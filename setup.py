@@ -46,7 +46,7 @@ import re
 import subprocess
 
 packageName     = 'fastmat'
-packageVersion  = '0.1b3'
+packageVersion  = '0.1b'
 strName         = "%s %s" % (packageName, packageVersion)
 strVersionFile  = "%s/version.py" %(packageName)
 
@@ -199,9 +199,9 @@ def extensions():
         print("\n\n" +
               "  Could not import one or more of the required modules:\n" +
               "    cython, numpy, scipy\n\n" +
-              "  Possibly an error in resolving package dependencies." +
+              "  Possibly an error in resolving package dependencies.\n" +
               "  Please try installing them manually and try again:\n" +
-              "    pip install ~\n\n" +
+              "    pip install cython numpy scipy matplotlib\n\n" +
               "  Sorry for the inconvenience. We are going to address this " +
               "soon.\n")
         sys.exit(1)
@@ -237,9 +237,9 @@ setup(
     ],
     keywords='linear transforms efficient algorithms mathematics',
     install_requires=[
-        'cython>=0.18',
-        'numpy>=1.7',
-        'scipy>=0.8',
+        'cython',
+        'numpy',
+        'scipy',
         'matplotlib'
     ],
     packages=[
