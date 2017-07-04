@@ -46,7 +46,7 @@ import re
 import subprocess
 
 packageName     = 'fastmat'
-packageVersion  = '0.1b'
+packageVersion  = '0.1b3'
 strName         = "%s %s" % (packageName, packageVersion)
 strVersionFile  = "%s/version.py" %(packageName)
 
