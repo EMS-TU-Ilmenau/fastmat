@@ -37,7 +37,15 @@ If you experience any trouble please do not hesitate to contact us or to open
 an issue on our github projectpage: https://github.com/EMS-TU-Ilmenau/fastmat
 
 ### FAQ
- *to be updated*
+
+#### Installation fails with *ImportError: No module named Cython.Build*
+Something went wrong with resolving the dependencies of fastmat during setup.
+Unfortunately one or more of the required packages numpy, scipy or cython were
+not installed automatically. Please do this manually by running `pip install ~`
+with `~` specifying the packages you want to be installed and try again.
+
+#### Issue not resolved?
+Please contact us or leave your bug report in the *issue* section. Thank You!
 
 
 ## Citation / Acknowledgements

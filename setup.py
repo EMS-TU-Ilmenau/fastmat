@@ -178,22 +178,33 @@ class lazyCythonize(list):
 
 
 def extensions():
-    from Cython.Build import cythonize
-    import numpy
+    try:
+        from Cython.Build import cythonize
+        import numpy
 
-    extensionArguments = {
-        'include_dirs':
-        [numpy.get_include(), 'fastmat/helpers', 'util/routines'],
-        'extra_compile_args': compilerArguments,
-        'extra_link_args': linkerArguments
-        #'define_macros' : [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
-    }
+        extensionArguments = {
+            'include_dirs':
+            [numpy.get_include(), 'fastmat/helpers', 'util/routines'],
+            'extra_compile_args': compilerArguments,
+            'extra_link_args': linkerArguments
+        }
 
-    return cythonize([
-        Extension("*", ["fastmat/*.pyx"], **extensionArguments),
-        Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
-        Extension("*", ["fastmat/helpers/*.pyx"], **extensionArguments)
-    ])
+        return cythonize([
+            Extension("*", ["fastmat/*.pyx"], **extensionArguments),
+            Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
+            Extension("*", ["fastmat/helpers/*.pyx"], **extensionArguments)
+        ])
+
+    except ImportError:
+        print("\n\n" +
+              "  Could not import one or more of the required modules:\n" +
+              "    cython, numpy, scipy\n\n" +
+              "  Possibly an error in resolving package dependencies." +
+              "  Please try installing them manually and try again:\n" +
+              "    pip install ~\n\n" +
+              "  Sorry for the inconvenience. We are going to address this " +
+              "soon.\n")
+        sys.exit(1)
 
 
 # setup package
