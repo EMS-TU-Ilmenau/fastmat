@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include makefile
+include .version
+recursive-include fastmat *.pyx
+recursive-include fastmat *.pxd
+recursive-include fastmat *.h
+recursive-exclude fastmat *.c
+recursive-include demo *
+recursive-include doc *
+recursive-include util *

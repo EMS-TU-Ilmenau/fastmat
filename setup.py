@@ -39,14 +39,11 @@
 '''
 
 # import modules
-from Cython.Build import cythonize
 import platform
 import sys
 import os
 import re
 import subprocess
-import numpy
-
 
 packageName     = 'fastmat'
 packageVersion  = '0.1b'
@@ -67,43 +64,52 @@ def WARNING(str):
     print("\033[91m WARNING:\033[0m %s" % (str))
 
 
-def updateVersion():
-    # check if source directory is a git repository
-    if not os.path.exists(".git"):
-        print("Installing from something other than a Git repository; " +
-              "Leaving %s alone." %(strVersionFile))
-        return
+def getCurrentVersion():
+    global packageVersion
 
-    # fetch current tag and commit description from git
-    try:
-        p = subprocess.Popen(
-            ["git", "describe", "--tags", "--dirty", "--always"],
-            stdout=subprocess.PIPE
-        )
-    except EnvironmentError:
-        print("Not a git repository; leaving version string '%s' untouched." %(
-            strVersionFile))
-        return
+    # check if there is a manual version override
+    if os.path.isfile(".version"):
+        with open(".version", "r") as f:
+            stdout = f.read().split('\n')[0]
+        print("Override of version string to '%s' (from .version file )" %(
+            stdout))
 
-    stdout = p.communicate()[0].strip()
-    if stdout is not str:
-        stdout = stdout.decode()
+        packageVersion = stdout
 
-    if p.returncode != 0:
-        print(("Unable to fetch version from git repository; " +
-               "leaving version string '%s' untouched.") %(strVersionFile))
-        return
+    else:
+        # check if source directory is a git repository
+        if not os.path.exists(".git"):
+            print(("Installing from something other than a Git repository; " +
+                   "Version file '%s' untouched.") %(strVersionFile))
+            return
 
-    # output results to version string, extract package version number from tag
-    versionMatch = re.match("[.+\d+]+\d*", stdout)
-    if versionMatch:
-        packageVersion = versionMatch.group(0)
-        print("Fetched package version number from git tag (%s)." %(
-            packageVersion))
+        # fetch current tag and commit description from git
+        try:
+            p = subprocess.Popen(
+                ["git", "describe", "--tags", "--dirty", "--always"],
+                stdout=subprocess.PIPE
+            )
+        except EnvironmentError:
+            print("Not a git repository; Version file '%s' not touched." %(
+                strVersionFile))
+            return
 
-    with open(strVersionFile, "w") as f:
-        f.write(VERSION_PY % (stdout))
-    print("Set %s to '%s'" %(strVersionFile, stdout))
+        stdout = p.communicate()[0].strip()
+        if stdout is not str:
+            stdout = stdout.decode()
+
+        if p.returncode != 0:
+            print(("Unable to fetch version from git repository; " +
+                   "leaving version file '%s' untouched.") %(strVersionFile))
+            return
+
+        # output results to version string, extract package version number
+        # from git tag
+        versionMatch = re.match("[.+\d+]+\d*", stdout)
+        if versionMatch:
+            packageVersion = versionMatch.group(0)
+            print("Fetched package version number from git tag (%s)." %(
+                packageVersion))
 
 
 # load setup and extension from distutils. Under windows systems, setuptools is
@@ -131,21 +137,64 @@ else:
         strName, strPlatform))
 print("Building %s for %s." % (strName, strPlatform))
 
-extensionArguments = {
-    'include_dirs':
-    [numpy.get_include(), 'fastmat/helpers', 'util/routines'],
-    'extra_compile_args': compilerArguments,
-    'extra_link_args': linkerArguments
-    #'define_macros'        : [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
-}
-
 # get version from git and update fastmat/__init__.py accordingly
-updateVersion()
+getCurrentVersion()
 
-# get the long description from the README file
-here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'README.md')) as f:
-    longDescription = f.read()
+# make sure there exists a version.py file in the project
+with open(strVersionFile, "w") as f:
+    f.write(VERSION_PY % (packageVersion))
+print("Set %s to '%s'" %(strVersionFile, packageVersion))
+
+# get the long description from the README file.
+# CAUTION: Python2/3 utf encoding shit calls needs some adjustments
+fileName = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md')
+f = (open(fileName, 'r') if sys.version_info < (3, 0)
+     else open(fileName, 'r', encoding='utf-8'))
+longDescription = f.read()
+f.close()
+
+
+# override list type to allow lazy cythonization: cythonize and compile only
+# after install_requires installed cython
+class lazyCythonize(list):
+    def __init__(self, callback):
+        self._list, self.callback = None, callback
+
+    def c_list(self):
+        if self._list is None:
+            self._list = self.callback()
+
+        return self._list
+
+    def __iter__(self):
+        for e in self.c_list():
+            yield e
+
+    def __getitem__(self, ii):
+        return self.c_list()[ii]
+
+    def __len__(self):
+        return len(self.c_list())
+
+
+def extensions():
+    from Cython.Build import cythonize
+    import numpy
+
+    extensionArguments = {
+        'include_dirs':
+        [numpy.get_include(), 'fastmat/helpers', 'util/routines'],
+        'extra_compile_args': compilerArguments,
+        'extra_link_args': linkerArguments
+        #'define_macros' : [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
+    }
+
+    return cythonize([
+        Extension("*", ["fastmat/*.pyx"], **extensionArguments),
+        Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
+        Extension("*", ["fastmat/helpers/*.pyx"], **extensionArguments)
+    ])
+
 
 # setup package
 setup(
@@ -172,14 +221,14 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-        'Topic :: Scientific/Engineering :: Mathematics'
+        'Topic :: Scientific/Engineering :: Mathematics',
         'Topic :: Software Development :: Libraries'
     ],
     keywords='linear transforms efficient algorithms mathematics',
     install_requires=[
-        'cython',
-        'numpy',
-        'scipy',
+        'cython>=0.18',
+        'numpy>=1.7',
+        'scipy>=0.8',
         'matplotlib'
     ],
     packages=[
@@ -187,9 +236,5 @@ setup(
         'fastmat/algs',
         'fastmat/helpers'
     ],
-    ext_modules=cythonize([
-        Extension("*", ["fastmat/*.pyx"], **extensionArguments),
-        Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
-        Extension("*", ["fastmat/helpers/*.pyx"], **extensionArguments)
-    ])
+    ext_modules=lazyCythonize(extensions)
 )

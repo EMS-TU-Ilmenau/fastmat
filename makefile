@@ -1,5 +1,5 @@
 #
-#  test/makefile
+#  makefile
 # -------------------------------------------------- part of the fastmat package
 #
 #  makefile for assisted fastmat package installation.
@@ -60,12 +60,10 @@ default: .warning
 ################################################################################
 
 ifeq ($(OS),Windows_NT)
-ECHO=@echo $(1)
 RM=del /F
 RMR=deltree
 PSEP=$(strip \)
 else
-ECHO=@echo "$(1)"
 RM=rm -f
 RMR=rm -rf
 PSEP=/
@@ -84,6 +82,9 @@ FILE_LIST=setup.files
 # python version
 PYTHON=python
 
+ifeq ($(OS),Windows_NT)
+else
+
 # STYLE_FILES specifies the files touched during coding style operations
 STYLE_FILES=util/*/*.py util/*.py *.py\
 	fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
@@ -98,7 +99,7 @@ CODEBASE_FILES:=$(shell find .\
 		-name '*.py' -o -name '*.pyx' -o -name '*.pxd'\
 	| $(PYTHON) -c 'import sys; print(" ".join([s.strip()\
 		for s in sys.stdin.readlines() if "output" not in s]))')
-
+endif
 
 ################################################################################
 ###  BUILD TARGETS
@@ -107,15 +108,15 @@ CODEBASE_FILES:=$(shell find .\
 # target 'install': Install fastmat.
 .PHONY: install
 install:
-	@$(call ECHO, * installing ... (generating '$(FILE_LIST)'))
-	@$(call ECHO, * using special mode: $(MODE))
+	$(info * installing ... (generating '$(FILE_LIST)'))
+	$(info * using special mode: $(MODE))
 	$(PYTHON) setup.py install --record $(FILE_LIST) $(MODE)
 
 
 # target 'uninstall': Uninstall fastmat.
 .PHONY: uninstall
 uninstall: $(FILE_LIST)
-	@$(call ECHO, * uninstalling ... (using '$(FILE_LIST)'))
+	$(info * uninstalling ... (using '$(FILE_LIST)'))
 ifeq ($(OS),Windows_NT)
 # Windows flavour
 	@for /f %%A in ($(FILE_LIST)) do del %%A
@@ -130,20 +131,20 @@ endif
 # target 'compile': Comile fastmat package locally.
 .PHONY: compile
 compile:
-	@$(call ECHO, * compiling fastmat package locally)
+	$(info * compiling fastmat package locally)
 	$(PYTHON) setup.py build_ext --inplace
 
 
 # target 'doc': Compile documentation
 .PHONY: doc
 doc:
-	@$(call ECHO, * building documentation: redirecting to './doc/make doc')
+	$(info * building documentation: redirecting to './doc/make doc')
 	@$(MAKE) -C doc doc OPTIONS=$(OPTIONS) PYTHON=$(PYTHON)
 
 # target 'test': Run unit tests for package
 .PHONY: test
 test: compile
-	@$(call ECHO, * running unit tests)
+	$(info * running unit tests)
 	$(PYTHON) util/bee.py test -vi
 
 
@@ -152,6 +153,12 @@ test: compile
 all: | compile doc test
 
 
+################################################################################
+###  LINUX-ONLY BUILD TARGETS
+################################################################################
+
+ifeq ($(OS),Windows_NT)
+else
 # target 'styleCheck': Perform a style check for all python code files
 .PHONY: styleCheck
 styleCheck:
@@ -169,9 +176,10 @@ styleFix:
 # target 'codeStats': Print statistics about the codebase
 .PHONY: codeStats
 codeStats:
-	@$(call ECHO, * LOC & SIZE for source files in codebase)
-	@$(call ECHO, * ---------------------------------------)
+	$(info * LOC & SIZE for source files in codebase)
+	$(info * ---------------------------------------)
 	@wc -l -c $(CODEBASE_FILES)
+endif
 
 
 ################################################################################
@@ -181,8 +189,8 @@ codeStats:
 # target 'warning': Print warning and exit.
 .PHONY: .warning
 .warning:
-	@$(call ECHO, * WARNING: no makefile target specified. Abort.)
-	@$(call ECHO, * valid targets are: install uninstall)
+	$(info * WARNING: no makefile target specified. Abort.)
+	$(info * valid targets are: install uninstall)
 
 
 ################################################################################
@@ -190,6 +198,6 @@ codeStats:
 ################################################################################
 
 # target '$(FILE_LIST)': Generate list of installed files.
-$(FILE_LIST):
-	@$(call ECHO,need to generate file list '$@' for uninstall)
-	$(MAKE) install
+#$(FILE_LIST):
+#	$(info need to generate file list '$@' for uninstall)
+#	$(MAKE) install
