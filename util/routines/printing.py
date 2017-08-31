@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/helpers/printing.py
+  util/routines/printing.py
  -------------------------------------------------- part of the fastmat package
 
   Routines for recurring printing and IO tasks

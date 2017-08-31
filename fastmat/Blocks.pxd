@@ -31,16 +31,16 @@ import cython
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
+from .core.types cimport *
 
 ################################################################################
 ################################################## class Blocks
 cdef class Blocks(Matrix):
 
     ############################################## class variables
-    cdef public tuple _content                   # list of list of Matrix terms
+    cdef public tuple _rows                      # list of list of Matrix terms
     #                                            # (array of matrix terms)
-    cdef public tuple _contentT                  # same as _content, transposed
+    cdef public tuple _cols                      # same as _rows, transposed
     cdef public tuple _rowN                      # heights of rows
     cdef public tuple _colM                      # widths of columns
     cdef public intsize _numRows                 # Row-count of term array

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/helpers/resource.py
+  fastmat/core/resource.py
  -------------------------------------------------- part of the fastmat package
 
   Routines for resource handling and estimation of consumption.
@@ -30,7 +30,7 @@ import sys
 from itertools import chain
 from collections import deque
 import numpy as np
-import scipy as sp
+from scipy.sparse import spmatrix
 from ..Matrix import Matrix
 
 ################################################## getMemoryFootprint()
@@ -104,7 +104,7 @@ def getMemoryFootprint(
             s += added if added > s else 0
 
         # check for sparse arrays (have special properties holding data)
-        if isinstance(obj, sp.sparse.spmatrix):
+        if isinstance(obj, spmatrix):
             s += sizeof(obj.__dict__)
 
         if verbose:

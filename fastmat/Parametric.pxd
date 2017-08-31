@@ -31,7 +31,7 @@ import cython
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
+from .core.types cimport *
 
 ctypedef object(*function)(object, object)
 
@@ -55,5 +55,4 @@ cdef class Parametric(Matrix):
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)
 
-    cpdef np.ndarray toarray(self)
     cpdef np.ndarray _reference(self)

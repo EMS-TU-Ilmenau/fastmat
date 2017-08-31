@@ -31,22 +31,13 @@ import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .Transpose cimport *
-from .helpers.cmath cimport _conjugate
-from .helpers.types cimport *
+from .core.cmath cimport _conjugate
+from .core.types cimport *
 
 
 ################################################################################
 ################################################## class Product
 cdef class Product(Matrix):
-
-    ############################################## class properties
-    # content - Property (read-only)
-    # Return the content of the product
-    property content:
-        def __get__(self):
-            lst = [self._scalar] if self._scalar != 1 else []
-            return lst + list(self._content)
 
     ############################################## class methods
     def __init__(self, *matrices, **options):
@@ -76,9 +67,12 @@ cdef class Product(Matrix):
                     continue
 
                 if not isinstance(factor, Matrix):
-                    raise TypeError("Product has non-fastmat-matrix terms.")
+                    raise TypeError("Product: Term not scalar nor Matrix.")
 
                 if isinstance(factor, Product):
+                    if factor._scalar != 1:
+                        self._scalar = self._scalar * factor._scalar
+
                     __addFactors(factor.content)
                 else:
                     # store fastmat-matrix-content: determine data type
@@ -107,8 +101,8 @@ cdef class Product(Matrix):
             factor = lstFactors[ii]
             if factor.numN != numM:
                 raise ValueError(
-                    ("Dimensions of product factor %d [%dx%d] " +
-                     "do not match.") %(ii, numN, numM))
+                    "Product: Dimension mismatch for term %d [%dx%d]" %(
+                        ii, numN, numM))
             numM = factor.numM
 
         # force scalar datatype to match matrix datatype (calculation accuracy)
@@ -167,6 +161,11 @@ cdef class Product(Matrix):
 
         # don't forget to return the conjugate as we use the backward
         return _conjugate(arrRes)
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        cdef float complexity = len(self._content)
+        return (complexity, complexity)
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
@@ -250,105 +249,95 @@ cdef class Product(Matrix):
 
         return arrRes
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                TEST.NUM_N      : 7,
+                TEST.NUM_M      : TEST.Permutation([10, TEST.NUM_N]),
+                'mType1'        : TEST.Permutation(TEST.ALLTYPES),
+                'mType2'        : TEST.Permutation(TEST.FEWTYPES),
+                'sType'         : TEST.Permutation(TEST.ALLTYPES),
+                'arr1'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType1',
+                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
+                }),
+                'arr2'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType2',
+                    TEST.SHAPE  : (TEST.NUM_M , TEST.NUM_N)
+                }),
+                'arr3'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType1',
+                    TEST.SHAPE  : (TEST.NUM_N , TEST.NUM_M)
+                }),
+                'num4'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'sType',
+                    TEST.SHAPE  : (1,)
+                }),
+                TEST.OBJECT     : Product,
+                TEST.INITARGS   : (lambda param: [param['num4']()[0],
+                                                  Matrix(param['arr1']()),
+                                                  Matrix(param['arr2']()),
+                                                  Matrix(param['arr3']())]),
+                'strType'       : (lambda param: TEST.TYPENAME[param['sType']]),
+                TEST.NAMINGARGS: dynFormat("%s*%s*%s*%s",
+                                           'strType', 'arr1', 'arr2', 'arr3'),
+                TEST.TOL_POWER  : 3.
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
+    def _getBenchmark(self):
+        from .inspect import BENCH
+        from .Fourier import Fourier
+        from .Hadamard import Hadamard
+        from .Eye import Eye
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c:
+                                   Product(Hadamard(c), Fourier(2 ** c))),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
+                BENCH.FUNC_STEP : (lambda c: c + 1)
+            },
+            BENCH.FORWARD: {},
+            BENCH.SOLVE: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c: Product(*([Eye(2 ** c)] * 2 ** c)))
+            }
+        }
 
-################################################### Testing
-test = {
-    NAME_COMMON: {
-        TEST_NUM_N: 7,
-        TEST_NUM_M: Permutation([10, TEST_NUM_N]),
-        'mType1': Permutation(typesAll),
-        'mType2': Permutation(typesSmallIFC),
-        'sType': Permutation(typesAll),
-        'arr1': ArrayGenerator({
-            NAME_DTYPE  : 'mType1',
-            NAME_SHAPE  : (TEST_NUM_N, TEST_NUM_M)
-            #            NAME_CENTER : 2,
-        }),
-        'arr2': ArrayGenerator({
-            NAME_DTYPE  : 'mType2',
-            NAME_SHAPE  : (TEST_NUM_M , TEST_NUM_N)
-            #            NAME_CENTER : 2,
-        }),
-        'arr3': ArrayGenerator({
-            NAME_DTYPE  : 'mType1',
-            NAME_SHAPE  : (TEST_NUM_N , TEST_NUM_M)
-            #            NAME_CENTER : 2,
-        }),
-        'num4': ArrayGenerator({
-            NAME_DTYPE  : 'sType',
-            NAME_SHAPE  : (1,)
-            #            NAME_CENTER : 2,
-        }),
-        TEST_OBJECT: Product,
-        TEST_INITARGS: (lambda param : [
-            param['num4']()[0],
-            Matrix(param['arr1']()),
-            Matrix(param['arr2']()),
-            Matrix(param['arr3']())
-        ]),
-        'strType': (lambda param: NAME_TYPES[param['sType']]),
-        TEST_NAMINGARGS: dynFormatString(
-            "%s*%s*%s*%s", 'strType', 'arr1', 'arr2', 'arr3'),
-        TEST_TOL_POWER: 3.
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-    }
-}
-
-
-################################################## Benchmarks
-from .Fourier import Fourier
-from .Hadamard import Hadamard
-from .Eye import Eye
-
-benchmark = {
-    NAME_COMMON: {
-        NAME_DOCU       : r'''$\bm P = \bm \Hs_k \cdot \bm \Fs_{2^k}$;
-            so $n = 2^k$''',
-        BENCH_FUNC_GEN  : (lambda c: Product(Hadamard(c), Fourier(2 ** c))),
-        BENCH_FUNC_SIZE : (lambda c: 2 ** c),
-        BENCH_FUNC_STEP : (lambda c : c + 1)
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_SOLVE: {
-    },
-    BENCH_OVERHEAD: {
-        BENCH_FUNC_GEN  : (lambda c : Product(*([Eye(2 ** c)] * 1000))),
-        NAME_DOCU       : r'''Produkt of $1000$ Identity matrices
-            $\bm I_{2^k}$; so $n = 2^k$'''
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-
-\subsection{Product (\texttt{fastmat.Product})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Product (\texttt{fastmat.Product})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 \[\bm M = \prod\limits_i \bm A_i \]
-where the $A_{i}$ can be fast transforms of \emph{any} type.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-
-# define the product terms
-A = fm.Circulant(x_A)
-B = fm.Circulant(x_B)
-
-# construct the product
-M = fm.Product(A.H, B)
-\end{lstlisting}
-
+where the $A_{i}$ can be fast transforms of \emph{any} type.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            '',
+                            '# define the product terms',
+                            'A = fm.Circulant(x_A)',
+                            'B = fm.Circulant(x_B)',
+                            '',
+                            '# construct the product',
+                            'M = fm.Product(A.H, B)',
+                            caption=r"""
 Assume we have two circulant matrices $\bm A$ and $\bm B$. Then we define
-\[\bm M = \bm A_c^\herm \bm B_c.\]
-\end{snippet}
-"""
+\[\bm M = \bm A_c^\herm \bm B_c.\]""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+The \emph{forward} and \emph{solve} benchmarks were performed on a matrix
+$\bm P = \bm \Hs_k \cdot \bm \Fs_{2^k}$; so $n = 2^k$
+whereas the \emph{overhead} benchmark was performed on a
+Produkt of $2^k$ Identity matrices $\bm I_{2^k}$; so $n = 2^k$""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
+                DOC.PLOTOVERHEAD()
+            )
+        )

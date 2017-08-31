@@ -31,7 +31,7 @@ import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.cmath cimport _conjugate, _multiply
+from .core.cmath cimport _conjugate, _multiply
 
 ################################################################################
 ################################################## class Outer
@@ -92,6 +92,11 @@ cdef class Outer(Matrix):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return self._vecVRav[idxN] * self._vecHRav[idxM]
 
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        cdef float complexity = 2 * (self.numN + self.numM)
+        return (complexity, complexity)
+
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         '''Calculate the forward transform of this matrix.'''
@@ -112,119 +117,103 @@ cdef class Outer(Matrix):
         dtype = np.promote_types(self.dtype, np.float64)
         return self._vecV.dot(self._vecH.astype(dtype))
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                TEST.NUM_N      : 4,
+                TEST.NUM_M      : TEST.Permutation([6, TEST.NUM_N]),
+                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
+                'mTypeV'        : TEST.Permutation(TEST.ALLTYPES),
+                'vecH'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeH',
+                    TEST.SHAPE  : (TEST.NUM_N, 1)
+                }),
+                'vecV'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeV',
+                    TEST.SHAPE  : (TEST.NUM_M, 1)
+                }),
+                TEST.INITARGS   : (lambda param : [param['vecH'](),
+                                                   param['vecV']()]),
+                TEST.OBJECT     : Outer,
+                TEST.NAMINGARGS : dynFormat("%so%s", 'vecH', 'vecV'),
+                TEST.TOL_MINEPS : (lambda param:
+                                   max(_getTypeEps(param['mTypeH']),
+                                       _getTypeEps(param['mTypeV']))),
+                TEST.TOL_POWER  : 4.
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {
+                # ignore int8 datatype as there will be overflows
+                TEST.IGNORE     : TEST.IgnoreFunc(lambda param: (
+                    param['mTypeH'] == param['mTypeV'] ==
+                    param[TEST.DATATYPE] == np.int8))
+            }
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
+    def _getBenchmark(self):
+        from .inspect import BENCH, arrTestDist
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: Outer(
+                    arrTestDist((c, ), dtype=np.float),
+                    arrTestDist((c, ), dtype=np.float)))
+            },
+            BENCH.FORWARD: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c: Outer(
+                    arrTestDist((2 ** c, ), dtype=np.float),
+                    arrTestDist((2 ** c, ), dtype=np.float)))
+            },
+            BENCH.DTYPES: {
+                BENCH.FUNC_GEN  : (lambda c, datatype: Outer(
+                    arrTestDist((2 ** c, ), dtype=datatype),
+                    arrTestDist((2 ** c, ), dtype=datatype)))
+            }
+        }
 
-################################################## Testing
-test = {
-    NAME_COMMON: {
-        TEST_NUM_N: 4,
-        TEST_NUM_M: Permutation([6, TEST_NUM_N]),
-        'mTypeH': Permutation(typesSmallIFC),
-        'mTypeV': Permutation(typesAll),
-        TEST_PARAMALIGN: ALIGN_DONTCARE,
-        'vecH': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeH',
-            NAME_SHAPE  : (TEST_NUM_N, 1),
-            NAME_ALIGN  : TEST_PARAMALIGN
-        }),
-        'vecV': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeV',
-            NAME_SHAPE  : (TEST_NUM_M, 1),
-            NAME_ALIGN  : TEST_PARAMALIGN
-        }),
-        TEST_INITARGS: (lambda param : [
-            param['vecH'](),
-            param['vecV']()
-        ]),
-        TEST_OBJECT: Outer,
-        TEST_NAMINGARGS: dynFormatString("%so%s", 'vecH', 'vecV'),
-        TEST_TOL_MINEPS: lambda param:
-            max(_getTypeEps(param['mTypeH']), _getTypeEps(param['mTypeV'])),
-        TEST_TOL_POWER: 4.
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-        # test forward and backward transforms
-        TEST_IGNORE:
-            IgnoreFunc(lambda param : param['mTypeH'] == param['mTypeV'] == \
-                       param[TEST_DATATYPE] == np.int8)
-    }
-}
-
-
-################################################## Benchmarks
-benchmark = {
-    NAME_COMMON: {
-        BENCH_FUNC_GEN  :
-            (lambda c : Outer(
-                np.random.uniform(2, 3, c),
-                np.random.uniform(2, 3, c)
-            )),
-        NAME_DOCU       : r'''$\bm M \in \R^{n \times n}$ with defining vectors'
-            entries drawn from a uniform distribution on $[2,3]$'''
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_OVERHEAD: {
-        BENCH_FUNC_GEN  :
-            (lambda c : Outer(
-                np.random.uniform(2, 3, 2 ** c),
-                np.random.uniform(2, 3, 2 ** c)
-            )),
-        NAME_DOCU       : r'''$\bm M \in \R^{n \times n}$ with $n = 2^k$,
-            $k \in \N$ and diagonal entries drawn from a uniform
-            distribution on $[2,3]$'''
-    },
-    BENCH_DTYPES: {
-        BENCH_FUNC_GEN  :
-            (lambda c, datatype : Outer(
-                np.random.uniform(2, 3, 2 ** c).astype(datatype),
-                np.random.uniform(2, 3, 2 ** c).astype(datatype)
-            )),
-        NAME_DOCU       : r'''$\bm M \in \R^{n \times n}$ with $n = 2^k$,
-            $k \in \N$ and defining vectors' entries drawn from a uniform
-            distribution on $[2,3]$'''
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Outer Product Matrix (\texttt{fastmat.Outer})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Outer Product Matrix (\texttt{fastmat.Outer})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 The outer product is a special case of the Kronecker product of one-dimensional
 vectors. For given $\bm a \in \C^n$ and $\bm b \in \C^m$ it is defined as
     \[\bm x \mapsto \bm a \cdot \bm b^\trans \cdot \bm x.\]
 It is clear, that this matrix has at most rank $1$ and as such has a fast
-transformation.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-import numpy as np
-
-# build the parameters
-n,m = 4,5
-v = np.arange(n)
-h = np.arange(m)
-
-# construct the matrix
-M = fm.Outer(v,h)
-\end{lstlisting}
-
+transformation.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            'import numpy as np',
+                            '',
+                            '# define parameter',
+                            'n, m = 4, 5',
+                            'v = np.arange(n)',
+                            'h = np.arange(m)',
+                            '',
+                            '# construct the matrix',
+                            'M = fm.Outer(v, h)',
+                            caption=r"""
 This yields
 \[\bm v = (0,1,2,3,4)^T\]
 \[\bm h = (0,1,2,3,4,5)^T\]
 \[\bm M = \left(\begin{array}{ccccc}
-    0 & 0 & 0 & 0 & 0 \\
-    0 & 1 & 2 & 3 & 4 \\
-    0 & 2 & 4 & 6 & 8 \\
+    0 & 0 & 0 & 0 & 0  \\
+    0 & 1 & 2 & 3 & 4  \\
+    0 & 2 & 4 & 6 & 8  \\
     0 & 3 & 6 & 9 & 12
-\end{array}\right)\]
-\end{snippet}
-"""
+\end{array}\right)\]""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix $\bm M \in \R^{n \times n}$ with
+defining vectors' entries drawn from a uniform distribution on $[2,3]$""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTOVERHEAD(),
+                DOC.PLOTTYPESPEED(),
+                DOC.PLOTTYPEMEMORY()
+            )
+        )

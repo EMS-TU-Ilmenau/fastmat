@@ -32,8 +32,8 @@ cimport numpy as np
 
 from .Matrix cimport Matrix
 from .Eye cimport Eye
-from .helpers.cmath cimport _conjugate, _multiply, _arrZero
-from .helpers.types cimport *
+from .core.cmath cimport _conjugate, _multiply, _arrZero
+from .core.types cimport *
 
 
 ################################################################################
@@ -58,13 +58,14 @@ cdef class Diag(Matrix):
         self._vecD = np.atleast_1d(np.squeeze(np.copy(vecD)))
         if self._vecD.ndim != 1:
             raise ValueError(
-                "Diag-defining vector must have exactly one active dimension.")
+                "Diag: Definition vector must have exactly one dimension.")
 
         # set properties of matrix
         self._initProperties(
             numN, numN, self._vecD.dtype,
             cythonCall=True,
-            forceInputAlignment=True
+            forceInputAlignment=True,
+            fortranStyle=True
         )
 
     ############################################## class property override
@@ -87,6 +88,9 @@ cdef class Diag(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._getCol(idx)
 
+    cpdef object _getItem(self, intsize idxN, intsize idxM):
+        return self._vecD[idxN] if idxN == idxM else self.dtype(0)
+
     cpdef Matrix _getGram(self):
         return Diag(np.abs(self._vecD) ** 2)
 
@@ -96,8 +100,12 @@ cdef class Diag(Matrix):
         else:
             return Diag(np.sign(self._vecD).astype(self.dtype))
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._vecD[idxN] if idxN == idxM else self.dtype(0)
+    cpdef Matrix _getT(self):
+        return self
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        return (2. * self.numN, 3. * self.numN)
 
     ############################################## class forward / backward
     cpdef _forwardC(
@@ -135,86 +143,65 @@ cdef class Diag(Matrix):
 
         return np.diag(d)
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                TEST.NUM_N      : 35,
+                TEST.NUM_M      : TEST.NUM_N,
+                'mTypeD'        : TEST.Permutation(TEST.ALLTYPES),
+                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                'vecD'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeD',
+                    TEST.SHAPE  : (TEST.NUM_N, ),
+                    TEST.ALIGN  : TEST.PARAMALIGN
+                }),
+                TEST.INITARGS   : (lambda param: [param['vecD']()]),
+                TEST.OBJECT     : Diag,
+                TEST.NAMINGARGS : dynFormat("%s", 'vecD')
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
-################################################### Testing
-test = {
-    NAME_COMMON: {
-        TEST_NUM_N: 35,
-        TEST_NUM_M: TEST_NUM_N,
-        'mTypeD': Permutation(typesAll),
-        TEST_PARAMALIGN : Permutation(alignmentsAll),
-        'vecD': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeD',
-            NAME_SHAPE  : (TEST_NUM_N, ),
-            NAME_ALIGN  : TEST_PARAMALIGN
-            #            NAME_CENTER : 2,
-        }),
-        TEST_INITARGS: (lambda param : [
-            param['vecD']()
-        ]),
-        TEST_OBJECT: Diag,
-        TEST_NAMINGARGS: dynFormatString("%s", 'vecD')
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-        # test forward and backward transforms
-    }
-}
+    def _getBenchmark(self):
+        from .inspect import BENCH
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: Diag(np.random.uniform(2, 3, c)))
+            },
+            BENCH.FORWARD: {},
+            BENCH.SOLVE: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c:
+                                   Diag(np.random.uniform(2, 3, 2 ** c)))
+            },
+            BENCH.DTYPES: {
+                BENCH.FUNC_GEN  : (lambda c, dt: Diag(
+                    np.random.uniform(2, 3, 2 ** c).astype(dt)))
+            }
+        }
 
-
-################################################## Benchmarks
-benchmark = {
-    NAME_COMMON: {
-        NAME_DOCU       : r'''$\bm D \in \R^{n \times n}$ with diagonal
-            entries drawn from a uniform distribution on $[2,3]$''',
-        BENCH_FUNC_GEN  : (lambda c : Diag(np.random.uniform(2, 3, c)))
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_SOLVE: {
-    },
-    BENCH_OVERHEAD: {
-        BENCH_FUNC_GEN  :
-            (lambda c : Diag(np.random.uniform(2, 3, 2 ** c))),
-        NAME_DOCU       :
-            r'''$\bm D \in \R^{n \times n}$ with $n = 2^k$, $k \in \N$ and
-            diagonal entries drawn from a uniform distribution on $[2,3]$'''
-    },
-    BENCH_DTYPES: {
-        BENCH_FUNC_GEN:
-            (lambda c, dt : Diag(np.random.uniform(2, 3, 2 ** c).astype(dt))),
-        NAME_DOCU       :
-            r'''$\bm D \in \R^{n \times n}$ with $n = 2^k$, $k \in \N$ and
-            diagonal entries drawn from a uniform distribution on $[2,3]$'''
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Diagonal Matrix (\texttt{fastmat.Diagonal})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Diagonal Matrix (\texttt{fastmat.Diagonal})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 \[x \mapsto \bm{\mathrm{diag}}(d_1,\dots,d_n) \cdot \bm x\]
-A diagonal matrix is uniquely defined by the entries of its diagonal.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-import numpy as np
-
-# build the parameters
-n = 4
-d = np.array([1, 0, 3, 6])
-
-# construct the matrix
-D = fm.Diagonal(d)
-\end{lstlisting}
-
+A diagonal matrix is uniquely defined by the entries of its diagonal.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            'import numpy as np',
+                            '',
+                            '# build the parameters',
+                            'n = 4',
+                            'd = np.array([1, 0, 3, 6])',
+                            '',
+                            '# construct the matrix',
+                            'D = fm.Diagonal(d)',
+                            caption=r"""
 This yields
 \[\bm d = (1, 0, 3, 6)^T\]
 \[\bm D = \left(\begin{array}{cccc}
@@ -222,6 +209,18 @@ This yields
     & 0 & & \\
     & & 3 & \\
     & & & 6
-\end{array}\right)\]
-\end{snippet}
-"""
+\end{array}\right)\]""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix
+$\bm D \in \R^{n \times n}$ with $n \in \N$ and diagonal entries drawn from a
+uniform distribution on $[2,3]$""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
+                DOC.PLOTOVERHEAD(),
+                DOC.PLOTTYPESPEED(),
+                DOC.PLOTTYPEMEMORY()
+            )
+        )

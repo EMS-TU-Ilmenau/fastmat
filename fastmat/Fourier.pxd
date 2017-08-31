@@ -27,21 +27,23 @@
 
  ------------------------------------------------------------------------------
 '''
-import cython
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
+from .core.types cimport *
 
 ################################################################################
 ################################################## class Fourier
 cdef class Fourier(Matrix):
 
     ############################################## class variables
-    cdef intsize     _order                      # order of the fourier matrix
+    cdef intsize           _order                # order of the fourier matrix
+    cdef public intsize    _numL                 # internal size
+    cdef public np.ndarray _preMult              #
+    cdef public np.ndarray _vecConvHat           # holds other convolution
+    #                                            # operand in image space
 
     ############################################## class methods
     cpdef np.ndarray _forward(self, np.ndarray)
     cpdef np.ndarray _backward(self, np.ndarray)
-    cpdef np.ndarray toarray(self)
     cpdef np.ndarray _reference(self)

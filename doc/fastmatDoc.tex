@@ -4,9 +4,9 @@
 %-------------------------------------------------- part of the fastmat demos
 %
 % Author      : sempersn
-% Introduced  : 
+% Introduced  :
 %------------------------------------------------------------------------------
-%  
+%
 %  Copyright 2016 Sebastian Semper, Christoph Wagner
 %      https://www.tu-ilmenau.de/ems/
 %
@@ -58,7 +58,7 @@
 %
 \newpage
 %
-\tableofcontents 
+\tableofcontents
 %
 \newpage
 %
@@ -74,16 +74,32 @@
 %
 %
 %
+\section{Package architecture}
+\include*{tex/architecture}
+%
+%
+%
+\clearpage
+\section{Generally Supported Functions}
+%
+All of the matrix class implementations described in this section share a
+common set of mathematical properties, which may be accessed uniformely through
+a common interface. The base class implementation \texttt{\fm.Matrix} offers
+a very general implementation whereas each more specific class overwrites this
+general implementation with versions closer dedicated to the particular matrix
+structure.
+The following subsections describe the common functionality of all matrix
+classes.
+\include*{tex/funcs}
+
+\clearpage
 \section{Supported Transformations}
+%
 \include*{output/trafos}
 %
 %
 %
-\section{Uniformly Supported Functions}
-\include*{tex/funcs}
-%
-%
-%
+\clearpage
 \section{Algorithms}
 %
 To showcase possible practical applications and also for our own research, we

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
   fastmat/BlockDiag.py
  -------------------------------------------------- part of the fastmat package
@@ -35,19 +35,11 @@ import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
-from .helpers.cmath cimport _arrZero
+from .core.types cimport *
 
 ################################################################################
 ################################################## class BlockDiag
 cdef class BlockDiag(Matrix):
-
-    ############################################## class properties
-    # content - Property (read-only)
-    # Return a list of child matrices on the diagonal of matrix
-    property content:
-        def __get__(self):
-            return self._content
 
     ############################################## class methods
     def __init__(self, *matrices):
@@ -75,6 +67,17 @@ cdef class BlockDiag(Matrix):
             widenInputDatatype=True
         )
 
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        cdef float complexityFwd = self.numN
+        cdef float complexityBwd = self.numM
+        cdef Matrix item
+        for item in self:
+            complexityFwd += item.numN + item.numM
+            complexityBwd += item.numM + item.numN
+
+        return (complexityFwd, complexityBwd)
+
     ############################################## class forward / backward
     cpdef _forwardC(
         self,
@@ -94,8 +97,6 @@ cdef class BlockDiag(Matrix):
 
             idxN += term.numN
             idxM += term.numM
-
-        return arrRes
 
     cpdef _backwardC(
         self,
@@ -117,8 +118,6 @@ cdef class BlockDiag(Matrix):
             idxN += term.numN
             idxM += term.numM
 
-        return arrRes
-
     ############################################## class reference
     cpdef np.ndarray _reference(self):
         '''
@@ -133,115 +132,97 @@ cdef class BlockDiag(Matrix):
 
         for term in self._content:
             arrRes[idxN:(idxN + term.numN), :][:, idxM:(idxM + term.numM)] = \
-                term.toarray()
+                term._getArray()
 
             idxN += term.numN
             idxM += term.numM
 
         return arrRes
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                'size'          : 5,
+                TEST.NUM_N      : (lambda param: param['size'] * 3),
+                TEST.NUM_M      : TEST.NUM_N,
+                'mType1'        : TEST.Permutation(TEST.ALLTYPES),
+                'mType2'        : TEST.Permutation(TEST.ALLTYPES),
+                'arr1'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType1',
+                    TEST.SHAPE  : ('size', 'size')
+                }),
+                'arr2'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType2',
+                    TEST.SHAPE  : ('size', 'size')
+                }),
+                'arr3'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType1',
+                    TEST.SHAPE  : ('size', 'size')
+                }),
+                TEST.INITARGS   : (lambda param: [Matrix(param['arr1']()),
+                                                  -2. * Matrix(param['arr2']()),
+                                                  2. * Matrix(param['arr3']())
+                                                  ]),
+                TEST.OBJECT: BlockDiag,
+                'strType1'      : (lambda param:
+                                   TEST.TYPENAME[param['mType1']]),
+                'strType2'      : (lambda param:
+                                   TEST.TYPENAME[param['mType2']]),
+                TEST.NAMINGARGS : dynFormat("%s,%s,%s:(%dx%d) each",
+                                            'strType1', 'strType2', 'strType1',
+                                            'size', 'size'),
+                TEST.TOL_POWER  : 3.
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
+    def _getBenchmark(self):
+        from .inspect import BENCH, arrTestDist
+        from .Circulant import Circulant
+        from .Diag import Diag
+        from .Eye import Eye
+        from .Fourier import Fourier
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: BlockDiag(
+                    Circulant(np.random.randn(c)),
+                    Circulant(np.random.randn(c)),
+                    Fourier(c), Diag(np.random.randn(c))
+                )),
+                BENCH.FUNC_SIZE : (lambda c: 4 * c)
+            },
+            BENCH.FORWARD: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c: BlockDiag(*([Eye(2 ** c)] * 16))),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c * 16)
+            }
+        }
 
-################################################### Testing
-test = {
-    NAME_COMMON: {
-        'size': 5,
-        TEST_NUM_N: (lambda param: param['size'] * 3),
-        TEST_NUM_M: TEST_NUM_N,
-        'mType1': Permutation(typesAll),
-        'mType2': Permutation(typesAll),
-        'arr1': ArrayGenerator({
-            NAME_DTYPE  : 'mType1',
-            NAME_SHAPE  : ('size', 'size')
-            #            NAME_CENTER : 2,
-        }),
-        'arr2': ArrayGenerator({
-            NAME_DTYPE  : 'mType2',
-            NAME_SHAPE  : ('size', 'size')
-            #            NAME_CENTER : 2,
-        }),
-        'arr3': ArrayGenerator({
-            NAME_DTYPE  : 'mType1',
-            NAME_SHAPE  : ('size', 'size')
-            #            NAME_CENTER : 2,
-        }),
-        TEST_INITARGS: (lambda param : [
-            Matrix(param['arr1']()),
-            -2. * Matrix(param['arr2']()),
-            2. * Matrix(param['arr3']())
-        ]),
-        TEST_OBJECT: BlockDiag,
-        'strType1': (lambda param: NAME_TYPES[param['mType1']]),
-        'strType2': (lambda param: NAME_TYPES[param['mType2']]),
-        TEST_NAMINGARGS: dynFormatString(
-            "%s,%s,%s:(%dx%d) each",
-            'strType1', 'strType2', 'strType1', 'size', 'size'),
-        TEST_TOL_POWER : 3.
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-        # test forward and backward transforms
-    }
-}
-
-
-################################################## Benchmarks
-from .Eye import Eye
-
-benchmark = {
-    NAME_COMMON: {
-        NAME_DOCU       : r'''$\bm B = \begin{pmatrix}
-            \bm M_{k \times k} & 0 \\ 0 & \bm M_M_{k \times k}
-            \end{pmatrix}$, $n = 2k$''',
-        BENCH_FUNC_GEN  : (lambda c : BlockDiag(
-            Matrix(arrTestDist((c, c), np.float64)),
-            Matrix(arrTestDist((c, c), np.float64))
-        )),
-        BENCH_FUNC_SIZE : (lambda c : 2 * c)
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_OVERHEAD: {
-        NAME_DOCU       : r'''$\bm B =
-            \begin{pmatrix}
-                \bm I_{2^k} & \dots     & 0             \\
-                            & \ddots    &               \\
-                0           & \dots     & \bm I_{2^k}
-            \end{pmatrix}$''',
-        BENCH_FUNC_GEN  :
-            (lambda c : BlockDiag(*([Eye(2 ** c)] * 16))),
-        BENCH_FUNC_SIZE : (lambda c : 2 ** c * 16)
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Block Diagonal Matrix (\texttt{fastmat.BlockDiag})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Block Diagonal Matrix (\texttt{fastmat.BlockDiag})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface',
+                r"""
 \[\bm M = \mathrm{diag}\left\{\left( \bm A_{i}\right)_{i}\right\},\]
-where the $\bm A_{i}$ can be fast transforms of \emph{any} type.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-
-# define the blocks
-A = fm.Circulant(x_A)
-B = fm.Circulant(x_B)
-C = fm.Fourier(n)
-D = fm.Diag(x_D)
-
-# define the block
-# diagonal matrix
-M = fm.BlockDiag(A, B, C, D)
-\end{lstlisting}
-
+where the $\bm A_{i}$ can be fast transforms of \emph{any} type.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            '',
+                            '# define the blocks',
+                            'A = fm.Circulant(x_A)',
+                            'B = fm.Circulant(x_B)',
+                            'C = fm.Fourier(n)',
+                            'D = fm.Diag(x_D)',
+                            '',
+                            '# define the block',
+                            '# diagonal matrix',
+                            'M = fm.BlockDiag(A, B, C, D)',
+                            caption=r"""
 Assume we have two circulant matrices $\bm A$ and $\bm B$, an $N$-dimensional
 Fourier matrix $\bm C$ and a diagonal matrix $\bm D$. Then we define
 \[\bm M = \left(\begin{array}{cccc}
@@ -249,39 +230,45 @@ Fourier matrix $\bm C$ and a diagonal matrix $\bm D$. Then we define
     & \bm B & & \\
     & & \bm C & \\
     & & & \bm D
-\end{array}\right).\]
-\end{snippet}
-
+\end{array}\right).\]"""),
+                r"""
 Meta types can also be nested, so that a block diagonal matrix can contain
 products of block matrices as its entries. Note that the efficiency of the fast
-transforms decreases the more building blocks they have.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-
-# define the blocks
-A = fm.Circulant(x_A)
-B = fm.Circulant(x_B)
-F = fm.Fourier(n)
-D = fm.Diag(x_D)
-
-# define a product
-P = fm.Product(A.H, B)
-
-# define the block
-# diagonal matrix
-M = fm.BlockDiag(P, F, D)
-\end{lstlisting}
-
-Assume we have a product $\bm P$ of two matrices $\bm A^\herm$ and $\bm B$,
-an $N$-dimensional Fourier matrix $\bm{\mathcal{F}}$ and a diagonal matrix
+transforms decreases the more building blocks they have.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            '',
+                            '# define the blocks',
+                            'A = fm.Circulant(x_A)',
+                            'B = fm.Circulant(x_B)',
+                            'F = fm.Fourier(n)',
+                            'D = fm.Diag(x_D)',
+                            '',
+                            '# define a product',
+                            'P = fm.Product(A.H, B)',
+                            '',
+                            '# define the block',
+                            '# diagonal matrix',
+                            'M = fm.BlockDiag(P, F, D)',
+                            caption=r"""
+Assume we have a product $\bm P$ of two matrices $\bm A^\herm$ and $\bm B$, an
+$N$-dimensional Fourier matrix $\bm{\mathcal{F}}$ and a diagonal matrix
 $\bm D$. Then we define
 \[\bm M = \left(\begin{array}{cccc}
-    \bm A^\herm \cdot B & &  \\
-    & \bm{\mathcal{F}} & \\
-    & & \bm D
-\end{array}\right).\]
-\end{snippet}
-"""
+    \bm A^\herm \cdot \bm B &                  &        \\
+                            & \bm{\mathcal{F}} &        \\
+                            &                  & \bm D
+\end{array}\right).\]""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks',
+                DOC.PLOTFORWARD(doc=r'(Matrix as in snippet)'),
+                DOC.PLOTFORWARDMEMORY(doc=r'(same as in snippet)'),
+                DOC.PLOTOVERHEAD(doc=r"""
+$\bm B = \begin{pmatrix}
+    \bm I_{2^k} & \dots     & 0             \\
+                & \ddots    &               \\
+    0           & \dots     & \bm I_{2^k}
+\end{pmatrix}$"""),
+            )
+        )

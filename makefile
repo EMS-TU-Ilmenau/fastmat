@@ -3,17 +3,17 @@
 # -------------------------------------------------- part of the fastmat package
 #
 #  makefile for assisted fastmat package installation.
-#  
+#
 #  NOTE: when working with this file, please keep in mind that line breaks in
 #        makefiles expand to one whitespace character! Deal with it. It's POSIX
 #
 #  Usecases:
 #    - install fastmat package system-wide on your machine (needs su privileges)
 #        EXAMPLE:        'make install'
-#    
+#
 #    - install fastmat package for your local user only (no privileges needed)
 #        EXAMPLE:        'make install MODE=--user'
-#    
+#
 #    - compile all cython source files locally
 #        EXAMPLE:        'make compile'
 #
@@ -33,7 +33,7 @@
 #  Author      : wcw
 #  Introduced  : 2016-07-06
 #------------------------------------------------------------------------------
-#  
+#
 #  Copyright 2016 Sebastian Semper, Christoph Wagner
 #      https://www.tu-ilmenau.de/ems/
 #
@@ -137,7 +137,7 @@ compile:
 
 # target 'doc': Compile documentation
 .PHONY: doc
-doc:
+doc: | compile
 	$(info * building documentation: redirecting to './doc/make doc')
 	@$(MAKE) -C doc doc OPTIONS=$(OPTIONS) PYTHON=$(PYTHON)
 
@@ -198,6 +198,6 @@ endif
 ################################################################################
 
 # target '$(FILE_LIST)': Generate list of installed files.
-#$(FILE_LIST):
-#	$(info need to generate file list '$@' for uninstall)
-#	$(MAKE) install
+$(FILE_LIST):
+	$(info need to generate file list '$@' for uninstall)
+	$(MAKE) install

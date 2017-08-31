@@ -1,14 +1,13 @@
-// -*- coding: utf-8 -*-
-/*
-  fastmat/helpers/types.h
- -------------------------------------------------- part of the fastmat package
+# -*- coding: utf-8 -*-
+'''
+  fastmat/inspect/__init__.py
+ -------------------------------------------------- part of the fastmat demos
 
-  Header file for type constant definitions
-  
+
   Author      : wcw
-  Introduced  : 2016-12-15
+  Introduced  : 2017-07-19
  ------------------------------------------------------------------------------
-					  
+
    Copyright 2016 Sebastian Semper, Christoph Wagner
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,8 +23,8 @@
    limitations under the License.
 
  ------------------------------------------------------------------------------
-*/
-
-// define the number of different types (including TYPE_INVALID)
-// as a C-style definition to get around the nasty TYPE_NUM-bug
-#define NUM_TYPES	8
+'''
+from .documentation import DOC, Documentation
+from .benchmark import BENCH, Benchmark
+from .test import TEST, Test
+from .common import arrTestDist, arrSparseTestDist, dynFormat

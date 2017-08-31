@@ -46,8 +46,8 @@ import re
 import subprocess
 
 packageName     = 'fastmat'
-packageVersion  = '0.1b'
-strName         = "%s %s" % (packageName, packageVersion)
+packageVersion  = '0.1'           # provide a version tag as fallback
+fullVersion     = packageVersion
 strVersionFile  = "%s/version.py" %(packageName)
 
 VERSION_PY      = """
@@ -66,6 +66,7 @@ def WARNING(str):
 
 def getCurrentVersion():
     global packageVersion
+    global fullVersion
 
     # check if there is a manual version override
     if os.path.isfile(".version"):
@@ -105,7 +106,8 @@ def getCurrentVersion():
 
         # output results to version string, extract package version number
         # from git tag
-        versionMatch = re.match("[.+\d+]+\d*", stdout)
+        fullVersion = stdout
+        versionMatch = re.match("[.+\d+]+\d*[abr]\d*", fullVersion)
         if versionMatch:
             packageVersion = versionMatch.group(0)
             print("Fetched package version number from git tag (%s)." %(
@@ -122,6 +124,22 @@ except ImportError:
     from distutils.core import setup, Extension
 
 
+# get version from git and update fastmat/__init__.py accordingly
+getCurrentVersion()
+
+# make sure there exists a version.py file in the project
+with open(strVersionFile, "w") as f:
+    f.write(VERSION_PY % (fullVersion))
+print("Set %s to '%s'" %(strVersionFile, fullVersion))
+
+# get the long description from the README file.
+# CAUTION: Python2/3 utf encoding shit calls needs some adjustments
+fileName = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md')
+f = (open(fileName, 'r') if sys.version_info < (3, 0)
+     else open(fileName, 'r', encoding='utf-8'))
+longDescription = f.read()
+f.close()
+
 # define different compiler arguments for each platform
 strPlatform = platform.system()
 if strPlatform == 'Windows':
@@ -134,24 +152,8 @@ elif strPlatform == 'Linux':
     linkerArguments = ['-fopenmp']
 else:
     raise NotImplementedError("Your platform is not supported by %s: %s" % (
-        strName, strPlatform))
-print("Building %s for %s." % (strName, strPlatform))
-
-# get version from git and update fastmat/__init__.py accordingly
-getCurrentVersion()
-
-# make sure there exists a version.py file in the project
-with open(strVersionFile, "w") as f:
-    f.write(VERSION_PY % (packageVersion))
-print("Set %s to '%s'" %(strVersionFile, packageVersion))
-
-# get the long description from the README file.
-# CAUTION: Python2/3 utf encoding shit calls needs some adjustments
-fileName = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md')
-f = (open(fileName, 'r') if sys.version_info < (3, 0)
-     else open(fileName, 'r', encoding='utf-8'))
-longDescription = f.read()
-f.close()
+        packageName, strPlatform))
+print("Building %s v%s for %s." % (packageName, packageVersion, strPlatform))
 
 
 # override list type to allow lazy cythonization: cythonize and compile only
@@ -184,7 +186,7 @@ def extensions():
 
         extensionArguments = {
             'include_dirs':
-            [numpy.get_include(), 'fastmat/helpers', 'util/routines'],
+            [numpy.get_include(), 'fastmat/core', 'util/routines'],
             'extra_compile_args': compilerArguments,
             'extra_link_args': linkerArguments
         }
@@ -192,7 +194,7 @@ def extensions():
         return cythonize([
             Extension("*", ["fastmat/*.pyx"], **extensionArguments),
             Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
-            Extension("*", ["fastmat/helpers/*.pyx"], **extensionArguments)
+            Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)
         ])
 
     except ImportError:
@@ -218,7 +220,7 @@ setup(
     url='https://ems-tu-ilmenau.github.io/fastmat/',
     license='Apache Software License',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
@@ -245,7 +247,8 @@ setup(
     packages=[
         'fastmat',
         'fastmat/algs',
-        'fastmat/helpers'
+        'fastmat/core',
+        'fastmat/inspect'
     ],
     ext_modules=lazyCythonize(extensions)
 )

@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/Zero.pyx
+  fastmat/Permutation.pyx
  -------------------------------------------------- part of the fastmat package
 
-  All-Zero matrix.
+  Permutation matrix.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
+  Author      : sempersn
+  Introduced  : 2017-06-30
  ------------------------------------------------------------------------------
 
    Copyright 2016 Sebastian Semper, Christoph Wagner
@@ -27,58 +26,54 @@
 
  ------------------------------------------------------------------------------
 '''
-cimport numpy as np
 import numpy as np
+cimport numpy as np
 
 from .Matrix cimport Matrix
-from .core.cmath cimport _arrZero
 from .core.types cimport *
 
 ################################################################################
-################################################## class Zero
-cdef class Zero(Matrix):
+################################################## class Permutation
+cdef class Permutation(Matrix):
+
+    property sigma:
+        def __get__(self):
+            return self._sigma
 
     ############################################## class methods
-    def __init__(self, numN, numM):
-        '''Initialize Matrix instance with its dimensions'''
-        # set properties of matrix
-        self._initProperties(numN, numM, np.int8)
+    def __init__(self, sigma):
+        '''
+        Initialize Matrix instance with its dimensions.
+
+        Generated a [numN x numM] matrix of small integers
+        '''
+        numN = sigma.shape[0]
+
+        if not np.allclose(np.sort(sigma), np.arange(numN)):
+            raise ValueError("Not a permutation.")
+
+        self._sigma = sigma
+        self._tau = np.argsort(sigma)
+
+        self._initProperties(numN, numN, np.int8)
 
     ############################################## class property override
-    cpdef np.ndarray _getArray(self):
-        return _arrZero(2, self.numN, self.numM, self._info.dtype[0].typeNum)
-
-    cpdef np.ndarray _getCol(self, intsize idx):
-        return _arrZero(1, self.numN, 1, self._info.dtype[0].typeNum)
-
-    cpdef np.ndarray _getRow(self, intsize idx):
-        return _arrZero(1, self.numM, 1, self._info.dtype[0].typeNum)
-
     cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return 0
+        return 1 if (self._sigma[idxN] == idxM) else 0
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        return 0.
+    cpdef np.ndarray _getArray(self):
+        return np.eye(self.numN, dtype=self.dtype)[self.sigma, :]
 
     cpdef object _getLargestSV(self, intsize maxSteps,
                                float relEps, float eps, bint alwaysReturn):
-        return 0.
+        return 1.
 
-    cpdef Matrix _getT(self):
-        return Zero(self.numM, self.numN)
-
-    cpdef Matrix _getH(self):
-        return Zero(self.numM, self.numN)
-
-    cpdef Matrix _getConj(self):
-        return self
-
-    cpdef Matrix _getGram(self):
-        return Zero(self.numM, self.numM)
+    cpdef object _getLargestEV(self, intsize maxSteps,
+                               float relEps, float eps, bint alwaysReturn):
+        return 1.
 
     cpdef Matrix _getNormalized(self):
-        raise ValueError("A Zero Matrix cannot be normalized.")
+        return self
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -87,15 +82,11 @@ cdef class Zero(Matrix):
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         '''Calculate the forward transform of this matrix'''
-        return _arrZero(
-            arrX.ndim, self.numN, arrX.shape[1] if arrX.ndim > 1 else 1,
-            _getNpType(arrX))
+        return arrX[self._sigma, :]
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         '''Calculate the backward transform of this matrix'''
-        return _arrZero(
-            arrX.ndim, self.numM, arrX.shape[1] if arrX.ndim > 1 else 1,
-            _getNpType(arrX))
+        return arrX[self._tau, :]
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
@@ -103,18 +94,18 @@ cdef class Zero(Matrix):
         Return an explicit representation of the matrix without using
         any fastmat code.
         '''
-        return np.zeros((self.numN, self.numM), dtype=self.dtype)
+        return np.eye(self.numN, dtype=self.dtype)[self._sigma, :]
 
     ############################################## class inspection, QM
     def _getTest(self):
-        from .inspect import TEST, dynFormat
+        from .inspect import TEST
         return {
             TEST.COMMON: {
                 TEST.NUM_N      : 35,
-                TEST.NUM_M      : TEST.Permutation([30, TEST.NUM_N]),
-                TEST.OBJECT     : Zero,
-                TEST.INITARGS   : [TEST.NUM_N, TEST.NUM_M],
-                TEST.NAMINGARGS : dynFormat("%dx%d", TEST.NUM_N, TEST.NUM_M)
+                TEST.NUM_M      : TEST.NUM_N,
+                TEST.OBJECT     : Permutation,
+                TEST.INITARGS   : (lambda param :
+                                   [np.random.permutation(param[TEST.NUM_N])])
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}
@@ -124,38 +115,47 @@ cdef class Zero(Matrix):
         from .inspect import BENCH
         return {
             BENCH.COMMON: {
-                BENCH.FUNC_GEN      : (lambda c: Zero(c, c)),
+                BENCH.FUNC_GEN  : (lambda c:
+                                   Permutation(np.random.permutation(c)))
             },
             BENCH.FORWARD: {},
+            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
-                BENCH.FUNC_GEN      : (lambda c: Zero(2 ** c, 2 ** c)),
+                BENCH.FUNC_GEN  : (lambda c:
+                                   Permutation(np.random.permutation(2 ** c)))
             }
         }
 
     def _getDocumentation(self):
         from .inspect import DOC
         return DOC.SUBSECTION(
-            r'Zero Transform (\texttt{fastmat.Zero})',
+            "Permutation Matrix (\texttt{fastmat.Permutation})",
             DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-    \[\bm x \mapsto \bm 0\]
-The zero matrix only needs the dimension $n$ of the vectors it acts on. It is
-very fast and very good!""",
-                DOC.SNIPPET('import fastmat as fm',
+                "Definition and Interface", r"""
+For a given permutation $\sigma \in S_n$ and a vector $\bm x \in \C^n$ we map
+\[\bm x \mapsto \left(x_{\sigma(i)}\right)_{i = 1}^n.\]""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat',
                             '',
-                            '# define the parameter',
-                            'n = 10',
+                            '# set the permutation',
+                            'sigma = np.array([3,1,2,0])',
                             '',
-                            '# construct the matrix',
-                            'O = fm.Zero(n)',
-                            caption=r"This yields something trivial.")
+                            '# construct the identity',
+                            'P = fastmat.Permutation(sigma)',
+                            caption=r"""
+\[\bm J = \left(\begin{array}{cccc}
+    0 & 0 & 0 & 1 \\
+    0 & 1 & 0 & 0 \\
+    0 & 0 & 1 & 0 \\
+    1 & 0 & 0 & 0
+\end{array}\right)\]""")
             ),
             DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm M = \bm 0_{2^k \times 2^k}$; so $n = 2^k$ for $k \in \N$.""",
+                "Performance Benchmarks", r"""
+All benchmarks were performed on a Matrix $\bm P_n$ with random permutation.""",
                 DOC.PLOTFORWARD(),
                 DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
                 DOC.PLOTOVERHEAD()
             )
         )

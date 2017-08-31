@@ -73,7 +73,7 @@ numFastTime = time.time() - s
 
 # cast the matrix to a standard numpy array
 print(" * Generate unstructured reference matrix for speed comparison")
-fmatLx2 = fastmat.Matrix(fmatLx1.toarray())
+fmatLx2 = fastmat.Matrix(fmatLx1.array)
 
 # calculate the gradient in the directions
 # using the inefficient way

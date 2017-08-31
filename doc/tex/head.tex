@@ -4,9 +4,9 @@
 %-------------------------------------------------- part of the fastmat demos
 %
 % Author      : sempersn
-% Introduced  : 
+% Introduced  :
 %------------------------------------------------------------------------------
-%  
+%
 %  Copyright 2016 Sebastian Semper, Christoph Wagner
 %      https://www.tu-ilmenau.de/ems/
 %
@@ -45,6 +45,7 @@
 
 \definecolor{fastmatCol}{rgb}{0.984,0.306,0.184}
 \definecolor{numpyCol}{rgb}{0.133,0.494,0.616}
+\definecolor{complCol}{rgb}{0.867,0.459,0.031}
 \definecolor{forwardCol}{rgb}{0.6,0.3,0.1}
 \definecolor{backwardCol}{rgb}{0.1,0.3,0.6}
 
@@ -54,8 +55,18 @@
 \usetikzlibrary{patterns}
 
 \pgfplotscreateplotcyclelist{speed}{
-	solid,very thick, name path= sf,color=fastmatCol\\%	
+	solid,very thick, name path= sf,color=fastmatCol\\%
 	solid,very thick, name path= sb,color=numpyCol\\%
+}
+
+\pgfplotscreateplotcyclelist{dtypes}{
+	solid,thick, name path= sf,color=fastmatCol\\%
+	densely dotted,thick, name path= sf,color=fastmatCol\\%
+	solid,thick, name path= sb,color=numpyCol\\%
+	densely dotted,thick, name path= sb,color=numpyCol\\%
+	solid,thick, name path= sf,color=complCol\\%
+	densely dotted,thick, name path= sb,color=complCol\\%
+	densely dashed,thick, name path= sf,color=complCol\\%
 }
 
 \pgfplotscreateplotcyclelist{overhead}{
@@ -74,6 +85,28 @@
 		at={(0.12,0.7)},
 		anchor=west,
 		legend columns=1,
+		draw=none,
+		name=legend,
+		fill=none
+	},
+	minor y tick num = 3,
+	width=0.95\columnwidth,
+	height=0.66\columnwidth,
+	xlabel=$n$,
+	ylabel={$\mathrm{time} [s]$},
+	xlabel style={font=\tiny},
+	ylabel style={font=\tiny},
+	xticklabel style={font=\tiny,text height=1.7ex},
+	yticklabel style={font=\tiny},
+	}
+}
+
+\pgfplotsset{dtypes/.style={%
+       legend style={
+		font=\tiny,
+		at={(0.12,0.7)},
+		anchor=west,
+		legend columns=2,
 		draw=none,
 		name=legend,
 		fill=none
@@ -110,14 +143,15 @@
 	xticklabel style={font=\tiny,text height=1.7ex},
 	yticklabel style={font=\tiny},
 	}}
-	
-\newcommand{\overhead}[2]{
-\begin{tikzpicture}
+
+\newcommand{\overhead}[3]{
+\hfill\begin{tikzpicture}
 	\begin{axis}[
 	benchmark,
 	ymode=log,
 	xmode=log,
 	cycle list name=overhead,
+	ylabel={#3},
 	]
 	#1
 	\end{axis}
@@ -125,13 +159,14 @@
 \end{tikzpicture}
 }
 
-\newcommand{\speed}[2]{
-\begin{tikzpicture}
+\newcommand{\speed}[3]{
+\hfill\begin{tikzpicture}
 	\begin{axis}[
 	benchmark,
 	ymode=log,
 	xmode=log,
 	cycle list name=speed,
+	ylabel={#3},
 	]
 	#1
 	\end{axis}
@@ -139,13 +174,29 @@
 \end{tikzpicture}
 }
 
-\newcommand{\mem}[2]{
-\begin{tikzpicture}
+\newcommand{\dtypes}[3]{
+\hfill\begin{tikzpicture}
+	\begin{axis}[
+	dtypes,
+	ymode=log,
+	xmode=log,
+	cycle list name=dtypes,
+	ylabel={#3},
+	]
+	#1
+	\end{axis}
+	\node[anchor=south] at (legend.north) {\footnotesize #2};
+\end{tikzpicture}
+}
+
+\newcommand{\mem}[3]{
+\hfill\begin{tikzpicture}
 	\begin{axis}[
 	memory,
 	ymode=log,
 	xmode=log,
 	cycle list name=mem,
+	ylabel={#3}
 	]
 	#1
 	\end{axis}
@@ -166,7 +217,7 @@
 
 \lstset{ %
 	backgroundcolor=\color{white},   	% choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
-	basicstyle=\linespread{0.85}\ttfamily\small,					% the size of the fonts that are used for the code
+	basicstyle=\linespread{0.9}\ttfamily\small,					% the size of the fonts that are used for the code
 	breakatwhitespace=true,					% sets if automatic breaks should only happen at whitespace
 	breaklines=true,						% sets automatic line breaking
 	captionpos=b,							% sets the caption-position to bottom
@@ -189,29 +240,30 @@
 	stepnumber=2,							% the step between two line-numbers. If it's 1, each line will be numbered
 	stringstyle=\color{mymauve},			% string literal style
 	tabsize=2,								% sets default tabsize to 2 spaces
-	title=\lstname							% show the filename of files included with \lstinputlisting; also try caption instead of title
+	title=\lstname,							% show the filename of files included with \lstinputlisting; also try caption instead of title
+	belowskip=-10pt,
 }
 
-\newenvironment{snippet}{
+\newenvironment{snippet}[1][Usage Example]{
 \vspace{3mm plus0mm minus3mm}
-\large \textbf{Usage Example}
+\large \textbf{#1}
 \vspace{2mm}
 \hrule
 \vspace{3mm}
 \small
 }{
-\vspace{3mm plus0mm minus3mm}
+\vspace{8mm plus0mm minus3mm}
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LAYOUT FORMATTING
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-\usepackage[headheight=0pt,top=0.7in, bottom=0.9in, left=0.5in, right=0.5in]{geometry}
+%
+\usepackage[headheight=12pt,top=0.7in, bottom=0.9in, left=0.5in, right=0.5in]{geometry}
 \usepackage{fancyhdr}
 \usepackage{multicol}
 \usepackage{titletoc}
-\usepackage[up,bf,raggedright]{titlesec}
+\usepackage[raggedright]{titlesec}
 \usepackage[activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10]{microtype}
 \microtypecontext{spacing=nonfrench}
 
@@ -236,18 +288,18 @@
 {\titlerule*[1pc]{.}\contentspage}
 
 % heading formatting
-\titlespacing\section{0pt}{2pt plus 4pt minus 2pt}{0pt plus 2pt minus 2pt}
-\titlespacing\subsection{0pt}{2pt plus 4pt minus 2pt}{0pt plus 2pt minus 2pt}
-\titlespacing\subsubsection{0pt}{2pt plus 2pt minus 2pt}{0pt plus 2pt minus 2pt}
+\titlespacing\section{0pt}{2pt plus 4pt minus 2pt}{2pt plus 2pt minus 2pt}
+\titlespacing\subsection{0pt}{2pt plus 4pt minus 2pt}{2pt plus 2pt minus 2pt}
+\titlespacing\subsubsection{0pt}{2pt plus 2pt minus 2pt}{2pt plus 2pt minus 2pt}
 
 % header formatting
 \pagestyle{fancy}
 \lhead[]{}
 \chead{}
 \rhead[]{}
-\rfoot[]{{\sffamily\centering \textbf{\thepage}}}
+\rfoot[]{{\sffamily \textbf{\thepage}}}
 \cfoot{}
-\lfoot[{\sffamily \thepage}]{}
+\lfoot[{\sffamily \textbf{\thepage}}]{}
 \renewcommand{\headrulewidth}{0.0pt}
 \renewcommand{\footrulewidth}{0.0pt}
 

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/Circulant.pxd
+  fastmat/Permutation.pxd
  -------------------------------------------------- part of the fastmat package
 
-  Header file for Circulant class (structural description).
+  Header file for Permutation class (structural description).
 
 
-  Author      : wcw
-  Introduced  : 2016-09-27
+  Author      : sempersn
+  Introduced  : 2017-06-30
  ------------------------------------------------------------------------------
 
    Copyright 2016 Sebastian Semper, Christoph Wagner
@@ -30,18 +30,16 @@
 import cython
 cimport numpy as np
 
-from .Partial cimport Partial
-from .core.types cimport *
+from .Matrix cimport Matrix
 
 ################################################################################
-################################################## class Circulant
-cdef class Circulant(Partial):
+################################################## class Permutation
+cdef class Permutation(Matrix):
 
-    ############################################## class variables
-    cdef public np.ndarray _vecC                 # matrix diagonal entry vector
-
-    ############################################## class internals
-    cdef void _roll(self, np.ndarray, intsize)
+    cpdef public np.ndarray _sigma
+    cpdef public np.ndarray _tau
 
     ############################################## class methods
+    cpdef np.ndarray _forward(self, np.ndarray)
+    cpdef np.ndarray _backward(self, np.ndarray)
     cpdef np.ndarray _reference(self)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
-  fastmat/helpers/cmath.pxd
+  fastmat/core/cmath.pxd
  -------------------------------------------------- part of the fastmat package
 
   fastmat math library for cython. (types and funcs)
@@ -26,10 +26,14 @@
 
  ------------------------------------------------------------------------------
 '''
+from libc.string cimport memcpy, memset
+from libc.math cimport ceil
+
 import numpy as np
 cimport numpy as np
 
 from .types cimport *
+from timeit import timeit
 
 # initialize numpy C-API interface for cython extension-type classes.
 # Theis call is required once for every module that uses PyArray_ calls
@@ -37,15 +41,172 @@ from .types cimport *
 np.import_array()
 
 ################################################################################
-###  Math routines
+###  Complexity estimation routines
+################################################################################
+cdef int _findFFTFactors(int targetLength, int maxFactor,
+                         int state, int bestState):
+    cdef int ff, length, complexity, newState
+    for ff in range(maxFactor, 0, -1):
+        length = (state & 0xFFFF) * ff
+        complexity = (state >> 16) + ff + 1
+        newState = (complexity << 16) + length
+        if newState <= bestState and length < targetLength:
+            # still now filled targeLength? -> recurse deeper but limit max
+            # factor of next stage for speed (still complete)
+            bestState = _findFFTFactors(targetLength, ff, newState, bestState)
+        else:
+            # this iteration ist better than wahat we already found?
+            if newState < bestState:
+                bestState = newState
+
+            continue
+
+    return bestState
+
+
+cpdef intsize _findOptimalFFTSize(intsize order, int maxStage):
+    cdef intsize paddedSize = 1, minimalSize = order
+    cdef float remaining = minimalSize
+    cdef int x, complexity, length
+    # fill the factor reasonably far with 4-DFTs but leave some room for
+    # choosing a close-to-optimal combination of DFT sizes to come as
+    # close as reasonable to the targeted size
+    while remaining > 64:
+        paddedSize *= 4
+        remaining /= 4
+
+    x = int(ceil(remaining))
+
+    # for what's left of minimalSize choose the "last mile" optimally, i.e.
+    # accept some overshoot while heading for the optimal stage combination
+    if x != 1:
+        # start a recursion. Pass a default as "current best solution":
+        # three stages of 4-DFT, (with complexity of 15 [3 * 4 + 1])
+        length = 64
+        complexity = 3 * (4 + 1)
+        factor = _findFFTFactors(x, maxStage, 1,
+                                 (complexity << 16) + length) & 0xFFFF
+        paddedSize *= factor
+
+    return paddedSize
+
+
+cpdef float _getFFTComplexity(intsize N):
+    '''
+    Return an estimate on the complexity of a typical FFT algorithm.
+
+    Consider a DFT of size N to be pieced together by smaller DFTs corresponding
+    to the prime factors of N. Each factor F introduces one level of (N / F)
+    DFTs of size F each and a scalar multiplication of the stages' output. The
+    composite complexity of all stages is extended by one stage for
+    initialization of input and permutation of output.
+    '''
+
+    # determine complexity on-the-fly during prime factor decomposition
+    # single should be just enough as the largest N is 2^63 which leads to
+    # an floating-point exponent of +126 that single still can hold
+    cdef intsize nn, factor, x
+    cdef float complexity = 0, floatN = N
+    cdef ii
+
+    # let nn denote the remaining "non-explored" fraction of N
+    nn = N
+
+    # first, consider Radix-4 stages as these are the most efficient and
+    # desirable.
+    while nn % 4 == 0:
+        complexity += 4 + 1
+        nn /= 4
+
+    # as 2 * 2 == 4 there can only be one more factor of 2
+    if nn > 1 and nn & 1 == 0:
+        complexity += 2 + 1
+        nn /= 2
+
+    # now consider all odd numbers larger or equal to three as dividers
+    # only search up to sqrt(nn), which represents the largest single
+    # factor with product nn.
+    ii = 3
+    while (nn > 1) and (ii * ii < nn):
+        if nn % ii == 0:
+            complexity += ii + 1
+            nn /= ii
+        else:
+            ii += 2
+
+    # if nn is still not 1 the remainder must be a prime by itself
+    # also include the output permutation stage
+    if nn > 1:
+        complexity += nn + 1
+
+    return floatN * (complexity + 1)
+
+
+################################################################################
+###  Profiling calls
 ################################################################################
 
-################################################## ndarray creation
+
+def profileCall(reps, call, *args):
+    '''
+    wrapper for measuring the runtime of 'call' by averaging the runtime
+    of many repeated calls.
+
+        reps        - number of repetitions to be averaged over
+        call        - pointer to the evaluatee call
+        *args       - a list of parameters for the callee
+    '''
+    cdef object arg1
+    cdef object arg2
+    cdef intsize N
+
+    N = 1 if reps < 1 else reps
+
+    def _inner():
+        cdef intsize ii
+        for _ii in range(N):
+            call(*args)
+
+    def _inner1():
+        cdef intsize ii
+        for _ii in range(N):
+            call(arg1)
+
+    def _inner2():
+        cdef intsize ii
+        for _ii in range(N):
+            call(arg1, arg2)
+
+    if len(args) == 1:
+        arg1 = args[0]
+        runtime = timeit(_inner1, number=1)
+    elif len(args) == 2:
+        arg1 = args[0]
+        arg2 = args[1]
+        runtime = timeit(_inner2, number=1)
+    else:
+        _innerArgs = args
+        runtime = timeit(_inner, number=1)
+
+    # return results
+    return {
+        'avg': runtime / reps,
+        'time': runtime,
+        'cnt': reps
+    }
+
+
+################################################################################
+###  Array creation routines
+################################################################################
+
+################################################## _arrZero()
 cpdef np.ndarray _arrZero(
     int dims,
     intsize numN,
     intsize numM,
-    nptype dtype
+    nptype dtype,
+    bint fortranStyle=True
 ):
     '''
     Create and zero-init new ndarray of specified shape and data type
@@ -57,17 +218,19 @@ cpdef np.ndarray _arrZero(
 
     return np.PyArray_ZEROS(
         dims if dims < 2 else 2,    # Nr. Dimensions
-        & shape[0],                  # Sizes of Dimensions
+        & shape[0],                 # Sizes of Dimensions
         dtype,                      # Data Type of elements
-        True                        # FORTRAN-style result
+        fortranStyle                # FORTRAN-style result
     )
 
 
+################################################## _arrEmpty()
 cpdef np.ndarray _arrEmpty(
     int dims,
     intsize numN,
     intsize numM,
-    nptype dtype
+    nptype dtype,
+    bint fortranStyle=True
 ):
     '''
     Create an empty ndarray of specified shape and data type
@@ -79,10 +242,103 @@ cpdef np.ndarray _arrEmpty(
 
     return np.PyArray_EMPTY(
         dims if dims < 2 else 2,    # Nr. Dimensions
-        & shape[0],                  # Sizes of Dimensions
+        & shape[0],                 # Sizes of Dimensions
         dtype,                      # Data Type of elements
-        True                        # FORTRAN-style result
+        fortranStyle                # FORTRAN-style result
     )
+
+
+################################################################################
+###  Array manipulation routines
+################################################################################
+
+################################################## _arrZeroAxis()
+cdef void _arrInitSlice(np.ndarray arr, np.uint8_t axis, SLICE_s *slice):
+    if axis > 1:
+        raise ValueError(
+            "Only the first two dimensions of 2D-arrays can be sliced.")
+
+    slice[0].axis           = axis
+    slice[0].base           = arr.data                  # array base pointer
+    slice[0].strideElement  = arr.strides[axis]         # the selected axis
+    slice[0].strideSlice    = arr.strides[axis ^ 1]     # the other axis
+    slice[0].numElements    = arr.shape[axis]           # element count in slice
+    slice[0].numSlices      = arr.shape[axis ^ 1]       # slice count in array
+    slice[0].sizeItem       = np.PyArray_ITEMSIZE(arr)  # size of one array item
+    slice[0].isContiguous   = slice[0].sizeItem == slice[0].strideElement
+
+
+################################################## _arrZeroAxis()
+cdef void _arrZeroSlice(SLICE_s *slice, intsize idx):
+    cdef intsize mm
+    cdef char *ptr = slice[0].base + slice[0].strideSlice * idx
+
+    if slice[0].isContiguous:
+        # do one rather quick memory fill and be done
+        memset(ptr, 0, slice[0].strideElement * slice[0].numElements)
+    else:
+        # non-contiguous access: slow but steady
+        if slice[0].sizeItem == 1:
+            for mm in range(slice[0].numElements):
+                ptr[0] = 0
+                ptr += slice[0].strideElement
+
+        elif slice[0].sizeItem == 4:
+            for mm in range(slice[0].numElements):
+                (<np.int32_t *> ptr)[0] = 0
+                ptr += slice[0].strideElement
+
+        elif slice[0].sizeItem == 8:
+            for mm in range(slice[0].numElements):
+                (<np.int64_t *> ptr)[0] = 0
+                ptr += slice[0].strideElement
+
+        else:
+            for mm in range(slice[0].numElements):
+                memset(ptr, 0, slice[0].sizeItem)
+                ptr += slice[0].strideElement
+
+
+################################################## _arrMoveAxis()
+cdef void _arrCopySlice(SLICE_s *slcDst, intsize idxDst,
+                        SLICE_s *slcSrc, intsize idxSrc):
+    # sanity check
+    if (slcDst[0].sizeItem != slcSrc[0].sizeItem or
+            slcDst[0].numElements != slcSrc[0].numElements):
+        raise TypeError("Arrays differ in axis shapes or element sizes.")
+
+    # determine addresses
+    cdef char *ptrSrc = slcSrc[0].base + slcSrc[0].strideSlice * idxSrc
+    cdef char *ptrDst = slcDst[0].base + slcDst[0].strideSlice * idxDst
+
+    if slcDst[0].isContiguous and slcSrc[0].isContiguous:
+        # do one rather quick memory copy and be done
+        memcpy(ptrDst, ptrSrc, slcSrc[0].strideElement * slcSrc[0].numElements)
+    else:
+        # non-contiguous access: slow but steady
+        if slcSrc[0].sizeItem == 1:
+            for ii in range(slcSrc[0].numElements):
+                ptrDst[0] = ptrSrc[0]
+                ptrDst += slcDst[0].strideElement
+                ptrSrc += slcSrc[0].strideElement
+
+        elif slcSrc[0].sizeItem == 4:
+            for ii in range(slcSrc[0].numElements):
+                (<np.int32_t *> ptrDst)[0] = (<np.int32_t *> ptrSrc)[0]
+                ptrDst += slcDst[0].strideElement
+                ptrSrc += slcSrc[0].strideElement
+
+        elif slcSrc[0].sizeItem == 8:
+            for ii in range(slcSrc[0].numElements):
+                (<np.int64_t *> ptrDst)[0] = (<np.int64_t *> ptrSrc)[0]
+                ptrDst += slcDst[0].strideElement
+                ptrSrc += slcSrc[0].strideElement
+
+        else:
+            for ii in range(slcSrc[0].numElements):
+                memcpy(ptrDst, ptrSrc, slcSrc[0].sizeItem)
+                ptrDst += slcDst[0].strideElement
+                ptrSrc += slcSrc[0].strideElement
 
 
 cpdef np.ndarray _arrReshape(
@@ -99,7 +355,24 @@ cpdef np.ndarray _arrReshape(
     shape[0] = numN
     shape[1] = numM
 
-    return np.PyArray_Newshape(arr, & shape2D, order)
+    return np.PyArray_Newshape(arr, &shape2D, order)
+
+
+cpdef bint _arrResize(
+    np.ndarray arr,
+    int dims,
+    intsize numN,
+    intsize numM,
+    np.NPY_ORDER order
+):
+    cdef np.PyArray_Dims shape2D
+    cdef np.npy_intp shape[2]
+    shape2D.ptr = &shape[0]
+    shape2D.len = dims if dims < 2 else 2
+    shape[0] = numN
+    shape[1] = numM
+
+    return np.PyArray_Resize(arr, &shape2D, False, order) is None
 
 
 cpdef np.ndarray _arrCopyExt(
@@ -120,30 +393,41 @@ cpdef np.ndarray _arrForceType(
 
 cpdef np.ndarray _arrForceAlignment(
     np.ndarray arr,
-    int flags
+    int flags,
+    bint fortranStyle=True
 ):
-    if np.PyArray_ISONESEGMENT(arr) and np.PyArray_ISFORTRAN(arr) and \
+    if np.PyArray_ISONESEGMENT(arr) and \
+       (np.PyArray_ISFORTRAN(arr) == fortranStyle) and \
        np.PyArray_ISCONTIGUOUS(arr):
         return arr
 
-    return np.PyArray_FROM_OF(
-        arr,
-        np.NPY_OWNDATA + np.NPY_F_CONTIGUOUS + np.NPY_ENSUREARRAY + flags)
+    if fortranStyle:
+        flags += np.NPY_F_CONTIGUOUS
+    else:
+        flags += np.NPY_C_CONTIGUOUS
+
+    return np.PyArray_FROM_OF(arr, np.NPY_OWNDATA + np.NPY_ENSUREARRAY + flags)
 
 
 cpdef np.ndarray _arrForceTypeAlignment(
     np.ndarray arr,
     nptype typeArr,
-    int flags
+    int flags,
+    bint fortranStyle=True
 ):
     if (np.PyArray_TYPE(arr) == typeArr) and \
-            np.PyArray_ISONESEGMENT(arr) and np.PyArray_ISFORTRAN(arr) and \
+            np.PyArray_ISONESEGMENT(arr) and \
+            (np.PyArray_ISFORTRAN(arr) == fortranStyle) and \
             np.PyArray_ISCONTIGUOUS(arr):
         return arr
 
-    return np.PyArray_FROM_OTF(
-        arr, typeArr,
-        np.NPY_OWNDATA + np.NPY_F_CONTIGUOUS + np.NPY_ENSUREARRAY + flags)
+    if fortranStyle:
+        flags += np.NPY_F_CONTIGUOUS
+    else:
+        flags += np.NPY_C_CONTIGUOUS
+
+    return np.PyArray_FROM_OTF(arr, typeArr,
+                               np.NPY_OWNDATA + np.NPY_ENSUREARRAY + flags)
 
 
 ################################################## fused-type conjugate

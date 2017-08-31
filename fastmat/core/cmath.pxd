@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/helpers/cmath.pxd
+  fastmat/core/cmath.pxd
  -------------------------------------------------- part of the fastmat package
 
   Header file for cython fastmat math library. (types and funcs)
@@ -27,6 +27,7 @@
 '''
 import cython
 import numpy as np
+cimport numpy as np
 
 from .types cimport *
 
@@ -42,13 +43,40 @@ cdef np.float64_t _norm(TYPE_ALL *, intsize)
 cdef np.float64_t _normMV(TYPE_ALL[:])
 cdef TYPE_ALL _corrMV(TYPE_ALL[:], TYPE_ALL[:])
 
-cpdef np.ndarray _arrZero(int, intsize, intsize, nptype)
-cpdef np.ndarray _arrEmpty(int, intsize, intsize, nptype)
+
+################################################## complexity estimation
+cdef int _findFFTFactors(int, int, int, int)
+cpdef intsize _findOptimalFFTSize(intsize, int)
+cpdef float _getFFTComplexity(intsize)
+
+################################################## Array generation routines
+cpdef np.ndarray _arrZero(int, intsize, intsize, nptype, bint fortranStyle=?)
+cpdef np.ndarray _arrEmpty(int, intsize, intsize, nptype, bint fortranStyle=?)
+
+################################################## Array manipulation routines
+ctypedef struct SLICE_s:
+    char *          base
+    intsize         strideElement
+    intsize         strideSlice
+    intsize         numElements
+    intsize         numSlices
+    np.uint8_t      sizeItem
+    np.uint8_t      axis
+    bint            isContiguous
+
 cpdef np.ndarray _arrReshape(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
+cpdef bint _arrResize(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
+
+cdef void _arrInitSlice(np.ndarray, np.uint8_t, SLICE_s *)
+cdef void _arrZeroSlice(SLICE_s *, intsize)
+cdef void _arrCopySlice(SLICE_s *, intsize, SLICE_s *, intsize)
+
+################################################## Array formatting
 cpdef np.ndarray _arrCopyExt(np.ndarray, nptype, int)
 cpdef np.ndarray _arrForceType(np.ndarray, nptype)
-cpdef np.ndarray _arrForceAlignment(np.ndarray, int)
-cpdef np.ndarray _arrForceTypeAlignment(np.ndarray, nptype, int)
+cpdef np.ndarray _arrForceAlignment(np.ndarray, int, bint fortranStyle=?)
+cpdef np.ndarray _arrForceTypeAlignment(np.ndarray, nptype, int,
+                                        bint fortranStyle=?)
 
 cpdef bint _conjugateInplace(np.ndarray)
 cpdef np.ndarray _conjugate(np.ndarray)

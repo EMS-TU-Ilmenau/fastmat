@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/Circulant.pxd
+  fastmat/LFSRCirculant.pxd
  -------------------------------------------------- part of the fastmat package
 
-  Header file for Circulant class (structural description).
+  Header file for LFSR-Circulant matrix class (structural description).
 
 
   Author      : wcw
@@ -30,18 +30,27 @@
 import cython
 cimport numpy as np
 
-from .Partial cimport Partial
+from .Matrix cimport Matrix
 from .core.types cimport *
 
+ctypedef np.uint32_t lfsrReg_t
+
 ################################################################################
-################################################## class Circulant
-cdef class Circulant(Partial):
+################################################## class LfsrConv
+cdef class LFSRCirculant(Matrix):
 
-    ############################################## class variables
-    cdef public np.ndarray _vecC                 # matrix diagonal entry vector
+    cdef public int         _regSize
+    cdef public lfsrReg_t   _regTaps
+    cdef public lfsrReg_t   _resetState
 
-    ############################################## class internals
+    cdef public np.ndarray  _vecC
+    cdef public np.ndarray  _states
+
+    cdef np.ndarray _getStates(self)
+    cdef np.ndarray _getVecC(self)
+
+    cdef void _core(self, np.ndarray, np.ndarray, bint, bint)
     cdef void _roll(self, np.ndarray, intsize)
 
-    ############################################## class methods
-    cpdef np.ndarray _reference(self)
+    cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
+    cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)

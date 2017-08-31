@@ -31,7 +31,7 @@ import cython
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
+from .core.types cimport *
 
 ################################################################################
 ################################################## class Diag

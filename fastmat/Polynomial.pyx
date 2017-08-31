@@ -30,7 +30,7 @@
 import numpy as np
 cimport numpy as np
 
-from .helpers.types cimport *
+from .core.types cimport *
 from .Matrix cimport Matrix
 
 
@@ -39,12 +39,6 @@ from .Matrix cimport Matrix
 cdef class Polynomial(Matrix):
 
     ############################################## class properties
-    # content - Property (read-only)
-    # Return the base transformation matrix.
-    property content:
-        def __get__(self):
-            return self._content
-
     # coeff - Property (read-only)
     # Return the polynomial coefficient vector.
     property coeff:
@@ -56,7 +50,7 @@ cdef class Polynomial(Matrix):
         '''Initialize Matrix instance'''
 
         if mat.numN != mat.numM:
-            raise ValueError("Matrix in polynomial must be square.")
+            raise ValueError("Polynomial: Matrix must be square.")
 
         dtype = np.promote_types(mat.dtype, coeff.dtype)
 
@@ -67,12 +61,18 @@ cdef class Polynomial(Matrix):
         dtype = (dtype if typeExpansion is None
                  else np.promote_types(dtype, typeExpansion))
 
-        self._content = mat
+        self._content = (mat,)
         self._coeff = np.flipud(coeff.astype(dtype))
         self._coeffConj = self._coeff.conj()
 
         # set properties of matrix
-        self._initProperties(self._content.numN, self._content.numM, dtype)
+        self._initProperties(self._content[0].numN, self._content[0].numM,
+                             dtype)
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        cdef float complexity = len(self._coeff) * (self.numN + self.numM)
+        return (complexity, complexity)
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
@@ -84,7 +84,7 @@ cdef class Polynomial(Matrix):
 
         # use inner for element-wise scalar mul as inner does type promotion
         for cc in range(1, cnt):
-            arrRes  = self._content.forward(arrRes) + np.inner(
+            arrRes  = self._content[0].forward(arrRes) + np.inner(
                 arrX, self._coeff[cc])
 
         return arrRes
@@ -98,7 +98,7 @@ cdef class Polynomial(Matrix):
 
         # use inner for element-wise scalar mul as inner does type promotion
         for cc in range(1, cnt):
-            arrRes  = self._content.backward(arrRes) + np.inner(
+            arrRes  = self._content[0].backward(arrRes) + np.inner(
                 arrX, self._coeffConj[cc])
 
         return arrRes
@@ -112,8 +112,8 @@ cdef class Polynomial(Matrix):
         arrRes = np.zeros((self.numN, self.numN), dtype=dtype)
 
         for cc in np.flipud(self._coeff):
-            arrTrafo = self._content.reference()
-            tmp = np.eye(self._content.numN, dtype=dtype)
+            arrTrafo = self._content[0].reference()
+            tmp = np.eye(self._content[0].numN, dtype=dtype)
             for ii in range(ind):
                 tmp = arrTrafo.dot(tmp)
 
@@ -122,101 +122,95 @@ cdef class Polynomial(Matrix):
 
         return arrRes
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                'order'         : 5,
+                TEST.TOL_POWER  : 'order',
+                TEST.NUM_N      : 7,
+                TEST.NUM_M      : 7,
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
-################################################### Testing
-test = {
-    NAME_COMMON: {
-        'order': 5,
-        TEST_TOL_POWER: 'order',
-        TEST_NUM_N: 7,
-        TEST_NUM_M: 7,
-        'mTypeC': Permutation(typesAll),
-        'mTypeM': Permutation(typesAll),
-        TEST_PARAMALIGN : Permutation(alignmentsAll),
-        'vecC': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeC',
-            NAME_SHAPE  : ('order', ),
-            NAME_ALIGN  : TEST_PARAMALIGN
-            #            NAME_CENTER : 2
-        }),
-        'arrM': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeM',
-            NAME_SHAPE  : (TEST_NUM_N, TEST_NUM_M)
-            #            NAME_CENTER : 2
-        }),
-        TEST_OBJECT: Polynomial,
-        TEST_INITARGS: (lambda param : [
-            Matrix(param['arrM']()),
-            param['vecC']()
-        ]),
-        TEST_NAMINGARGS: dynFormatString("%s,%s", 'vecC', 'arrM'),
-        TEST_TOL_POWER: 'order'
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-        # test forward and backward transforms
-    }
-}
+                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeM'        : TEST.Permutation(TEST.ALLTYPES),
+                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                'vecC'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeC',
+                    TEST.SHAPE  : ('order', ),
+                    TEST.ALIGN  : TEST.PARAMALIGN
+                }),
+                'arrM'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeM',
+                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
+                }),
 
+                TEST.OBJECT     : Polynomial,
+                TEST.INITARGS   : (lambda param: [Matrix(param['arrM']()),
+                                                  param['vecC']()]),
+                TEST.NAMINGARGS : dynFormat("%s,%s", 'vecC', 'arrM'),
+                TEST.TOL_POWER  : 'order'
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################## Benchmarks
-from .Eye import Eye
-from .Hadamard import Hadamard
+    def _getBenchmark(self):
+        from .inspect import BENCH
+        from .Eye import Eye
+        from .Hadamard import Hadamard
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: Polynomial(
+                    Hadamard(c), np.random.uniform(1, 2, 6))),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
+                BENCH.FUNC_STEP : (lambda c: c + 1)
+            },
+            BENCH.FORWARD: {},
+            BENCH.SOLVE: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c: Polynomial(
+                    Eye(2 ** c), np.random.uniform(1, 2, 10)))
+            }
+        }
 
-benchmark = {
-    NAME_COMMON: {
-        NAME_DOCU       : r'''$\bm P = a_2 \cdot \bm \Hs_k^2 + a_1 \cdot
-            \bm \Hs_k^1 + a_0 \cdot \bm I_{2^k}$''',
-        BENCH_FUNC_GEN  :
-            (lambda c : Polynomial(Hadamard(c), np.random.uniform(1, 2, 6))),
-        BENCH_FUNC_SIZE : (lambda c : 2 ** c),
-        BENCH_FUNC_STEP : (lambda c : c + 1)
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_SOLVE: {
-    },
-    BENCH_OVERHEAD: {
-        BENCH_FUNC_GEN  :
-            (lambda c : Polynomial(Eye(2 ** c), np.random.uniform(1, 2, 10))),
-        NAME_DOCU       : r'''Polynomial of Identity $\bm I_{2^k}$
-            matrices with degree $10$'''
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Polynomial (\texttt{fastmat.Polynomial})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Polynomial (\texttt{fastmat.Polynomial})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 For given coefficients $a_k,\dots,a_0 \in \C$ and a linear mapping $\bm A \in
 \C^{n \times n}$, we define
 \[\bm M = a_n \bm A^n + a_{n-1} \bm A^{n-1} + a_1 \bm A + a_0 \bm I.\]
 The transform $\bm M \cdot \bm x$ can be calculated efficiently with Horner's
-method.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-
-# define the transforms
-H = fm.Hadamard(n)
-
-# define the coefficient array
-arr_a = [1, 2 + 1j, -3.0, 0.0]
-
-# define the polynomial
-M = fm.Polynomial(H, arr_a)
-\end{lstlisting}
-
+method.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            '',
+                            '# define the transforms',
+                            'H = fm.Hadamard(n)',
+                            '',
+                            '# define the coefficient array',
+                            'arr_a = [1, 2 + 1j, -3.0, 0.0]',
+                            '',
+                            '# define the polynomial',
+                            'M = fm.Polynomial(H, arr_a)',
+                            caption=r"""
 Let $\bm H_n$ be the Hadamard matrix of order $n$. And let
 $\bm a = (1, 2 + i, -3, 0) \in \C^{4}$ be a coefficient vector,
 then the polynomial is defined as
-\[\bm M = \bm H_n^3 + (2+i) \bm H_n^2 - 3 \bm H_n.\]
-\end{snippet}
-"""
+\[\bm M = \bm H_n^3 + (2+i) \bm H_n^2 - 3 \bm H_n.\]""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+The \emph{forward} and \emph{solve} benchmarks were performed on a matrix
+$\bm P = a_2 \cdot \bm \Hs_k^2 + a_1 \cdot \bm \Hs_k^1 + a_0 \cdot \bm I_{2^k}$
+""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
+                DOC.PLOTOVERHEAD(doc=r"""
+Polynomial of Identity $\bm I_{2^k}$ matrices with degree $10$""")
+            )
+        )

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
   fastmat/Parametric.py
  -------------------------------------------------- part of the fastmat package
@@ -32,8 +32,8 @@ import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
-from .helpers.cmath cimport _dotSingleRow, _conjugateInplace, _arrEmpty
+from .core.types cimport *
+from .core.cmath cimport _dotSingleRow, _conjugateInplace, _arrEmpty
 
 
 ################################################################################
@@ -91,7 +91,13 @@ cdef class Parametric(Matrix):
             len(self._vecX),            # numM
             self._funDtype,             # data type of matrix
             cythonCall=True,
-            forceInputAlignment=True
+            forceInputAlignment=True,
+            bypassAutoArray=False       # deactivate automatic generation of
+                                        # array for transformation bypass. As
+                                        # Parametric is always slower than dot
+                                        # product with the dense array this
+                                        # would otherwise happen always for all
+                                        # sizes
         )
 
     ############################################## class property override
@@ -229,162 +235,165 @@ cdef class Parametric(Matrix):
 
         return arrRes
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                # define parameters for test
+                TEST.NUM_N      : 4,
+                TEST.NUM_M      : TEST.Permutation([6, TEST.NUM_N]),
+                'typeY'         : TEST.Permutation(TEST.LARGETYPES),
+                'typeX'         : TEST.Permutation(TEST.FEWTYPES),
+                'rangeAccess'   : TEST.Permutation([False, True]),
+                'complexFun'    : TEST.Permutation([False, True]),
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
-################################################## Testing
-test = {
-    NAME_COMMON: {
-        # define parameters for test
-        TEST_NUM_N: 4,
-        TEST_NUM_M: Permutation([6, TEST_NUM_N]),
-        'typeY': Permutation(typesAll),
-        'typeX': Permutation(typesSmallIFC),
-        'rangeAccess': Permutation([False, True]),
-        'complexFun' : Permutation([False, True]),
-        TEST_PARAMALIGN : ALIGN_DONTCARE,
+                # define arguments for test
+                'vecY'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'typeY',
+                    TEST.SHAPE  : (TEST.NUM_N, )
+                }),
+                'vecX'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'typeX',
+                    TEST.SHAPE  : (TEST.NUM_M, )
+                }),
 
-        # define arguments for test
-        'vecY': ArrayGenerator({
-            NAME_DTYPE  : 'typeY',
-            NAME_SHAPE  : (TEST_NUM_N, ),
-            NAME_ALIGN  : TEST_PARAMALIGN
-        }),
-        'vecX': ArrayGenerator({
-            NAME_DTYPE  : 'typeX',
-            NAME_SHAPE  : (TEST_NUM_M, ),
-            NAME_ALIGN  : TEST_PARAMALIGN
-        }),
+                # define constructor for test instances and naming of test
+                TEST.OBJECT     : Parametric,
+                TEST.INITARGS   : (lambda param: [
+                    param['vecX'](),
+                    param['vecY'](),
+                    (TEST.IgnoreFunc(lambda x, y:
+                                     x * np.int8(2) - np.complex64(1j) * y)
+                     if param['complexFun']
+                     else TEST.IgnoreFunc(lambda x, y :
+                                          x * np.int8(2) - np.int8(3) * y))
+                ]),
+                TEST.INITKWARGS : {'rangeAccess': 'rangeAccess'},
 
-        # define constructor for test instances and naming of test
-        TEST_OBJECT: Parametric,
-        TEST_INITARGS: (lambda param : [
-            param['vecX'](),
-            param['vecY'](),
-            IgnoreFunc(lambda x, y : x * np.int8(2) - np.complex64(1j) * y)
-            if param['complexFun']
-            else IgnoreFunc(lambda x, y : x * np.int8(2) - np.int8(3) * y)
-        ]),
-        TEST_INITKWARGS: {'rangeAccess': 'rangeAccess'},
+                # name the test instances individually to reflect test scenario
+                'strC'          : (lambda param:
+                                   ('complex' if param['complexFun']
+                                    else 'real')),
+                'strV'          : (lambda param:
+                                   ('vector' if param['rangeAccess']
+                                    else 'single')),
+                TEST.NAMINGARGS : dynFormat("x:%s,y:%s,%s,%s",
+                                            'vecX', 'vecY', 'strV', 'strC'),
+                TEST.TOL_POWER  : 4.
+            },
+            TEST.CLASS: {
+                # ignore int8 datatype as there will be overflows
+                TEST.IGNORE     : TEST.IgnoreFunc(lambda param: (
+                    param['typeX'] == param['typeY'] == np.int8))
+            },
+            TEST.TRANSFORMS: {}
+        }
 
-        # name the test instances individually to reflect test scenario
-        'strC': (lambda param: 'complex' if param['complexFun'] else 'real'),
-        'strV': (lambda param: 'vector' if param['rangeAccess'] else 'single'),
-        TEST_NAMINGARGS: dynFormatString(
-            "x:%s,y:%s,%s,%s", 'vecX', 'vecY', 'strV', 'strC'),
-        TEST_TOL_POWER: 4.
-    },
-    TEST_CLASS: {
-        # test basic class methods
-        TEST_IGNORE:
-            IgnoreFunc(lambda param : param['typeX'] == param['typeY'] == \
-                       np.int8)
-    }, TEST_TRANSFORMS: {
-        # test forward and backward transforms
-    }
-}
+    def _getBenchmark(self):
+        from .inspect import BENCH
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: Parametric(
+                    np.arange(c).astype(np.double) / c,
+                    np.arange(c).astype(np.double) / c,
+                    (lambda x, y: np.sin(2 * np.pi * x ** y)))),
+                BENCH.FUNC_SIZE : (lambda c: c),
+                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12))
+            },
+            BENCH.FORWARD: {},
+            BENCH.SOLVE: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c: Parametric(
+                    np.arange(2 ** c).astype(np.double) / (2 ** c),
+                    np.arange(2 ** c).astype(np.double) / (2 ** c),
+                    (lambda x, y: 1.0))),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
+                BENCH.FUNC_STEP : (lambda c: c + 1)
+            },
+            BENCH.DTYPES: {
+                BENCH.FUNC_GEN  : (lambda c, datatype: Parametric(
+                    np.arange(2 ** c).astype(datatype) / (2 ** c),
+                    np.arange(2 ** c).astype(datatype) / (2 ** c),
+                    (lambda x, y: datatype(1)))),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c)
+            }
+        }
 
-################################################## Benchmarks
-benchmark = {
-    NAME_COMMON: {
-        NAME_DOCU       : r'''Defining function $f(x,y) = \exp(2 \pi
-            \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$''',
-        BENCH_FUNC_GEN  :
-            (lambda c : Parametric(
-                np.arange(c).astype(np.double) / c,
-                np.arange(c).astype(np.double) / c,
-                (lambda x, y: np.exp(2 * np.pi * x * y))
-            )),
-        BENCH_FUNC_SIZE : (lambda c : c),
-        BENCH_FUNC_STEP : (lambda c : c * 10 ** (1. / 12))
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_SOLVE: {
-    },
-    BENCH_OVERHEAD: {
-        BENCH_FUNC_GEN  :
-            (lambda c : Parametric(
-                np.arange(c).astype(np.double) / c,
-                np.arange(c).astype(np.double) / c,
-                (lambda x, y: 1.0)
-            )),
-        NAME_DOCU       : r'Defining function $f(x,y) = 1$'
-    },
-    BENCH_DTYPES: {
-        BENCH_FUNC_GEN  :
-            (lambda c, datatype : Parametric(
-                np.arange(c).astype(datatype) / c,
-                np.arange(c).astype(datatype) / c,
-                (lambda x, y: datatype(1))
-            )),
-        NAME_DOCU       : r'Defining function $f(x,y) = 1$'
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Parametric Matrix (\texttt{fastmat.Parametric})}
-\subsubsection{Definition and Interface}
-
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Parametric Matrix (\texttt{fastmat.Parametric})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 Let $f \D \C^2 \rightarrow \C$ be any function and two vectors $\bm x \in \C^m$
 and $\bm y \in \C^n$ such that $(x_j,y_i) \in \Dom(f)$ for $i \in [n]$ and $j
 \in [m]$. Then the matrix $\bm F \in \C^{n \times m}$ is defined as
-%
+
 \[F_{i,j} = f(x_j,y_i).\]
-%
+
 This class is not designed to be super fast, but memory efficient. This means,
 that everytime the forward or backward projections are called, the elements are
 generated according to the specified function on the fly.
 
 \textbf{Hint:} For small dimensions, where the matrix fits into memory, it is
-definately more efficient to cast the matrix to a regular Matrix object.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-
-# define the parametrizing
-# function for the elements
-def f(x, y):
-    return x ** 2 - y ** 2
-
-# define the input array
-# for the function f
-x = np.linspace(1, 4, 4)
-
-# construct the transform
-F = fm.Parametric(x, x, f)
-\end{lstlisting}
-
+definately more efficient to cast the matrix to a regular Matrix object.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            '',
+                            '# define parameter',
+                            '# function for the elements',
+                            'def f(x, y):',
+                            '    return x ** 2 - y ** 2',
+                            '',
+                            '# define the input array',
+                            '# for the function f',
+                            'x = np.linspace(1, 4, 4)',
+                            '',
+                            '# construct the transform',
+                            'F = fm.Parametric(x, x, f)',
+                            caption=r"""
 This yields
 \[f : \C \rightarrow \C\]
 \[(x_1,x_2)^T \mapsto x_1^2 - x_2^2\]
 \[\bm x = (1,2,3,4)^T\]
 \[\bm F = \left(\begin{array}{cccc}
-    1 & 3 & 8 & 15 \\
-    -3 & 0 & 5 & 12 \\
-    -8 & -5 & 0 & 7 \\
-    -15 & -12 & -7 & 0
-\end{array}\right)\]
-\end{snippet}
-
+      1 &   3 &  8 & 15 \\
+     -3 &   0 &  5 & 12 \\
+     -8 &  -5 &  0 &  7 \\
+    -15 & -12 & -7 &  0
+\end{array}\right)\]"""),
+                r"""
 We used Cython \cite{para_smith2011cython} to get an efficient implementation in
 order to reduce computation time. Moreover, it is generally assumed the the
 defined function is able to use row and column broadcasting during evaluation.
 If this is not the case, one has to set the flag \texttt{rangeAccess} to
-\texttt{False}.
-
-\begin{thebibliography}{9}
-\bibitem{para_smith2011cython}
-Stefan Behnel, Robert Bradshaw, Craig Citro, Lisandro Dalcin, Dag Sverre
-Seljebotn and Kurt Smith,
-\emph{Cython: The Best of Both Worlds},
-Computing in Science and Engineering,
-Volume 13,
-2011.
-\end{thebibliography}
-"""
+\texttt{False}."""
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix of $\bm \P_{n x n}$ with $n \in \N$
+and their support vectors $\bm s_x, \bm s_y \in \R$ each representing a linear
+slope along the interval $[0, 1]$.
+The defining function varies throughout the benchmarks and is specified
+separately for each plot.""",
+                DOC.PLOTFORWARD(doc=r"""
+$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
+                DOC.PLOTFORWARDMEMORY(doc=r"""
+$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
+                DOC.PLOTSOLVE(doc=r"""
+$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
+                DOC.PLOTOVERHEAD(doc=r"""
+$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
+                DOC.PLOTTYPESPEED(doc=r'$f(x,y) = 1$'),
+                DOC.PLOTTYPEMEMORY(doc=r'$f(x,y) = 1$')
+            ),
+            DOC.BIBLIO(
+                para_smith2011cython=DOC.BIBITEM(
+                    r"""
+Stefan Behnel, Robert Bradshaw, Craig Citro, Lisandro Dalcin,
+Dag Sverre Seljebotn and Kurt Smith,""",
+                    r'Cython: The Best of Both Worlds',
+                    r'Computing in Science and Engineering, Volume 13, 2011.')
+            )
+        )

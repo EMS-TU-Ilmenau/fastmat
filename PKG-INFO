@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: fastmat
-Version: 0.1b3
+Version: 0.1
 Summary: fast linear transforms in Python
 Home-page: https://ems-tu-ilmenau.github.io/fastmat/
 Author: Christoph Wagner, Sebastian Semper, EMS group TU Ilmenau
@@ -45,7 +45,16 @@ Description: # fastmat
         an issue on our github projectpage: https://github.com/EMS-TU-Ilmenau/fastmat
         
         ### FAQ
-         *to be updated*
+        
+        #### Installation fails with *ImportError: No module named Cython.Build*
+        Something went wrong with resolving the dependencies of fastmat during setup.
+        Unfortunately one or more of the required packages numpy, scipy or cython were
+        not installed automatically. Please do this manually by running
+            `pip install cython numpy scipy matplotlib`
+        and try the installation of fastmat again.
+        
+        #### Issue not resolved?
+        Please contact us or leave your bug report in the *issue* section. Thank You!
         
         
         ## Citation / Acknowledgements
@@ -96,7 +105,7 @@ Description: # fastmat
         
 Keywords: linear transforms efficient algorithms mathematics
 Platform: UNKNOWN
-Classifier: Development Status :: 3 - Alpha
+Classifier: Development Status :: 5 - Production/Stable
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: Education
 Classifier: Intended Audience :: Science/Research

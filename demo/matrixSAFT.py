@@ -40,7 +40,7 @@ try:
 except ImportError:
     sys.path.insert(0, '..')
     import fastmat
-from fastmat.helpers.resource import getMemoryFootprint
+from fastmat.core.resource import getMemoryFootprint
 
 # import smooth printing routines
 sys.path.insert(0, '../util')
@@ -83,7 +83,7 @@ printTitle("Generating masks and SAFT matrices", width=80)
 frameText(" %-20s : %s" %("'matSparse'",
                         "SAFT aperture masks as scipy-sparse matrices"))
 
-# create an array to store index mapping 
+# create an array to store index mapping
 # (row-index [:, 0] to col-index[:, 1], data is [:, 2])
 arrI = np.zeros((numN, 3), dtype=np.int32)
 arrI[:, 0] = np.arange(numN)
@@ -98,11 +98,11 @@ matSparse = []
 for kk in range(0, numK):
     # determine row-to-col index mapping for kk
     arrI[:, 1] = np.sqrt((kk * dX) ** 2 + (arrI[:, 0] * dZ) ** 2) / dZ + 0.5
-    
+
     # select all entries within matrix range
     selection = np.where((arrI[:, 1] < sizeItem) * (arrI[:, 1] >= 0))[0]
     mapping = arrI[selection].astype(np.int16)
-    
+
     # stop when submatrices are empty
     if selection.size < 1:
         break
@@ -121,7 +121,7 @@ cntK = len(matSparse)
 ###  Generate SAFT matrix using fastmat Kronecker approach
 ###############################################################################
 
-################################################## multi-diag-eye fastmat class 
+################################################## multi-diag-eye fastmat class
 # define a fastmat class for a special type of eye matrix
 class SparseEye(fastmat.Matrix):
     def __init__(self, numN, offset):
@@ -129,14 +129,14 @@ class SparseEye(fastmat.Matrix):
         self._start = offset
         self._stop = numN - offset
         self._initProperties(numN, numN, np.int8)
-    
+
     def _forward(self, arrX):
         arrRes = np.zeros((self.numN, arrX.shape[1]), dtype=arrX.dtype)
         arrRes[:self._stop, :] = arrX[self._start:, :]
         if self._offset > 0:
             arrRes[self._start:, :] += arrX[:self._stop, :]
         return arrRes
-    
+
     def _backward(self, arrX):
         return self._forward(arrX)
 
@@ -145,7 +145,7 @@ frameText(" %-20s : %s" %("'matSaftKron'",
                         "using fastmat built-in classes"))
 matSaftKron = fastmat.Sum(
     *[fastmat.Kron(
-            fastmat.Eye(numD) if kk == 0 else SparseEye(numD, kk), 
+            fastmat.Eye(numD) if kk == 0 else SparseEye(numD, kk),
             fastmat.Sparse(mat.tocsc()))
       for kk, mat in enumerate(matSparse)])
 frameText(" " * 4 + repr(matSaftKron))
@@ -157,7 +157,7 @@ frameText(" " * 4 + repr(matSaftKron))
 ###  Generate SAFT matrix with a user-defined fastmat clas
 ###############################################################################
 
-################################################## user-defined SAFT class 
+################################################## user-defined SAFT class
 # define a fastmat class representing SAFT
 class SaftClass(fastmat.Matrix):
     def __init__(self, numN, sizeItem, *items):
@@ -166,15 +166,15 @@ class SaftClass(fastmat.Matrix):
         self._numBlocks = numN // sizeItem
         self._numItems = len(items)
         self._initProperties(numN, numN, np.int8)
-    
+
     def _core(self, arrX, backward):
         numI = self._sizeItem
         numB = self._numBlocks
-        
+
         arrRes = np.empty((self.numN, arrX.shape[1]), dtype=arrX.dtype)
         viewIn  = [arrX[mm * numI:(mm + 1) * numI, :] for mm in range(numB)]
         viewOut = [arrRes[nn * numI:(nn + 1) * numI, :] for nn in range(numB)]
-        
+
         for kk in range(self._numItems):
             item = self._items[kk]
             itemDot = item.vdot if backward else item.dot
@@ -185,15 +185,15 @@ class SaftClass(fastmat.Matrix):
                 else:
                     kkl, kkr = nn - kk, nn + kk
                     arrArg = (viewIn[kkr] if kkl < 0
-                              else (viewIn[kkl] if kkr >= numB 
+                              else (viewIn[kkl] if kkr >= numB
                                     else viewIn[kkl] + viewIn[kkr]))
                     viewOut[nn][:] += itemDot(arrArg)
-        
+
         return arrRes
-        
+
     def _forward(self, arrX):
         return self._core(arrX, False)
-    
+
     def _backward(self, arrX):
         return self._core(arrX, True)
 
@@ -211,7 +211,7 @@ frameText(" " * 4 + repr(matSaftClass))
 import pyximport; pyximport.install()
 from matrixSAFTmask import SaftMaskCore
 
-################################################## user-defined SAFT class 
+################################################## user-defined SAFT class
 class SaftMaskClass(fastmat.Matrix):
     def __init__(self, numBlocks, sizeItem, *masks):
         if any((mask.ndim != 2 or mask.shape[1] != 2) for mask in masks):
@@ -223,11 +223,11 @@ class SaftMaskClass(fastmat.Matrix):
         self._numMasks = len(masks)
         numN = numBlocks * self._sizeItem
         self._initProperties(numN, numN, np.int8)
-    
+
     def _forward(self, arrX):
         return SaftMaskCore(arrX, self._sizeItem, self._numBlocks, self._masks,
                             False)
-    
+
     def _forward(self, arrX):
         return SaftMaskCore(arrX, self._sizeItem, self._numBlocks, self._masks,
                             True)
@@ -238,8 +238,8 @@ class SaftMaskClass(fastmat.Matrix):
 ################################################## Use special fastmat class
 frameText(" %-20s : %s" %("'matSaftMaskClass'",
                         "user-defined fastmat class, cython-optimized"))
-matSaftMaskClass = SaftMaskClass(numD, sizeItem, 
-                                 *(tuple(np.vstack((mat.row, mat.col)).T 
+matSaftMaskClass = SaftMaskClass(numD, sizeItem,
+                                 *(tuple(np.vstack((mat.row, mat.col)).T
                                          for mat in matSparse)))
 frameText(" " * 4 + repr(matSaftMaskClass))
 
@@ -312,7 +312,7 @@ for name, matrix in sorted({
 printTitle("Benchmarking forward transform performance of matrices",
            width=80)
 def timing(title, fun, reps):
-    frameText("%40s : %10.4g s"% (title, 
+    frameText("%40s : %10.4g s"% (title,
                                   timeit.timeit(fun, number=reps) / reps))
 
 for title, fun in sorted({
@@ -347,21 +347,21 @@ frameLine()
 #subplot(3, numRows, 1)
 #imshow(arrRef)
 
-#arrMask = matSaftMaskClass.toarray()
+#arrMask = matSaftMaskClass.array
 #print("norm(arrMask - arrRef) : %f" %(np.linalg.norm(arrMask - arrRef)))
 #subplot(3, numRows, 2)
 #imshow(arrMask)
 #subplot(3, numRows, numRows + 2)
 #imshow(arrMask - arrRef)
 
-#arrClass = matSaftClass.toarray()
+#arrClass = matSaftClass.array
 #print("norm(arrClass - arrRef) : %f" %(np.linalg.norm(arrClass - arrRef)))
 #subplot(3, numRows, 3)
 #imshow(arrClass)
 #subplot(3, numRows, numRows + 3)
 #imshow(arrClass - arrRef)
 
-#arrKron = matSaftKron.toarray()
+#arrKron = matSaftKron.array
 #print("norm(arrKron - arrRef)  : %f" %(np.linalg.norm(arrKron - arrRef)))
 #subplot(3, numRows, 4)
 #imshow(arrKron)

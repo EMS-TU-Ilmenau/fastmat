@@ -31,15 +31,11 @@ import cython
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
+from .core.types cimport *
 
 ################################################################################
 ################################################## class BlockDiag
 cdef class BlockDiag(Matrix):
-
-    ############################################## class variables
-    cdef public tuple _content                   # list of of child matrices
-    #                                            # along main diagonal axis
 
     ############################################## class methods
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)

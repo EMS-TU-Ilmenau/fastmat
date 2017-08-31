@@ -39,5 +39,4 @@ cdef class Zero(Matrix):
     ############################################## class methods
     cpdef np.ndarray _forward(self, np.ndarray)
     cpdef np.ndarray _backward(self, np.ndarray)
-    cpdef np.ndarray toarray(self)
     cpdef np.ndarray _reference(self)

@@ -26,8 +26,8 @@
  ------------------------------------------------------------------------------
 '''
 # algorithms for sparse recovery
-from .ISTA import ISTA
-from .OMP import OMP
+from .ISTA import ISTA, ISTAinspect
+from .OMP import OMP, OMPinspect
 
 # numeric algorithms
-from .CG import CG
+from .CG import CG, CGinspect

@@ -64,8 +64,12 @@ except ImportError:
     sys.path.append('.')
     import fastmat
 
-from fastmat.helpers.unitInterface import *
+from fastmat.inspect import Test, Benchmark, Documentation, TEST, BENCH, DOC
+from fastmat.inspect.common import AccessDict
+
 from routines.printing import *
+
+classBaseContainers = (fastmat.Matrix, fastmat.Algorithm)
 
 ################################################## package constant definition
 packageName = 'fastmat'
@@ -90,6 +94,25 @@ def getObjects(
     '''
     return sorted([item for item in list(obj.__dict__.keys())
                    if aSelector(obj, item)])
+
+
+def unpackExtraArgs(extraArgs):
+    result = {}
+    if extraArgs is not None:
+        for p in extraArgs:
+            for pp in list(p.split(',')):
+                tokens = pp.split('=')
+                if len(tokens) >= 2:
+                    string = "=".join(tokens[1:])
+                    try:
+                        val = int(string)
+                    except ValueError:
+                        try:
+                            val = float(string)
+                        except ValueError:
+                            val = string
+                    result[tokens[0]] = val
+    return result
 
 
 class CommandArgParser(object):
@@ -147,37 +170,16 @@ class Bee(CommandArgParser):
                 action='store_true',
                 help='Show extended information'
             )
-            self.argParser.add_argument(
-                '-f', '--filename',
-                action='store_true',
-                help="Print 'filename' key of dataset values if dictionary " +
-                "unless extended output is enabled."
-            )
             self.args = self.argParser.parse_args(arguments)
 
-        def _printDataset(
-            self,
-            dataset,
-            newline='\n',
-            separator=' '
-        ):
+        def _printDataset(self, dataset, newline='\n', separator=' '):
             '''List contents of dataset according to modifiers in self.args.'''
             if self.args.extended:
                 pprint.pprint(dataset)
             else:
-                if self.args.filename:
-                    # if filename switch is given, extract values of the
-                    # 'filename' key of all dictionaries in dataset
-                    lst = [
-                        d[NAME_FILENAME] for d in dataset.values()
-                        if isinstance(d, dict) and d.get(NAME_FILENAME, None)
-                    ]
-                else:
-                    # otherwise extract all key names of dataset
-                    lst = [loc for loc in dataset.keys()]
-
-                # print the list
-                print(separator.join(sorted(lst)) + newline)
+                # extract all key names of dataset and print the list
+                print(separator.join(
+                    sorted([loc for loc in dataset.keys()])) + newline)
 
         def _parseAndPrint(self, dataset, *arguments):
             '''Combine self._parseArgs and self._printDataset.'''
@@ -192,44 +194,20 @@ class Bee(CommandArgParser):
             '''Return list of available algorithms in package.'''
             self._parseAndPrint(packageAlgs, *arguments)
 
-        def units(self, *arguments):
+        def index(self, *arguments):
             '''Return list of available units in package.'''
-            self._parseAndPrint(packageUnits, *arguments)
-
-        def benchmarks(self, *arguments):
-            '''Return list of benchmark targets used in package.'''
-            self._parseAndPrint(packageBenchmarks, *arguments)
-
-        def benchmarktargets(self, *arguments):
-            '''Return list of available benchmark targets.'''
-            self._parseAndPrint(packageBenchmarkTargets, *arguments)
-
-        def documentation(self, *arguments):
-            '''Return list of units with documentation included.'''
-            self._parseAndPrint(packageDocumentation, *arguments)
-
-        def tests(self, *arguments):
-            '''Return list of test targets used in package.'''
-            self._parseAndPrint(packageTests, *arguments)
-
-        def testtargets(self, *arguments):
-            '''Return list of test targets used in package.'''
-            self._parseAndPrint(packageTestTargets, *arguments)
+            self._parseAndPrint(packageIndexTree, *arguments)
 
         def makedump(self, *arguments):
             '''Dump all information for makefile processing.'''
             self._parseArgs()
 
             printSetup = {'newline': ';', 'separator': ':'}
-            for dataset in [packageClasses, packageAlgs,
-                            packageBenchmarkTargets]:
-                self.args.filename = False
-                self._printDataset(dataset, **printSetup)
-                self.args.filename = True
+            for dataset in [packageClasses, packageAlgs]:
                 self._printDataset(dataset, **printSetup)
 
     ############################################## selection helper function
-    def _select(self, nameType, arguments, lstTypes, lstTargets):
+    def _select(self, nameType, arguments, lstElements):
         self.argParser.add_argument(
             '-s', '--select',
             nargs='+',
@@ -269,13 +247,20 @@ class Bee(CommandArgParser):
         self.extraArgs = tuple(list(self.extraArgs) + self.args.options)
 
         # compile job list (--select argument), default: all
-        # perform deep copy to allow modifying data locally later on
-        selected = {key: value.copy() for key, value in lstTargets.items()}
-        if len(self.args.select) > 0:
+        # prepare a dictionary with {element:[]} structure to keep track of all
+        # selected targets for each element.
+        if len(self.args.select) == 0:
+            # This defaults to 'select all targets of all elements'
+            return {element: [] for element in lstElements}
+        else:
+            # default to no selected elements(every element selects one element
+            # representing an illegal target -> nothing will be tested unless
+            # another element is added
+            dummyElement = ''
+            selected = {element: set([dummyElement]) for element in lstElements}
+
             # prepare lists to collect parameters
-            filterUnit = set([])
-            filterType = set([])
-            picked = set([])
+            selectElement = set([])
 
             # classify options in lists
             for name in self.args.select:
@@ -283,39 +268,51 @@ class Bee(CommandArgParser):
                 if len(tokens) < 2:
                     continue
 
+                element, target = '.'.join(tokens[:-1]), tokens[-1]
                 if tokens[0] == '':
-                    # begins with '.' -> ".benchmark" mask
-                    filterType.add(tokens[-1])
+                    # begins with '.' -> ".target" selection mask
+                    # if specific targets were selected, add them to all
+                    # elements resulting in full selection of target
+                    for lstTargets in selected.values():
+                        lstTargets.add(target)
                 elif tokens[-1] == '':
-                    # ends on '.' -> "unit." mask
-                    filterUnit.add('.'.join(tokens[:-1]))
+                    # ends on '.' -> "element." selection mask
+                    # collect these elements for now
+                    selectElement.add(element)
                 else:
-                    picked.add(name)
+                    # element.target specific selection mask
+                    # only select this specific element:target pair
+                    if element in lstElements:
+                        selected[element].add(tokens[-1])
 
-            # if a filter contains no elements, disable it by filling its
-            # "enable mask" with all possible elements
-            if len(filterUnit) == 0 and len(filterType) > 0:
-                filterUnit = set(packageUnits.keys())
+            # to select some elements completely the selection list of that
+            # particular element only needs to become empty
+            for element in selectElement:
+                if element in lstElements:
+                    selected[element].clear()
 
-            if len(filterType) == 0 and len(filterUnit) > 0:
-                filterType = set(lstTypes.keys())
+            # now remove all elements containing only the dummy element (these
+            # were actually not selected at all)
+            selected = {
+                element: lstTargets
+                for element, lstTargets in selected.items()
+                if len(lstTargets) != 1 or dummyElement not in lstTargets}
 
-            # remove items not picked and not meeting filtermasks
-            popList = [
-                key for key, target in selected.items()
-                if not ((target[NAME_UNIT] in filterUnit and
-                         target[nameType] in filterType) or key in picked)]
+            # as cleanup stage remove the empty-blocking '' elements from all
+            # sets which contain one other parameter as well (> two elements)
+            # also do convert bayk to list
+            for element, lstElements in selected.items():
+                if len(lstElements) > 1:
+                    lstElements.discard(dummyElement)
 
-            for key in popList:
-                selected.pop(key)
+                selected[element] = sorted(list(selected[element]))
 
-        return selected
+            # return the selector as list
+            return selected
 
     ############################################## command: test
     def test(self, *arguments):
         '''Run unit tests in package.'''
-        from routines import test
-
         # parse arguments and get selection from list
         self.argParser.add_argument(
             '-w', '--write-failed',
@@ -323,12 +320,6 @@ class Bee(CommandArgParser):
             help="If specified, stores failed test results to a .mat file " +
             "for each failed test instance, including parameters, input and " +
             "evaluation output"
-        )
-        self.argParser.add_argument(
-            '-p', '--path-results',
-            type=str,
-            default='.',
-            help="Path to put the result files for failed tests."
         )
         self.argParser.add_argument(
             '-i', '--interact',
@@ -346,149 +337,185 @@ class Bee(CommandArgParser):
             action='store_true',
             help="Produce full output."
         )
-        tests = self._select(
-            'test', arguments,
-            packageTests, packageTestTargets
+        self.argParser.add_argument(
+            '-c', '--calibration',
+            type=str,
+            default='',
+            help="Filename to read calibration data from. Loads calibration " +
+            "data for fastmat classes which is then used by the package."
         )
 
+        # stop time
+        timeTotal = time.time()
+
+        # determine the selection of classes-under-test and their tergets
+        selection = self._select(TEST.TEST, arguments, packageIndex.keys())
+
         # sanity check
-        if len(tests) < 1:
+        if len(selection) < 1:
             self.argParser.exit(0, "test: job list is empty.\n")
 
-        # update test result filenames to point to path specified
-        for target in tests.values():
-            target[NAME_FILENAME] = os.path.normpath(os.path.join(
-                self.args.path_results, target[NAME_FILENAME]))
+        # generate test worker classes
+        options = unpackExtraArgs(self.extraArgs)
+        tests = {name: Test(packageIndex[name], extraOptions=options)
+                 for name in selection.keys()}
+
+        # if workers have no targets, discard them (evaluated during __init__)
+        tests = {name: worker
+                 for name, worker in tests.items()
+                 if len(worker.options.keys()) > 0}
 
         # run tests
-        problems = {}
-        testUnits = set([])
-        testCount = 0
-        testIgnoredCount = 0
-        timeTotal = time.time()
-        for target in sorted(tests.keys()):
-            testUnits.add(tests[target]['unit'])
+        cntTests, cntProblems, cntIrregularities = [0], [0], [0]
+        for nameTest, test in sorted(tests.items()):
+            # measure timing as lap timer in callback
+            timeLap = [time.time()]
 
-            # run tests (prints results instantly)
-            unitTestCount, problems[target], unitTestIgnoredCnt = \
-                test.runTest(
-                    tests[target], *self.extraArgs,
-                    fullOutput=self.args.full,
-                    verbose=self.args.verbose
-            )
-            testCount += unitTestCount
-            testIgnoredCount += unitTestIgnoredCnt
+            def cbResult(name, targetResult):
+                # runtime of last test
+                timeSingle = time.time() - timeLap[0]
 
-            # now comes saving the output data. But first check if this is
-            # actually what we want
-            if not self.args.write_failed or len(problems[target]) == 0:
-                continue
+                # statistics and output
+                test.findProblems(name, targetResult)
+                numProb = len(test.problems[name])
+                numIrr = len(test.irregularities[name])
+                numTests = sum(sum(len(variant.values())
+                                   for variant in test.values())
+                               for test in targetResult.values())
+                cntProblems[0] += numProb
+                cntIrregularities[0] += numIrr
+                cntTests[0] += numTests
 
-            # prepare data to be stored
-            #  * convert non-representables to strings (keep numbers and arrays)
-            def _convert(data):
-                # behave recursive for all types of containers
-                if isinstance(data, dict):
-                    for key, value in data.items():
-                        data[key] = _convert(value)
+                print((fmtBold(">> %s:") + " ran %d tests in %.2f seconds") %(
+                    '.'.join([nameTest, name]), numTests, timeSingle
+                ) + " (%s%s)" %(
+                    (fmtGreen if numProb == 0 else fmtRed)
+                    ("%d problems" % (numProb)),
+                    ("" if numIrr == 0
+                     else fmtYellow(
+                         ", %d irregularities (ignored)" %(numIrr)))
+                ))
+                # refresh timer for next measurement
+                timeLap[0] = time.time()
 
-                    return data
-                elif isinstance(data, list):
-                    for ii, item in enumerate(data):
-                        data[ii] = _convert(item)
+            # set callbacks, verbosity and start testing all selected targets
+            test.verbosity = self.args.verbose, self.args.full
+            test.cbResult = cbResult
+            test.run(*(selection[nameTest]))
 
-                    return data
-                elif isinstance(data, tuple):
-                    lst = list(data)
-                    _convert(lst)
-                    return tuple(lst)
-
-                # now check for elements
-                elif isinstance(data, (np.ndarray, Number, str)):
-                    return data
-                # everything else needs to be converted
-                elif isinstance(data, fastmat.Matrix):
-                    return data.__repr__()
-                else:
-                    return str(data)
-
-            # save test data, ensure output path exists
-            # (convert result data to storeable format)
-            filename = tests[target][NAME_FILENAME]
-            path = os.path.dirname(filename)
-            if not os.path.exists(path):
-                os.makedirs(path)
-
-            spio.savemat(filename, _convert(results))
-            print("   > results saved to '%s'" % (filename))
-
-        timeTotal = time.time() - timeTotal
+        # forget about all tests with no targets executed (the selection list
+        # did not match the targets offered by the test) to exclude it from
+        # the unit result reporting following
+        tests = {name: test
+                 for name, test in tests.items()
+                 if len(test.results.keys()) > 0}
 
         # analyze dependencies of units involved in problems
-        problemUnits = set(['.'.join(name.split('.')[:-1])
-                            for name, lst in problems.items() if len(lst) > 0])
+        testClasses = {name: packageIndex[name]
+                       for name in tests.keys()}
+        # STAGE 1: detect structural dependencies (crawl inheritance model)
+        # a dependency is a class of which the respective class is a subclass of
+        # limit search to classes derived from one of the class containers
+        testDependencies = {
+            name: set(inspect.getmro(classType))
+            for name, classType in testClasses.items()}
 
-        independentUnits = []
-        dependentUnits = {}
-        fineUnits = []
-        unitDependencies = {}
-        for unit in testUnits:
-            if unit not in problemUnits:
-                fineUnits.append(unit)
-                continue
+        # STAGE 2: add dependencies introduced in test case instances
+        def crawlContent(contents, targetSet):
+            if isinstance(contents, (list, tuple)):
+                for item in contents:
+                    crawlContent(item)
+            elif isinstance(contents, dict):
+                for item in contents.values():
+                    crawlContent(item)
+            elif isinstance(contents, classBaseContainers):
+                targetSet.add(contents.__class__)
 
-            dependencies = sorted([dep
-                                   for dep in vars(packageUnits[unit]['module'])
-                                   if (dep in packageUnits) and (dep != unit)])
-            unitDependencies[unit] = dependencies
+        for name, testWorker in tests.items():
+            targetSet = testDependencies[name]
+            for nameTarget, target in testWorker.results.items():
+                for nameTest, test in target.items():
+                    if len(test) > 0:
+                        aVariant = list(test.values())[0]
+                        if len(aVariant) > 0:
+                            aQuery = list(aVariant.values())[0]
+                            crawlContent(aQuery.get(TEST.INSTANCE, None),
+                                         targetSet)
 
-            if len(dependencies) == 0:
-                independentUnits.append(unit)
-            else:
-                dependentUnits[unit] = dependencies
+        # filter out the containers themselves as they are obviousely the
+        # "mothers of it all" and as each class is also a subclass to itself,
+        # skip it as well to improve readability of output
+        testDependencies = {
+            name: [item
+                   for item in dependencies
+                   if (issubclass(item, classBaseContainers) and
+                       item not in classBaseContainers and
+                       item != testClasses[name])]
+            for name, dependencies in testDependencies.items()}
 
-        # flatten unit-name based list of problems
-        problems = {name: problem
-                    for unitProblems in problems.values()
-                    for name, problem in unitProblems.items()}
+        # split units into two main lists (unit has problems / has no problems)
+        problemUnits = [name
+                        for name, test in sorted(tests.items())
+                        if sum(len(problems)
+                               for problems in test.problems.values()) > 0]
+        fineUnits = [name
+                     for name in sorted(tests.keys())
+                     if name not in problemUnits]
 
-        # print results
+        # now divide the `has problems` list further based on dependencies
+        dependentProblems = [name
+                             for name in problemUnits
+                             if len(testDependencies[name]) > 0]
+        independentProblems = [name
+                               for name in problemUnits
+                               if name not in dependentProblems]
+
+        # stop time, print results and show summary of dependencies
+        timeTotal = time.time() - timeTotal
+        cntTests = cntTests[0]
+        cntProblems, cntIrregularities = (cntProblems[0], cntIrregularities[0])
+
         printTitle("Results")
-        print(("   > found %d problem(s) in %d units%s " +
+        print(("   > found %d problem(s) in %d classes%s " +
                "(ran %d tests in %.2f seconds)") %(
-            len(problems), len(problemUnits),
-            ("" if testIgnoredCount == 0
-             else " (%d issues ignored)" %(testIgnoredCount)),
-            testCount, timeTotal))
+            cntProblems, len(problemUnits),
+            ("" if cntIrregularities == 0
+             else " (%d issues ignored)" %(cntIrregularities)),
+            cntTests, timeTotal))
 
         if len(fineUnits) > 0:
-            print("   > Units with no problems:")
+            print("   > Classes with no problems:")
             print("%s[%s]\n" % (
                 " " * 8, ", ".join([fmtGreen(unit)
                                     for unit in fineUnits])))
 
-        if len(independentUnits) > 0:
-            print("   > Units with independent problems (start fixing here):")
+        if len(independentProblems) > 0:
+            print("   > Classes with independent problems (start fixing here):")
             print("%s[%s]\n" % (
                 " " * 8, ", ".join([fmtRed(unit)
-                                    for unit in sorted(independentUnits)])))
+                                    for unit in sorted(independentProblems)])))
 
-        if len(dependentUnits) > 0:
-            nameLength = max(len(name) for name in dependentUnits)
-            print("   > Units with problems, depending on other " +
-                  "units with problems")
-            for unit, depList in sorted(dependentUnits.items()):
+        if len(dependentProblems) > 0:
+            nameLength = max(len(name) for name in dependentProblems)
+            print("   > Classes with problems that depend on other classes")
+
+            def fmtDummy(string):
+                return string
+
+            for name in dependentProblems:
+                depList = [((fmtYellow if dep in problemUnits else fmtGreen)
+                            if dep in tests.keys() else fmtDummy)(dep.__name__)
+                           for dep in testDependencies[name]]
                 print("%s%*s: [%s]" % (
-                    " " * 8,
-                    nameLength, fmtRed(unit),
-                    ", ".join([
-                        dep if dep not in testUnits
-                        else [fmtGreen, fmtYellow][dep in problemUnits](dep)
-                        for dep in sorted(depList)])))
+                    " " * 8, nameLength, fmtRed(name),
+                    ", ".join(sorted(depList))))
             print("\n")
 
+        # make test dictionary easy accessible
+        tests = AccessDict(tests)
+
         # interactive session, anyone?
-        if self.args.interact and len(problems) > 0:
+        if self.args.interact and cntProblems > 0:
             # register signaling for graceful exit
             import atexit
             try:
@@ -502,87 +529,12 @@ class Bee(CommandArgParser):
             atexit.register(quitGracefully)
 
             # scope dictionary
-            scope={}
-
-            # define helper function for filtering problems
-            def select(*filters):
-                return {name: item for name, item in problems.items()
-                        if all(f in name for f in filters)}
-
-            def get(index, data=problems, verbose=True):
-                key = list(data.keys())[index]
-                if verbose:
-                    print("selected problem '%s'." %(fmtBold(key)))
-                return data[key]
-
-            def fetch(problem, dataSet=problems, scope=scope):
-                def _load(key, name, doc=""):
-                    if key in problem:
-                        print("retrieved %s <= [%s] %s" %(
-                            name, key, "" if len(doc) == 0 else " (%s)" %(doc)))
-                        scope[name]=problem[key]
-
-                # fetch from scope (interpret as index) if no problem passed
-                if problem not in scope:
-                    problem = get(problem, data=dataSet)
-
-                # load fields from problem
-                _load(TEST_INSTANCE, 'inst',
-                      doc="matrix instance")
-                _load(TEST_REFERENCE, 'arrMat',
-                      doc="plain matrix representation")
-                _load(TEST_RESULT_INPUT, 'arrIn',
-                      doc="input to tested code segment")
-                _load(TEST_RESULT_OUTPUT, 'arrOut',
-                      doc="output of tested code segment")
-                _load(TEST_RESULT_REF, 'arrRef',
-                      doc="reference calculation result")
-                _load(TEST_RESULT_TOLERR, 'tolErr')
-
-                # calculate some other measures
-                try:
-
-                    if all(key in scope for key in ['arrRef', 'arrOut']):
-                        arrOut, arrRef = scope['arrOut'], scope['arrRef']
-
-                        eps0 = scope['eps0'] = \
-                            fastmat.helpers.types._getTypeEps(arrOut.dtype)
-
-                        arrDiff = arrOut - arrRef
-                        absErr = scope['absErr'] = (np.abs(arrDiff).max() /
-                                                    np.abs(arrRef).max())
-                        print("absErr = %e [tolErr = %e]" %(
-                            absErr, scope['tolErr']))
-
-                        if eps0 != 0:
-                            relErr = scope['relErr'] = absErr / eps0
-                            print("relErr = %e [eps = %e]" %(relErr, eps0))
-                except NameError:
-                    pass
-
-            def getDiff(data=problems):
-                return {name: (item['testOutput'] - item['testReference'])
-                        for name, item in data.items()}
-
-            def getAbs(data=problems):
-                return {name: abs(item) for name, item in data.items()}
-
-            def getMax(data=problems):
-                return {name: item.max() for name, item in data.items()}
-
-            def show(data=problems):
-                pprint.pprint(data)
+            scope = {}
 
             # set numpy print options
-            np.set_printoptions(
-                linewidth=200,
-                threshold=10,
-                edgeitems=3,
-                formatter={
-                    'float_kind'    : '{: .3}'.format,
-                    'complex_kind'  : '{: .3e}'.format
-                }
-            )
+            np.set_printoptions(linewidth=200, threshold=10, edgeitems=3,
+                                formatter={'float_kind'     : '{: .3}'.format,
+                                           'complex_kind'   : '{: .3e}'.format})
 
             # scope dictionary
             scope.update(globals())
@@ -590,28 +542,16 @@ class Bee(CommandArgParser):
 
             # start interactive session
             import code
-            code.interact(
-                r"""
-   > Entering interactive testing session.
-   > Available commands:
-      * select('selector', ...) - Select subset from 'problems'
-                                  (includes auto-completion)
-      * get(index, dataSet)     - Return single problem #(index) from dataSet
-      * show(dataSet)           - Print all problems in dataSet
-      * fetch(problem)          - extract data fields from single problem
-      * getDiff(dataSet)        - return diff arrays for problems in dataSet
-      * getAbs(dictArrays)      - return absolute of all arrays in dictArrays
-      * getMax(dictArrays)      - return maximum of all values in dictArrays
-                """, None, scope)
+            code.interact(r"  > Entering interactive testing session.",
+                          None, scope)
 
         # if problems occurred, exit with non-zero errorcode
-        if len(problems) > 0:
+        if cntProblems > 0:
             sys.exit(1)
 
     ############################################## command: benchmark
     def benchmark(self, *arguments):
         '''Run performance evaluation of units in package.'''
-        from routines import benchmark
 
         # parse arguments and get selection from list
         self.argParser.add_argument(
@@ -620,38 +560,58 @@ class Bee(CommandArgParser):
             default='.',
             help="Save the benchmark results to the path specified."
         )
-        benchmarks=self._select(
-            NAME_BENCHMARK, arguments,
-            packageBenchmarks, packageBenchmarkTargets)
+        self.argParser.add_argument(
+            '-c', '--calibration',
+            type=str,
+            default='',
+            help="Filename to read calibration data from. Loads calibration " +
+            "data for fastmat classes which is then used by the package."
+        )
+        selection = self._select(
+            BENCH.BENCHMARK, arguments, packageIndex.keys())
+
+        # load calibration data
+        if len(self.args.calibration) > 0:
+            fastmat.core.loadCalibration(self.args.calibration)
+            print("  > Loaded calibration data from %s." %(
+                self.args.calibration))
 
         # sanity check
-        if len(benchmarks) < 1:
+        if len(selection) < 1:
             self.argParser.error("benchmark: job list is empty.")
 
-        # update benchmark result filenames to point to path specified
-        for target in benchmarks.values():
-            target[NAME_FILENAME]=os.path.normpath(os.path.join(
-                self.args.path_results, target[NAME_FILENAME]))
+        # generate benchmark worker classes
+        benchmarks = {
+            name: Benchmark(packageIndex[name],
+                            extraOptions=unpackExtraArgs(self.extraArgs))
+            for name in selection.keys()}
 
         # run benchmarks
-        for target in sorted(benchmarks.keys()):
-            bench=benchmarks[target]
+        for nameBench, bench in sorted(benchmarks.items()):
+            def cbResult(name, targetResult):
+                # output, anyone?
+                if len(self.args.path_results) > 0:
+                    print("   > saved result '%s' to '%s'" % (
+                        name,
+                        bench.saveResult(name, outPath=self.args.path_results)))
 
-            # run benchmark with set of bench options and extra cmd arguments
-            benchmark.runEvaluation(*self.extraArgs, **bench)
-            print("   > results saved to '%s'" % (bench[NAME_FILENAME]))
+                print("")
+
+            # start tests of all targets of this element
+            bench.cbResult = cbResult
+            bench.run(*(selection[nameBench]))
 
     ############################################## command: documentation
     def documentation(self, *arguments):
         '''Extract built-in documentation from units in package.'''
-        from routines import documentation
-
         self.argParser.add_argument(
             'units',
             nargs='*',
-            default=packageDocumentation.keys(),
+            default=[],
             help="Specify the documentation sections to include in the TeX " +
-            "output. Defaults to all units having available documentation."
+            "output. If this list is empty, all sections in the package will " +
+            "be considered. Any key=value pairs will be forwarded to " +
+            "benchmark operations"
         )
         self.argParser.add_argument(
             '-p', '--path-results',
@@ -660,67 +620,409 @@ class Bee(CommandArgParser):
             help='Path to the benchmark results.'
         )
         self.argParser.add_argument(
-            '-s', '--section',
+            '-o', '--output',
             type=str,
-            default=None,
-            help="If specified, open a new \section with the caption given"
+            default='',
+            help="Filename to write the output to. If not file is specified " +
+            "the output will be directed to STDOUT."
+        )
+        self.argParser.add_argument(
+            '-c', '--calibration',
+            type=str,
+            default='',
+            help="Filename to read calibration data from. Loads calibration " +
+            "data for fastmat classes which is then used by the package."
         )
 
         # parse arguments, all extra stuff goes to 'extraParam'
-        self.args, self.extraParam=self.argParser.parse_known_args(arguments)
+        self.args, extraArgs = self.argParser.parse_known_args(arguments)
+        self.args.units.extend(extraArgs)
 
-        # get list of selected units, ensure they contain some doc
-        docs={name: packageDocumentation[name].copy()
-              for name in self.args.units if name in packageDocumentation}
+        # load calibration data
+        if len(self.args.calibration) > 0:
+            fastmat.core.loadCalibration(self.args.calibration)
+            print("  > Loaded calibration data from %s." %(
+                self.args.calibration))
 
-        if len(docs) < 1:
+        # compile set of extra options for optional benchmarking
+        benchmarkOptions = unpackExtraArgs([name
+                                            for name in self.args.units
+                                            if '=' in name])
+        options = {'benchmarkOptions'   : benchmarkOptions,
+                   DOC.OUTPATH          : self.args.path_results}
+
+        selection = [name for name in self.args.units if '=' not in name]
+
+        # if selection is empty, take all sections of package
+        if len(selection) == 0:
+            selection = (sorted(packageClasses.keys()) +
+                         sorted(packageAlgs.keys()))
+        else:
+            selection = [name for name in selection if name in packageIndex]
+
+        if len(selection) < 1:
             self.argParser.error("documentation: job list is empty.")
 
-        # get the file names of benchmark result files for each module, update
-        # the filenames with the specified path where they shall be stored and
-        # check if they exist. Store the compiled list in the unit's doc info
-        for nameDoc, doc in docs.items():
-            # copy benchmark target definitions for this unit
-            doc['results']={name: bench.copy()
-                            for name, bench in packageBenchmarkTargets.items()
-                            if bench.get(NAME_UNIT, None) == nameDoc}
+        output = ["% THIS OUTPUT WAS GENERATED AUTOMATICALLY AND " +
+                  "MAY BE OVERWRITTEN ANYTIME"]
 
-            # iterate over benchmark targets, updating filenames
-            for nameBench, bench in doc['results'].items():
-                bench[NAME_FILENAME]=os.path.normpath(
-                    os.path.join(self.args.path_results, bench[NAME_FILENAME]))
+        # add machine info ahead of documentation
+        machineInfo = (
+            " ".join([" \\verb|%s|" %(token)
+                      for token in platform.platform().split("-")]).strip("`"),
+            " ".join([" \\verb|%s|" %(token)
+                      for token in " ".join(
+                          platform.uname()).split(" ")]).strip("'"),
+            platform.processor(),
+            '---'
+        )
+        output.append(DOC.SUBSECTION('General information', r"""
+This section was automatically generated on a system with the following
+specifications
 
-        # print header
-        print("% BEWARE: THIS FILE WAS GENERATED AUTOMATICALLY. ALL EDITS " +
-              "MAY BE OVERWRITTEN WITHOUT PRIOR NOTICE %")
+\vspace{5mm}\begin{centering}
+  \begin{tabular}[t]{ m{.45\columnwidth} | m{.45\columnwidth} }
+    \textbf{\large System} & \textbf{\large Kernel} \\
+      \begin{flushleft}%s\end{flushleft} & \begin{flushleft}%s\end{flushleft} \\
+      \textbf{\large Processor} & \textbf{\large Memory} \\
+      \verb|%s| & \verb|%s|
+  \end{tabular}
+\end{centering}""" % machineInfo))
 
-        # output section header if applicable
-        if self.args.section:
-            print("\section{%s}" % (self.args.section))
-
-        # output all documentation information to tex file.
-        for nameDoc, doc in sorted(docs.items()):
-            # state which unit gets printed
-            printTitle(
-                "Documentation of unit '%s'" % (nameDoc),
-                repChar='%', strBorder='%%', width=80, style=lambda str: str)
+        # get documentation of selected units
+        for name in selection:
+            # add class name to tex output and make output open on a new column
+            output.extend(['', '%' * 80,
+                           "%% Documentation of unit '%s'" %(name),
+                           '%' * 80, '',
+                           r'\vfill\null\columnbreak'])
 
             # output class documentation
-            print(doc[NAME_DOCU])
+            output.append(Documentation(packageIndex[name], **options))
 
-            # output benchmark results if applicable
-            results={name: result
-                     for name, result in sorted(doc.get('results', {}).items())
-                     if os.path.isfile(result.get(NAME_FILENAME, ''))}
+        # finally, print output
+        strOutput = os.linesep.join([str(item)
+                                     if isinstance(item, DOC.__DOC__) else item
+                                     for item in output])
+        if len(self.args.output) == 0:
+            print(strOutput)
+        else:
+            with open(self.args.output, "w") as f:
+                f.write(strOutput)
 
-            if len(results) > 0:
-                print("\subsubsection{Time and Memory complexity}")
+            print(" >> output written to '%s'" %(self.args.output))
 
-            for result in results.values():
-                print(documentation.docResultOutput(result))
+    ############################################## command: calibrate
+    def calibrate(self, *arguments):
+        '''Extract built-in documentation from units in package.'''
+        self.argParser.add_argument(
+            'classes',
+            nargs='*',
+            default=[],
+            help="If an output file is specified, select the classes to " +
+            "perform a calibration on. If as sole item the string `all` is " +
+            "given, all classes in fastmat will be selected."
+        )
+        self.argParser.add_argument(
+            '-i', '--input',
+            type=str,
+            default='',
+            help="Filename to read calibration data from. May be used to " +
+            "load existing calibration data for plotting."
+        )
+        self.argParser.add_argument(
+            '-o', '--output',
+            type=str,
+            default='',
+            help="Perform a calibration of all selected classes. Write the " +
+            "resulting calibration data to OUTPUT"
+        )
+        self.argParser.add_argument(
+            '-p', '--plot',
+            action='store_true',
+            help="Plot the calibration data for all selected classes. If no " +
+            "new calibration was performed a fresh set of overhead " +
+            "benchmarks will be generated and used for plotting against."
+        )
+        self.argParser.add_argument(
+            '-v', '--verbose',
+            action='store_true',
+            help="Be verbose about the calibration."
+        )
 
-            # print one empty line
-            print("")
+        # parse arguments
+        self.args = self.argParser.parse_args(arguments)
+
+        # determine a list of selected classes: interpret codewords
+        if len(self.args.classes) == 1 and self.args.classes[0] == 'all':
+            classes = fastmat.classes
+        else:
+            classNames = {item.__name__: item for item in fastmat.classes}
+            classes = [classNames[name]
+                       for name in self.args.classes
+                       if name in classNames]
+
+        # explore dependencies of class benchmarks in two stages:
+        # STAGE I: determine class inheritance relations (code dependencies)
+        dependencies = {
+            item: set([child for child in inspect.getmro(item)
+                       if (issubclass(child, fastmat.Matrix) and
+                           not (child == item))])
+            for item in fastmat.classes}
+
+        # STAGE II: add nested matrix classes in benchmark instances
+        #           (data dependencies)
+        def nodesOfTree(tree):
+            nodes = set()
+            if tree is not None:
+                for child in tree:
+                    nodes.add(child)
+                    nodes.update(nodesOfTree(child))
+
+            return nodes
+
+        instances = [
+            Benchmark(item).options[BENCH.OVERHEAD][BENCH.FUNC_GEN](2)
+            for item in fastmat.classes]
+
+        for inst in instances:
+            deps = dependencies.setdefault(inst.__class__, set())
+            deps.update(node.__class__ for node in nodesOfTree(inst))
+
+        # now compile a new selection list, which also includes dependent but
+        # currently not yet calibrated classes
+        # traverse the list in order of dependency count to put baseclasses
+        # before deeply-nested metalasses. sort alphabetically if count matches
+        selected = []
+        for item in sorted(classes,
+                           key=lambda x: (len(dependencies[x]), x.__name__)):
+            # the class in `item` was selected for calibration. Make
+            # sure all dependent classes are calibrated as well
+            def updateSelected(node):
+                # recurse over all subnodes of node
+                for dep in dependencies[node]:
+                    if dep not in selected:
+                        updateSelected(dep)
+
+                # finally, add the node that just got crawled it not
+                # already done before
+                if (node not in selected and
+                        node not in fastmat.core.calData):
+                    selected.append(node)
+
+            # add all the requested classes to the job list. Make sure
+            # the order is such that no class is added before all of its
+            # dependencies are fulfilled by the list contents so far
+            updateSelected(item)
+
+        self.args.classes = selected
+
+        # load calibration data from file if specified
+        if len(self.args.input) > 0:
+            fastmat.core.loadCalibration(self.args.input)
+            print("  > Loaded calibration data from %s." %(self.args.input))
+
+        # generate calibration data for the classes specified
+        benchmarks = {}
+        # first, figure out in which order to perform the calibrations
+        # also
+
+        # finally run the benchmarks
+        for item in self.args.classes:
+            print("  > Running calibration of class '%s'" %(item.__name__))
+            cal, bench = fastmat.core.calibrateClass(item,
+                                                     verbose=self.args.verbose)
+            benchmarks[item] = bench
+
+        # write calibration data to file if an output file is specified
+        if len(self.args.output) > 0:
+            fastmat.core.saveCalibration(self.args.output)
+            print("  > Written calibration data to %s." %(self.args.output))
+
+        # plot the current set of calibration data and perform benchmarks if
+        # we have no data for some of the classes
+        if self.args.plot:
+            missing = [item for item in fastmat.core.calData
+                       if item not in benchmarks]
+            if len(missing) > 0:
+                print("  > Generating performance measurements for class plots")
+                for item in missing:
+                    print("     - %s" %(item.__name__))
+                    benchmarks[item] = fastmat.core.calibrateClass(
+                        item, verbose=self.args.verbose, benchmarkOnly=True)
+
+            # plot using matplotlib and the TU Ilmenau CI colors
+            print("  > Plotting %d figures." %(len(fastmat.core.calData)))
+            from matplotlib import pyplot as plt
+            colors = ['#003366', '#FF6600', '#CC0000', '#FCE1E1']
+
+            def plot(arrN, arrTime, arrNested, arrEstimate,
+                     title, legend=False):
+                '''
+                Plot a time measurement and -model for each a Forward() and
+                Backward() transform
+                '''
+                plt.loglog(arrN, arrTime[:, 0],
+                           color=colors[0], linestyle='dotted')
+                plt.loglog(arrN, arrTime[:, 1],
+                           color=colors[1], linestyle='dotted')
+                plt.loglog(arrN, arrNested[:, 0],
+                           color=colors[0], linestyle='dashed')
+                plt.loglog(arrN, arrNested[:, 1],
+                           color=colors[1], linestyle='dashed')
+                plt.loglog(arrN, arrEstimate[:, 0],
+                           color=colors[0], linestyle='solid')
+                plt.loglog(arrN, arrEstimate[:, 1],
+                           color=colors[1], linestyle='solid')
+                if legend:
+                    plt.legend(['%s-%s' %(a, b)
+                                for a in ['time measure', 'nested matrices',
+                                          'estimated model']
+                                for b in ['Forward()', 'Backward()']])
+                plt.title(title)
+
+            bb = 1
+            numBlocks = int(np.ceil(np.sqrt(len(benchmarks))))
+            for item, bench in benchmarks.items():
+                # arrN holds the problem size of each benchmark
+                # arrTime holds the measured durations of forward and backward
+                # arrNested states the amount of time spent in nested classes
+                # for the forward (col 0) and backward (col 1) transform
+                arrN = bench.getResult('overhead', 'numN')
+
+                arrTime = bench.getResult('overhead',
+                                          'forwardMin',
+                                          'backwardMin')
+                arrNested = bench.getResult('overhead',
+                                            BENCH.RESULT_OVH_NESTED_F,
+                                            BENCH.RESULT_OVH_NESTED_B,
+                                            BENCH.RESULT_EFF_NESTED_F,
+                                            BENCH.RESULT_EFF_NESTED_B)
+                arrNested = arrNested[:, 0:2] + arrNested[:, 2:4]
+
+                # now load the calibration data and generate the estimate based
+                # on the calibration and the transforms' complexity estimates
+                cal = fastmat.core.getMatrixCalibration(item)
+                matCal = np.diag(np.array([cal.gainForward, cal.gainBackward]))
+                arrComplexity = bench.getResult('overhead',
+                                                BENCH.RESULT_COMPLEXITY_F,
+                                                BENCH.RESULT_COMPLEXITY_B)
+                arrEstimate = (
+                    np.array([[cal.offsetForward, cal.offsetBackward]]) +
+                    arrNested + arrComplexity.dot(matCal))
+
+                # final step: plotting into a new subplot each
+                plt.subplot(numBlocks, numBlocks, bb)
+                bb = bb + 1
+                plot(arrN, arrTime, arrNested, arrEstimate, item.__name__)
+
+            # plot an empty diagram with the same line parameters as the other
+            # plots, but this time with a legend -> generates a legend frame
+            plt.subplot(numBlocks, numBlocks, bb)
+            plot(np.empty((0, 2)), np.empty((0, 2)),
+                 np.empty((0, 2)), np.empty((0, 2)), 'Legend', legend=True)
+
+            plt.show()
+
+    ############################################## command: performance
+    def performance(self, *arguments):
+        '''Extract built-in documentation from units in package.'''
+        self.argParser.add_argument(
+            'classes',
+            nargs='*',
+            default=[],
+            help="Select the classes to show in performance plots. " +
+            "`all` is default."
+        )
+        self.argParser.add_argument(
+            '-c', '--calibration',
+            type=str,
+            default='',
+            help="Filename to read calibration data from. Loads calibration " +
+            "data for fastmat classes which is then used by the package."
+        )
+
+        # parse arguments
+        self.args = self.argParser.parse_args(arguments)
+
+        # determine a list of selected classes: interpret codewords
+        if len(self.args.classes) < 1:
+            classes = fastmat.classes
+        else:
+            classNames = {item.__name__: item for item in fastmat.classes}
+            classes = [classNames[name]
+                       for name in self.args.classes
+                       if name in classNames]
+
+        # load calibration data from file if specified
+        if len(self.args.calibration) > 0:
+            fastmat.core.loadCalibration(self.args.calibration)
+            print("  > Loaded calibration data from %s." %(
+                self.args.calibration))
+
+        # run the benchmarks and plot the result
+        from matplotlib import pyplot as plt
+        colors = ['#003366', '#FF6600', '#CC0000', '#FCE1E1']
+
+        def plot(arrN, arrTime, arrEstimate, title, legend=False):
+            '''
+            Plot a time measurement and -model for each a Forward() and
+            Backward() transform
+            '''
+            plotLegend = ['time measure']
+            plt.loglog(arrN, arrTime[:, 0],
+                       color=colors[0], linestyle='dotted')
+            plt.loglog(arrN, arrTime[:, 1],
+                       color=colors[1], linestyle='dotted')
+            if arrEstimate.shape[0] == arrN.shape[0]:
+                plt.loglog(arrN, arrEstimate[:, 0],
+                           color=colors[0], linestyle='solid')
+                plt.loglog(arrN, arrEstimate[:, 1],
+                           color=colors[1], linestyle='solid')
+                plotLegend.append('estimated model')
+
+            if legend:
+                plt.legend(['%s-%s' %(a, b)
+                            for a in plotLegend
+                            for b in ['Forward()', 'Backward()']])
+            plt.title(title)
+
+        print("  > Generating performance measurements for class plots")
+        bb = 1
+        numBlocks = int(np.ceil(np.sqrt(len(classes) + 1)))
+        for item in classes:
+            print("     - %s" %(item.__name__))
+            bench = fastmat.core.calibrateClass(item, benchmarkOnly=True)
+
+            # arrN holds the problem size of each benchmark
+            # arrTime holds the measured durations of forward and backward
+            # arrNested states the amount of time spent in nested classes
+            # for the forward (col 0) and backward (col 1) transform
+            arrN = bench.getResult('overhead', 'numN').squeeze()
+
+            arrTime = bench.getResult('overhead',
+                                      'forwardMin',
+                                      'backwardMin')
+
+            # fetch the runtime estimation from the benchmarks
+            arrEstimate = bench.getResult('overhead',
+                                          BENCH.RESULT_ESTIMATE_FWD,
+                                          BENCH.RESULT_ESTIMATE_BWD)
+
+            # final step: plotting into a new subplot each
+            plt.subplot(numBlocks, numBlocks, bb)
+            bb = bb + 1
+            plot(arrN, arrTime, arrEstimate, item.__name__)
+
+        # plot an empty diagram with the same line parameters as the other
+        # plots, but this time with a legend -> generates a legend frame
+        plt.subplot(numBlocks, numBlocks, bb)
+        plot(np.empty((0, 2)), np.empty((0, 2)), np.empty((0, 2)),
+             'Legend', legend=True)
+
+        # plot using matplotlib and the TU Ilmenau CI colors
+        print("  > Plotting %d figures." %(len(classes)))
+        plt.show()
 
 
 ################################################################################
@@ -730,7 +1032,7 @@ if __name__ == '__main__':
     # keep track of already seen items during the search
     seenItems=set([])
 
-    def crawlModule(module, level):
+    def crawlModule(module, level, targets):
         elements={}
 
         # determine elements of package
@@ -747,7 +1049,6 @@ if __name__ == '__main__':
             # determine module name and package descendency
             # Also check, that the following conditions are met:
             #  -> the module is a part of our package
-            #  -> the item is named after its container
             #  -> we haven't seen it yet
             #  -> the except AttributeError catches errors caused by numeric
             #     function names sometimes generated by cython
@@ -758,24 +1059,26 @@ if __name__ == '__main__':
             except AttributeError:
                 continue
 
-            if modulePath[0] != packageName or modulePath[-1] != itemName or \
-               (item in seenItems):
+            try:
+                if modulePath[0] != packageName or (item in seenItems):
+                    continue
+            except TypeError:
                 continue
 
             seenItems.add(item)
 
             # if the element is a submodule of fastmat, go deeper
             if inspect.ismodule(item):
-                result=crawlModule(item, level + 1)
+                result = crawlModule(item, level + 1, targets)
                 if len(result) > 0:
-                    elements[itemName]=result
-            elif inspect.isroutine(item) or inspect.isclass(item):
-                elements[itemName]=item
+                    elements[itemName] = result
+            elif (inspect.isclass(item) and issubclass(item, targets)):
+                elements[itemName] = item
 
         return elements
 
-    # Index elements in fastmat (classes, routines, modules)
-    packageIndex=crawlModule(fastmat, 1)
+    # Index elements in fastmat by location
+    packageIndexTree = crawlModule(fastmat, 1, classBaseContainers)
 
     ############################################## Collect package infos
     # Flatten Index for categorization
@@ -796,100 +1099,23 @@ if __name__ == '__main__':
             else:
                 output[prefix + key]=item
 
-    packageIndexFlat={}
-    appendDictFlattened(packageIndexFlat, '', packageIndex)
+    packageIndex={}
+    appendDictFlattened(packageIndex, '', packageIndexTree)
+
+    # now filter out the fastmat.Algorithm class as it is just a classifier
+    packageIndex={name: element
+                  for name, element in packageIndex.items()
+                  if element is not fastmat.Algorithm}
 
     ############################################## analyze structure
-    packageUnits={}
-    for loc, item in packageIndexFlat.items():
-        # assemble generic set of infos
-        absPath='.'.join([packageName, loc])
-        info={
-            'object': item,
-            'absModulePath': absPath,
-            'relModulePath': loc,
-            'name': item.__name__
-        }
-
-        # try to load container module and add some more
-        try:
-            module=importlib.import_module(absPath)
-            info['module']=module
-            info[NAME_FILENAME]=module.__file__
-
-            # try to load entry points for related helpers
-            def setInfoIfPresent(key):
-                obj=getattr(module, key, None)
-                if obj is not None:
-                    info[key]=obj
-
-            for key in [NAME_BENCHMARK, NAME_DOCU, NAME_TEST]:
-                setInfoIfPresent(key)
-
-        except ImportError:
-            continue
-
-        packageUnits[loc]=info
-
     # categorize into classes (class) and algorithms (routine)
-    packageClasses={key: item
-                    for key, item in packageUnits.items()
-                    if inspect.isclass(item['object'])}
+    packageClasses={loc: element
+                    for loc, element in packageIndex.items()
+                    if issubclass(element, fastmat.Matrix)}
 
-    packageAlgs={key: item
-                 for key, item in packageUnits.items()
-                 if inspect.isroutine(item['object'])}
-
-    ################################################## collect benchmarks
-    # compile list of all used benchmark types and list which units use them
-    # also, compile list of available benchmark targets
-    packageBenchmarks={}
-    packageBenchmarkTargets={}
-    for unitName, unit in packageUnits.items():
-        if isinstance(unit.get(NAME_BENCHMARK, None), dict):
-            benchmarks=unit[NAME_BENCHMARK]
-            for benchmarkName in benchmarks.keys():
-                if benchmarkName == NAME_COMMON:
-                    continue
-
-                packageBenchmarks.setdefault(benchmarkName, []).append(unitName)
-                target={}
-                target.update(benchmarks.get(NAME_COMMON, {}))
-                target.update(benchmarks[benchmarkName])
-                target.setdefault('template', benchmarkName)
-                target[NAME_UNIT]=unitName
-                target[NAME_BENCHMARK]=benchmarkName
-                name="%s.%s" % (unitName, benchmarkName)
-                target[NAME_FILENAME]=os.path.join(
-                    '.', '.'.join([name, EXT_BENCH_RESULT]))
-                packageBenchmarkTargets[name]=target
-
-    ################################################## collect tests
-    # compile list of all used test types and list which units use them also,
-    # compile list of available test targets
-    packageTests={}
-    packageTestTargets={}
-    for unitName, unit in packageUnits.items():
-        if isinstance(unit.get(NAME_TEST, None), dict):
-            tests=unit[NAME_TEST]
-            for testName in tests.keys():
-                if testName == NAME_COMMON:
-                    continue
-
-                packageTests.setdefault(testName, []).append(unitName)
-                test={}
-                test.update(tests.get(NAME_COMMON, {}))
-                test.update(tests[testName])
-                test[NAME_UNIT]=unitName
-                test[NAME_TEST]=testName
-                name="%s.%s" % (unitName, testName)
-                test[NAME_FILENAME]=os.path.join(
-                    '.', '.'.join([name, EXT_TEST_RESULT]))
-                packageTestTargets[name]=test
-
-    ################################################## collect documentation
-    packageDocumentation={key: item for key, item in packageUnits.items()
-                          if isinstance(item.get(NAME_DOCU, None), str)}
+    packageAlgs={loc: element
+                 for loc, element in packageIndex.items()
+                 if issubclass(element, fastmat.Algorithm)}
 
     ################################################## Parse and Run
     Bee(*(sys.argv[1:]), prevArgs=' '.join(sys.argv[:1]))

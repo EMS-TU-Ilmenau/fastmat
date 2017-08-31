@@ -31,15 +31,14 @@ import cython
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
+from .core.types cimport *
 
 ################################################################################
 ################################################## class Kron
 cdef class Kron(Matrix):
 
     ############################################## class variables
-    cdef public tuple _content                   # list of matrices in product
-    cdef public tuple _dims                      # list if term dimensions
+    cdef public tuple _dims                      # list of term dimensions
 
     ############################################## class methods
     cpdef np.ndarray _forward(self, np.ndarray)

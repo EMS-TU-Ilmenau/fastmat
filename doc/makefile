@@ -96,6 +96,7 @@ TEX=tex
 
 # name of the output files
 NAME_DOCU=fastmatDoc
+CAL_DATA=$(RESULTS)$(PSEP)calibration.json
 
 # name of the tex resource directories
 TEX_TRAFOS=$(OUTPUT)$(PSEP)trafos.tex
@@ -106,9 +107,7 @@ TEXRESOURCES:=$(TEX_TRAFOS) $(TEX_ALGS)\
 # links to generator scripts
 SCRIPT=..$(PSEP)util
 SCRIPT_BEE=$(SCRIPT)$(PSEP)bee.py
-SCRIPT_RESOURCES=$(foreach file,benchmark.py documentation.py printing.py\
-	statistics.py test.py, $(SCRIPT)$(PSEP)routines$(PSEP)$(file))\
-	$(SCRIPT_BEE) makefile
+SCRIPT_RESOURCES=$(SCRIPT_BEE) makefile
 
 # python version to use for doc generation (may be overwritten on command line)
 PYTHON=python
@@ -137,12 +136,6 @@ EXT_TEX_OUTPUT=pdf aux log toc bbl lof lot blg out nav snm
 NAME_TEX_OUTPUT_FILES=$(foreach ext,$(EXT_TEX_OUTPUT),$(1).$(ext))
 
 
-# NAME_RESULT_FROM_BENCHMARK
-#   Return the benchmark result filename for a given unit benchmark target
-#   EXAMPLE: $(call ~~~,'algs.ISTA.performance')
-#       ==> 'results/algs.ISTA.performance.csv'
-NAME_RESULT_FROM_BENCHMARK=$(RESULTS)$(PSEP)$(1).$(EXT_RESULT)
-
 ################################################## File-list generation
 
 # holds five lines containing the output of the util/bee commands used in this
@@ -152,33 +145,26 @@ LIST_BEEDUMP:=$(shell $(BEE) list makedump)
 BEE_LINE=$(subst :, ,$(word $(1),$(subst ;, ,$(LIST_BEEDUMP))))
 
 LIST_CLASSES:=$(call BEE_LINE, 1)
-LIST_CLASSES_SOURCE:=$(call BEE_LINE, 2)
-LIST_ALGS:=$(call BEE_LINE, 3)
-LIST_ALGS_SOURCE:=$(call BEE_LINE, 4)
-LIST_BENCHMARK_TARGETS:=$(call BEE_LINE, 5)
-LIST_BENCHMARK_RESULTS:=$(foreach target,$(LIST_BENCHMARK_TARGETS),$(call\
-	NAME_RESULT_FROM_BENCHMARK,$(target)))
+LIST_ALGS:=$(call BEE_LINE, 2)
 
-LIST_SOURCES:=$(LIST_CLASSES_SOURCE) $(LIST_ALGS_SOURCE)
 
 ################################################################################
 ###  BUILD TARGETS
 ################################################################################
 
-# target 'compile': Only compile documentation, do not do benchmarks
+# target 'compile': Compile documentation
 .PHONY: compile
-compile: | $(NAME_DOCU).pdf
+compile: | $(TEX_TRAFOS) $(TEX_ALGS) $(CAL_DATA) $(NAME_DOCU).pdf
 
 
-# target 'doc': Build documentation including all benchmarks
+# target 'doc': Build documentation including all benchmarks if needed
 .PHONY: doc
-# conditional: if no benchmarks exist yet, build them all in one run. Otherwise
-#              decide and run each target
-ifeq ($(wildcard $(RESULTS)$(PSEP)*.$(EXT_RESULT)),)
-doc: | allbenchmarks compile
-else
-doc: | benchmarks compile
-endif
+doc: | compile
+
+# target 'benchmarks': Perform all benchmarks
+.PHONY: benchmarks
+benchmarks: | $(CAL_DATA)
+	@$(BEE) benchmark -p $(RESULTS) -o . $(OPTIONS)
 
 
 # target 'clean':
@@ -200,7 +186,7 @@ cleanall: | clean
 
 # target 'rebuild':
 .PHONY: rebuild
-rebuild: | cleanall allbenchmarks all
+rebuild: | cleanall all
 
 
 ################################################################################
@@ -226,76 +212,55 @@ rebuild: | cleanall allbenchmarks all
 .debug:
 	@$(call ECHO, ***  Extended debug output)
 	@$(call ECHO, *** -----------------------)
-	@$(call ECHO, *** units containing classes (and their source files):)
+	@$(call ECHO, *** units containing classes:)
 	@$(call ECHO,$(LIST_CLASSES))
-	@$(call ECHO,$(LIST_CLASSES_SOURCE))
-	@$(call ECHO, *** units containing algorithms (and their source files):)
+	@$(call ECHO, *** units containing algorithms:)
 	@$(call ECHO,$(LIST_ALGS))
-	@$(call ECHO,$(LIST_ALGS_SOURCE))
-	@$(call ECHO, *** available benchmark targets (and their result files):)
-	@$(call ECHO,$(LIST_BENCHMARK_TARGETS))
-	@$(call ECHO,$(LIST_BENCHMARK_RESULTS))
 	@$(call ECHO,.)
 
 ################################################################################
 ###  RESOURCE TARGETS
 ################################################################################
 
+################################################## Calibration data
+$(CAL_DATA): $(SCRIPT_RESOURCES)
+	@$(call ECHO, ***  Generating calibration data )
+	@$(BEE) calibrate all -o $(CAL_DATA)
+
+
 ################################################## Compilation of class docu
-$(TEX_TRAFOS): $(SCRIPT_RESOURCES) $(LIST_CLASSES_SOURCE)
+$(TEX_TRAFOS): $(SCRIPT_RESOURCES) $(CAL_DATA)
 	@$(call ECHO, ***  Extracting documentation from source code )
 	@$(call ECHO, ***   > modules: $(LIST_CLASSES))
 	@$(call ECHO, ***   > output: $@)
 	@$(MKDIR) $(OUTPUT)
 	@-$(RM) $@
-	@$(BEE) documentation $(LIST_CLASSES) -p $(RESULTS) > $@
+	@$(BEE) documentation $(LIST_CLASSES) $(OPTIONS)\
+		-p $(RESULTS) -o $@ -c $(CAL_DATA)
 
 
 ################################################## Compilation of algorithm docu
-$(TEX_ALGS): $(SCRIPT_RESOURCES) $(LIST_ALGS_SOURCE)
+$(TEX_ALGS): $(SCRIPT_RESOURCES) $(CAL_DATA)
 	@$(call ECHO, ***  Extracting documentation from source code )
 	@$(call ECHO, ***   > modules: $(LIST_ALGS))
 	@$(call ECHO, ***   > output: $@)
 	@$(MKDIR) $(OUTPUT)
 	@-$(RM) $@
-	@$(BEE) documentation $(LIST_ALGS) -p $(RESULTS) > $@
-
-################################################## Evaluation of performance
-
-# specify an individual target for each benchmark
-define BENCHMARK_rule
-$(2): $$(SCRIPT_RESOURCES)
-	@$(call ECHO, ***  Running benchmark for target '$(1)' [$(2)])
-	@$(BEE) benchmark -s $(1) -p $$(RESULTS) $$(OPTIONS)
-endef
-$(foreach target,$(LIST_BENCHMARK_TARGETS),$(eval $(call\
-	BENCHMARK_rule,$(target),$(call NAME_RESULT_FROM_BENCHMARK,$(target)))))
-
-
-# target 'benchmarks': Run benchmarks one-by-one. Regeneration only when needed.
-.PHONY: benchmarks
-benchmarks: $(LIST_BENCHMARK_RESULTS)
-
-
-# target 'allbenchmarks': Run benchmarks in one run: faster, but reruns existing
-.PHONY: allbenchmarks
-allbenchmarks: $(SCRIPT_RESOURCES) $(LIST_SOURCES)
-	@$(call ECHO, ***  Running benchmarks for all targets)
-	@$(BEE) benchmark -p $(RESULTS) $(OPTIONS)
+	@$(BEE) documentation $(LIST_ALGS) $(OPTIONS)\
+		-p $(RESULTS) -o $@ -c $(CAL_DATA)
 
 ################################################## LaTeX Compilation targets
-
 # these suffixes will be used in suffix recipes
 #.SUFFIXES: .bib .toc .aux .bbl
 
 
 # target '%.toc': Build .toc files
-%.toc: %.tex
+%.toc: $(TEXRESOURCES) $(SCRIPT_RESOURCES) %.tex
 	pdflatex -shell-escape -draftmode -interaction=nonstopmode $*
 
 
 # target '%.aux': Build .aux files
-%.aux: %.tex %.toc
+%.aux: $(TEXRESOURCES) $(SCRIPT_RESOURCES) %.tex %.toc
 	pdflatex -shell-escape -draftmode -interaction=nonstopmode $*
 	$(RM) $*.pdf
 
@@ -311,7 +276,7 @@ endif
 ################################################## Additional dependencies
 
 # target '$(NAME_DOCU).pdf': Build docu pdf file with additional targets
-$(NAME_DOCU).pdf: $(TEXRESOURCES) $(SCRIPT_RESOURCES) $(LIST_SOURCES) \
+$(NAME_DOCU).pdf: $(TEXRESOURCES) $(SCRIPT_RESOURCES) $(TEX_TRAFOS) $(TEX_ALGS)\
 	$(NAME_DOCU).tex $(NAME_DOCU).aux
 	@$(call ECHO, ***  Prepared all depencies for $@, compiling doc ...)
-	pdflatex --shell-escape -interaction=nonstopmode $(NAME_DOCU)
+	pdflatex -shell-escape -interaction=nonstopmode $(NAME_DOCU)

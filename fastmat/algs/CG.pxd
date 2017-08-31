@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/Circulant.pxd
+  fastmat/algs/CG.pxd
  -------------------------------------------------- part of the fastmat package
 
-  Header file for Circulant class (structural description).
+  Implementation of conjugated gradient method solver for linear equation
+  systems in fastmat.
 
-
-  Author      : wcw
-  Introduced  : 2016-09-27
+  Author      : sempersn
+  Introduced  : 2016-04-08
  ------------------------------------------------------------------------------
 
    Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -27,21 +26,8 @@
 
  ------------------------------------------------------------------------------
 '''
-import cython
+
 cimport numpy as np
+from ..Matrix cimport Matrix
 
-from .Partial cimport Partial
-from .core.types cimport *
-
-################################################################################
-################################################## class Circulant
-cdef class Circulant(Partial):
-
-    ############################################## class variables
-    cdef public np.ndarray _vecC                 # matrix diagonal entry vector
-
-    ############################################## class internals
-    cdef void _roll(self, np.ndarray, intsize)
-
-    ############################################## class methods
-    cpdef np.ndarray _reference(self)
+cpdef np.ndarray CG(Matrix, np.ndarray, float eps=?)

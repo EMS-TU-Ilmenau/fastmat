@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/helpers/types.pxd
+  fastmat/core/types.pxd
  -------------------------------------------------- part of the fastmat package
 
   fastmat type handling support.

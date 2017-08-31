@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
   demo/matrixSAFT.py
  -------------------------------------------------- part of the fastmat demos
@@ -57,9 +57,9 @@ cdef void _SaftMaskCore(
     cdef int numElements, numMasks, numSize, numVecs
     cdef np.uint16_t[:] maskRow, maskCol
     cdef bint applyAbove
-    
+
     cdef DATATYPE value
-    
+
     numSize = mvIn.shape[0]
     numVecs = mvIn.shape[1]
     numMasks = len(masks)
@@ -68,31 +68,31 @@ cdef void _SaftMaskCore(
         maskRow = masks[mm][:, 0 if backward else 1]
         maskCol = masks[mm][:, 1 if backward else 0]
         numElements = maskRow.shape[0]
-        
+
         for bb in range(numBlocks):
-            
+
             # compute elements on and below the main block diagonal
             # determine indices into input and output memoryviews
             oo = bb * sizeItem
             iiB = (bb - mm) * sizeItem
             iiA = (bb + mm) * sizeItem
             applyAbove = iiA < numSize and (iiA != iiB)
-            
+
             for ee in range(numElements):
                 ooe = oo + maskRow[ee]
 
                 dC = maskCol[ee]
                 iiAe = iiA + dC
                 iiBe = iiB + dC
-                
+
                 for vv in range(numVecs):
                     value = mvIn[iiBe, vv] if iiBe >= 0 else 0
                     if applyAbove:
                         value += mvIn[iiAe, vv]
                     if value != 0:
                         mvOut[ooe, vv] = mvOut[ooe, vv] + value
-                        
-                
+
+
 
 
 ################################################## type-dispatch
@@ -104,7 +104,7 @@ cpdef np.ndarray SaftMaskCore(
     bint backward
 ):
     cdef np.ndarray arrOut = np.zeros((<object> arrIn).shape, dtype=arrIn.dtype)
-    
+
     if arrIn.dtype == np.int8:
         _SaftMaskCore[np.int8_t](
             arrIn, arrOut, sizeItem, numBlocks, masks, backward)
@@ -132,5 +132,5 @@ cpdef np.ndarray SaftMaskCore(
     else:
         raise TypeError("Data type '%s' not supported in SaftMask.forward()" %(
             str(arrIn.dtype)))
-    
+
     return arrOut

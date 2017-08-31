@@ -37,11 +37,10 @@ from .Matrix cimport Matrix
 cdef class Sparse(Matrix):
 
     ############################################## class variables
-    cdef public object _content                  # Some scipy sparse matrix
-    cdef public object _contentH                 # hermitian of _content
+    cdef public object _spArray                  # Some scipy sparse matrix
+    cdef public object _spArrayH                 # hermitian of _spArray
 
     ############################################## class methods
     cpdef np.ndarray _forward(self, np.ndarray)
     cpdef np.ndarray _backward(self, np.ndarray)
-    cpdef np.ndarray toarray(self)
     cpdef np.ndarray _reference(self)

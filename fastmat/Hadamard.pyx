@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
   fastmat/Hadamard.pyx
  -------------------------------------------------- part of the fastmat package
@@ -29,13 +29,14 @@
  ------------------------------------------------------------------------------
 '''
 from libc.stdlib cimport malloc, free
+from libc.string cimport memcpy
 
 import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
 from .Eye cimport Eye
-from .helpers.types cimport *
+from .core.types cimport *
 
 # have a very lazy import to avoid initialization of scipy.linalg during import
 # of main module
@@ -57,7 +58,7 @@ cdef class Hadamard(Matrix):
     def __init__(self, order):
         '''Initialize Matrix instance'''
         if order < 1:
-            raise ValueError("Order must be an integer larger than 0.")
+            raise ValueError("Hadamrd: Order must be larger than 0.")
 
         self._order = order
 
@@ -66,10 +67,11 @@ cdef class Hadamard(Matrix):
         self._initProperties(
             numN, numN, np.int8,
             cythonCall=True,
-            forceInputAlignment=True
+            forceInputAlignment=True,
+            fortranStyle=True
         )
 
-    cpdef np.ndarray toarray(self):
+    cpdef np.ndarray _getArray(self):
         '''
         Return an explicit representation of the matrix as numpy-array.
         '''
@@ -89,6 +91,11 @@ cdef class Hadamard(Matrix):
 
     cpdef Matrix _getGram(self):
         return Eye(self.numN) * np.float32(self.numN)
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        cdef float complexity = self.numN * self.order
+        return (complexity, complexity + 1)
 
     ############################################## class core methods
     cdef void _coreLoop(
@@ -185,7 +192,7 @@ cdef class Hadamard(Matrix):
         elif typeX == TYPE_INT8:
             self._core[np.int8_t](arrX, arrRes, typeX)
         else:
-            raise NotImplementedError("Type %d not supported." %(typeX))
+            raise NotImplementedError("Hadamard: %d not supported." %(typeX))
 
     cpdef _backwardC(
         self,
@@ -212,96 +219,93 @@ cdef class Hadamard(Matrix):
 
         return spHadamard(self.numN, dtype=self.dtype)
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                # define matrix sizes and parameters
+                'order'         : TEST.Permutation([4, 6]),
+                TEST.NUM_N      : (lambda param : 2 ** param['order']),
+                TEST.NUM_M      : TEST.NUM_N,
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
+                # define constructor for test instances and naming of test
+                TEST.OBJECT     : Hadamard,
+                TEST.INITARGS   : ['order'],
+                TEST.NAMINGARGS : dynFormat("%d", 'order')
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################## Testing
-test = {
-    NAME_COMMON: {
-        # define matrix sizes and parameters
-        'order'         : Permutation([4, 6]),
-        TEST_NUM_N      : (lambda param : 2 ** param['order']),
-        TEST_NUM_M      : TEST_NUM_N,
+    def _getBenchmark(self):
+        from .inspect import BENCH
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: Hadamard(c)),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
+                BENCH.FUNC_STEP : (lambda c: c + 1),
+            },
+            BENCH.FORWARD: {},
+            BENCH.SOLVE: {},
+            BENCH.OVERHEAD: {},
+            BENCH.DTYPES: {
+                BENCH.FUNC_GEN  : (lambda c, datatype: Hadamard(c))
+            }
+        }
 
-        # define constructor for test instances and naming of test
-        TEST_OBJECT     : Hadamard,
-        TEST_INITARGS   : ['order'],
-        TEST_NAMINGARGS : dynFormatString("%d", 'order')
-    },
-    TEST_CLASS: {
-    },
-    TEST_TRANSFORMS: {
-    }
-}
-
-
-################################################## Benchmarks
-benchmark = {
-    NAME_COMMON: {
-        BENCH_FUNC_GEN  : (lambda c : Hadamard(c)),
-        BENCH_FUNC_SIZE : (lambda c : 2 ** c),
-        BENCH_FUNC_STEP : (lambda c: c + 1),
-        NAME_DOCU       : r'$\bm \Hs_k$ and $n = 2^k$'
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_SOLVE: {
-    },
-    BENCH_OVERHEAD: {
-    },
-    BENCH_DTYPES: {
-        BENCH_FUNC_GEN  : (lambda c, datatype : Hadamard(c))
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Hadamard Matrix (\texttt{fastmat.Hadamard})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Hadamard Matrix (\texttt{fastmat.Hadamard})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 A Hadamard Matrix is recursively defined as
     \[\bm H_n = \bm H_1 \otimes \bm H_{n-1},\]
 where
     \[\bm H_1 = \left(\begin{array}{cc} 1 & 1 \\ 1 & -1 \end{array}\right)\]
 and $\bm H_0 = (1)$. Obviously the dimension of $\bm H_n$ is $2^n$. The
-transform is realized with the Fast Hadamard Transform (FHT).
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-
-# define the parameter
-n = 4
-
-# construct the matrix
-H = fm.Hadamard(n)
-\end{lstlisting}
-
+transform is realized with the Fast Hadamard Transform (FHT).""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            '',
+                            '# define the parameter',
+                            'n = 4',
+                            '',
+                            '# construct the matrix',
+                            'H = fm.Hadamard(n)',
+                            caption=r"""
 This yields a Hadamard matrix $\bm{\mathcal{H}}_4$ of order $4$,
- i.e. with $16$ rows and columns.
-\end{snippet}
-
+ i.e. with $16$ rows and columns."""),
+                r"""
 The algorithm we used is described in \cite{hada_hershey1997hadamard} and was
-implemented in Cython \cite{hada_smith2011cython}.
-
-\begin{thebibliography}{9}
-\bibitem{hada_hershey1997hadamard}
-Rao K. Yarlagadda, John E. Hershey,
-\emph{Hadamard Matrix Analysis and Synthesis, With Applications to
-Communications and Signal/Image Processing}, The Springer International Series
-in Engineering and Computer Science,
-Volume 383,
-1997.
-
-\bibitem{hada_smith2011cython}
-Stefan Behnel, Robert Bradshaw, Craig Citro, Lisandro Dalcin, Dag Sverre
-Seljebotn and Kurt Smith,
-\emph{Cython: The Best of Both Worlds},
-Computing in Science and Engineering,
-Volume 13,
-2011.
-\end{thebibliography}
-"""
+implemented in Cython \cite{hada_smith2011cython}."""
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix
+$\bm \Hs_k$ and $n = 2^k$ with $n, k \in \N$""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
+                DOC.PLOTOVERHEAD(),
+                DOC.PLOTTYPESPEED(),
+                DOC.PLOTTYPEMEMORY()
+            ),
+            DOC.BIBLIO(
+                hada_hershey1997hadamard=DOC.BIBITEM(
+                    r'Rao K. Yarlagadda, John E. Hershey',
+                    r"""
+Hadamard Matrix Analysis and Synthesis, With Applications to Communications
+and Signal/Image Processing""",
+                    r"""
+The Springer International Series in Engineering and Computer Science,
+Volume 383, 1997"""),
+                hada_smith2011cython=DOC.BIBITEM(
+                    r"""
+Stefan Behnel, Robert Bradshaw, Craig Citro, Lisandro Dalcin,
+Dag Sverre Seljebotn and Kurt Smith""",
+                    r'Cython: The Best of Both Worlds',
+                    r'Computing in Science and Engineering, Volume 13,2011.')
+            )
+        )

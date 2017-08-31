@@ -1,3 +1,4 @@
 fastmat
 fastmat/algs
-fastmat/helpers
+fastmat/core
+fastmat/inspect

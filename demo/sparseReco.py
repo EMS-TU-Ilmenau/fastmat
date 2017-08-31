@@ -144,7 +144,7 @@ numDictionaryTime = time.time() - s
 # create an explicit version of the dictionary
 # that disregards the circulant structure
 print(" * Create the unstructured matrix for speed comparison")
-matCHat = fastmat.Matrix(matC.toarray())
+matCHat = fastmat.Matrix(matC.array)
 
 
 # generate a random sequence of spikes where position and amplitudes are random

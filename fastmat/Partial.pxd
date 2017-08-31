@@ -37,7 +37,6 @@ from .Matrix cimport Matrix
 cdef class Partial(Matrix):
 
     ############################################## class variables
-    cdef public Matrix _content                  # Base matrix
     cdef public np.ndarray _indicesN             # Support indices in N-dim
     cdef public np.ndarray _indicesM             # Support indices in M-dim
     cdef bint _pruneN                            # selective support for N-dim

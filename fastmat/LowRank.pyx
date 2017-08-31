@@ -36,15 +36,11 @@ from .Matrix cimport Matrix
 
 from .Diag cimport Diag
 
-from .helpers.types cimport *
+from .core.types cimport *
 
 ################################################################################
 ################################################## class LowRank
 cdef class LowRank(Product):
-    '''
-    class fastmat.LowRank
-    '''
-    # for class local variables, see .pxd header
 
     ############################################## class properties
     # vecS - Property (read-only)
@@ -75,10 +71,10 @@ cdef class LowRank(Product):
                 "Singular value vector must have exactly one active dimension.")
 
         if arrU.ndim != 2 or arrV.ndim != 2:
-            raise ValueError("Defining arrays must be 2D!")
+            raise ValueError("Defining arrays must be 2D.")
 
         if vecS.shape[0] != arrU.shape[1]:
-            raise ValueError("Size of U must fit to rank!")
+            raise ValueError("Size of U must fit to rank.")
 
         # determine matrix data data type from parameters, then adjust them to
         # match (parameters)
@@ -93,6 +89,11 @@ cdef class LowRank(Product):
 
         super(LowRank, self).__init__(
             Matrix(self._arrU), Diag(vecS), Matrix(self._arrV.conj().T))
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        cdef float complexity = self.numN + self.numM + self._vecS.shape[0]
+        return (complexity, complexity)
 
     ########################################################################
     ## forward and backward are taken from sum, product and outer
@@ -112,89 +113,74 @@ cdef class LowRank(Product):
 
         return arrU.dot(np.diag(vecS).dot(arrV.conj().T))
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                'order'         : 4,
+                TEST.TOL_POWER  : (lambda param: np.sqrt(param['order'])),
+                TEST.NUM_N      : 7,
+                TEST.NUM_M      : TEST.Permutation([11, TEST.NUM_N]),
+                'mTypeS'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeU'        : TEST.Permutation(TEST.FEWTYPES),
+                'mTypeV'        : TEST.Permutation(TEST.ALLTYPES),
+                'vecS'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeS',
+                    TEST.SHAPE  : ('order',),
+                }),
+                'arrU'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeU',
+                    TEST.SHAPE  : (TEST.NUM_N, 'order'),
+                }),
+                'arrV'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeV',
+                    TEST.SHAPE  : (TEST.NUM_M, 'order'),
+                }),
+                TEST.INITARGS   : (lambda param : [param['vecS'](),
+                                                   param['arrU'](),
+                                                   param['arrV']()]),
+                TEST.OBJECT     : LowRank,
+                TEST.NAMINGARGS : dynFormat("%s,%s,%s", 'arrU', 'vecS', 'arrV'),
+                TEST.TOL_POWER  : 3.
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
+    def _getBenchmark(self):
+        from .inspect import BENCH, arrTestDist
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_SIZE : (lambda c: 10 * c + 1),
+                BENCH.FUNC_GEN  : (lambda c: LowRank(
+                    arrTestDist((c + 1, ), dtype=np.float, center=2),
+                    arrTestDist((10 * c + 1, c + 1), dtype=np.float, center=2),
+                    arrTestDist((10 * c + 1, c + 1), dtype=np.float, center=2)))
+            },
+            BENCH.FORWARD: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
+                BENCH.FUNC_GEN  : (lambda c: LowRank(
+                    arrTestDist((c, ), dtype=np.float),
+                    arrTestDist((2 ** c, c), dtype=np.float),
+                    arrTestDist((2 ** c, c), dtype=np.float)))
+            },
+            BENCH.DTYPES: {
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
+                BENCH.FUNC_GEN  : (lambda c, datatype: LowRank(
+                    arrTestDist((c, ), dtype=np.float),
+                    arrTestDist((2 ** c, c), dtype=np.float),
+                    arrTestDist((2 ** c, c), dtype=np.float)))
+            }
+        }
 
-################################################## Testing
-test = {
-    NAME_COMMON: {
-        'order': 4,
-        TEST_TOL_POWER: (lambda param: np.sqrt(param['order'])),
-        TEST_NUM_N: 7,
-        TEST_NUM_M: Permutation([11, TEST_NUM_N]),
-        'mTypeS': Permutation(typesAll),
-        'mTypeU': Permutation(typesSmallIFC),
-        'mTypeV': Permutation(typesAll),
-        TEST_PARAMALIGN : ALIGN_DONTCARE,
-        'vecS': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeS',
-            NAME_SHAPE  : ('order',),
-            NAME_ALIGN  : TEST_PARAMALIGN
-            #            NAME_CENTER : 2,
-        }),
-        'arrU': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeU',
-            NAME_SHAPE  : (TEST_NUM_N, 'order'),
-            NAME_ALIGN  : TEST_PARAMALIGN
-            #            NAME_CENTER : 2,
-        }),
-        'arrV': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeV',
-            NAME_SHAPE  : (TEST_NUM_M, 'order'),
-            NAME_ALIGN  : TEST_PARAMALIGN
-            #            NAME_CENTER : 2,
-        }),
-        TEST_INITARGS: (lambda param : [
-            param['vecS'](),
-            param['arrU'](),
-            param['arrV']()
-        ]),
-        TEST_OBJECT: LowRank,
-        TEST_NAMINGARGS: dynFormatString("%s,%s,%s", 'arrU', 'vecS', 'arrV'),
-        TEST_TOL_POWER          : 3.
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-    }
-}
-
-################################################## Benchmarks
-benchmark = {
-    NAME_COMMON: {
-        NAME_DOCU : r'''$\bm D \in \R^{n \times n}$ with diagonal
-            entries drawn from a uniform distribution on $[2,3]$''',
-        BENCH_FUNC_SIZE : (lambda c : 10 * c + 1),
-        BENCH_FUNC_GEN : (lambda c : LowRank(
-            np.random.uniform(2, 3, c + 1),
-            np.random.randn(10 * c + 1, c + 1),
-            np.random.randn(10 * c + 1, c + 1)
-        ))
-    }, BENCH_FORWARD: {
-    }, BENCH_SOLVE: {
-    }, BENCH_OVERHEAD: {
-        BENCH_FUNC_SIZE : (lambda c : 2 ** c),
-        BENCH_FUNC_GEN : (lambda c : LowRank(
-            np.array(np.random.uniform(2, 3, c)),
-            np.array(np.random.randn(2 ** c, c)),
-            np.array(np.random.randn(2 ** c, c))
-        )),
-    }, BENCH_DTYPES: {
-        BENCH_FUNC_SIZE : (lambda c : 2 ** c),
-        BENCH_FUNC_GEN : (lambda c, datatype : LowRank(
-            np.array(np.random.uniform(2, 3, c), dtype=datatype),
-            np.array(np.random.randn(2 ** c, c), dtype=datatype),
-            np.array(np.random.randn(2 ** c, c), dtype=datatype)
-        )),
-    }
-}
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Low Rank Matrix (\texttt{fastmat.LowRank})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Low Rank Matrix (\texttt{fastmat.LowRank})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 Generally one can consider the "complexity" of a matrix as the number of its
 rows $n$ and columns $m$. The rank of a matrix $\bm A \in \C^{n \times m}$
 always obeys the bound
@@ -207,17 +193,30 @@ singular value decomposition (SVD) of $\bm A = \bm U \bm \Sigma \bm V^\herm$,
 then one can express $\bm A$ as a sum of rank-$1$ matrices as
     \[\bm A = \Sum{i = 1}{r}{\sigma_i \bm u_{i} \bm v^\herm_{i}}.\]
 If $r = \Rk $ is much smaller than the minimum of the dimensions, then one can
-save a lot of computational effort in applying $\bm A$ to a vector.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-import numpy as np
-
-
-\end{lstlisting}
-
-
-\end{snippet}
-"""
+save a lot of computational effort in applying $\bm A$ to a vector.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            'import numpy as np',
+                            '',
+                            '# define all parameters',
+                            'S = np.random.randn(2)',
+                            'U = np.random.randn(20,2)',
+                            'V = np.random.randn(20,2)',
+                            '',
+                            '# define the matrix',
+                            'L = fm.LowRank(S, U, V)',
+                            center=r"""
+We define a matrix $\bm L = \bm U \bm S \bm V^\herm \in \R^{20 \times 20}$
+with rank $2$""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix $\bm A \in \R^{n \times n}$ with
+rank approximately $n/10$.""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTOVERHEAD(),
+                DOC.PLOTTYPESPEED(),
+                DOC.PLOTTYPEMEMORY()
+            )
+        )

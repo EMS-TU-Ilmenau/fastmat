@@ -25,9 +25,8 @@
  ------------------------------------------------------------------------------
 '''
 
-# import fundamental types and classes first
-from .Matrix import Matrix
-from .Transpose import Transpose
+# import fundamental types and classes first, also behavioural flags
+from .Matrix import Matrix, Hermitian, Conjugate, Transpose, flags
 from .Product import Product
 
 # import all fastmat classes
@@ -43,14 +42,32 @@ from .LowRank import LowRank
 from .Outer import Outer
 from .Parametric import Parametric
 from .Partial import Partial
+from .Permutation import Permutation
 from .Polynomial import Polynomial
 from .Sparse import Sparse
 from .Sum import Sum
 from .Toeplitz import Toeplitz
 from .Zero import Zero
 
+# new stuff
+from .LFSRCirculant import LFSRCirculant
+
 # import algorithms subpackage
+from .base import Algorithm
 from . import algs
+
 
 # define package version (gets overwritten by setup script)
 from .version import __version__
+
+# compile a list of all matrix classes offered by the package
+
+
+def isClass(item):
+    try:
+        return issubclass(item, Matrix)
+    except TypeError:
+        return False
+
+
+classes = list(item for item in locals().values() if isClass(item))

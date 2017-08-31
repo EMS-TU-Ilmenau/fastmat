@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
   fastmat/Circulant.py
  -------------------------------------------------- part of the fastmat package
@@ -35,8 +35,9 @@
 import numpy as np
 cimport numpy as np
 
-from .helpers.types cimport *
-from .helpers.cmath cimport _arrEmpty
+from .core.types cimport *
+from .core.cmath cimport *
+from .Matrix cimport Matrix
 from .Partial cimport Partial
 from .Product cimport Product
 from .Fourier cimport Fourier
@@ -76,7 +77,7 @@ cdef class Circulant(Partial):
         column vector length is one element short of twice the generating vector
         length. Thus, padding is only efficient for really bad behaved fourier
         transforms.
-          [ d c C C C 0 0 0 0 0 0 0 C C C c]
+          [ d c C C C 0 0 0 0 0 0 0 c C C C]
 
         Valid options
         -------------
@@ -85,55 +86,58 @@ cdef class Circulant(Partial):
             False as padding introduces significant overhead to non-padded for
             most but some sizes.
 
-        All options specified will also be passed on to the geneation of the
+        All options specified will also be passed on to the generation of the
         underlying Product instance initialization.
         '''
 
         # save generating vector. Matrix sizes will be set by Product
         # during its intitalization (invoked by 'super' below)
         self._vecC = np.atleast_1d(np.squeeze(np.copy(vecC)))
-        if self._vecC.ndim != 1:
-            raise ValueError("Column-definition vector must be 1D.")
 
-        # evaluate options passed to class
-        pad = options.get('pad', False)
+        assert self._vecC.ndim == 1, "Column-definition vector must be 1D."
+        assert len(self._vecC) >= 1, "Vector must have at least one entry"
 
-        # perform padding (if enabled) and generate vector
-        # N will be the next larger power of two for deciding whether
-        # padding is actually necessary
+        cdef bint optimize = options.get('optimize', True)
+        cdef int maxStage = options.get('maxStage', 4)
+
         cdef intsize size = len(vecC)
-        cdef intsize needed = 2 * size - 1
-        cdef intsize N = 2 ** np.ceil(np.log2(size))
-        if size < 1:
-            raise ValueError("Vector must have at least one entry")
+        cdef intsize paddedSize, minimalSize = size * 2 - 1
+        cdef np.ndarray arrIndices
 
-        if pad and (N > size):
-            # N must have at least 2 * N - 1 elements
-            N = 2 ** np.ceil(np.log2(needed))
-            vec = np.concatenate([
-                self._vecC,
-                np.zeros((N - needed,), dtype=self._vecC.dtype),
-                self._vecC[1:]
-            ])
-        else:
-            N = size
-            vec = self._vecC
+        # determine if zero-padding of the convolution to achieve a better FFT
+        # size is beneficial or not
+        if optimize:
+            paddedSize = _findOptimalFFTSize(minimalSize, maxStage)
 
-        # Describe circulant matrix as product of data and vector in
-        # fourier domain. Both fourier matrices cause scaling of the
-        # data vector by N, which will be compensated in Diag().
+            assert paddedSize >= size * 2 - 1
+
+            if _getFFTComplexity(size) > _getFFTComplexity(paddedSize):
+                # zero-padding pays off, so do it!
+                vecC = np.concatenate([vecC,
+                                       np.zeros((paddedSize - minimalSize,),
+                                                dtype=vecC.dtype),
+                                       vecC[1:]])
+                size = paddedSize
+
+        # Describe circulant matrix as product of data and vector in fourier
+        # domain. Both fourier matrices cause scaling of the data vector by
+        # size, which will be compensated in Diag().
 
         # Create inner product
-        cdef Fourier FN = Fourier(N)
-        cdef Product P = Product(FN.H, Diag(np.fft.fft(vec) / N), FN, **options)
+        cdef Fourier FN = Fourier(size)
+        cdef Product P = Product(FN.H, Diag(np.fft.fft(vecC) / size),
+                                 FN, **options)
 
-        # initialize Partial of Product
-        super(Circulant, self).__init__(P, N=np.arange(size), M=np.arange(size))
+        # initialize Partial of Product. Only use Partial when padding size
+        if size == len(self._vecC):
+            super(Circulant, self).__init__(P)
+        else:
+            # generate index array once to save memory by one shared reference
+            arrIndices = np.arange(len(self._vecC))
+            super(Circulant, self).__init__(P, N=arrIndices, M=arrIndices)
 
-    cpdef np.ndarray toarray(self):
-        '''
-        Return an explicit representation of the matrix as numpy-array.
-        '''
+    cpdef np.ndarray _getArray(self):
+        '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
 
     ############################################## class property override
@@ -141,18 +145,26 @@ cdef class Circulant(Partial):
         return self._vecC[(idxN - idxM) % self.numN]
 
     cpdef np.ndarray _getCol(self, intsize idx):
-        '''Return selected columns of self.toarray()'''
+        '''Return selected columns of self.array'''
         cdef np.ndarray arrRes = _arrEmpty(
             1, self.numN, 0, self._info.dtype[0].typeNum)
         self._roll(arrRes, idx)
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        '''Return selected rows of self.toarray()'''
+        '''Return selected rows of self.array'''
         cdef np.ndarray arrRes = _arrEmpty(
             1, self.numN, 0, self._info.dtype[0].typeNum)
         self._roll(arrRes[::-1], self.numN - idx - 1)
         return arrRes
+
+    cpdef Matrix _getGram(self):
+        cdef Fourier F = self.content[0].content[2]
+        return Circulant(np.fft.ifft(abs(np.fft.fft(self.vecC)) ** 2))
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        return (0., 0.)
 
     ############################################## internal roll core
     cdef void _roll(self, np.ndarray vecOut, intsize shift):
@@ -179,101 +191,88 @@ cdef class Circulant(Partial):
 
         return arrRes
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                # 35 is just any number that causes no padding
+                # 41 is the first size for which bluestein is faster
+                TEST.NUM_N      : TEST.Permutation([31, 41]),
+                TEST.NUM_M      : TEST.NUM_N,
+                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'optimize'      : True,
+                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                'vecC'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeC',
+                    TEST.SHAPE  : (TEST.NUM_N, ),
+                    TEST.ALIGN  : TEST.PARAMALIGN
+                }),
+                TEST.INITARGS   : (lambda param : [param['vecC']()]),
+                TEST.INITKWARGS : {'optimize' : 'optimize'},
+                TEST.OBJECT     : Circulant,
+                TEST.NAMINGARGS : dynFormat("%s,optimize=%s",
+                                            'vecC', str('optimize')),
+                TEST.TOL_POWER  : 2.,
+                TEST.TOL_MINEPS : _getTypeEps(np.float64)
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
-################################################### Testing
-test = {
-    NAME_COMMON: {
-        TEST_NUM_N: 31,
-        TEST_NUM_M: TEST_NUM_N,
-        'mTypeC': Permutation(typesAll),
-        'padding' : Permutation([True, False]),
-        TEST_PARAMALIGN : Permutation(alignmentsAll),
-        'vecC': ArrayGenerator({
-            NAME_DTYPE  : 'mTypeC',
-            NAME_SHAPE  : (TEST_NUM_N, ),
-            NAME_ALIGN  : TEST_PARAMALIGN
-            #            NAME_CENTER : 2,
-        }),
-        TEST_INITARGS: (lambda param : [
-            param['vecC']()
-        ]),
-        TEST_INITKWARGS: {'pad' : 'padding'},
-        TEST_OBJECT: Circulant,
-        TEST_NAMINGARGS: dynFormatString("%s,pad=%s", 'vecC', str('padding')),
+    def _getBenchmark(self):
+        from .inspect import BENCH
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c:
+                                   Circulant(np.random.randn(2 ** c))),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
+                BENCH.FUNC_STEP : (lambda c: c + 1),
+            },
+            BENCH.FORWARD: {
+                BENCH.FUNC_GEN  : (lambda c: Circulant(np.random.randn(c),
+                                                       pad=True)),
+                BENCH.FUNC_SIZE : (lambda c: c),
+                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12))
+            },
+            BENCH.SOLVE: {},
+            BENCH.OVERHEAD: {},
+            BENCH.DTYPES: {
+                BENCH.FUNC_GEN  : (lambda c, dt: Circulant(
+                    np.random.randn(2 ** c).astype(dt)))
+            }
+        }
 
-        TEST_TOL_POWER          : 2.,
-        TEST_TOL_MINEPS         : _getTypeEps(np.float64)
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-        # test forward and backward transforms
-    }
-}
-
-
-################################################## Benchmarks
-benchmark = {
-    NAME_COMMON: {
-        BENCH_FUNC_GEN  :
-            (lambda c : Circulant(np.random.randn(2 ** c))),
-        BENCH_FUNC_SIZE : (lambda c : 2 ** c),
-        BENCH_FUNC_STEP : (lambda c : c + 1),
-        NAME_DOCU       : r'''$\bm{\mathcal{C}} \in \R^{n \times n}$
-            with $n = 2^k$, $k \in \N$ and first columns entries
-            drawn from a  standard Gaussian distribution.'''
-    },
-    BENCH_FORWARD: {
-    },
-    'padding': {
-        NAME_TEMPLATE   : BENCH_FORWARD,
-        BENCH_FUNC_GEN  :
-            (lambda c : Circulant(np.random.randn(2 * c), pad=True)),
-        BENCH_FUNC_SIZE : (lambda c : 2 * c),
-        BENCH_FUNC_STEP : (lambda c : c * 10 ** (1. / 12))
-    },
-    BENCH_SOLVE: {
-    },
-    BENCH_OVERHEAD: {
-    },
-    BENCH_DTYPES: {
-        BENCH_FUNC_GEN  :
-            (lambda c, dt : Circulant(np.random.randn(2 ** c).astype(dt)))
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Circulant Matrix (\texttt{fastmat.Circulant})}
-\subsubsection{Definition and Interface}
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Circulant Matrix (\texttt{fastmat.Circulant})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface',
+                r"""
 Circulant matrices realize the following mapping
 \[\bm x \mapsto \bm C \cdot \bm x = \bm c * \bm x,\]
 with $\bm x \in \C^n$ and
-\[\bm C = \left(\begin{array}{cccc} c_1 & c_n & \dots & c_2 \\ c_2 & c_1 &
-    \ddots & c_3 \\ \vdots & \vdots & \ddots & \vdots \\ c_n & c_{n-1} &
-    \dots & c_1 \end{array}\right).\]
+\[\bm C = \left(\begin{array}{cccc}
+    c_1     & c_n       & \dots     & c_2       \\
+    c_2     & c_1       & \ddots    & c_3       \\
+    \vdots  & \vdots    & \ddots    & \vdots    \\
+    c_n     & c_{n-1}   & \dots     & c_1
+\end{array}\right).\]
 This means that $\bm C$ is completely defined by its first column and realizes
-the convolution with the vector $\bm c$.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-import numpy as np
-
-# construct the
-# parameter
-n = 4
-c = np.array([1, 0, 3, 6])
-
-# construct the matrix
-C = fm.Circulant(c)
-\end{lstlisting}
-
+the convolution with the vector $\bm c$.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            'import numpy as np',
+                            '',
+                            '# construct the',
+                            '# parameter',
+                            'n = 4',
+                            'c = np.array([1, 0, 3, 6])',
+                            '',
+                            '# construct the matrix',
+                            'C = fm.Circulant(c)',
+                            caption=r"""
 This yields
 \[\bm c = (1,0,3,6)^T\]
 \[\bm C = \left(\begin{array}{cccc}
@@ -281,9 +280,21 @@ This yields
     0 & 1 & 6 & 3 \\
     3 & 0 & 1 & 6 \\
     6 & 3 & 0 & 1
-\end{array}\right)\]
-\end{snippet}
-
-\textbf{Depends:}
-    \texttt{Fourier}, \texttt{Diag}, \texttt{Product}, \texttt{Partial}
-"""
+\end{array}\right)\]"""),
+                r"""
+This class depends on \texttt{Fourier}, \texttt{Diag}, \texttt{Product} and
+\texttt{Partial}."""
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix
+$\bm{\mathcal{C}} \in \R^{n \times n}$ with $n \in \N$ and first columns
+entries drawn from a  standard Gaussian distribution.""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
+                DOC.PLOTOVERHEAD(),
+                DOC.PLOTTYPESPEED(),
+                DOC.PLOTTYPEMEMORY()
+            )
+        )

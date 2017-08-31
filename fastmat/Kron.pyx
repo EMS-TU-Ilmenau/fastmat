@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
   fastmat/Kron.pyx
  -------------------------------------------------- part of the fastmat package
@@ -31,22 +31,14 @@
 import numpy as np
 cimport numpy as np
 
-from .Matrix cimport Matrix
+from .Matrix cimport Matrix, profileUpdate
 from .Product cimport Product
-from .helpers.types cimport *
-from .helpers.cmath cimport _arrReshape, _arrEmpty
+from .core.types cimport *
+from .core.cmath cimport _arrReshape, _arrEmpty
 
 ################################################################################
 ################################################## class Kron
 cdef class Kron(Matrix):
-
-    ############################################## class properties
-
-    # content - Property (read-only)
-    # Return a list of child matrices on the diagonal of matrix
-    property content:
-        def __get__(self):
-            return self._content
 
     ############################################## class methods
     def __init__(self, *matrices, **options):
@@ -59,7 +51,7 @@ cdef class Kron(Matrix):
         #check the number of matrices
         self._content = tuple(matrices)
         if factorCount < 2:
-            raise ValueError("Kronecker product must have at least two terms")
+            raise ValueError("Kronecker: Product must have at least two terms")
 
         # determine total size and data type of matrix
         dtype = np.int8
@@ -69,7 +61,7 @@ cdef class Kron(Matrix):
 
             #check for symmetry of matrices
             if (factor.numN != factor.numM):
-                raise ValueError("Kronecker product terms must be symmetric")
+                raise ValueError("Kronecker: Product terms must be symmetric")
 
             # acknowledge size and data type of factor
             numN *= self._content[ff].numN
@@ -158,6 +150,30 @@ cdef class Kron(Matrix):
             numResult *= self._content[ii][idxTermsN[ii], idxTermsM[ii]]
 
         return numResult
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        cdef intsize N = len(self._content)
+        return (2 * N * self.numN, 2 * N * self.numN)
+
+    cpdef _exploreNestedProfiles(self):
+        '''
+        Explore the runtime properties of all nested fastmat matrices. Use ane
+        iterator on self._content by default to sum the profile properties of
+        all nested classes of meta-classes by default. basic-classes either
+        have an empty tuple for _content or need to overwrite this method.
+        '''
+        cdef Matrix item
+        cdef intsize scale
+        cdef bint bypass
+        for item in self:
+            scale = self.numN / item.numN
+            bypass = (item._bypassAllow and
+                      (item._array is not None or item._bypassAutoArray))
+            profileUpdate(&(self._profileForward), scale, bypass,
+                          &(item._profileForward), &(item._profileBypassFwd))
+            profileUpdate(&(self._profileBackward), scale, bypass,
+                          &(item._profileBackward), &(item._profileBypassBwd))
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
@@ -256,96 +272,83 @@ cdef class Kron(Matrix):
 
         return arrRes
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST, dynFormat
+        return {
+            TEST.COMMON: {
+                TEST.NUM_N      : 5 * 4 * 3,
+                TEST.NUM_M      : TEST.NUM_N,
+                'mType1'        : TEST.Permutation(TEST.ALLTYPES),
+                'mType2'        : TEST.Permutation(TEST.ALLTYPES),
+                'arr1'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType1',
+                    TEST.SHAPE  : (5, 5)
+                }),
+                'arr2'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType2',
+                    TEST.SHAPE  : (4, 4)
+                }),
+                'arr3'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mType1',
+                    TEST.SHAPE  : (3, 3)
+                }),
+                TEST.INITARGS: (lambda param : [Matrix(param['arr1']()),
+                                                Matrix(param['arr2']()),
+                                                Matrix(param['arr3']())]),
+                TEST.OBJECT     : Kron,
+                TEST.NAMINGARGS : dynFormat("%so%so%s", 'arr1', 'arr2', 'arr3'),
+                TEST.TOL_POWER  : 4.
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
-################################################### Testing
-test = {
-    NAME_COMMON: {
-        TEST_NUM_N : 5 * 4 * 3,
-        TEST_NUM_M : TEST_NUM_N,
-        'mType1': Permutation(typesAll),
-        'mType2': Permutation(typesAll),
-        'arr1': ArrayGenerator({
-            NAME_DTYPE  : 'mType1',
-            NAME_SHAPE  : (5, 5)
-            #            NAME_CENTER : 2,
-        }),
-        'arr2': ArrayGenerator({
-            NAME_DTYPE  : 'mType2',
-            NAME_SHAPE  : (4, 4)
-            #            NAME_CENTER : 2,
-        }),
-        'arr3': ArrayGenerator({
-            NAME_DTYPE  : 'mType1',
-            NAME_SHAPE  : (3, 3)
-            #            NAME_CENTER : 2,
-        }),
-        TEST_INITARGS: (lambda param : [
-            Matrix(param['arr1']()),
-            Matrix(param['arr2']()),
-            Matrix(param['arr3']()),
-        ]),
-        TEST_OBJECT: Kron,
-        TEST_NAMINGARGS: dynFormatString("%so%so%s", 'arr1', 'arr2', 'arr3'),
-        TEST_TOL_POWER          : 4.
-    },
-    TEST_CLASS: {
-        # test basic class methods
-    }, TEST_TRANSFORMS: {
-        # test forward and backward transforms
-    }
-}
+    def _getBenchmark(self):
+        from .inspect import BENCH, arrTestDist
+        from .Fourier import Fourier
+        from .Diag import Diag
+        from .Matrix import Matrix
+        from .Eye import Eye
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: Kron(
+                    Fourier(2 * c),
+                    Diag(np.random.uniform(2, 3, (2 * c))),
+                    Matrix(arrTestDist((2 * c, 2 * c), dtype=np.complex)))),
+                BENCH.FUNC_SIZE : (lambda c: 8 * c ** 3)
+            },
+            BENCH.FORWARD: {},
+            BENCH.SOLVE: {},
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c: Kron(*([Eye(2)] * c))),
+                BENCH.FUNC_SIZE : (lambda c: (2) ** c)
+            },
+            BENCH.DTYPES: {
+                BENCH.FUNC_GEN  : (lambda c, dt: Kron(
+                    Fourier(2 * c),
+                    Diag(np.random.uniform(2, 3, (2 * c)).astype(dt)),
+                    Matrix(arrTestDist((2 * c, 2 * c), dt)))),
+                BENCH.FUNC_SIZE : (lambda c: 8 * c ** 3)
+            }
+        }
 
-################################################## Benchmarks
-from .Fourier import Fourier
-from .Diag import Diag
-from .Matrix import Matrix
-from .Eye import Eye
-
-benchmark = {
-    NAME_COMMON: {
-        BENCH_FUNC_GEN  :
-            (lambda c : Kron(
-                Fourier(2 * c),
-                Diag(np.random.uniform(2, 3, (2 * c))),
-                Matrix(np.random.uniform(2, 3, (2 * c, 2 * c)) +
-                       1j * np.random.uniform(2, 3, (2 * c, 2 * c)))
-            )),
-        BENCH_FUNC_SIZE : (lambda c: 8 * c ** 3),
-        NAME_DOCU       : r'''$\bm K = \bm \Fs_{2k} \otimes \bm D_{2k}
-            \otimes \bm M_{2k}$, where $\bm \Fs$ is a Fourier
-            Matrix, $\bm D$ is diagonal and $\bm M$ is unstructured
-            and complex valued; so $n = 8 k^3$ for $k \in \N$'''
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_SOLVE: {
-    },
-    BENCH_OVERHEAD: {
-        BENCH_FUNC_GEN  : (lambda c : Kron(*([Eye(c)] * 4))),
-        BENCH_FUNC_SIZE : (lambda c : (c) ** 4),
-        NAME_DOCU       : r''' $\bm K = \bm I_k \otimes \bm I_k \otimes
-            \bm I_k \otimes \bm I_k$; so $n=k^4$ for $k \in \N$'''
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Kronecker Product (\texttt{fastmat.Kron})}
-\subsubsection{Definition and Interface}
-For matrices $\bm A_i \in \C^{n_i \times n_i}$ for $i = 1,\dots,k$ the Kronecker
-product
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Kronecker Product (\texttt{fastmat.Kron})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
+For matrices $\bm A_i \in \C^{n_i \times n_i}$ for $i = 1,\dots,k$ the
+Kronecker product
 \[\bm A_1 \otimes \bm A_2 \otimes \dots \otimes \bm A_k\]
 can be defined recursively because of associativity from the Kronecker product
 of $\bm A \in \C^{n \times m}$ and $\bm B \in \C^{r \times s}$ defined as
 \[\bm A \otimes \bm B =
 \left(\begin{array}{ccc}
-    a_{11} \bm B & \dots & a_{1m} \bm B \\
-    \vdots & \ddots & \vdots \\
-    a_{n1} \bm B & \dots & a_{nm} \bm B
+    a_{11} \bm B    & \dots     & a_{1m} \bm B  \\
+    \vdots          & \ddots    & \vdots        \\
+    a_{n1} \bm B    & \dots     & a_{nm} \bm B
 \end{array}\right).\]
 We make use of a decomposition into a standard matrix product to speed up the
 matrix-vector multiplication which is introduced in
@@ -357,31 +360,43 @@ matrix-vector multiplication which is introduced in
     which saves \textbf{a lot} of memory.
 \item When fast transforms of the factors are available the calculations can be
     sped up further.
-\end{itemize}
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat as fm
-
-# define the factors
-C = fm.Circulant(x_C)
-H = fm.Hadamard(n)
-
-# define the Kronecker
-# product
-P = fm.Kron(C.H, H)
-\end{lstlisting}
-
+\end{itemize}""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat as fm',
+                            '',
+                            '# define the factors',
+                            'C = fm.Circulant(x_C)',
+                            'H = fm.Hadamard(n)',
+                            '',
+                            '# define the Kronecker',
+                            '# product',
+                            'P = fm.Kron(C.H, H)',
+                            caption=r"""
 Assume we have a circulant matrix $\bm C$ with first column $\bm x_c$ and a
 Hadamard matrix $\bm{\mathcal{H}}_n$ of order $n$. Then we define
-    \[\bm P = \bm C^H \otimes \bm H_n.\]
-\end{snippet}
-
-\begin{thebibliography}{9}
-\bibitem{kron_fernandes1998automata_networks}
-Fernandes, Paulo and Plateau, Brigitte and Stewart, William J.,
-\emph{Efficient Descriptor-Vector Multiplications in Stochastic Automata
-    Networks}, Journal of the ACM, New York, Volume 45, 1998.
-\end{thebibliography}
-"""
+    \[\bm P = \bm C^H \otimes \bm H_n.\]""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All but the overhead benchmarks were performed on a matrix
+$\bm K = \bm \Fs_{2k} \otimes \bm D_{2k} \otimes \bm M_{2k}$, where $\bm \Fs$
+is a Fourier Matrix, $\bm D$ is diagonal and $\bm M$ is unstructured and
+complex valued; so $n = 8 k^3$ for $k \in \N$""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
+                DOC.PLOTOVERHEAD(doc=r"""
+$\bm K = \prod_k \bm I_k$;
+so $n=k^4$ for $k \in \N$"""),
+                DOC.PLOTTYPESPEED(),
+                DOC.PLOTTYPEMEMORY()
+            ),
+            DOC.BIBLIO(
+                kron_fernandes1998automata_networks=DOC.BIBITEM(
+                    r"""
+Fernandes, Paulo and Plateau, Brigitte and Stewart, William J.,""",
+                    r"""
+Efficient Descriptor-Vector Multiplications in Stochastic Automata Networks""",
+                    r'Journal of the ACM, New York, Volume 45, 1998')
+            )
+        )

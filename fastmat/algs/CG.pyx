@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+#cython: boundscheck=False, wraparound=False
 '''
   fastmat/algs/CG.pyx
  -------------------------------------------------- part of the fastmat package
@@ -32,14 +32,15 @@
 import numpy as np
 cimport numpy as np
 
-from ..helpers.cmath cimport _arrEmpty, _arrZero, _arrForceTypeAlignment, _norm
-from ..helpers.types cimport *
+from ..core.cmath cimport _arrEmpty, _arrZero, _arrForceTypeAlignment, _norm
+from ..core.types cimport *
+from ..base import Algorithm
 
 from ..Matrix cimport Matrix
 
 
 ################################################################################
-###  CG: wrapper around the single vector solver
+###  CG: Conjugate gradient method solver for linear equation systems
 ################################################################################
 cpdef np.ndarray CG(
     Matrix fmatA,
@@ -184,102 +185,107 @@ cdef np.ndarray _CGcore(
 
 
 ################################################################################
+###  Maintainance and Documentation
 ################################################################################
-from ..helpers.unitInterface import *
-from ..Diag import Diag
 
-################################################### Testing
+################################################## inspection inerface
+class CGinspect(Algorithm):
 
+    def _getTest(self):
+        from ..inspect import TEST, dynFormat, arrTestDist
 
-def testCG(test):
+        def testCG(test):
 
-    # prepare vectors
-    test[TEST_RESULT_REF] = arrTestDist(
-        (test[TEST_NUM_M], test[TEST_DATACOLS]), dtype=test[TEST_DATATYPE])
-    test[TEST_RESULT_INPUT] = test[TEST_INSTANCE] * test[TEST_RESULT_REF]
-    test[TEST_RESULT_OUTPUT] = CG(test[TEST_INSTANCE], test[TEST_RESULT_INPUT])
+            # prepare vectors
+            test[TEST.RESULT_REF]    = arrTestDist((test[TEST.NUM_M],
+                                                    test[TEST.DATACOLS]),
+                                                   dtype=test[TEST.DATATYPE])
+            test[TEST.RESULT_INPUT]  = (test[TEST.INSTANCE] *
+                                        test[TEST.RESULT_REF])
+            test[TEST.RESULT_OUTPUT] = CG(test[TEST.INSTANCE],
+                                          test[TEST.RESULT_INPUT])
 
+        return {
+            TEST.ALGORITHM: {
+                TEST.NUM_N      : 27,
+                TEST.NUM_M      : TEST.NUM_N,
 
-test = {
-    TEST_ALGORITHM: {
-        TEST_NUM_N      : 27,
-        TEST_NUM_M      : TEST_NUM_N,
+                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
+                'arrA'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'typeA',
+                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_N)
+                }),
 
-        'typeA'         : Permutation(typesAll),
-        'arrA'          : ArrayGenerator({
-            NAME_DTYPE      : 'typeA',
-            NAME_SHAPE      : (TEST_NUM_N, TEST_NUM_N)
-        }),
+                TEST.OBJECT     : Matrix,
+                TEST.INITARGS   : (lambda param: [param.arrA()]),
 
-        TEST_OBJECT     : Matrix,
-        TEST_INITARGS   : (lambda param: [param.arrA()]),
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
+                TEST.INIT_VARIANT : TEST.IgnoreFunc(testCG),
 
-        TEST_DATAALIGN      : ALIGN_DONTCARE,
-        TEST_INIT_VARIANT   : IgnoreFunc(testCG),
+                'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
+                TEST.NAMINGARGS : dynFormat("%s", 'arrA'),
 
-        'strTypeA'      : (lambda param: NAME_TYPES[param['typeA']]),
-        TEST_NAMINGARGS : dynFormatString("%s", 'arrA'),
+                # matrix inversion always expands data type to floating-point
+                TEST.TYPE_PROMOTION : np.float32,
+                #TEST.CHECK_PROXIMITY : False,
+                TEST.TOL_POWER  : 7.
+            },
+        }
 
-        # matrix inversion always expands data type to floating-point
-        TEST_TYPE_PROMOTION     : np.float32,
-        #        TEST_CHECK_PROXIMITY    : False,
-        TEST_TOL_POWER          : 6.
-    },
-}
+    def _getBenchmark(self):
+        from ..inspect import BENCH, arrTestDist
+        from ..Diag import Diag
 
+        def createTarget(M, datatype):
+            '''Create test target for algorithm performance evaluation.'''
 
-################################################## Benchmarks
-def createBenchmarkTarget(M, datatype):
-    '''Create test target for algorithm performance evaluation.'''
+            # generate matA (random diagonal matrix)
+            matA = Diag(arrTestDist((M, 1), datatype))
 
-    # generate matA (random diagonal matrix)
-    matA = Diag(arrTestDist((M, 1), datatype))
+            # generate arrb from random baseline support and matrix (RHS)
+            arrB = matA.forward(arrTestDist((M, 1), datatype))
 
-    # generate arrb from random baseline support and matrix (RHS)
-    arrB = matA.forward(arrTestDist((M, 1), datatype))
+            return (CG, [matA, arrB])
 
-    return (CG, [matA, arrB])
+        return {
+            BENCH.COMMON: {
+                BENCH.NAME      : 'Method of Conjugate Gradients',
+                BENCH.DOCU      : r'$\bm A = \diag(\{1,\dots,n\})$',
+                BENCH.FUNC_GEN  : (lambda c: createTarget(c, np.double))
+            },
+            BENCH.PERFORMANCE: {
+                BENCH.CAPTION   : 'CG performance'
+            },
+            BENCH.DTYPES: {
+                BENCH.FUNC_GEN  : createTarget,
+                BENCH.FUNC_SIZE : (lambda c: c),
+                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
+            }
+        }
 
-
-benchmark = {
-    NAME_COMMON: {
-        NAME_NAME       : 'Method of Conjugate Gradients',
-        NAME_DOCU       : r'$\bm A = \diag(\{1,\dots,n\})$',
-        BENCH_FUNC_GEN  : (lambda c: createBenchmarkTarget(c, np.double))
-    },
-    BENCH_PERFORMANCE: {
-        NAME_CAPTION    : 'CG performance'
-    },
-    BENCH_DTYPES: {
-        BENCH_FUNC_GEN  : createBenchmarkTarget,
-        BENCH_FUNC_SIZE : (lambda c: c),
-        BENCH_FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Conjugate Gradient Method (CG) (\texttt{fastmat.algs.CG})}
-\subsubsection{Definition and Interface}
-%
+    def _getDocumentation(self):
+        from ..inspect import DOC
+        return DOC.SUBSECTION(
+            r'Conjugate Gradient Method (CG) (\texttt{fastmat.algs.CG})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
 For a given full rank hermitian matrix $\bm A \in \C^n$ and a vector $\bm b \in
 \C^n$, we solve
-%
+
 \begin{align}
 \bm A \cdot \bm x = \bm b
 \end{align}
-%
+
 for $\bm x \in \C^n$, i.e. $\bm x = \bm A^{-1} \cdot \bm b$. If $\bm A$ is not
 hermitian, we solve
-%
+
 \begin{align}
 \bm A^\herm \cdot \bm A \cdot \bm x = \bm A^\herm \cdot \bm b
 \end{align}
 instead. In this case it should be noted, that the condition number of $\bm
 A^\herm \cdot \bm A$ might be a lot larger than the one of $\bm A$ an thus we
 might run into stability problems for large and already ill-conditioned systems.
-%
+
 \begin{itemize}
 \item \textbf{Input:} System matrix $\bm A$, right hand side $\bm b$ and
 stopping tolerance for the residual $0 < \varepsilon \ll 1$.
@@ -288,43 +294,46 @@ stopping tolerance for the residual $0 < \varepsilon \ll 1$.
 
 This algorithm was originally described in \cite{cg_stiefel1952cg} and is
 applicable here, because it only uses the backward and forward projection of a
-matrix.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the packages
-import numpy.random as npr
-import numpy as np
-import fastmat as fm
-import fastmat.algs as fma
-
-# construct the matrix
-n = 26
-H = fm.Hadamard(n)
-
-# define the right hand side
-b = npr.randn(2**n)
-
-# solve the system
-y = fma.CG(H,b)
-
-# check if solution is correct
-print(
-    np.allclose(b,H.forward(y))
-    )
-\end{lstlisting}
-
+matrix.""",
+                DOC.SNIPPET('# import the packages',
+                            'import numpy.random as npr',
+                            'import numpy as np',
+                            'import fastmat as fm',
+                            'import fastmat.algs as fma',
+                            '',
+                            '# construct the matrix',
+                            'n = 26',
+                            'H = fm.Hadamard(n)',
+                            '',
+                            '# define the right hand side',
+                            'b = npr.randn(2 ** n)',
+                            '',
+                            '# solve the system',
+                            'y = fma.CG(H, b)',
+                            '',
+                            '# check if solution is correct',
+                            'print(np.allclose(',
+                            '    b, H.forward(y)))',
+                            caption=r"""
 We construct a Hadamard matrix of order $26$, which would consume
 \SI{4.5}{\peta\byte} of memory if we used \SI{1}{byte} integers to represent it
-and solve above system of linear equations.
-\end{snippet}
-
-\begin{thebibliography}{9}
-\bibitem{cg_stiefel1952cg}
-Hestenes, Magnus R., Stiefel, Eduard
-\emph{Methods of Conjugate Gradients for Solving Linear Systems},
-Journal of Research of the National Bureau of Standards,
-Volume 49,
-1952.
-\end{thebibliography}
-"""
+and solve above system of linear equations.""")
+            ),
+            DOC.SUBSUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix
+$\bm \Hs_k$ and $n = 2^k$ with $n, k in \N$""",
+                DOC.PLOTPERFORMANCE(),
+                DOC.PLOTTYPESPEED(),
+                DOC.PLOTTYPEMEMORY()
+            ),
+            DOC.BIBLIO(
+                cg_stiefel1952cg=DOC.BIBITEM(
+                    r'Hestenes, Magnus R., Stiefel, Eduard',
+                    r"""
+Methods of Conjugate Gradients for Solving Linear Systems""",
+                    r"""
+The Springer International Series in Engineering and Computer Science,
+Volume 383, 1997""")
+            )
+        )

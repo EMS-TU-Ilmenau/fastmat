@@ -1,0 +1,2 @@
+class Algorithm(object):
+    pass

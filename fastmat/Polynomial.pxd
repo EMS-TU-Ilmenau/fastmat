@@ -37,7 +37,6 @@ from .Matrix cimport Matrix
 cdef class Polynomial(Matrix):
 
     ############################################## class variables
-    cdef public Matrix _content                  # Base matrix for polynomial
     cdef public np.ndarray _coeff                # Polynomial coefficients
     cdef public np.ndarray _coeffConj            # Polynomial coefficients,
     #                                            # conjugated to allow speedup

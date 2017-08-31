@@ -30,15 +30,12 @@
 import cython
 cimport numpy as np
 
-from .helpers.types cimport *
+from .core.types cimport *
 from .Matrix cimport Matrix
 
 ################################################################################
 ################################################## class Sum
 cdef class Sum(Matrix):
-
-    ############################################## class variables
-    cdef public tuple _content                   # tuple list of matrices to sum
 
     ############################################## class methods
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)

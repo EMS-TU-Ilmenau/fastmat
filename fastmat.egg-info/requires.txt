@@ -1,4 +1,4 @@
-cython>=0.18
-numpy>=1.7
-scipy>=0.8
+cython
+numpy
+scipy
 matplotlib

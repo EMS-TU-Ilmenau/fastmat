@@ -39,5 +39,4 @@ cdef class Eye(Matrix):
     ############################################## class methods
     cpdef np.ndarray _forward(Eye, np.ndarray)
     cpdef np.ndarray _backward(Eye, np.ndarray)
-    cpdef np.ndarray toarray(Eye)
     cpdef np.ndarray _reference(Eye)

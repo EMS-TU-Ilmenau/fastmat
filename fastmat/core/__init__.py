@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/helpers/__init__.py
+  fastmat/core/__init__.py
  -------------------------------------------------- part of the fastmat demos
 
 
@@ -24,3 +24,4 @@
 
  ------------------------------------------------------------------------------
 '''
+from .calibration import *

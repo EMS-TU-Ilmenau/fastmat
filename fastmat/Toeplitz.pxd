@@ -41,5 +41,4 @@ cdef class Toeplitz(Partial):
     cdef public np.ndarray _vecR                 # Row-defining vector
 
     ############################################## class methods
-    cpdef np.ndarray toarray(self)
     cpdef np.ndarray _reference(self)

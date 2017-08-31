@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/helpers/cmath.pxd
+  fastmat/core/cmath.pxd
  -------------------------------------------------- part of the fastmat package
 
   Header file for fastmat type handling support.

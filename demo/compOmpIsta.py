@@ -30,7 +30,7 @@ import sys                                        # system calls
 import time                                       # measuring time
 
 import numpy                                      # math library
-import scipy                                      # math library
+import scipy.sparse                               # math library
 import matplotlib.pyplot as plt                   # plotting
 import matplotlib.gridspec as gridspec            # grid specification
 
@@ -80,7 +80,7 @@ M = 500        # width of dictionary
 K = 30        # sparsity (non-zero components in support)
 
 # define baseline random support (1.0 forces dtype to be float)
-s = scipy.sparse.rand(M, 1, 1.0 * K / M).todense() 
+s = scipy.sparse.rand(M, 1, 1.0 * K / M).todense()
 x0 = s - 1j * s
 
 # define some dictionary
@@ -105,11 +105,11 @@ b = mat * x0
 
 # run OMP and ISTA
 # result = fastmat.OMP(mat, b, K)
-xOMP = printTime("running OMP", 
+xOMP = printTime("running OMP",
                  fastmat.algs.OMP, mat, b, K)
 # result = fastmat.ISTA(mat, b, numLambda=1e4)
-xISTA = printTime("running ISTA", 
-                  fastmat.algs.ISTA, mat, b, 
+xISTA = printTime("running ISTA",
+                  fastmat.algs.ISTA, mat, b,
                   numLambda = 1e6, numMaxSteps = 1000)
 
 # plot:
@@ -121,9 +121,8 @@ grid = gridspec.GridSpec(
 
 # plot dictionary. as it is a partial Fourier, only plot element phases
 plot = fig.add_subplot(grid[0, :-1], title='Dictionary matrix').imshow(
-    numpy.angle(mat.toarray()),
-    interpolation='none',
-    aspect='auto')
+    numpy.angle(mat.array),
+    interpolation='none', aspect='auto')
 
 # plot measurements next to matrix
 plotComplex(fig.add_subplot(grid[0, -1], title='Measurements'), b)

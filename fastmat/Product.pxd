@@ -37,7 +37,6 @@ from .Matrix cimport Matrix
 cdef class Product(Matrix):
 
     ############################################## class variables
-    cdef public tuple _content                   # Terms of the matrix product
     cdef public object _scalar                   # Scalar product term
 
     ############################################## class methods

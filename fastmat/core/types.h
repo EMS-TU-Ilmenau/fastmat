@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
-'''
-  fastmat/Circulant.pxd
+// -*- coding: utf-8 -*-
+/*
+ f astmat/core/types.h
  -------------------------------------------------- part of the fastmat package
 
-  Header file for Circulant class (structural description).
-
+  Header file for type constant definitions
 
   Author      : wcw
-  Introduced  : 2016-09-27
+  Introduced  : 2016-12-15
  ------------------------------------------------------------------------------
 
    Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -26,22 +24,8 @@
    limitations under the License.
 
  ------------------------------------------------------------------------------
-'''
-import cython
-cimport numpy as np
+*/
 
-from .Partial cimport Partial
-from .core.types cimport *
-
-################################################################################
-################################################## class Circulant
-cdef class Circulant(Partial):
-
-    ############################################## class variables
-    cdef public np.ndarray _vecC                 # matrix diagonal entry vector
-
-    ############################################## class internals
-    cdef void _roll(self, np.ndarray, intsize)
-
-    ############################################## class methods
-    cpdef np.ndarray _reference(self)
+// define the number of different types (including TYPE_INVALID)
+// as a C-style definition to get around the nasty TYPE_NUM-bug
+#define NUM_TYPES	8

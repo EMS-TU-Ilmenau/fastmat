@@ -31,8 +31,8 @@ import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .helpers.types cimport *
-from .helpers.cmath cimport _arrZero
+from .core.types cimport *
+from .core.cmath cimport _arrZero
 
 ################################################################################
 ################################################## class Eye
@@ -47,7 +47,7 @@ cdef class Eye(Matrix):
         '''
         self._initProperties(numN, numN, np.int8)
 
-    cpdef np.ndarray toarray(Eye self):
+    cpdef np.ndarray _getArray(Eye self):
         '''
         Return an explicit representation of the matrix as numpy-array.
         '''
@@ -91,6 +91,10 @@ cdef class Eye(Matrix):
     cpdef Matrix _getConj(self):
         return self
 
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        return (0., 0.)
+
     ############################################## class forward / backward
     cpdef np.ndarray _forward(Eye, np.ndarray arrX):
         '''Calculate the forward transform of this matrix'''
@@ -108,67 +112,60 @@ cdef class Eye(Matrix):
         '''
         return np.eye(self.numN, dtype=self.dtype)
 
+    ############################################## class inspection, QM
+    def _getTest(self):
+        from .inspect import TEST
+        return {
+            TEST.COMMON: {
+                TEST.NUM_N      : 35,
+                TEST.NUM_M      : TEST.NUM_N,
+                TEST.OBJECT     : Eye,
+                TEST.INITARGS   : [TEST.NUM_N]
+            },
+            TEST.CLASS: {},
+            TEST.TRANSFORMS: {}
+        }
 
-################################################################################
-################################################################################
-from .helpers.unitInterface import *
+    def _getBenchmark(self):
+        from .inspect import BENCH
+        return {
+            BENCH.COMMON: {
+                BENCH.FUNC_GEN  : (lambda c: Eye(c)),
+            },
+            BENCH.FORWARD: {},
+            BENCH.SOLVE: {
+                BENCH.FUNC_GEN  : (lambda c: Eye(c))
+            },
+            BENCH.OVERHEAD: {
+                BENCH.FUNC_GEN  : (lambda c: Eye(2 ** c)),
+            }
+        }
 
-################################################## Testing
-test = {
-    NAME_COMMON: {
-        TEST_NUM_N      : 35,
-        TEST_NUM_M      : TEST_NUM_N,
-        TEST_OBJECT     : Eye,
-        TEST_INITARGS   : [TEST_NUM_N]
-    },
-    TEST_CLASS: {
-        # test basic class functions
-    },
-    TEST_TRANSFORMS: {
-        # test
-    }
-}
-
-
-################################################## Benchmarks
-benchmark = {
-    NAME_COMMON: {
-        BENCH_FUNC_GEN  : (lambda c : Eye(c)),
-        NAME_DOCU       : r'$\bm I_n$'
-    },
-    BENCH_FORWARD: {
-    },
-    BENCH_SOLVE: {
-        BENCH_FUNC_GEN  : (lambda c : Eye(c))
-    },
-    BENCH_OVERHEAD: {
-        BENCH_FUNC_GEN  : (lambda c : Eye(2 ** c)),
-        NAME_DOCU       : r'$\bm I_n$ with $n = 2^k$ for $k \in \N$'
-    }
-}
-
-
-################################################## Documentation
-docLaTeX = r"""
-\subsection{Identity Transform (\texttt{fastmat.Eye})}
-\subsubsection{Definition and Interface}
-For $\bm x \in \C^n$ we map
-\[\bm x \mapsto \bm x.\]
-The identity matrix only needs the dimension $n$ of the vectors it acts on.
-
-\begin{snippet}
-\begin{lstlisting}[language=Python]
-# import the package
-import fastmat
-
-# set the parameter
-n = 10
-
-# construct the
-# identity
-I = fastmat.Eye(n)
-\end{lstlisting}
-
-This yields the identity matrix $\bm I_{10}$ with dimension $10$.
-\end{snippet}
-"""
+    def _getDocumentation(self):
+        from .inspect import DOC
+        return DOC.SUBSECTION(
+            r'Identity Transform (\texttt{fastmat.Eye})',
+            DOC.SUBSUBSECTION(
+                'Definition and Interface', r"""
+For $\bm x \in \C^n$ we map \[\bm x \mapsto \bm x.\]
+The identity matrix only needs the dimension $n$ of the vectors it acts on.""",
+                DOC.SNIPPET('# import the package',
+                            'import fastmat',
+                            '',
+                            '# set the parameter',
+                            'n = 10',
+                            '',
+                            '# construct the identity',
+                            'I = fastmat.Eye(n)',
+                            caption=r"""
+This yields the identity matrix $\bm I_{10}$ with dimension $10$.""")
+            ),
+            DOC.SUBSECTION(
+                'Performance Benchmarks', r"""
+All benchmarks were performed on a matrix $\bm I_n$ with $n \in \N$.""",
+                DOC.PLOTFORWARD(),
+                DOC.PLOTFORWARDMEMORY(),
+                DOC.PLOTSOLVE(),
+                DOC.PLOTOVERHEAD()
+            )
+        )
