@@ -1,0 +1,25 @@
+language: python
+
+matrix:
+  include:
+    - python: "2.7"
+    - python: "3.3"
+    - python: "3.4"
+    - python: "3.5"
+    - python: "3.6"
+    - python: "nightly"
+  allow_failures:
+    - python: "nightly"
+
+install:
+  - pip install -r requirements.txt
+  - pip install coverage coveralls # for CI
+
+script:
+  - make compile
+  - coverage run --source=fastmat util/bee.py test -vi
+
+after_success: >
+  if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
+    coveralls
+  fi

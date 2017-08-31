@@ -39,3 +39,6 @@ setup.files
 # cython stuff
 *.c
 *.so
+
+# coverage results
+.coverage
