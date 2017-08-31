@@ -1,5 +1,7 @@
 # fastmat
 
+[![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)[![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
+
 ## Description
 Scientific computing requires handling large composed or structured matrices.
 Fastmat is a framework for handling large composed or structured matrices.
@@ -13,10 +15,13 @@ dense matrix representations.
 - Cython
 
 ### Dependencies
-- Python >= 2.7 or >=3.0
+- Python >= 2.7 or >=3.4
 - Numpy >= 1.07
 - Scipy >= 1.08
 - Cython >= 1.18
+
+### nice-to-haves
+- matplotlib: for the demos that use plotting
 
 ### Authors
 - Sebastian Semper - Technische Universität Ilmenau, Institute for Mathematics
