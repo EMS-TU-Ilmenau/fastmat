@@ -1,19 +1,22 @@
-language: python
+branches:
+  only:
+    - master
 
-matrix:
-  include:
-    # Linux Python 2.7
-    - sudo: required
-      python: "2.7"
-      services:
-        - docker
-    
-    # Linux Python 3.6
-    - sudo: required
-      python: "3.6"
-      services:
-        - docker
+language:
+  - python
 
+sudo:
+  - required
+
+services:
+  - docker
+
+python:
+  - "2.7"
+  - "3.6"
+
+before_install
+  - sudo apt-get update -qq
 install:
   - pip install cython
   - pip install coverage coveralls # for CI
@@ -21,10 +24,14 @@ install:
 script:
   - make compile
   - coverage run --source=fastmat util/bee.py test -v
-  - pip install cibuildwheel==0.5.1
-  - cibuildwheel --output-dir wheelhouse
-
 after_success: >
   if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
     coveralls
   fi
+
+before_deploy:
+  - pip install cibuildwheel==0.5.1
+ 
+ deploy:
+  - cibuildwheel --output-dir wheelhouse
+
