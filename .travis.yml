@@ -15,8 +15,9 @@ python:
   - "2.7"
   - "3.6"
 
-before_install
+before_install:
   - sudo apt-get update -qq
+  
 install:
   - pip install cython
   - pip install coverage coveralls # for CI
