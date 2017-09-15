@@ -1,11 +1,9 @@
 language: python
+sudo: required
 
 branches:
   only:
     - master
-
-sudo:
-  - required
 
 services:
   - docker
@@ -13,6 +11,11 @@ services:
 python:
   - "2.7"
   - "3.6"
+  - "nightly"
+
+matrix:
+  allow_failures:
+    - "nightly"
 
 before_install:
   - sudo apt-get update -qq
@@ -24,7 +27,8 @@ install:
 script:
   - make compile
   - coverage run --source=fastmat util/bee.py test -v
-after_success: >
+
+after_success:
   if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
     coveralls
   fi
