@@ -15,7 +15,7 @@ python:
 
 matrix:
   allow_failures:
-    - "nightly"
+    - python: "nightly"
 
 before_install:
   - sudo apt-get update -qq
@@ -28,7 +28,7 @@ script:
   - make compile
   - coverage run --source=fastmat util/bee.py test -v
 
-after_success:
+after_success: >
   if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
     coveralls
   fi
@@ -36,6 +36,5 @@ after_success:
 before_deploy:
   - pip install cibuildwheel==0.5.1
  
- deploy:
+deploy:
   - cibuildwheel --output-dir wheelhouse
-
