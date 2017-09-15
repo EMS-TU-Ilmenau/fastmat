@@ -5,36 +5,24 @@ matrix:
     - sudo: required
       services:
         - docker
-    - python: "2.6"
     - python: "2.7"
-    - python: "3.2"
-    - python: "3.3"
     - python: "3.4"
     - python: "3.5"
     - python: "3.6"
     - python: "nightly"
-    - os: osx
     - os: linux
+    - os: osx
   allow_failures:
-    - python: "2.6"
-    - python: "3.2"
-    - python: "3.3"
     - python: "nightly"
 
 install:
-  - pip install cython numpy scipy
   - pip install coverage coveralls # for CI
-  - pip install cibuildwheel==0.5.1
-  - cibuildwheel --output-dir wheelhouse
-  - |
-    if [[ $TRAVIS_TAG ]]; then
-      python -m pip install twine
-      python -m twine upload wheelhouse/*.whl
-    fi
 
 script:
   - make compile
   - coverage run --source=fastmat util/bee.py test -v
+  - pip install cibuildwheel==0.5.1
+  - cibuildwheel --output-dir wheelhouse
 
 after_success: >
   if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
