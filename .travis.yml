@@ -2,18 +2,21 @@ language: python
 
 matrix:
   include:
+    # Linux Python 2.7
     - sudo: required
       services:
         - docker
-    - python: "2.7"
-    - python: "3.4"
-    - python: "3.5"
-    - python: "3.6"
-    - python: "nightly"
-    - os: linux
-    - os: osx
-  allow_failures:
-    - python: "nightly"
+      python: "2.7"
+      before_install:
+        - pip install cython
+    
+    # Linux Python 3.6
+    - sudo: required
+      services:
+        - docker
+      python: "3.6"
+      before_install:
+        - pip install cython
 
 install:
   - pip install coverage coveralls # for CI
