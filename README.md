@@ -20,13 +20,13 @@ dense matrix representations.
 - Scipy >= 1.08
 - Cython >= 1.18
 
-### nice-to-haves
-- matplotlib: for the demos that use plotting
+### soft-dependencies
+- matplotlib: for demos and tools that make use of plotting functions
 
 ### Authors
 - Sebastian Semper - Technische Universität Ilmenau, Institute for Mathematics
 - Christoph Wagner - Technische Universität Ilmenau,
-					 Institute for Information Technology, EMS Group
+                     Institute for Information Technology, EMS Group
 
 ### Contact
 - sebastian.semper@tu-ilmenau.de
@@ -45,12 +45,19 @@ an issue on our github projectpage: https://github.com/EMS-TU-Ilmenau/fastmat
 
 #### Installation fails with *ImportError: No module named Cython.Build*
 Something went wrong with resolving the dependencies of fastmat during setup.
-Unfortunately one or more of the required packages numpy, scipy or cython were
-not installed automatically. Please do this manually by running
-    `pip install cython numpy scipy matplotlib`
-and try the installation of fastmat again.
+This issue will be addressed in release 0.1.1. Please check if the problem
+persists with this version. You may try to bypass the problem by running
+    `pip install cython numpy scipy`
+and retrying the installation of fastmat.
 
-#### Issue not resolved?
+#### Windows: Installation fails with various "file not found" errors
+Often, this is causedby missing header files. Unfortunately windows ships
+without a c-compiler and the header files necessary to compile native binary
+code. If you use the Intel Distribution for Python this can be resolved by
+installing the Visual Studio Build tools with the version as recommended by
+the version of the Intel Distribution for Python that you are using.
+
+#### Issue not resolved yet?
 Please contact us or leave your bug report in the *issue* section. Thank You!
 
 
@@ -65,18 +72,19 @@ the following publication affiliated with the project:
 - `to be announced soon. Please tune back in regularly to check on updates.`
 
 ## Installation
-fastmat currently **supports both Linux and Windows**. Building the
+fastmat currently supports both Linux and Windows. Building the
 documentation and running benchmarks is currently only supported under linux
 with windows support underway. You may choose one of these installation methods:
 
-### installation with pip: the fast and easy way
+### installation with pip:
 
 fastmat is included in the Python Package Index (PyPI) and can be installed
 from the commandline by running one easy and straightforward command:
     `pip install fastmat`
 
 When installing with pip all dependencies of the package will be installed
-along.
+along. With release 0.1.1 python wheels will be offered for many versions
+greatly improving installation time and effort, especially under windows.
 
 ### installation from source: doing it manually
 - download the source distribution from our github repository:
