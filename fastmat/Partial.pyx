@@ -180,29 +180,25 @@ cdef class Partial(Matrix):
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST, dynFormat
+        from .Hadamard import Hadamard
         return {
             TEST.COMMON: {
-                'num_N'         : 15,
-                'num_M'         : TEST.Permutation([20, 'num_N']),
+                'order'         : 4,
+                'num_N'         : (lambda param: 2 ** param['order']),
+                'num_M'         : 'num_N',
                 TEST.NUM_N      : (lambda param: len(param['subRows'])),
                 TEST.NUM_M      : (lambda param: len(param['subCols'])),
-
-                'mType'         : TEST.Permutation(TEST.ALLTYPES),
-                'arrM'          : TEST.ArrayGenerator({
-                    TEST.DTYPE  : 'mType',
-                    TEST.SHAPE  : ('num_N', 'num_M')
-                }),
 
                 'subCols'       : TEST.Permutation([np.array([1, 2, 3, 11, 12]),
                                                     np.array([6])]),
                 'subRows'       : TEST.Permutation([np.array([7, 8, 9, 13]),
                                                     np.array([10])]),
-                TEST.INITARGS   : (lambda param: [Matrix(param['arrM']()),
+                TEST.INITARGS   : (lambda param: [Hadamard(param['order']),
                                                   param['subRows'],
                                                   param['subCols']]),
                 TEST.OBJECT     : Partial,
-                TEST.NAMINGARGS : dynFormat("%s,%dx%d",
-                                            'arrM', TEST.NUM_N, TEST.NUM_M)
+                TEST.NAMINGARGS : dynFormat("Hadamard(%d)->%dx%d",
+                                            'order', TEST.NUM_N, TEST.NUM_M)
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}
