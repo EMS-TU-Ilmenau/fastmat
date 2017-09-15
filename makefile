@@ -86,8 +86,7 @@ ifeq ($(OS),Windows_NT)
 else
 
 # STYLE_FILES specifies the files touched during coding style operations
-STYLE_FILES=util/*/*.py util/*.py *.py\
-	fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
+STYLE_FILES=util/*.py *.py fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
 	fastmat/*/*.py fastmat/*/*.pyx fastmat/*/*.pxd
 
 # STYLE_IGNORES lists the errors to be skipped during style check

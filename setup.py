@@ -182,32 +182,58 @@ class lazyCythonize(list):
 def extensions():
     try:
         from Cython.Build import cythonize
-        import numpy
-
-        extensionArguments = {
-            'include_dirs':
-            [numpy.get_include(), 'fastmat/core', 'util/routines'],
-            'extra_compile_args': compilerArguments,
-            'extra_link_args': linkerArguments
-        }
-
-        return cythonize([
-            Extension("*", ["fastmat/*.pyx"], **extensionArguments),
-            Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
-            Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)
-        ])
-
     except ImportError:
-        print("\n\n" +
-              "  Could not import one or more of the required modules:\n" +
-              "    cython, numpy, scipy\n\n" +
-              "  Possibly an error in resolving package dependencies.\n" +
-              "  Please try installing them manually and try again:\n" +
-              "    pip install cython numpy scipy matplotlib\n\n" +
-              "  Sorry for the inconvenience. We are going to address this " +
-              "soon.\n")
-        sys.exit(1)
+        def cythonize(*args, **kwargs):
+            print("Hint: Wrapping import of cythonize in extensions()")
+            from Cython.Build import cythonize
+            return cythonize(*args, **kwargs)
 
+    try:
+        import numpy
+        lstIncludes = [numpy.get_include()]
+    except ImportError:
+        lstIncludes = []
+
+    extensionArguments = {
+        'include_dirs':
+        lstIncludes + ['fastmat/core', 'util/routines'],
+        'extra_compile_args': compilerArguments,
+        'extra_link_args': linkerArguments
+    }
+
+    return cythonize([
+        Extension("*", ["fastmat/*.pyx"], **extensionArguments),
+        Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
+        Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)
+    ])
+
+
+# determine requirements for install and setup
+def checkRequirement(lstRequirements, importName, requirementName):
+    '''
+    Don't add packages unconditionally as this involves the risk of updating an
+    already installed package. Sometimes this may break during install or mix
+    up dependencies after install. Consider an update only if the requested
+    package is not installed at all or if we are building an installation wheel.
+    '''
+    try:
+        __import__(importName)
+    except ImportError:
+        lstRequirements.append(requirementName)
+    else:
+        if 'bdist_wheel' in sys.argv[1:]:
+            lstRequirements.append(requirementName)
+
+
+setupRequires = []
+installRequires = []
+checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
+checkRequirement(setupRequires, 'Cython', 'cython>=0.18')
+checkRequirement(setupRequires, 'numpy', 'numpy')
+checkRequirement(installRequires, 'scipy', 'scipy')
+
+print("Requirements for setup: %s" %(setupRequires))
+print("Requirements for install: %s" %(installRequires))
 
 # setup package
 setup(
@@ -238,12 +264,8 @@ setup(
         'Topic :: Software Development :: Libraries'
     ],
     keywords='linear transforms efficient algorithms mathematics',
-    install_requires=[
-        'cython',
-        'numpy',
-        'scipy',
-        'matplotlib'
-    ],
+    setup_requires=setupRequires,
+    install_requires=installRequires,
     packages=[
         'fastmat',
         'fastmat/algs',
