@@ -1,9 +1,8 @@
+language: python
+
 branches:
   only:
     - master
-
-language:
-  - python
 
 sudo:
   - required
