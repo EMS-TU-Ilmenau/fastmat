@@ -34,24 +34,20 @@ import timeit
 import numpy as np
 import scipy as sp
 
-# import fastmat, try as global package or locally from one floor up
+################################################## import modules
 try:
     import fastmat
 except ImportError:
-    sys.path.insert(0, '..')
+    sys.path.append('..')
     import fastmat
 from fastmat.core.resource import getMemoryFootprint
-
-# import smooth printing routines
-sys.path.insert(0, '../util')
-from routines.printing import frameLine, frameText, printTitle
 
 ###############################################################################
 # SAFT demo
 ###############################################################################
 
-printTitle("Synthetic Aperture Focussing Technique (SAFT) demo using fastmat",
-           width=80)
+print("fastmat demo: Synthetic Aperture Focussing Technique (SAFT)")
+print("-----------------------------------------------------------")
 
 # x - Parameter für die Matrix (Unterscheidung)
 # a - Rekovektor
@@ -71,17 +67,17 @@ for key, value in {
     'Samples in time dimension (numN)': numN,
     'Samples in spatial dimension (numD)': numD,
     'Summation window width (numK)': numK}.items():
-    frameText("%40s = %g" %(key, value), width=80)
+    print("%40s = %g" %(key, value))
 
 
 
-printTitle("Generating masks and SAFT matrices", width=80)
+print("\nGenerating masks and SAFT matrices:")
 
 
 
 ##################################################  Generate SAFT aperture masks
-frameText(" %-20s : %s" %("'matSparse'",
-                        "SAFT aperture masks as scipy-sparse matrices"))
+print(" %-20s : %s" %("'matSparse'",
+                      "SAFT aperture masks as scipy-sparse matrices"))
 
 # create an array to store index mapping
 # (row-index [:, 0] to col-index[:, 1], data is [:, 2])
@@ -141,14 +137,14 @@ class SparseEye(fastmat.Matrix):
         return self._forward(arrX)
 
 ################################################## generate actual matrix
-frameText(" %-20s : %s" %("'matSaftKron'",
-                        "using fastmat built-in classes"))
+print(" %-20s : %s" %("'matSaftKron'",
+                      "using fastmat built-in classes"))
 matSaftKron = fastmat.Sum(
     *[fastmat.Kron(
             fastmat.Eye(numD) if kk == 0 else SparseEye(numD, kk),
             fastmat.Sparse(mat.tocsc()))
       for kk, mat in enumerate(matSparse)])
-frameText(" " * 4 + repr(matSaftKron))
+print(" " * 4 + repr(matSaftKron))
 
 
 
@@ -198,10 +194,10 @@ class SaftClass(fastmat.Matrix):
         return self._core(arrX, True)
 
 ################################################## generate actual matrix
-frameText(" %-20s : %s" %("'matSaftClass'",
-                        "user-defined fastmat class"))
+print(" %-20s : %s" %("'matSaftClass'",
+                      "user-defined fastmat class"))
 matSaftClass = SaftClass(sizeFull, sizeItem, *matSparse)
-frameText(" " * 4 + repr(matSaftClass))
+print(" " * 4 + repr(matSaftClass))
 
 ###############################################################################
 # fastmat matrix class for efficient mask matrices
@@ -236,12 +232,12 @@ class SaftMaskClass(fastmat.Matrix):
         raise NotImplementedError("No backward() for SaftMask implemented yet.")
 
 ################################################## Use special fastmat class
-frameText(" %-20s : %s" %("'matSaftMaskClass'",
-                        "user-defined fastmat class, cython-optimized"))
+print(" %-20s : %s" %("'matSaftMaskClass'",
+                      "user-defined fastmat class, cython-optimized"))
 matSaftMaskClass = SaftMaskClass(numD, sizeItem,
                                  *(tuple(np.vstack((mat.row, mat.col)).T
                                          for mat in matSparse)))
-frameText(" " * 4 + repr(matSaftMaskClass))
+print(" " * 4 + repr(matSaftMaskClass))
 
 
 
@@ -249,8 +245,8 @@ frameText(" " * 4 + repr(matSaftMaskClass))
 ###############################################################################
 # Generate a sparse reference matrix with scipy (as reference)
 ###############################################################################
-frameText(" %-20s : %s" %("'matSaftReference'",
-                        "using scipy only"))
+print(" %-20s : %s" %("'matSaftReference'",
+                      "using scipy only"))
 
 # determine element count upfront to initialize storage memory efficiently:
 numElements = 0
@@ -278,7 +274,7 @@ for nn in range(0, cntBlocks):
     sys.stdout.flush()
 matSaftReference = sp.sparse.coo_matrix((arrData, (arrRow, arrCol)),
     shape=(sizeFull, sizeFull), dtype=np.int8)
-frameText(" " * 4 + repr(matSaftReference))
+print(" " * 4 + repr(matSaftReference))
 
 
 
@@ -297,23 +293,20 @@ frameText(" " * 4 + repr(matSaftReference))
 # define a sample data vector
 v = np.arange(sizeFull).reshape((sizeFull, 1)).astype(np.int64)
 
-printTitle("Checking accuracy of the various methods",
-           width=80)
-frameText(" metric used: distance norm of transform output for a given vector")
+print("\nChecking accuracy of the various methods:")
+print(" - metric used: distance norm of transform output for a given vector")
 vReference = matSaftReference.dot(v)
 for name, matrix in sorted({
     "matSaftKron"       : matSaftKron,
     "matSaftClass"      : matSaftClass,
     "matSaftMaskClass"  : matSaftMaskClass}.items()):
-    frameText("%40s : %12.4e" %("%s(v) vs. reference(v)" %(name),
-                              np.linalg.norm(matrix * v - vReference)))
+    print("%40s : %12.4e" %("%s(v) vs. reference(v)" %(name),
+                            np.linalg.norm(matrix * v - vReference)))
 
 
-printTitle("Benchmarking forward transform performance of matrices",
-           width=80)
+print("\nBenchmarking forward transform performance of matrices:")
 def timing(title, fun, reps):
-    frameText("%40s : %10.4g s"% (title,
-                                  timeit.timeit(fun, number=reps) / reps))
+    print("%40s : %10.4g s"% (title, timeit.timeit(fun, number=reps) / reps))
 
 for title, fun in sorted({
     "matSaftKron"       : lambda: matSaftKron * v,
@@ -323,52 +316,11 @@ for title, fun in sorted({
     timing(title, fun, 1)
 
 
-printTitle("RAM usage for the various variants", width=80)
+print("\nRAM usage for the various variants:")
 for size, title in sorted({
     getMemoryFootprint(matSaftKron)         : "matSaftKron",
     getMemoryFootprint(matSaftClass)        : "matSaftClass",
     getMemoryFootprint(matSaftMaskClass)    : "matSaftMaskClass",
     getMemoryFootprint(matSaftReference)    : "matSaftReference",
     getMemoryFootprint(matSparse)           : "matSparse"}.items()):
-    frameText("%40s : %10d kBytes" %(title, size / 1000))
-
-frameLine()
-
-
-###############################################################################
-# Plot the matrices (uncomment to use, beware of large problem sizes!)
-###############################################################################
-#from matplotlib.pyplot import *
-#rc('image', aspect='auto', interpolation='hanning')
-#fig = figure(1)
-#numRows = 5
-
-#arrRef = matSaftReference.todense()
-#subplot(3, numRows, 1)
-#imshow(arrRef)
-
-#arrMask = matSaftMaskClass.array
-#print("norm(arrMask - arrRef) : %f" %(np.linalg.norm(arrMask - arrRef)))
-#subplot(3, numRows, 2)
-#imshow(arrMask)
-#subplot(3, numRows, numRows + 2)
-#imshow(arrMask - arrRef)
-
-#arrClass = matSaftClass.array
-#print("norm(arrClass - arrRef) : %f" %(np.linalg.norm(arrClass - arrRef)))
-#subplot(3, numRows, 3)
-#imshow(arrClass)
-#subplot(3, numRows, numRows + 3)
-#imshow(arrClass - arrRef)
-
-#arrKron = matSaftKron.array
-#print("norm(arrKron - arrRef)  : %f" %(np.linalg.norm(arrKron - arrRef)))
-#subplot(3, numRows, 4)
-#imshow(arrKron)
-#subplot(3, numRows, numRows + 4)
-#imshow(arrKron - arrRef)
-
-#for kk in range(cntK):
-    #subplot(3, cntK, 2 * cntK + kk + 1)
-    #imshow(matSparse[kk].todense())
-#show()
+    print("%40s : %10d kBytes" %(title, size / 1000))

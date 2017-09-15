@@ -31,23 +31,24 @@ import time                                       # measuring time
 
 import numpy                                      # math library
 import scipy.sparse                               # math library
-import matplotlib.pyplot as plt                   # plotting
-import matplotlib.gridspec as gridspec            # grid specification
 
-# import fastmat, try as global package or locally from one floor up
+
+################################################## import modules
+try:
+    import matplotlib.pyplot as plt               # plotting
+    import matplotlib.gridspec as gridspec        # grid specification
+except:
+    print("matplotlib not found. Please consider installing it to proceed.")
+    sys.exit(0)
+
 try:
     import fastmat
 except ImportError:
-    sys.path.insert(0, '..')
+    sys.path.append('..')
     import fastmat
 
-# import smooth printing routines
-sys.path.insert(0, '../util')
-from routines.printing import *
 
 ################################################## helper functions
-
-
 def printTime(note, call, *args, **kwargs):
     '''Measure runtime of call and print it to stdout.'''
     sys.stdout.write(" * %s ... " % (note))
@@ -72,7 +73,8 @@ def plotComplex(plot, vec):
 ################################################## script
 
 
-printTitle("Sparse-Signal-Recovery Demo using OMP and ISTA", width=80)
+print("fastmat demo: Sparse-Signal-Recovery Demo using OMP and ISTA")
+print("------------------------------------------------------------")
 
 # define some constants
 N = 100        # number of measurements (height of dictionary)
@@ -87,8 +89,8 @@ x0 = s - 1j * s
 # (dictionary matrix holds first N entries of M-Fourier matrix)
 # option to choose a complex one or a non-complex one
 matG = fastmat.Matrix(
-        numpy.random.normal(0.0, np.sqrt(N), (N, M)) + \
-        1j * fastmat.Matrix(numpy.random.normal(0.0, np.sqrt(N), (N, M)))
+        numpy.random.normal(0.0, numpy.sqrt(N), (N, M)) + \
+        1j * fastmat.Matrix(numpy.random.normal(0.0, numpy.sqrt(N), (N, M)))
     )
 
 # option 1
@@ -134,7 +136,7 @@ plotComplex(fig.add_subplot(grid[1, 2], title='baseline'), x0)
 
 # set title of whole figure
 fig.suptitle(
-    "Demonstration of Sparse Signal Recovery with fastmat using OMP and ISTA",
+    "Sparse Signal Recovery Demo with OMP and ISTA using fastmat",
     fontweight='bold')
 
 # arrange tightly and plot

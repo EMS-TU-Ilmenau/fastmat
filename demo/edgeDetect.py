@@ -33,20 +33,23 @@ import time
 # import numpy functionality
 import numpy as np
 from scipy import ndimage
-import matplotlib.pyplot as plt
 
-# import fastmat, try as global package or locally from one floor up
+################################################## import modules
+try:
+    import matplotlib.pyplot as plt               # plotting
+except:
+    print("matplotlib not found. Please consider installing it to proceed.")
+    sys.exit(0)
+
 try:
     import fastmat
 except ImportError:
-    sys.path.insert(0, '..')
+    sys.path.append('..')
     import fastmat
 
-# import smooth printing routines
-sys.path.insert(0, '../util')
-from routines.printing import frameLine, frameText, printTitle
 
-printTitle("Edge detection using fast correlation", width=80)
+print("fastmat demo: Edge detection using fast correlation")
+print("---------------------------------------------------")
 
 # read the image
 arrHead = ndimage.imread("head.png", flatten=True)
@@ -86,12 +89,10 @@ numSlowTime = time.time() - s
 # calc the total gradient
 arrEdges = np.sqrt(arrEdgesX**2 + arrEdgesY**2)
 
-printTitle("RESULTS", width=80)
-frameText("   Fast Detection: %.4fs  |  Reference: %.4fs" %
-          (numFastTime, numSlowTime), align='c'
-          )
-frameText("   Speedup Factor: %3.3f" % (numSlowTime / numFastTime), align='c')
-frameLine()
+print("\nResults:")
+print("   Fast Detection: %.3fs" %(numFastTime))
+print("   Reference     : %.3fs" %(numSlowTime))
+print("   Speedup Factor: %3.3f" %(numSlowTime / numFastTime))
 
 plt.figure(1)
 plt.subplot(211)

@@ -40,16 +40,12 @@ import numpy.random as npr
 import numpy.linalg as npl
 import numpy as np
 
-# import fastmat, try as global package or locally from one floor up
+################################################## import modules
 try:
     import fastmat
 except ImportError:
-    sys.path.insert(0, '..')
+    sys.path.append('..')
     import fastmat
-
-# import smooth printing routines
-sys.path.insert(0, '../util')
-from routines.printing import frameLine, frameText, printTitle
 
 ################################################################################
 #                          PARAMETER SECTION
@@ -64,27 +60,25 @@ numApproxQual = 0.3
 #                          CALCULATION SECTION
 ################################################################################
 
-printTitle(
-    "Approximation of an almost low rank matrix using the LowRank class",
-    width=80
-)
+print("fastmat demo: Approximation of an almost low rank matrix with LowRank()")
+print("-----------------------------------------------------------------------")
 
 # calc the number of dimensions to approximate
 numSize = int(numApproxQual * numMatSize)
 
 # draw a dense random and normalized array
-frameText(" Generate the Matrix")
+print(" * Generate the Matrix")
 arrFull = npr.randn(numMatSize, numMatSize) / np.sqrt(numMatSize)
 
 # get the SVD
-frameText(" Calc the SVD")
+print(" * Calc the SVD")
 arrU, vecSigma, arrV = npl.svd(arrFull)
 
-frameText(" Truncate the singular values")
+print(" * Truncate the singular values")
 vecT = np.linspace(0, 3, numMatSize - numSize - 1)
 vecSigma[numSize + 1:] = vecSigma[numSize + 1:] * 0.1 * np.exp(-vecT)
 
-frameText(" Rebuild the matrix with truncated singular values")
+print(" * Rebuild the matrix with truncated singular values")
 arrFull = arrU.dot( np.diag(vecSigma).dot(arrV.T) )
 
 matFull = fastmat.Matrix(arrFull)
@@ -92,25 +86,25 @@ matApprox = fastmat.LowRank(
     vecSigma[:numSize],arrU[:,:numSize],arrV[:,:numSize]
 )
 
-frameText(" Generate the linear system")
+print(" * Generate the linear system")
 vecX = npr.randn(numMatSize)
 vecB = matFull * vecX
 
 s = time.time()
 y1 = matFull * vecX
-numDenseForwardTime = time.time() - s
+timeDenseFwd = time.time() - s
 
 s = time.time()
 y2 = matApprox * vecX
-numApproxForwardTime = time.time() - s
+timeApproxFwd = time.time() - s
 
 s = time.time()
 x1 = fastmat.algs.CG(matFull,vecB)
-numDenseSolveTime = time.time() - s
+timeDenseSolve = time.time() - s
 
 s = time.time()
 x2 = fastmat.algs.CG(matApprox,vecB)
-numApproxSolveTime = time.time() - s
+timeApproxSolve = time.time() - s
 
 numApproxErr1 = npl.norm(x1 - x2) / npl.norm(x1)
 numApproxErr2 = npl.norm(matFull * x1 - matFull * x2) / npl.norm(vecB)
@@ -118,27 +112,10 @@ numApproxErr2 = npl.norm(matFull * x1 - matFull * x2) / npl.norm(vecB)
 ################################################################################
 #                               OUTPUT SECTION
 ################################################################################
-printTitle("RESULTS", width=80)
-frameText(" Dense Multiplication             % 10.3f ms" %
-          (1000 * numDenseForwardTime))
-frameText(" Approximated Multiplication      % 10.3f ms" %
-          (1000 * numApproxForwardTime))
-frameText(" Solve Dense Linear System        % 10.3f ms" %
-          (1000 * numDenseSolveTime))
-frameText(" Solve Approximated Linear System % 10.3f ms" %
-          (1000 * numApproxSolveTime))
-frameText(" Relative Error in Coefficient Domain      % 10.3f" %
-          (numApproxErr1))
-frameText(" Relative Error in Signal Domain           % 10.3f" %
-          (numApproxErr2))
-printTitle("K THX, BYE", width=80)
-
-#import matplotlib.pyplot as plt
-#plt.plot(vecSigma)
-#plt.show()
-#plt.plot(x1)
-#plt.plot(x2)
-#plt.show()
-#plt.plot(x1)
-#plt.plot(x2)
-#plt.show()
+print("\nResults:")
+print("   Dense Multiplication             %14.3f ms" %(1e3 * timeDenseFwd))
+print("   Approximated Multiplication      %14.3f ms" %(1e3 * timeApproxFwd))
+print("   Solve Dense Linear System        %14.3f ms" %(1e3 * timeDenseSolve))
+print("   Solve Approximated Linear System %14.3f ms" %(1e3 * timeApproxSolve))
+print("   Relative Error in Coefficient Domain %10.3f" %(numApproxErr1))
+print("   Relative Error in Signal Domain      %10.3f" %(numApproxErr2))

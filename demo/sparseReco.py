@@ -42,19 +42,16 @@ import sys
 import time
 
 # import numpy functionality
-import numpy.random as npr
 import numpy as np
+import numpy.random as npr
 
-# import fastmat, try as global package or locally from one floor up
+################################################## import modules
 try:
     import fastmat
 except ImportError:
-    sys.path.insert(0, '..')
+    sys.path.append('..')
     import fastmat
 
-# import smooth printing routines
-sys.path.insert(0, '../util')
-from routines.printing import frameLine, frameText, printTitle
 
 ################################################################################
 #                          PARAMETER SECTION
@@ -123,14 +120,14 @@ def genGroundTruth(numN, numM, numK):
 #                          CALCULATION SECTION
 ################################################################################
 
-printTitle("Sparse reconstruction example using efficient convolution",
-           width=80)
+print("fastmat demo: Sparse reconstruction using efficient convolution")
+print("---------------------------------------------------------------")
 
 
 print(" * Generate the windowed pulse")
 s = time.time()
 arrP = genPulse(numSignalSize, numPulseWidth, numPulseFreq)
-numPulseTime = time.time() - s
+timePulse = time.time() - s
 
 
 # generate a circulant dictionary which will serve as linear operator for the
@@ -138,57 +135,54 @@ numPulseTime = time.time() - s
 print(" * Create the dictionary")
 s = time.time()
 matC = fastmat.Circulant(arrP)
-numDictionaryTime = time.time() - s
+timeDictionary = time.time() - s
 
 
 # create an explicit version of the dictionary
 # that disregards the circulant structure
 print(" * Create the unstructured matrix for speed comparison")
-matCHat = fastmat.Matrix(matC.array)
+matCHat = fastmat.Matrix(matC._getArray())
 
 
 # generate a random sequence of spikes where position and amplitudes are random
 print(" * Generating the ground truth as a sequence of spikes")
 s = time.time()
 arrX = genGroundTruth(numSignalSize, numSlices, numPulses)
-numGroundTime = time.time() - s
+timeGroundTruth = time.time() - s
 
 
 # do the measurement (apply the forward model), i.e. do the convolution
 print(" * Apply the forward model to generate the signal")
 s = time.time()
 arrY = matC * arrX
-numForwardTime = time.time() - s
+timeForward = time.time() - s
 
 
 # call the sparse recovery algorithm to extract the original pulses
 print(" * Do the reconstruction while exploiting structure")
 s = time.time()
 arrR1 = fastmat.algs.OMP(matC, arrY, numPulses)
-numFastTime = time.time() - s
+timeFastmat = time.time() - s
 
 print(" * Do the reconstruction without exploiting structure")
 s = time.time()
 arrR2 = fastmat.algs.OMP(matCHat, arrY, numPulses)
-numSlowTime = time.time() - s
+timeRegular = time.time() - s
 
 ################################################################################
 #                               OUTPUT SECTION
 ################################################################################
 
-printTitle("RESULTS", width=80)
-frameText("   Pulse Generation         : % 10.3f ms" % (1000 * numPulseTime))
-frameText("   Dictionary Generation    : % 10.3f ms" %
-          (1000 * numDictionaryTime))
-frameText("   Ground Truth Generation  : % 10.3f ms" % (1000 * numGroundTime))
-frameText("   Forward Model            : % 10.3f ms" % (1000 * numForwardTime))
-frameLine()
-frameText("   Fast Reconstruction Time : % 10.3f s" % (numFastTime))
-frameText("   Slow Reconstruction Time : % 10.3f s" % (numSlowTime))
-frameLine()
-frameText("   Efficient Matrix Storage : % 10.3f MB" % (matC.nbytes / 2.**20))
-frameText("   Reference Matrix Storage : % 10.3f MB" %
-          (matCHat.nbytes / 2.**20))
-frameLine()
-frameText("   Speedup factor           : % 10.2f" % (numSlowTime / numFastTime))
-frameLine()
+print("\nResults:")
+print("   Pulse Generation            % 18.3f ms" %(1e3 * timePulse))
+print("   Dictionary Generation       % 18.3f ms" %(1e3 * timeDictionary))
+print("   Ground Truth Generation     % 18.3f ms" %(1e3 * timeGroundTruth))
+print("   Forward Model               % 18.3f ms" %(1e3 * timeForward))
+print("")
+print("   Reconstruction with fastmat classes % 10.3f s" %(timeFastmat))
+print("   Reconstruction with dense matrices  % 10.3f s" %(timeRegular))
+print("   Speedup factor              % 18.3f" %(timeRegular / timeFastmat))
+print("")
+print("   Efficient Matrix Storage    % 18.3f MB" %(matC.nbytes / 2. ** 20))
+print("   Reference Matrix Storage    % 18.3f MB" %(matCHat.nbytes / 2. ** 20))
+
