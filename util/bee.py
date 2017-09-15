@@ -56,7 +56,21 @@ import numpy as np
 from scipy import io as spio
 from numbers import Number
 
-# import fastmat, try as global package or locally from one floor up
+
+def importMatplotlib():
+    '''Conditional import of matplotlib'''
+    try:
+        from matplotlib import pyplot as plt
+    except ImportError:
+        print("matplotlib not found. Please consider installing it to proceed.")
+        sys.exit(0)
+
+    return plt
+
+
+colors = ['#003366', '#FF6600', '#CC0000', '#FCE1E1']
+
+################################################## import fastmat
 try:
     import fastmat
 except ImportError:
@@ -65,9 +79,8 @@ except ImportError:
     import fastmat
 
 from fastmat.inspect import Test, Benchmark, Documentation, TEST, BENCH, DOC
-from fastmat.inspect.common import AccessDict
-
-from routines.printing import *
+from fastmat.inspect.common import AccessDict, \
+    fmtBold, fmtGreen, fmtYellow, fmtRed
 
 classBaseContainers = (fastmat.Matrix, fastmat.Algorithm)
 
@@ -144,7 +157,7 @@ class CommandArgParser(object):
             # dispatch all other arguments to subcommand-stage
             dispatch = getattr(self, argument)
         except AttributeError:
-            printTitle(toolTitle)
+            print(os.linesep + toolTitle)
             self.cmdParser.print_help()
             exit(1)
 
@@ -390,7 +403,7 @@ class Bee(CommandArgParser):
                     '.'.join([nameTest, name]), numTests, timeSingle
                 ) + " (%s%s)" %(
                     (fmtGreen if numProb == 0 else fmtRed)
-                    ("%d problems" % (numProb)),
+                    ("%d problegms" % (numProb)),
                     ("" if numIrr == 0
                      else fmtYellow(
                          ", %d irregularities (ignored)" %(numIrr)))
@@ -475,7 +488,7 @@ class Bee(CommandArgParser):
         cntTests = cntTests[0]
         cntProblems, cntIrregularities = (cntProblems[0], cntIrregularities[0])
 
-        printTitle("Results")
+        print("\nResults:")
         print(("   > found %d problem(s) in %d classes%s " +
                "(ran %d tests in %.2f seconds)") %(
             cntProblems, len(problemUnits),
@@ -667,6 +680,7 @@ class Bee(CommandArgParser):
                   "MAY BE OVERWRITTEN ANYTIME"]
 
         # add machine info ahead of documentation
+        import platform
         machineInfo = (
             " ".join([" \\verb|%s|" %(token)
                       for token in platform.platform().split("-")]).strip("`"),
@@ -851,10 +865,8 @@ specifications
                     benchmarks[item] = fastmat.core.calibrateClass(
                         item, verbose=self.args.verbose, benchmarkOnly=True)
 
-            # plot using matplotlib and the TU Ilmenau CI colors
+            plt = importMatplotlib()
             print("  > Plotting %d figures." %(len(fastmat.core.calData)))
-            from matplotlib import pyplot as plt
-            colors = ['#003366', '#FF6600', '#CC0000', '#FCE1E1']
 
             def plot(arrN, arrTime, arrNested, arrEstimate,
                      title, legend=False):
@@ -961,8 +973,7 @@ specifications
                 self.args.calibration))
 
         # run the benchmarks and plot the result
-        from matplotlib import pyplot as plt
-        colors = ['#003366', '#FF6600', '#CC0000', '#FCE1E1']
+        plt = importMatplotlib()
 
         def plot(arrN, arrTime, arrEstimate, title, legend=False):
             '''
@@ -1020,7 +1031,6 @@ specifications
         plot(np.empty((0, 2)), np.empty((0, 2)), np.empty((0, 2)),
              'Legend', legend=True)
 
-        # plot using matplotlib and the TU Ilmenau CI colors
         print("  > Plotting %d figures." %(len(classes)))
         plt.show()
 
