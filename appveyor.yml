@@ -64,7 +64,7 @@ install:
      print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
 build_script:
-  - make compile
+  - mingw32-make compile
   - pip install cibuildwheel==0.5.1
   - cibuildwheel --output-dir wheelhouse
 
