@@ -32,6 +32,7 @@ before_install:
   - sudo apt-get update -qq
   
 install:
+  - pip install six
   - pip install cython numpy scipy
   - pip install coverage coveralls # for CI
   - pip install cibuildwheel==0.5.1
