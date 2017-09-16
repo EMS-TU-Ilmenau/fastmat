@@ -230,6 +230,7 @@ installRequires = []
 checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
 checkRequirement(setupRequires, 'Cython', 'cython>=0.18')
 checkRequirement(setupRequires, 'numpy', 'numpy')
+checkRequirement(installRequires, 'six', 'six')
 checkRequirement(installRequires, 'scipy', 'scipy')
 
 print("Requirements for setup: %s" %(setupRequires))

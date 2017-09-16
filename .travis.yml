@@ -33,7 +33,7 @@ before_install:
   
 install:
   - pip install six
-  - pip install cython numpy scipy
+  - pip install cython numpy scipy --use-wheel
   - pip install coverage coveralls # for CI
   - pip install cibuildwheel==0.5.1
 
@@ -44,12 +44,15 @@ script:
   - coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
   - coverage run -a --source=fastmat util/bee.py calibrate Matrix
   - cibuildwheel --output-dir wheelhouse
-  - |
-    if [[ $TRAVIS_TAG ]]; then
-      ls -l wheelhouse/*
-      pip install twine
-      twine upload wheelhouse/*.whl
-    fi
+  - ls -l wheelhouse/*
+  - pip install twine
+  - twine upload wheelhouse/*.whl
+#  - |
+#    if [[ $TRAVIS_TAG ]]; then
+#      ls -l wheelhouse/*
+#      pip install twine
+#      twine upload wheelhouse/*.whl
+#    fi
 
 after_success: >
   if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then

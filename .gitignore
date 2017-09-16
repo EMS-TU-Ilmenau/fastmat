@@ -27,6 +27,7 @@ fastmat/*.dll
 # build stuff
 dist/*
 build/*
+fastmat.egg-info
 *.egginfo
 *.egg
 

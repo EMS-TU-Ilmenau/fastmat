@@ -92,7 +92,7 @@ install:
       ls $destination
 
 build_script:
-  - pip install cython numpy
+  - pip install cython numpy scipy --use-wheel
   - pip install cibuildwheel==0.5.1
   - cibuildwheel --output-dir wheelhouse
 
