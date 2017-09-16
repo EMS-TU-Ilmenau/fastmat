@@ -1,62 +1,55 @@
 environment:
   global:
-    PYTHON: "C:\\conda"
-    MINICONDA_VERSION: "latest"
-    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\ci-helpers\\appveyor\\windows_sdk.cmd"
-    CONDA_DEPENDENCIES: "numpy scipy"
-    PIP_DEPENDENCIES: "six"
     CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
- 
+
   matrix:
-    - PYTHON_VERSION: "3.6"
-
-    - PYTHON_VERSION: "3.5"
-      SKIP_NOTAG: true
-
-    - PYTHON_VERSION: "3.4"
-      SKIP_NOTAG: true
-
-    - PYTHON_VERSION: "2.7"
-
-    - PYTHON_VERSION: "3.6"
-      SKIP_NOTAG: true
-
-    - PYTHON_VERSION: "3.5"
-      SKIP_NOTAG: true
-
-    - PYTHON_VERSION: "3.4"
-      SKIP_NOTAG: true
-
-    - PYTHON_VERSION: "2.7"
-      SKIP_NOTAG: true
-
-platform:
-  - x86
-  - x64
+    # For Python versions available on Appveyor, see 
+    # http://www.appveyor.com/docs/installed-software#python
+    # Use Anaconda as SciPy is a 
+    # headache with Windows.
+      # 3.6
+    - PYTHON: "C:\\Miniconda36"
+      # 3.6 64-bit
+    - PYTHON: "C:\\Miniconda36-x64"
+      # 3.5
+    - PYTHON: "C:\\Miniconda35"
+      # 3.5 64-bit
+    - PYTHON: "C:\\Miniconda35-x64"
+      # 3.4
+    - PYTHON: "C:\\Miniconda3"
+      # 3.4 64-bit
+    - PYTHON: "C:\\Miniconda3-x64"
+      # 2.7
+    - PYTHON: "C:\\Miniconda"
+      # 2.7 64-bit
+    - PYTHON: "C:\\Miniconda-x64"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
 install:
-  - "powershell ci-helpers/appveyor/install-miniconda.ps1"
+  # Prepend chosen Python to the PATH of this build
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
-
-  # Check that we have the expected version and architecture for Python
-  - python --version
   - >-
      %CMD_IN_ENV%
      python -c "import sys,platform,struct;
      print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
+  # Install the conda supplied packages; msvc_runtime needed for py34
+  - "conda update -y conda"
+  - "conda install -y pip wheel numpy scipy"
 
 build_script:
   - pip install cibuildwheel==0.5.1
-  - "%CMD_IN_ENV% python setup.py build_ext --inplace"
+  - pip install .
 
 test_script:
-  - "%CMD_IN_ENV% python util/bee.py test -v"
+  - python util/bee.py test -v"
   - cibuildwheel --output-dir wheelhouse
 
 artifacts:
