@@ -1,39 +1,33 @@
 environment:
   global:
     PYTHON: "C:\\conda"
+    MINICONDA_VERSION: "latest"
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\ci-helpers\\appveyor\\windows_sdk.cmd"
     CONDA_DEPENDENCIES: "numpy scipy"
     PIP_DEPENDENCIES: "six"
     CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
  
   matrix:
     - PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: 32
 
     - PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: 32
       SKIP_NOTAG: true
 
     - PYTHON_VERSION: "3.4"
-      PYTHON_ARCH: 32
       SKIP_NOTAG: true
 
     - PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: 32
 
     - PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: 64
       SKIP_NOTAG: true
 
     - PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: 64
       SKIP_NOTAG: true
 
     - PYTHON_VERSION: "3.4"
-      PYTHON_ARCH: 64
       SKIP_NOTAG: true
 
     - PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: 64
       SKIP_NOTAG: true
 
 platform:
@@ -45,6 +39,8 @@ init:
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
 install:
+  - "powershell ci-helpers/appveyor/install-miniconda.ps1"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
@@ -56,9 +52,11 @@ install:
      print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
 build_script:
-  - python setup.py build_ext --inplace
-  - python util/bee.py test -v
   - pip install cibuildwheel==0.5.1
+  - "%CMD_IN_ENV% python setup.py build_ext --inplace"
+
+test_script:
+  - "%CMD_IN_ENV% python util/bee.py test -v"
   - cibuildwheel --output-dir wheelhouse
 
 artifacts:
