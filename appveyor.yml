@@ -1,5 +1,5 @@
 build_script:
-  - pip install cython numpy scipy
+  - pip install cython numpy
   - pip install cibuildwheel==0.5.1
   - cibuildwheel --output-dir wheelhouse
 
