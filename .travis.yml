@@ -10,7 +10,7 @@ services:
 
 env:
   global:
-    - CIBW_BEFORE_BUILD="{pip} install six"
+    - CIBW_BEFORE_BUILD="{pip} install cython numpy scipy six --use-wheel"
     - CIBW_TEST_COMMAND="python {project}/util/bee.py test -v"
 # set user:pass for twine in travis CI setup for project
 
