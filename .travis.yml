@@ -11,8 +11,12 @@ services:
 env:
   global:
     - CIBW_SKIP="cp26-* cp32-* cp33-*"
+    - CIBW_BEFORE_BUILD="{pip} install six"
     - CIBW_TEST_COMMAND="python {project}/util/bee.py test -v"
 # set user:pass for twine in travis CI setup for project
+
+os:
+  - linux
 
 python:
   - "2.7"
@@ -20,11 +24,9 @@ python:
   - "3.5"
   - "3.6"
 
-os:
-  - linux
-  - osx
-
 matrix:
+  include:
+    - python: "3.3"
   allow_failures:
     - os: osx
 
@@ -34,27 +36,29 @@ before_install:
 install:
   - pip install six
   - pip install cython numpy scipy --use-wheel
-  - pip install coverage coveralls # for CI
-  - pip install cibuildwheel==0.5.1
+  - |
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+      pip install coverage coveralls cibuildwheel==0.5.1 twine --use-wheel
+    fi
 
 script:
   - make compile
-  - coverage run --source=fastmat util/bee.py test -s Matrix. -v
-  - coverage run -a --source=fastmat util/bee.py list makedump
-  - coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
-  - coverage run -a --source=fastmat util/bee.py calibrate Matrix
-  - cibuildwheel --output-dir wheelhouse
-  - ls -l wheelhouse/*
-  - pip install twine
-  - twine upload wheelhouse/*.whl
-#  - |
-#    if [[ $TRAVIS_TAG ]]; then
-#      ls -l wheelhouse/*
-#      pip install twine
-#      twine upload wheelhouse/*.whl
-#    fi
+  - |
+    if [[ "$TRAVIS_PYTHON_VERSION == "3.3" ]] ; then
+      coverage run --source=fastmat util/bee.py test -s Matrix. -v
+      coverage run -a --source=fastmat util/bee.py list makedump
+      coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
+      coverage run -a --source=fastmat util/bee.py calibrate Matrix
+    elif [[ "$TRAVIS_PYTHON_VERSION == "3.6" ]] ; then
+      cibuildwheel --output-dir wheelhouse
+    else
+      python util/bee.py test -v
+    fi
 
 after_success: >
-  if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
+  if [[ "$TRAVIS_PYTHON_VERSION" == "3.3" ]] ; then
     coveralls
+  elif [[ "$TRAVIS_PYTHON_VERSION == "3.6" ]] ; then
+    ls -l wheelhouse/*
+    twine upload wheelhouse/*.whl
   fi
