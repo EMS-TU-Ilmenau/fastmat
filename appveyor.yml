@@ -1,6 +1,6 @@
 environment:
   global:
-    - CIBW_TEST_COMMAND="python {project}/util/bee.py test -v"
+    CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
  
   matrix:
     - PYTHON: C:\Python36
