@@ -21,13 +21,16 @@ before_install:
   - sudo apt-get update -qq
   
 install:
-  - pip install cython
+  - pip install cython numpy scipy
   - pip install coverage coveralls # for CI
   - pip install cibuildwheel==0.5.1
 
 script:
   - make compile
-  - coverage run --source=fastmat util/bee.py test -v
+  - coverage run --source=fastmat util/bee.py test -s Matrix. -v
+  - coverage run -a --source=fastmat util/bee.py list makedump
+  - coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
+  - coverage run -a --source=fastmat util/bee.py calibrate Matrix
   - cibuildwheel --output-dir wheelhouse
 
 after_success: >
