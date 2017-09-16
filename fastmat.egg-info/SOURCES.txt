@@ -93,5 +93,3 @@ fastmat/inspect/common.py
 fastmat/inspect/documentation.py
 fastmat/inspect/test.py
 util/bee.py
-util/routines/__init__.py
-util/routines/printing.py

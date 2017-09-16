@@ -43,6 +43,7 @@ install:
 
 script:
   - make compile
+  - echo $TRAVIS_PYTHON_VERSION
   - |
     if [[ "$TRAVIS_PYTHON_VERSION == "3.3" ]] ; then
       coverage run --source=fastmat util/bee.py test -s Matrix. -v

@@ -1,4 +1,2 @@
-cython
-numpy
+six
 scipy
-matplotlib
