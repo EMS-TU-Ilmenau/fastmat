@@ -37,29 +37,28 @@ install:
   - pip install six
   - pip install cython numpy scipy --use-wheel
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      pip install coverage coveralls cibuildwheel==0.5.1 twine --use-wheel
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.3" ]] ; then
+      pip install coverage coveralls --use-wheel
+    elif [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+      pip install cibuildwheel==0.5.1 twine --use-wheel
     fi
 
 script:
   - make compile
   - echo $TRAVIS_PYTHON_VERSION
-  - |
-    if [[ "$TRAVIS_PYTHON_VERSION == "3.3" ]] ; then
-      coverage run --source=fastmat util/bee.py test -s Matrix. -v
+  - if [[ "$TRAVIS_PYTHON_VERSION == "3.5" ]] ; then
+      coverage run --source=fastmat util/bee.py test -v
       coverage run -a --source=fastmat util/bee.py list makedump
       coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
       coverage run -a --source=fastmat util/bee.py calibrate Matrix
+      coveralls
     elif [[ "$TRAVIS_PYTHON_VERSION == "3.6" ]] ; then
       cibuildwheel --output-dir wheelhouse
-    else
-      python util/bee.py test -v
+      ls -l wheelhouse/*
     fi
 
 after_success: >
-  if [[ "$TRAVIS_PYTHON_VERSION" == "3.3" ]] ; then
-    coveralls
-  elif [[ "$TRAVIS_PYTHON_VERSION == "3.6" ]] ; then
+  if [[ "$TRAVIS_PYTHON_VERSION == "3.6" ]] ; then
     ls -l wheelhouse/*
     twine upload wheelhouse/*.whl
   fi
