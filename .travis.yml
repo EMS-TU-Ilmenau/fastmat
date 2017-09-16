@@ -37,7 +37,7 @@ install:
   - pip install six
   - pip install cython numpy scipy --use-wheel
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.3" ]] ; then
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]] ; then
       pip install coverage coveralls --use-wheel
     elif [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
       pip install cibuildwheel==0.5.1 twine --use-wheel
