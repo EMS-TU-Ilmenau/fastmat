@@ -5,50 +5,50 @@ environment:
     OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-5f998ef_gcc7_1_0_win32.zip
     OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-5f998ef_gcc7_1_0_win64.zip
     
-matrix:
-  - PYTHON: C:\Python36
-    PYTHON_VERSION: 3.6
-    PYTHON_ARCH: 32
-    TEST_MODE: fast
+  matrix:
+    - PYTHON: C:\Python36
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 32
+      TEST_MODE: fast
 
-  - PYTHON: C:\Python27-x64
-    PYTHON_VERSION: 2.7
-    PYTHON_ARCH: 64
-    TEST_MODE: fast
+    - PYTHON: C:\Python27-x64
+      PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 64
+      TEST_MODE: fast
 
-  - PYTHON: C:\Python34-x64
-    PYTHON_VERSION: 3.4
-    PYTHON_ARCH: 64
-    TEST_MODE: fast
+    - PYTHON: C:\Python34-x64
+      PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 64
+      TEST_MODE: fast
 
-  - PYTHON: C:\Python36-x64
-    PYTHON_VERSION: 3.6
-    PYTHON_ARCH: 64
-    TEST_MODE: full
+    - PYTHON: C:\Python36-x64
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 64
+      TEST_MODE: full
 
-  - PYTHON: C:\Python27
-    PYTHON_VERSION: 2.7
-    PYTHON_ARCH: 32
-    SKIP_NOTAG: true
-    TEST_MODE: full
+    - PYTHON: C:\Python27
+      PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 32
+      SKIP_NOTAG: true
+      TEST_MODE: full
 
-  - PYTHON: C:\Python34
-    PYTHON_VERSION: 3.4
-    PYTHON_ARCH: 32
-    SKIP_NOTAG: true
-    TEST_MODE: full
+    - PYTHON: C:\Python34
+      PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 32
+      SKIP_NOTAG: true
+      TEST_MODE: full
 
-  - PYTHON: C:\Python35-x64
-    PYTHON_VERSION: 3.5
-    PYTHON_ARCH: 64
-    SKIP_NOTAG: true
-    TEST_MODE: full
+    - PYTHON: C:\Python35-x64
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 64
+      SKIP_NOTAG: true
+      TEST_MODE: full
 
-  - PYTHON: C:\Python35
-    PYTHON_VERSION: 3.5
-    PYTHON_ARCH: 32
-    SKIP_NOTAG: true
-    TEST_MODE: full
+    - PYTHON: C:\Python35
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 32
+      SKIP_NOTAG: true
+      TEST_MODE: full
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
