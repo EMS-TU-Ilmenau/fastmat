@@ -3,10 +3,14 @@ sudo: required
 
 branches:
   only:
-    - master
+    - stable
 
 services:
   - docker
+
+os:
+  - linux
+  - osx
 
 python:
   - "2.7"
