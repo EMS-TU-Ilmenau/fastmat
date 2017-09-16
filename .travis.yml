@@ -3,17 +3,26 @@ sudo: required
 
 branches:
   only:
-    - stable
+    - master
 
 services:
   - docker
 
-os:
-  - linux
-  - osx
+env:
+  global:
+    - CIBW_SKIP="cp26-* cp32-* cp33-*"
+    - CIBW_TEST_COMMAND="python {project}/util/bee.py test -v"
+# set user:pass for twine in travis CI setup for project
 
 python:
   - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+
+os:
+  - linux
+  - osx
 
 matrix:
   allow_failures:
@@ -36,6 +45,7 @@ script:
   - cibuildwheel --output-dir wheelhouse
   - |
     if [[ $TRAVIS_TAG ]]; then
+      ls -l wheelhouse/*
       pip install twine
       twine upload wheelhouse/*.whl
     fi
