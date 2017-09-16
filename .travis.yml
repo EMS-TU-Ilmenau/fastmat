@@ -10,8 +10,6 @@ services:
 
 python:
   - "2.7"
-  - "3.6"
-  - "nightly"
 
 matrix:
   allow_failures:
@@ -32,6 +30,11 @@ script:
   - coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
   - coverage run -a --source=fastmat util/bee.py calibrate Matrix
   - cibuildwheel --output-dir wheelhouse
+  - |
+    if [[ $TRAVIS_TAG ]]; then
+      pip install twine
+      twine upload wheelhouse/*.whl
+    fi
 
 after_success: >
   if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
