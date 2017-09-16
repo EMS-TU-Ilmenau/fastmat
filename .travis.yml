@@ -10,25 +10,26 @@ services:
 
 env:
   global:
-    - CIBW_SKIP="cp26-* cp32-* cp33-*"
     - CIBW_BEFORE_BUILD="{pip} install six"
     - CIBW_TEST_COMMAND="python {project}/util/bee.py test -v"
 # set user:pass for twine in travis CI setup for project
 
-os:
-  - linux
-
-python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-
 matrix:
   include:
-    - python: "3.3"
-  allow_failures:
-    - os: osx
+    # all CIBW_SKIP-globs are intended to match exclosures,
+    # i.e. platform tags to exclude from the generation
+    - python: "3.6"
+      os: linux
+      CIBW_SKIP: "cp[!3]?-* cp3[!6]-*"
+    - python: "3.5"
+      os: linux
+      CIBW_SKIP: "cp[!3]?-* cp3[!5]-*"
+    - python: "3.4"
+      os: linux
+      CIBW_SKIP: "cp[!3]?-* cp3[!4]-*"
+    - python: "2.7"
+      os: linux
+      CIBW_SKIP: "cp[!2]?-* cp2[!7]-*"
 
 before_install:
   - sudo apt-get update -qq
@@ -36,30 +37,37 @@ before_install:
 install:
   - pip install six
   - pip install cython numpy scipy --use-wheel
+  - pip install cibuildwheel==0.5.1 twine --use-wheel
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]] ; then
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
       pip install coverage coveralls --use-wheel
-    elif [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      pip install cibuildwheel==0.5.1 twine --use-wheel
     fi
 
 script:
+  - echo "Running build for $TRAVIS_PYTHON_VERSION"
   - make compile
-  - echo $TRAVIS_PYTHON_VERSION
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]] ; then
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+      echo "Running coverage analysis..."
       coverage run --source=fastmat util/bee.py test -v
       coverage run -a --source=fastmat util/bee.py list makedump
       coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
       coverage run -a --source=fastmat util/bee.py calibrate Matrix
-    elif [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      cibuildwheel --output-dir wheelhouse
-      ls -l wheelhouse/*
+    else
+      echo "Running regular test set..."
+      python util/bee.py test -v
     fi
+  - echo "Beginning wheel generation..."
+  - cibuildwheel --output-dir wheelhouse
+  - ls -l wheelhouse/*
 
 after_success: >
-  if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-    coveralls
-    ls -l wheelhouse/*
-    twine upload wheelhouse/*.whl
-  fi
+  - echo "Finished job for $TRAVIS_PYTHON_VERSION successfully."
+  - |
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+      echo "Submitting coverage analysis results..."
+      coveralls
+    fi
+  - echo "Uploading generated wheels..."
+  - ls -l wheelhouse/*
+  - twine upload wheelhouse/*.whl
