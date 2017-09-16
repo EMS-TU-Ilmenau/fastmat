@@ -1,0 +1,8 @@
+build_script:
+  - pip install cython numpy scipy
+  - pip install cibuildwheel==0.5.1
+  - cibuildwheel --output-dir wheelhouse
+
+artifacts:
+  - path: "wheelhouse\\*.whl"
+    name: Wheels
