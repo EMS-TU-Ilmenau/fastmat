@@ -1,7 +1,7 @@
 environment:
-#  global:
-#    CIBW_BEFORE_BUILD: "conda update -y conda && conda install -y numpy scipy"
-#    CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
+  global:
+    CIBW_BEFORE_BUILD: "conda update -y conda && conda install -y numpy scipy"
+    CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
 
   matrix:
     # For Python versions available on Appveyor, see 
