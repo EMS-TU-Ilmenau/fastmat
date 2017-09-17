@@ -9,9 +9,9 @@ services:
   - docker
 
 env:
-  global:
-    - CIBW_BEFORE_BUILD="{pip} install cython numpy scipy six --use-wheel"
-    - CIBW_TEST_COMMAND="python {project}/util/bee.py test -s Matrix. algs.OMPinspect -v"
+#  global:
+#    - CIBW_BEFORE_BUILD="{pip} install cython numpy scipy six --use-wheel"
+#    - CIBW_TEST_COMMAND="python {project}/util/bee.py test -s Matrix. algs.OMPinspect -v"
 # set user:pass for twine in travis CI setup for project
 
 matrix:
