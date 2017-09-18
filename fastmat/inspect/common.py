@@ -441,8 +441,11 @@ def arrAlign(arr, alignment=ALIGNMENT.DONTCARE):
         elif arrFill.ndim == 3:
             arrFill[1::spacing, 1::spacing, 1::spacing] = arr
             return arrFill[1::spacing, 1::spacing, 1::spacing]
+        elif arrFill.ndim == 4:
+            arrFill[1::spacing, 1::spacing, 1::spacing, 1::spacing] = arr
+            return arrFill[1::spacing, 1::spacing, 1::spacing, 1::spacing]
         else:
-            raise ValueError("Only arrays of dimensions <3 are supported.")
+            raise ValueError("Only arrays of dimensions <5 are supported.")
     else:
         raise ValueError("Unknown alignment identificator '%s'" %(alignment))
 

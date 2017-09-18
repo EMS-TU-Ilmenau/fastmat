@@ -129,7 +129,7 @@ cdef class Permutation(Matrix):
     def _getDocumentation(self):
         from .inspect import DOC
         return DOC.SUBSECTION(
-            "Permutation Matrix (\texttt{fastmat.Permutation})",
+            r"Permutation Matrix (\texttt{fastmat.Permutation})",
             DOC.SUBSUBSECTION(
                 "Definition and Interface", r"""
 For a given permutation $\sigma \in S_n$ and a vector $\bm x \in \C^n$ we map

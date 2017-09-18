@@ -181,6 +181,19 @@ cdef class Toeplitz(Partial):
         '''
         return self._reference()
 
+    cpdef Matrix _getNormalized(self):
+        arrNorms = np.zeros((self.numM))
+        arrNorms[0] = np.linalg.norm(self._vecC) **2
+
+        cdef intsize ii = 0
+
+        for ii in range(self.numM - 1):
+            arrNorms[ii + 1] = arrNorms[ii] \
+                + np.abs(self._vecR[ii]) ** 2 \
+                - np.abs(self._vecC[self.numN - ii - 1]) ** 2
+
+        return self * Diag(1 / np.sqrt(arrNorms))
+
     ############################################## class property override
     cpdef tuple _getComplexity(self):
         return (0., 0.)
