@@ -77,7 +77,7 @@ def ISTA(
         raise ValueError("Only n x m arrays are supported for ISTA")
 
     # calculate the largest singular value to get the right step size
-    numL = 1.0 / (fmatA.largestSV ** 2)
+    numL = 1.0 / ( fmatA.largestSV ** 2)
 
     arrX = np.zeros(
         (fmatA.numM, arrB.shape[1]),
@@ -88,8 +88,8 @@ def ISTA(
     for numStep in range(numMaxSteps):
         # do the gradient step and threshold
 
-        arrStep = arrX - 2.0 * numL * fmatA.backward(fmatA.forward(arrX) - arrB)
-        arrX = _softThreshold(arrStep, numL * numLambda)
+        arrStep = arrX -  numL * fmatA.backward(fmatA.forward(arrX) - arrB)
+        arrX = _softThreshold(arrStep, numL * numLambda * 0.5)
 
     # return the unthresholded values for all non-zero support elements
     return np.where(arrX != 0, arrStep, arrX)
@@ -236,11 +236,10 @@ performance upgrade, which we hope to implement soon.""",
                             'n, k = 512, 3',
                             '',
                             '# define the sampling positions',
-                            't = np.linspace(0, 20 * m.pi, n)',
+                            't = np.linspace(0, 20 * np.pi, n)',
                             '',
                             '# construct the convolution matrix',
-                            'c = np.cos(2 * t) * np.exp(',
-                            '    -(t - 10 * m.pi) ** 2 / .1)',
+                            'c = np.cos(2 * t)',
                             'C = fm.Circulant(c)',
                             '',
                             '# create the ground truth',
