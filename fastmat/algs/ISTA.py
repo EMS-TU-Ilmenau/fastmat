@@ -96,10 +96,10 @@ def ISTA(
 
 
 ################################################################################
-###  Maintainance and Documentation
+###  Maintenance and Documentation
 ################################################################################
 
-################################################## inspection inerface
+################################################## inspection interface
 class ISTAinspect(Algorithm):
 
     def _getTest(self):

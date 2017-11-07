@@ -185,10 +185,10 @@ cdef np.ndarray _CGcore(
 
 
 ################################################################################
-###  Maintainance and Documentation
+###  Maintenance and Documentation
 ################################################################################
 
-################################################## inspection inerface
+################################################## inspection interface
 class CGinspect(Algorithm):
 
     def _getTest(self):
