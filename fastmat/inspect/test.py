@@ -155,19 +155,21 @@ def compareResults(test, query):
     tolError=5 * dynamics * maxEps * (dynamics * np.sqrt(maxDim)) ** tolPower
     query[TEST.RESULT_TOLERR]=tolError
 
-    maxRef=np.amax(np.abs(arrReference))
-    maxDiff=np.amax(np.abs(arrOutput - arrReference))
-    error=(maxDiff / maxRef if maxRef != 0 else maxDiff)
+    maxRef = float(np.amax(np.abs(arrReference)))
+    maxDiff = float(np.amax(np.abs(arrOutput - arrReference)))
+    error = (maxDiff / maxRef if maxRef != 0 else maxDiff)
     resultProximity=(error <= tolError) or (maxRef <= tolError)
 
     # determine final result
     query[TEST.RESULT]=(resultType and resultProximity)
+    # result ignored: whenever the main result is not true but an ignore in one
+    # of the tests would cause it to become true
     query[TEST.RESULT_IGNORED]=((resultType or ignoreType) and
-                                (resultProximity or ignoreProximity))
-    query[TEST.RESULT_TYPE]=(
-        resultType, ignoreType, arrOutput.dtype, expectedType)
-    query[TEST.RESULT_PROX]=(
-        resultProximity, ignoreProximity, error, maxRef)
+                                (resultProximity or ignoreProximity) and
+                                not query[TEST.RESULT])
+    query[TEST.RESULT_TYPE]=(resultType, ignoreType,
+                             arrOutput.dtype, expectedType)
+    query[TEST.RESULT_PROX]=(resultProximity, ignoreProximity, error, maxRef)
 
     return query
 
