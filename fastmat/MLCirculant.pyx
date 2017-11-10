@@ -144,7 +144,7 @@ cdef class MLCirculant(Partial):
 
     cpdef Matrix _getNormalized(self):
         norm = np.linalg.norm(self._tenC.reshape((-1)))
-        return self * Diag(np.ones(self.numN) / norm)
+        return self * (1. / norm)
 
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
