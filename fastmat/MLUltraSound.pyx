@@ -121,33 +121,6 @@ cdef class MLUltraSound(Partial):
         '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
 
-    ############################################## class property override
-    cpdef tuple _getComplexity(self):
-        return (0., 0.)
-
-    ############################################## class reference
-    cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
-        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
-
-        # go through all blocks and construct the corresponding
-        # MLToeplitz instance by calling its reference
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
-                arrRes[
-                    ii * self._numSize1 * self._numSize2:
-                    (ii + 1) * self._numSize1 * self._numSize2,
-                    jj * self._numSize1 * self._numSize2:
-                    (jj + 1) * self._numSize1 * self._numSize2
-                ] = MLToeplitz(
-                    np.copy(self._tenT[ii, jj, :, :])
-                )._reference()
-
-        return arrRes
-
     cpdef Matrix _getNormalized(self):
         cdef intsize ii, jj
 
@@ -207,6 +180,33 @@ cdef class MLUltraSound(Partial):
                     + arrT[2 * numL - 2 - ii] \
                     - arrT[numL - ii - 1]
         return arrNorms
+
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        return (0., 0.)
+
+    ############################################## class reference
+    cpdef np.ndarray _reference(self):
+        '''
+        Return an explicit representation of the matrix without using
+        any fastmat code.
+        '''
+        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
+
+        # go through all blocks and construct the corresponding
+        # MLToeplitz instance by calling its reference
+        for ii in range(self._numBlocksN):
+            for jj in range(self._numBlocksN):
+                arrRes[
+                    ii * self._numSize1 * self._numSize2:
+                    (ii + 1) * self._numSize1 * self._numSize2,
+                    jj * self._numSize1 * self._numSize2:
+                    (jj + 1) * self._numSize1 * self._numSize2
+                ] = MLToeplitz(
+                    np.copy(self._tenT[ii, jj, :, :])
+                )._reference()
+
+        return arrRes
 
     ############################################## class inspection, QM
     def _getTest(self):

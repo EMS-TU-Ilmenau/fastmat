@@ -214,6 +214,58 @@ cdef class MLToeplitz(Partial):
             )
         return arrS
 
+    cpdef Matrix _getNormalized(self):
+        arrNorms = self._normalizeCore(self._tenT)
+
+        return self * Diag(1. / np.sqrt(arrNorms))
+
+    def _normalizeCore(self, tenT):
+        cdef intsize ii, numS1, numS2, numS3
+
+        cdef intsize numL = int((tenT.shape[0] + 1) /2)
+        cdef intsize numEll = tenT.shape[0]
+
+        cdef intsize numD = len(tenT.shape)
+
+        cdef np.ndarray arrT, arrNorms
+        if numD == 1:
+            # if we are deep enough we do the normal toeplitz stuff
+            arrT = tenT
+
+            arrNorms = np.zeros(numL)
+
+            arrNorms[0] = np.linalg.norm(arrT[:numL]) **2
+
+            for ii in range(numL - 1):
+
+                arrNorms[ii + 1] = arrNorms[ii] \
+                    + np.abs(arrT[2 * numL - 2 - ii]) ** 2 \
+                    - np.abs(arrT[numL - ii - 1]) ** 2
+
+        else:
+            numS1 = np.prod(self._arrN[-numD :])
+            numS2 = np.prod(self._arrN[-(numD - 1) :])
+            arrNorms = np.zeros(numS1)
+            arrT = np.zeros((numEll, numS2))
+
+            # go deeper in recursion and get norms of blocks
+            for ii in range(numEll):
+                arrT[ii, :] = self._normalizeCore(tenT[ii, :])
+
+            numS3 = arrT.shape[1]
+            arrNorms[:numS3] = np.sum(arrT[:numL, :], axis=0)
+
+            # now do blockwise subtraction and addition
+            for ii in range(numL - 1):
+
+                arrNorms[
+                    (ii +1) *numS2 : (ii +2) *numS2
+                ] = arrNorms[ii *numS2 : (ii +1) *numS2] + \
+                    + arrT[2 * numL - 2 - ii] \
+                    - arrT[numL - ii - 1]
+
+        return arrNorms
+
     ############################################## class reference
     cpdef np.ndarray _reference(self):
         '''
@@ -301,58 +353,6 @@ cdef class MLToeplitz(Partial):
             # if we are in a lowest level, we just construct the right
             # single level toeplitz block
             return Toeplitz(tenU[:numN], tenU[numN:][::-1]).array
-
-    cpdef Matrix _getNormalized(self):
-        arrNorms = self._normalizeCore(self._tenT)
-
-        return self * Diag(1 / np.sqrt(arrNorms))
-
-    def _normalizeCore(self, tenT):
-        cdef intsize ii, numS1, numS2, numS3
-
-        cdef intsize numL = int((tenT.shape[0] + 1) /2)
-        cdef intsize numEll = tenT.shape[0]
-
-        cdef intsize numD = len(tenT.shape)
-
-        cdef np.ndarray arrT, arrNorms
-        if numD == 1:
-            # if we are deep enough we do the normal toeplitz stuff
-            arrT = tenT
-
-            arrNorms = np.zeros(numL)
-
-            arrNorms[0] = np.linalg.norm(arrT[:numL]) **2
-
-            for ii in range(numL - 1):
-
-                arrNorms[ii + 1] = arrNorms[ii] \
-                    + np.abs(arrT[2 * numL - 2 - ii]) ** 2 \
-                    - np.abs(arrT[numL - ii - 1]) ** 2
-
-        else:
-            numS1 = np.prod(self._arrN[-numD :])
-            numS2 = np.prod(self._arrN[-(numD - 1) :])
-            arrNorms = np.zeros(numS1)
-            arrT = np.zeros((numEll, numS2))
-
-            # go deeper in recursion and get norms of blocks
-            for ii in range(numEll):
-                arrT[ii, :] = self._normalizeCore(tenT[ii, :])
-
-            numS3 = arrT.shape[1]
-            arrNorms[:numS3] = np.sum(arrT[:numL, :], axis=0)
-
-            # now do blockwise subtraction and addition
-            for ii in range(numL - 1):
-
-                arrNorms[
-                    (ii +1) *numS2 : (ii +2) *numS2
-                ] = arrNorms[ii *numS2 : (ii +1) *numS2] + \
-                    + arrT[2 * numL - 2 - ii] \
-                    - arrT[numL - ii - 1]
-
-        return arrNorms
 
     ############################################## class inspection, QM
     def _getTest(self):
