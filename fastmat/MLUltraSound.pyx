@@ -258,16 +258,16 @@ cdef class MLUltraSound(Partial):
             DOC.SUBSUBSECTION(
                 'Definition and Interface',
                 r"""
-                This class is an implementation of matrices, which have a block 
-structure, where each block itself is a $2$-level Toeplitz matrix, as 
-implemented in \texttt{MLToeplitz}. The name originated from the fact, that 
-these matrices pop up, when modeling a ultrasonic pulse echo as a superposition 
+                This class is an implementation of matrices, which have a block
+structure, where each block itself is a $2$-level Toeplitz matrix, as
+implemented in \texttt{MLToeplitz}. The name originated from the fact, that
+these matrices pop up, when modeling a ultrasonic pulse echo as a superposition
 of hyperbolas.
 
-As such we can 
-collect the unique defining elements of $\bm H$ in $\bm h \in \bm \R^{M \times 
-M 
-\times 2 N_x - 1 \times 2 N_y - 1}$ and then set 
+As such we can
+collect the unique defining elements of $\bm H$ in $\bm h \in \bm \R^{M \times
+M
+\times 2 N_x - 1 \times 2 N_y - 1}$ and then set
 %
 \[
     \bm H_{i,j} = \bm T_{([N_x, N_y], 2)}(\bm h_{i,j}).
@@ -283,28 +283,28 @@ To this end we embed each $\bm H_{i,j}$ into a $2$-level circulant matrix
     \mathfrak{T}_2(\bm H_{0,0})   & \dots  & \mathfrak{T}_2(\bm H_{0,M-1}) \\
     \vdots        & \ddots & \vdots \\
     \mathfrak{T}_2(\bm H_{M-1,0}) & \dots  & \mathfrak{T}_2(\bm H_{M-1,M-1}) \\
-    \end{bmatrix} \endgroup = 
+    \end{bmatrix} \endgroup =
 \bm K^\herm \cdot \bm D \cdot \bm K
 \end{align}
 %
-for 
+for
 $\bm F = \bm \Fs_{2 N_x - 1} \otimes \bm \Fs_{2 N_y - 1} $,
 $\bm K = \bm I_{M} \otimes \bm F$
 %
-and 
-\[\bm D = 
+and
+\[\bm D =
 \begingroup
 \setlength\arraycolsep{3pt}
 \begin{bmatrix}
-\diag(\bm F \Vectorize \tilde{\bm h}_{0,0}) & \dots & 
+\diag(\bm F \Vectorize \tilde{\bm h}_{0,0}) & \dots &
 \diag(\bm F \Vectorize \tilde{\bm h}_{0,M-1}) \\
 \vdots & \ddots & \vdots \\
-\diag(\bm F \Vectorize \tilde{\bm h}_{M-1,0}) & \dots & 
+\diag(\bm F \Vectorize \tilde{\bm h}_{M-1,0}) & \dots &
 \diag(\bm F \Vectorize \tilde{\bm h}_{M-1,M-1}) \\
 \end{bmatrix},
 \endgroup
 \]
-which shows, that $\bm H$ simply is a subselection of the above block 
+which shows, that $\bm H$ simply is a subselection of the above block
 diagonalizated matrix. This is exactly, how it is implemented in \fm{}.
                 """,
                 DOC.SNIPPET('# import the package',

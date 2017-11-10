@@ -410,8 +410,8 @@ cdef class MLToeplitz(Partial):
             DOC.SUBSUBSECTION(
                 'Definition and Interface',
                 r"""
-Let $d \geqslant 2$. Then, given a $d$-dimensional complex sequence 
-$\bm{t} = [t_{\bm{k}}]$ for $\bm{k} \in \N^d$ a 
+Let $d \geqslant 2$. Then, given a $d$-dimensional complex sequence
+$\bm{t} = [t_{\bm{k}}]$ for $\bm{k} \in \N^d$ a
 $d$-level Toeplitz matrix $\bm{T}_{\bm{n},d}$ is recursively defined as
 %
 \[\bm{T}_{(\bm{n},d)} =
@@ -430,13 +430,13 @@ $d$-level Toeplitz matrix $\bm{T}_{\bm{n},d}$ is recursively defined as
 \endgroup
 \]
 %
-where $\bm m = \bm n_{-1}$ and $\ell = d-1$. So for $\bm n = [2,2]$ and 
+where $\bm m = \bm n_{-1}$ and $\ell = d-1$. So for $\bm n = [2,2]$ and
 $\bm t \in \C^{3 \times 3}$ we get
 %
 \[
 \begingroup
 \setlength\arraycolsep{3pt}
-\bm T_{[2,2],2} = 
+\bm T_{[2,2],2} =
 \begin{bmatrix}
 \bm T_{[1,2],1} & \bm T_{[3,2],1} \\
 \bm T_{[2,2],1} & \bm T_{[1,2],1}

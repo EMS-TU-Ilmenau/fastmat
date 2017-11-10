@@ -165,8 +165,8 @@ cdef class DiagBlocks(Matrix):
             DOC.SUBSUBSECTION(
                 'Definition and Interface',
                 r"""
-For given $n,m \in \N$ this class allows to define a block matrix $\bm M \in 
-\C^{nm \times nm}$, where each block is a diagonal matrix $\bm D_{ij} \in 
+For given $n,m \in \N$ this class allows to define a block matrix $\bm M \in
+\C^{nm \times nm}$, where each block is a diagonal matrix $\bm D_{ij} \in
 \C^{m \times m}$. This obviously allows efficient storage and computations.""",
                 DOC.SNIPPET('# import the package',
                             'import fastmat as fm',
@@ -184,7 +184,7 @@ For given $n,m \in \N$ this class allows to define a block matrix $\bm M \in
                             '# matrix diagonal-wise',
                             'M = fm.DiagBlocks(d)',
                             caption=r"""
-We have randomly drawn the defining elements $\bm d$ from a standard Gaussian 
+We have randomly drawn the defining elements $\bm d$ from a standard Gaussian
 distribution, which results in
 \[
     \bm M =

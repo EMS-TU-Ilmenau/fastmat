@@ -85,7 +85,8 @@ cdef class MLCirculant(Partial):
                 arrOptSize[inn] = _findOptimalFFTSize(nn, maxStage)
 
                 # use this size, if we get better in that level
-                if _getFFTComplexity(arrOptSize[inn]) < _getFFTComplexity(self._arrN[inn]):
+                if (_getFFTComplexity(arrOptSize[inn]) <
+                        _getFFTComplexity(self._arrN[inn])):
                     arrDoOpt[inn] = 1
 
         arrDoOpt = arrDoOpt == 1
@@ -141,7 +142,6 @@ cdef class MLCirculant(Partial):
         if self.dtype != self._tenC.dtype:
             self._tenC = self._tenC.astype(self.dtype)
 
-
     cpdef Matrix _getNormalized(self):
         norm = np.linalg.norm(self._tenC.reshape((-1)))
         return self * Diag(np.ones(self.numN) / norm)
@@ -162,7 +162,7 @@ cdef class MLCirculant(Partial):
         arrN
     ):
         '''
-        preprocess one axis of the defining tensor. here we check for one 
+        preprocess one axis of the defining tensor. here we check for one
         dimension, whether it makes sense to  zero-pad or not by estimating
         the fft-complexity in each dimension.
         '''
@@ -340,15 +340,15 @@ cdef class MLCirculant(Partial):
             DOC.SUBSUBSECTION(
                 'Definition and Interface',
                 r"""
-Multilevel Circulant Matrices are not circulant by themselves, but consist 
-of multiply nested levels of circulant structures. To this end, let 
-$d \geqslant 2$, $\bm n = [n_1, \dots, n_d]$, 
-$\bm n_{1-} = [n_1,\dots, n_{d-1}]$ and $\bm m = [n_2,\dots, n_d]$. 
-Then, given a $d$-dimensional complex sequence 
-$\bm c = [c_{\bm{k}}]$ for $\bm{k} \in \N^d$ 
+Multilevel Circulant Matrices are not circulant by themselves, but consist
+of multiply nested levels of circulant structures. To this end, let
+$d \geqslant 2$, $\bm n = [n_1, \dots, n_d]$,
+$\bm n_{1-} = [n_1,\dots, n_{d-1}]$ and $\bm m = [n_2,\dots, n_d]$.
+Then, given a $d$-dimensional complex sequence
+$\bm c = [c_{\bm{k}}]$ for $\bm{k} \in \N^d$
 a $d$-level circulant matrix $\bm C_{\bm n,d}$ is recursively defined as
 %
-\[\bm C_{\bm n,d} = 
+\[\bm C_{\bm n,d} =
 \begingroup
 \setlength\arraycolsep{0pt}
 \begin{bmatrix}
@@ -357,7 +357,7 @@ a $d$-level circulant matrix $\bm C_{\bm n,d}$ is recursively defined as
     \bm{C}_{[2,\bm{m}],\ell}        & \bm{C}_{[1,\bm{m}],\ell}
     & \dots     & \bm{C}_{[3,\bm{m}],\ell}  \\
     \vdots                              & \vdots
-    & \ddots    & \vdots                        \\ 
+    & \ddots    & \vdots                        \\
     \bm{C}_{[n_1,\bm{m}],\ell}      & \bm{C}_{[n_1 - 1,\bm{m}],\ell}
     & \dots     & \bm{C}_{[1,\bm{m}],\ell}  \\
 \end{bmatrix}.
@@ -369,7 +369,7 @@ So for $\bm n = (2,2)$ and $\bm c \in \C^{2 \times 2}$ we get
 \[
 \begingroup
 \setlength\arraycolsep{3pt}
-\bm C_{[2,2],2} = 
+\bm C_{[2,2],2} =
 \begin{bmatrix}
 \bm C_{[1,2],1} & \bm C_{[2,2],1} \\
 \bm C_{[2,2],1} & \bm C_{[1,2],1}

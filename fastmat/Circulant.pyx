@@ -142,7 +142,6 @@ cdef class Circulant(Partial):
         if self.dtype != self._vecC.dtype:
             self._vecC = self._vecC.astype(self.dtype)
 
-
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
