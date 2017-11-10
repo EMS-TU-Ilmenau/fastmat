@@ -183,7 +183,7 @@ cdef class Circulant(Partial):
             vecOut[shift:] = self._vecC[:self.numN - shift]
 
     cpdef Matrix _getNormalized(self):
-        return self * Diag((1 /np.linalg.norm(self._vecC)) *np.ones(self.numM))
+        return self * (1. / np.linalg.norm(self._vecC))
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
