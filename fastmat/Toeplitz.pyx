@@ -191,17 +191,35 @@ cdef class Toeplitz(Partial):
         return self._reference()
 
     cpdef Matrix _getNormalized(self):
-        arrNorms = np.zeros((self.numM))
-        arrNorms[0] = np.linalg.norm(self._vecC) **2
+        # NOTE: This method suffers accuracy losses when elements with lower
+        # indices are large in magnitude compared to ones with higher index!
+        cdef intsize ii, N = self.numN, M = self.numM
+        cdef intsize iiMax = (N + 1) if M > N else M
 
-        cdef intsize ii = 0
+        # fill in a placeholder array
+        cdef np.ndarray arrNorms = _arrZero(1, M, 1, np.NPY_FLOAT64)
 
-        for ii in range(self.numM - 1):
-            arrNorms[ii + 1] = arrNorms[ii] \
-                + np.abs(self._vecR[ii]) ** 2 \
-                - np.abs(self._vecC[self.numN - ii - 1]) ** 2
+        # compute the absolute value of the squared elements in the defining
+        # vectors
+        cdef np.ndarray vecCSqr = np.square(np.abs(self._vecC))
+        cdef np.ndarray vecRSqr = np.square(np.abs(self._vecR))
 
-        return self * Diag(1 / np.sqrt(arrNorms))
+        # the first column is easy
+        arrNorms[0] = vecCSqr.sum()
+
+        # then follow the iterative approach. Every subsequent column features
+        # one more element of vecR and one less of vecC. Continue until vecC is
+        # eaten up completely
+        for ii in range(1, iiMax):
+            arrNorms[ii] = arrNorms[ii - 1] + vecRSqr[ii - 1] - vecCSqr[N - ii]
+
+        # then (as vecC is eaten up), proceed with rolling the remaining
+        # elements of vecR until they are represented fully in arrNorms
+        for ii in range(iiMax, M):
+            arrNorms[ii] = (arrNorms[ii - 1] +
+                            vecRSqr[ii - 1] - vecRSqr[ii - iiMax])
+
+        return self * Diag(1. / np.sqrt(arrNorms))
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
