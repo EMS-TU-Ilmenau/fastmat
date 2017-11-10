@@ -432,20 +432,9 @@ def arrAlign(arr, alignment=ALIGNMENT.DONTCARE):
             *(dim * spacing for dim in arr.shape)) - 0.5)).astype(arr.dtype)
 
         # fill-in the array data and return a view of the to-be-aligned array
-        if arrFill.ndim == 1:
-            arrFill[1::spacing] = arr
-            return arrFill[1::spacing]
-        elif arrFill.ndim == 2:
-            arrFill[1::spacing, 1::spacing] = arr
-            return arrFill[1::spacing, 1::spacing]
-        elif arrFill.ndim == 3:
-            arrFill[1::spacing, 1::spacing, 1::spacing] = arr
-            return arrFill[1::spacing, 1::spacing, 1::spacing]
-        elif arrFill.ndim == 4:
-            arrFill[1::spacing, 1::spacing, 1::spacing, 1::spacing] = arr
-            return arrFill[1::spacing, 1::spacing, 1::spacing, 1::spacing]
-        else:
-            raise ValueError("Only arrays of dimensions <5 are supported.")
+        arrPart = arrFill[(np.s_[1::spacing], ) * arrFill.ndim]
+        arrPart[:] = arr
+        return arrPart
     else:
         raise ValueError("Unknown alignment identificator '%s'" %(alignment))
 
