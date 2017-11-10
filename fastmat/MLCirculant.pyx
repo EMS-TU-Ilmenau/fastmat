@@ -135,6 +135,13 @@ cdef class MLCirculant(Partial):
         else:
             super(MLCirculant, self).__init__(P, N=arrIndices, M=arrIndices)
 
+        # Currently Fourier matrices bloat everything up to complex double
+        # precision, therefore make sure tenC matches the precision of the
+        # matrix itself
+        if self.dtype != self._tenC.dtype:
+            self._tenC = self._tenC.astype(self.dtype)
+
+
     cpdef Matrix _getNormalized(self):
         norm = np.linalg.norm(self._tenC.reshape((-1)))
         return self * Diag(np.ones(self.numN) / norm)

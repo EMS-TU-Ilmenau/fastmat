@@ -141,6 +141,15 @@ cdef class Toeplitz(Partial):
 
         super(Toeplitz, self).__init__(P, **kwargs)
 
+        # Currently Fourier matrices bloat everything up to complex double
+        # precision, therefore make sure vecC and vecR matches the precision of
+        # the matrix itself
+        if self.dtype != self._vecC.dtype:
+            self._vecC = self._vecC.astype(self.dtype)
+
+        if self.dtype != self._vecR.dtype:
+            self._vecR = self._vecR.astype(self.dtype)
+
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef intsize N = self.numN

@@ -136,6 +136,13 @@ cdef class Circulant(Partial):
             arrIndices = np.arange(len(self._vecC))
             super(Circulant, self).__init__(P, N=arrIndices, M=arrIndices)
 
+        # Currently Fourier matrices bloat everything up to complex double
+        # precision, therefore make sure vecC matches the precision of the
+        # matrix itself
+        if self.dtype != self._vecC.dtype:
+            self._vecC = self._vecC.astype(self.dtype)
+
+
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()

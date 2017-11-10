@@ -135,6 +135,12 @@ cdef class MLToeplitz(Partial):
         else:
             super(MLToeplitz, self).__init__(P, N=arrIndices, M=arrIndices)
 
+        # Currently Fourier matrices bloat everything up to complex double
+        # precision, therefore make sure tenT matches the precision of the
+        # matrix itself
+        if self.dtype != self._tenT.dtype:
+            self._tenT = self._tenT.astype(self.dtype)
+
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()

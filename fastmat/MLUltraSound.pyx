@@ -111,6 +111,12 @@ cdef class MLUltraSound(Partial):
         # call the parent constructor
         super(MLUltraSound, self).__init__(P, N=arrIndicesN, M=arrIndicesN)
 
+        # Currently Fourier matrices bloat everything up to complex double
+        # precision, therefore make sure tenT matches the precision of the
+        # matrix itself
+        if self.dtype != self._tenT.dtype:
+            self._tenT = self._tenT.astype(self.dtype)
+
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
