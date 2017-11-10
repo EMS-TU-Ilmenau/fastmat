@@ -403,7 +403,7 @@ class Bee(CommandArgParser):
                     '.'.join([nameTest, name]), numTests, timeSingle
                 ) + " (%s%s)" %(
                     (fmtGreen if numProb == 0 else fmtRed)
-                    ("%d problegms" % (numProb)),
+                    ("%d problems" % (numProb)),
                     ("" if numIrr == 0
                      else fmtYellow(
                          ", %d irregularities (ignored)" %(numIrr)))
