@@ -49,7 +49,7 @@ import inspect
 import os
 import argparse
 import importlib
-import pprint
+from pprint import pprint
 import time
 
 import numpy as np
@@ -188,7 +188,7 @@ class Bee(CommandArgParser):
         def _printDataset(self, dataset, newline='\n', separator=' '):
             '''List contents of dataset according to modifiers in self.args.'''
             if self.args.extended:
-                pprint.pprint(dataset)
+                pprint(dataset)
             else:
                 # extract all key names of dataset and print the list
                 print(separator.join(
