@@ -434,15 +434,10 @@ class Bee(CommandArgParser):
             for name, classType in testClasses.items()}
 
         # STAGE 2: add dependencies introduced in test case instances
-        def crawlContent(contents, targetSet):
-            if isinstance(contents, (list, tuple)):
-                for item in contents:
-                    crawlContent(item)
-            elif isinstance(contents, dict):
-                for item in contents.values():
-                    crawlContent(item)
-            elif isinstance(contents, classBaseContainers):
-                targetSet.add(contents.__class__)
+        def crawlContent(item, targetSet):
+            for nestedItem in item:
+                targetSet.add(nestedItem.__class__)
+                crawlContent(nestedItem, targetSet)
 
         for name, testWorker in tests.items():
             targetSet = testDependencies[name]
