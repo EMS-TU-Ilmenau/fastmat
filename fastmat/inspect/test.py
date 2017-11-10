@@ -29,6 +29,7 @@
 '''
 import itertools
 import numpy as np
+from pprint import pprint
 
 from .common import *
 from ..core.types import _getTypeEps, safeTypeExpansion
@@ -127,6 +128,12 @@ def compareResults(test, query):
     # if the query was not generated from input data, assume an int8-Eye-Matrix
     if TEST.RESULT_INPUT in query:
         arrInput=query[TEST.RESULT_INPUT]
+        # check that input vector actually contains energy
+        if np.linalg.norm(arrInput) == 0:
+            print("Test query data causing exception:")
+            pprint(query)
+            raise ValueError("All-zero input vector detected in test")
+
         expectedType=np.promote_types(expectedType, arrInput.dtype)
         maxEps=max(maxEps, _getTypeEps(arrInput.dtype))
 
@@ -210,6 +217,12 @@ def initTest(test):
     test[TEST.REFERENCE]=test[TEST.INSTANCE].reference()
 
 
+################################################## testFailDump()
+def testFailDump(test):
+    print("Test query causing the exception:")
+    pprint(test)
+
+
 ################################################## testArrays()
 def testArrays(test):
     query={TEST.RESULT_INPUT      : test[TEST.RESULT_INPUT],
@@ -222,7 +235,12 @@ def testArrays(test):
 def testForward(test):
     query={}
     arrInput=query[TEST.RESULT_INPUT]=test[TEST.DATAARRAY].forwardData
+    arrInputCheck = arrInput.copy()
     query[TEST.RESULT_OUTPUT]=test[TEST.INSTANCE].forward(arrInput)
+    if not np.array_equal(arrInput, arrInputCheck):
+        testFailDump(test)
+        raise ValueError(".forward() modified input array.")
+
     query[TEST.RESULT_REF]=test[TEST.REFERENCE].dot(arrInput)
     return compareResults(test, query)
 
@@ -231,7 +249,12 @@ def testForward(test):
 def testBackward(test):
     query={}
     arrInput=query[TEST.RESULT_INPUT]=test[TEST.DATAARRAY].backwardData
+    arrInputCheck = arrInput.copy()
     query[TEST.RESULT_OUTPUT]=test[TEST.INSTANCE].backward(arrInput)
+    if not np.array_equal(arrInput, arrInputCheck):
+        testFailDump(test)
+        raise ValueError(".backward() modified input array.")
+
     query[TEST.RESULT_REF]=test[TEST.REFERENCE].T.conj().dot(arrInput)
     return compareResults(test, query)
 
@@ -419,16 +442,21 @@ def testAlgorithm(test):
     # generate input data vector. As this one is needed for some algs, do one
     # dereferentiation step on a complete dictionary, including test and result
     query=test.copy()
-    query[TEST.RESULT_INPUT]=query[TEST.DATAARRAY].forwardData
+    arrInput, query[TEST.RESULT_INPUT]=query[TEST.DATAARRAY].forwardData
     paramDereferentiate(query)
 
     # now call the algorithm executor functions for FUT and reference
+    arrInputCheck = arrInput.copy()
     query[TEST.RESULT_OUTPUT]=query[TEST.ALG](
         *query.get(TEST.ALG_ARGS, ()),
         **query.get(TEST.ALG_KWARGS, {}))
     query[TEST.RESULT_REF]=query[TEST.REFALG](
         *query.get(TEST.REFALG_ARGS,      query.get(TEST.ALG_ARGS, [])),
         **query.get(TEST.REFALG_KWARGS,   query.get(TEST.ALG_KWARGS, {})))
+
+    if not np.array_equal(arrInput, arrInputCheck):
+        testFailDump(test)
+        raise ValueError("Algorithm modified input array.")
 
     return compareResults(test, query)
 
