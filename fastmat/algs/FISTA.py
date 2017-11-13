@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 '''
-  fastmat/algs/ISTA.py
+  fastmat/algs/FISTA.py
  -------------------------------------------------- part of the fastmat package
 
-  Implementation of iterative Shrinking-Thresholding Algorithm (ISTA) in
+  Implementation of Fast Iterative Shrinking-Thresholding Algorithm (FISTA) in
   fastmat.
 
 
-  Author      : sempersn
-  Introduced  : 2016-04-08
+  Author      : kirchhjn
+  Introduced  : 2017-11-06
  ------------------------------------------------------------------------------
 
    Copyright 2016 Sebastian Semper, Christoph Wagner
@@ -29,10 +29,8 @@
  ------------------------------------------------------------------------------
 
   TODO:
-    - test ISTA for correctness
-    - implement unit test code
-    - specify when this transform was introduced
-    - reformulate benchmark baseline definition to ensure compareability
+    - Todos for ISTA
+    - Check if its working
 '''
 import numpy as np
 
@@ -40,7 +38,7 @@ from ..base import Algorithm
 
 
 ################################################################################
-###  ISTA: Sparse recovery algorithm
+###  FISTA: Sparse recovery algorithm
 ################################################################################
 
 
@@ -57,14 +55,14 @@ def _softThreshold(arrX, numAlpha):
 
 ##################################################
 
-def ISTA(
-    fmatA,
-    arrB,
-    numLambda=0.1,
-    numMaxSteps=100
+def FISTA(
+        fmatA,
+        arrB,
+        numLambda=0.1,
+        numMaxSteps=100
 ):
     '''
-    Wrapper around the ISTA algrithm to allow processing of arrays of signals
+    Wrapper around the FISTA algrithm to allow processing of arrays of signals
         fmatA         - input system matrix
         arrB          - input data vector (measurements)
         numLambda     - balancing parameter in optimization problem
@@ -74,23 +72,30 @@ def ISTA(
     '''
 
     if len(arrB.shape) > 2:
-        raise ValueError("Only n x m arrays are supported for ISTA")
+        raise ValueError("Only n x m arrays are supported for FISTA")
 
     # calculate the largest singular value to get the right step size
     numL = 1.0 / ( fmatA.largestSV ** 2)
-
+    t = 1
     arrX = np.zeros(
         (fmatA.numM, arrB.shape[1]),
         dtype=np.promote_types(np.float32, arrB.dtype)
     )
-
+    # initial arrY
+    arrY = np.copy(arrX)
     # start iterating
     for numStep in range(numMaxSteps):
+        arrXold = np.copy(arrX)
         # do the gradient step and threshold
+        arrStep = arrY - numL * fmatA.backward(fmatA.forward(arrY) - arrB)
 
-        arrStep = arrX -  numL * fmatA.backward(fmatA.forward(arrX) - arrB)
         arrX = _softThreshold(arrStep, numL * numLambda * 0.5)
 
+        # update t
+        tOld =t
+        t = (1 + np.sqrt(1 + 4 * t ** 2)) / 2
+        # update arrY
+        arrY = arrX + ((tOld - 1) / t) * (arrX - arrXold)
     # return the unthresholded values for all non-zero support elements
     return np.where(arrX != 0, arrStep, arrX)
 
@@ -100,8 +105,7 @@ def ISTA(
 ################################################################################
 
 ################################################## inspection interface
-class ISTAinspect(Algorithm):
-
+class FISTAinspect(Algorithm):
     def _getTest(self):
         from ..inspect import TEST, dynFormat, arrTestDist, arrSparseTestDist
         from ..core.types import _getTypeEps
@@ -109,7 +113,7 @@ class ISTAinspect(Algorithm):
         from ..Hadamard import Hadamard
         from ..Matrix import Matrix
 
-        def testISTA(test):
+        def testFISTA(test):
             # prepare vectors
             numM = test[TEST.NUM_M]
             test[TEST.RESULT_REF] = np.hstack(
@@ -118,42 +122,42 @@ class ISTAinspect(Algorithm):
                  for nn in range(test[TEST.DATACOLS])])
             test[TEST.RESULT_INPUT] = (test[TEST.INSTANCE] *
                                        test[TEST.RESULT_REF])
-            test[TEST.RESULT_OUTPUT] = ISTA(
+            test[TEST.RESULT_OUTPUT] = FISTA(
                 test[TEST.INSTANCE], test[TEST.RESULT_INPUT],
                 numLambda=test['lambda'], numMaxSteps=test['maxSteps'])
 
         return {
             TEST.ALGORITHM: {
-                'order'         : 6,
-                TEST.NUM_N      : (lambda param: 3 * param['order']),
-                TEST.NUM_M      : (lambda param: 2 ** param['order']),
-                'numK'          : 'order',
-                'lambda'        : 10.,
-                'maxSteps'      : 1000,
-                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
+                'order': 6,
+                TEST.NUM_N: (lambda param: 3 * param['order']),
+                TEST.NUM_M: (lambda param: 2 ** param['order']),
+                'numK': 'order',
+                'lambda': 10.,
+                'maxSteps': 1000,
+                'typeA': TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.OBJECT     : Matrix,
-                TEST.INITARGS   : (lambda param: [
+                TEST.OBJECT: Matrix,
+                TEST.INITARGS: (lambda param: [
                     Product(Matrix(np.random.uniform(
                         -100, 100, (getattr(param, TEST.NUM_M),
                                     getattr(param, TEST.NUM_M))).astype(
-                                        param['typeA'])),
-                            Hadamard(param.order),
-                            typeExpansion=param['typeA']).array]),
+                        param['typeA'])),
+                        Hadamard(param.order),
+                        typeExpansion=param['typeA']).array]),
 
-                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
-                TEST.INIT_VARIANT: TEST.IgnoreFunc(testISTA),
+                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
+                TEST.INIT_VARIANT: TEST.IgnoreFunc(testFISTA),
 
-                'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
-                TEST.NAMINGARGS : dynFormat("(%dx%d)*Hadamard(%s)[%s]",
-                                            TEST.NUM_N, TEST.NUM_M,
-                                            'order', 'strTypeA'),
+                'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
+                TEST.NAMINGARGS: dynFormat("(%dx%d)*Hadamard(%s)[%s]",
+                                           TEST.NUM_N, TEST.NUM_M,
+                                           'order', 'strTypeA'),
 
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION     : np.float32,
-                TEST.TOL_MINEPS         : _getTypeEps(np.float32),
-                TEST.TOL_POWER          : 5.
-                #TEST.CHECK_PROXIMITY    : False
+                TEST.TYPE_PROMOTION: np.float32,
+                TEST.TOL_MINEPS: _getTypeEps(np.float32),
+                TEST.TOL_POWER: 5.
+                # TEST.CHECK_PROXIMITY    : False
             },
         }
 
@@ -168,7 +172,7 @@ class ISTAinspect(Algorithm):
             '''Create test target for algorithm performance evaluation.'''
 
             if M < 10:
-                raise ValueError("Problem size too small for ISTA benchmark")
+                raise ValueError("Problem size too small for FISTA benchmark")
 
             # assume a 1:5 ratio of measurements and problem size
             # assume a sparsity of half the number of measurements
@@ -181,21 +185,21 @@ class ISTAinspect(Algorithm):
             # generate arrB from random baseline support (RHS)
             arrB = matA * sps.rand(M, 1, 1.0 * K / M).todense().astype(datatype)
 
-            return (ISTA, [matA, arrB])
+            return (FISTA, [matA, arrB])
 
         return {
             BENCH.COMMON: {
-                BENCH.NAME      : 'ISTA Algorithm',
-                BENCH.FUNC_GEN  : (lambda c: createTarget(10 * c, np.float64)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c)
+                BENCH.NAME: 'FISTA Algorithm',
+                BENCH.FUNC_GEN: (lambda c: createTarget(10 * c, np.float64)),
+                BENCH.FUNC_SIZE: (lambda c: 10 * c)
             },
             BENCH.PERFORMANCE: {
-                BENCH.CAPTION   : 'ISTA performance'
+                BENCH.CAPTION: 'FISTA performance'
             },
             BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, dt: createTarget(10 * c, dt)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c),
-                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
+                BENCH.FUNC_GEN: (lambda c, dt: createTarget(10 * c, dt)),
+                BENCH.FUNC_SIZE: (lambda c: 10 * c),
+                BENCH.FUNC_STEP: (lambda c: c * 10 ** (1. / 12)),
             }
         }
 
@@ -203,13 +207,13 @@ class ISTAinspect(Algorithm):
         from ..inspect import DOC
         return DOC.SUBSECTION(
             r"""
-Iterative Soft Thresholding Algorithm (ISTA) (\texttt{fastmat.algs.ISTA})""",
+Fast Iterative Soft Thresholding Algorithm (FISTA) (\texttt{fastmat.algs.FISTA})""",
             DOC.SUBSUBSECTION(
                 'Definition and Interface', r"""
 For a given matrix $\bm A \in \C^{m \times N}$ with $m \ll N$ and a
 vector $\bm b \in \C^m$ we approximately solve
 
-\begin{align}\label{ista_lasso}
+\begin{align}\label{fista_lasso}
     \Min\limits_{\bm x \in \C^N}\Norm{\bm A \cdot \bm x - \bm b}^2_2 +
     \lambda\cdot\Norm{\bm x}_1,
 \end{align}
@@ -223,8 +227,8 @@ data fidelity and sparsity of the solution.
 \item \textbf{Output:} Reconstruction vector $\bm x$.
 \end{itemize}
 
-The algorithm is presented in \cite{ista_beck1952ista} together with an
-performance upgrade, which we hope to implement soon.""",
+FISTA is a performance upgrade for the standard ISTA algorithm as described
+ in\cite{fista_beck1952fista}.""",
                 DOC.SNIPPET('# import the packages',
                             'import numpy.linalg as npl',
                             'import numpy as np',
@@ -239,7 +243,7 @@ performance upgrade, which we hope to implement soon.""",
                             't = np.linspace(0, 20 * np.pi, n)',
                             '',
                             '# construct the convolution matrix',
-                            'c = np.cos(2 * t)',
+                            'c = np.cos(2 * t),',
                             'C = fm.Circulant(c)',
                             '',
                             '# create the ground truth',
@@ -249,7 +253,7 @@ performance upgrade, which we hope to implement soon.""",
                             'b = C * x',
                             '',
                             '# reconstruct it',
-                            'y = fma.ISTA(C, b, 0.005, 1000)',
+                            'y = fma.FISTA(C, b, 0.005, 1000)',
                             '',
                             '# test if they are close in the',
                             '# domain of C',
@@ -263,20 +267,20 @@ arbitrary locations."""),
     this algorithm, but this is not an easy task. Unfortunately we are not
     in the place here to give you a rule of thumb what to do, since it
     highly depends on the application at hand. Again, consult
-    \cite{ista_beck1952ista} for any further considerations of this matter."""
+    \cite{fista_beck1952fista} for any further considerations of this matter."""
             ),
             DOC.SUBSUBSECTION(
                 'Performance Benchmarks', r"""
 We use $\bm A = \bm M \cdot \bm \Fs$, where $\bm M$ was drawn from a standard
 Gaussian distribution and $\bm \Fs$ is a Fourier matrix. The vector $\bm b \in
-\C^m$ of equation \eqref{ista_lasso} is generated from multiplying $\bm A$ with
+\C^m$ of equation \eqref{fista_lasso} is generated from multiplying $\bm A$ with
 a sparse vector $\bm x$.""",
                 DOC.PLOTPERFORMANCE(),
                 DOC.PLOTTYPESPEED(),
                 DOC.PLOTTYPEMEMORY()
             ),
             DOC.BIBLIO(
-                ista_beck1952ista=DOC.BIBITEM(
+                fista_beck1952fista=DOC.BIBITEM(
                     r'Amir Beck and Marc Teboulle',
                     r"""
 A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems
