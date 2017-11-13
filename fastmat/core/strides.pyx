@@ -54,7 +54,7 @@ cdef void strideInit(STRIDE_s *stride, np.ndarray arr, np.uint8_t axis):
 
 
 cdef void strideCopy(STRIDE_s *strideDst, STRIDE_s *strideSrc):
-    memcpy(&strideDst, &strideSrc, sizeof(STRIDE_s))
+    memcpy(strideDst, strideSrc, sizeof(STRIDE_s))
 
 
 cdef void strideSliceVectors(STRIDE_s *stride,
