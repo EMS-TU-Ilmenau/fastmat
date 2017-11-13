@@ -51,7 +51,7 @@ persists with this version. You may try to bypass the problem by running
 and retrying the installation of fastmat.
 
 #### Windows: Installation fails with various "file not found" errors
-Often, this is causedby missing header files. Unfortunately windows ships
+Often, this is caused by missing header files. Unfortunately windows ships
 without a c-compiler and the header files necessary to compile native binary
 code. If you use the Intel Distribution for Python this can be resolved by
 installing the Visual Studio Build tools with the version as recommended by
@@ -90,13 +90,36 @@ greatly improving installation time and effort, especially under windows.
 - download the source distribution from our github repository:
     https://github.com/EMS-TU-Ilmenau/fastmat/archive/master.zip
 - unpack its contents and navigate to the project root directory
-- make sure you have installed all listed dependencies with at least the
-  specified version
-- type `make install` to install fastmat on your computer
-    * If you intend to install the package locally for your user
-      type `make install MODE=--user` instead.
-    * If you only would like to compile the package to use it from this local
-      directory without installing it, type `make compile`
+#### LINUX
+##### Python 2.x:
+- Make sure you have the following packages installed:
+  * numpy
+  * scipy
+  * cython
+- Call "make install MODE=--user PYTHON=python2" to install fastmat for your local user $PYTHONPATH
+- Call "sudo make install PYTHON=python2" to install fastmat as super user onto your local machine
+- Call "sudo make uninstall" to remove a previous local machine install
+- Call "make uninstall MODE=--user" to remove a previous local user install
+##### Python 3.x:
+- Make sure you have the following packages installed:
+  * numpy
+  * scipy
+  * cython3
+- Call "make install MODE=--user PYTHON=python3" to install fastmat for your local user $PYTHONPATH
+- Call "sudo make install PYTHON=python3" to install fastmat as super user onto your local machine
+- Call "sudo make uninstall" to remove a previous local machine install
+- Call "make uninstall MODE=--user" to remove a previous local user install
+#### WINDOWS
+- Make sure you have the following software packages installed properly:
+  * Intel Distribution for Python 2.7
+  * Microsoft Visual C++ Compiler 9.0 for Python 2.7
+  * GNU make for Windows 3.81 or newer
+- Add the paths to python.exe (Intel Distribution, defaults to C:\IntelPython27\) and make.exe (GNU make) to the @PATH@ environment variable
+- Call "make install MODE=--user" to install fastmat for your local user $PYTHONPATH
+- Call "make install" as super user to install fastmat onto your local machine
+- Call "make uninstall" to remove a previous local machine install.
+- Call "make uninstall MODE=--user" to remove a provious local user install
+
 
 
 ## Demos
