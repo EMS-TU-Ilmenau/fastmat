@@ -33,6 +33,7 @@ cimport numpy as np
 from .Matrix cimport Matrix
 from .Eye cimport Eye
 from .core.cmath cimport *
+from .core.strides cimport *
 
 ################################################################################
 ################################################## class Fourier
@@ -141,18 +142,18 @@ cdef class Fourier(Matrix):
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         '''Calculate the forward transform of this matrix'''
         cdef np.ndarray arrRes
-        cdef SLICE_s slRes
+        cdef STRIDE_s strResPadding
         cdef intsize mm, M = arrX.shape[1]
 
         if self._numL == 0:
             arrRes = np.fft.fft(arrX, axis=0)
         else:
-            arrRes = np.zeros((self._numL, arrX.shape[1]),
-                              dtype=np.promote_types(self.dtype, arrX.dtype))
-
-            _arrInitSlice(arrRes[self.order:, :], 0, &slRes)
-            for mm in range(M):
-                _arrZeroSlice(&slRes, mm)
+            arrRes = _arrEmpty(
+                2, self._numL, M,
+                typeInfo[self._info.dtype.promote[_getFType(arrX)]].typeNum)
+            strideInit(&strResPadding, arrRes, 0)
+            strideSliceElements(&strResPadding, self.order, -1, 1)
+            opZeroVectors(&strResPadding)
 
             arrRes[:self.order, :] = (self._preMult.T * arrX.T).T
 
@@ -166,12 +167,19 @@ cdef class Fourier(Matrix):
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         '''Calculate the backward transform of this matrix'''
         cdef np.ndarray arrRes
+        cdef STRIDE_s strResPadding
+        cdef intsize mm, M = arrX.shape[1]
 
         if self._numL == 0:
             arrRes = np.fft.fft(_conjugate(arrX), axis=0)
         else:
-            arrRes = np.zeros((self._numL, arrX.shape[1]),
-                              dtype=np.promote_types(self.dtype, arrX.dtype))
+            arrRes = _arrEmpty(
+                2, self._numL, M,
+                typeInfo[self._info.dtype.promote[_getFType(arrX)]].typeNum)
+
+            strideInit(&strResPadding, arrRes, 0)
+            strideSliceElements(&strResPadding, self.order, -1, 1)
+            opZeroVectors(&strResPadding)
 
             arrRes[:self.order, :] = (self._preMult.T * _conjugate(arrX).T).T
 
