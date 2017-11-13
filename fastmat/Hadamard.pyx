@@ -28,19 +28,49 @@
 
  ------------------------------------------------------------------------------
 '''
-from libc.stdlib cimport malloc, free
-from libc.string cimport memcpy
+#from libc.stdlib cimport malloc, free
+#from libc.string cimport memcpy
 
 import numpy as np
 cimport numpy as np
 
+from .core.types cimport nptype, _getNpType
+from .core.strides cimport *
+from .core.cmath cimport _arrEmpty
 from .Matrix cimport Matrix
 from .Eye cimport Eye
-from .core.types cimport *
 
 # have a very lazy import to avoid initialization of scipy.linalg during import
 # of main module
 spHadamard = None
+
+
+cdef void _hadamardCore(STRIDE_s *strA, STRIDE_s *strB, TYPE_IN dummy):
+    cdef intsize vv, ee
+
+    cdef char *ptrVectorA
+    cdef char *ptrElementA
+    cdef char *ptrVectorB
+    cdef char *ptrElementB
+
+    cdef TYPE_IN a, b
+
+    ptrVectorA = strA.base
+    ptrVectorB = strB.base
+    for vv in range(strA[0].numVectors):
+        ptrElementA = ptrVectorA
+        ptrElementB = ptrVectorB
+        for ee in range(strA[0].numElements):
+            a = (<TYPE_IN *> ptrElementA)[0]
+            b = (<TYPE_IN *> ptrElementB)[0]
+            (<TYPE_IN *> ptrElementA)[0] = a + b
+            (<TYPE_IN *> ptrElementB)[0] = a - b
+
+            ptrElementA += strA.strideElement
+            ptrElementB += strB.strideElement
+
+        ptrVectorA += strA.strideVector
+        ptrVectorB += strB.strideVector
 
 
 ################################################################################
@@ -64,12 +94,8 @@ cdef class Hadamard(Matrix):
 
         # set properties of matrix
         numN = 2 ** self._order
-        self._initProperties(
-            numN, numN, np.int8,
-            cythonCall=True,
-            forceInputAlignment=True,
-            fortranStyle=True
-        )
+        self._initProperties(numN, numN, np.int8, cythonCall=True,
+                             forceInputAlignment=True)
 
     cpdef np.ndarray _getArray(self):
         '''
@@ -97,74 +123,6 @@ cdef class Hadamard(Matrix):
         cdef float complexity = self.numN * self.order
         return (complexity, complexity + 1)
 
-    ############################################## class core methods
-    cdef void _coreLoop(
-        self,
-        TYPE_IN *pIn,
-        TYPE_IN *pOut,
-        intsize N,
-        intsize M
-    ):
-        cdef intsize jj, mm, halfN = N / 2
-        cdef TYPE_IN a, b
-        # pointers to a single column (vector)
-        cdef TYPE_IN *vecIn
-        cdef TYPE_IN *vecOut
-
-        for mm in range(M):
-
-            # pointers to a single column (vector)
-            vecIn = &(pIn[mm * N])
-            vecOut = &(pOut[mm * N])
-
-            # process one step for a single column-vector
-            for jj in range(halfN):
-                a = vecIn[jj * 2]
-                b = vecIn[jj * 2 + 1]
-                vecOut[jj] = a + b
-                vecOut[jj + halfN] = a - b
-
-    cdef void _core(
-        self,
-        np.ndarray arrIn,
-        np.ndarray arrOut,
-        TYPE_IN typeArr
-    ):
-        cdef intsize N = arrOut.shape[0], M = arrOut.shape[1]
-        cdef intsize mm, nn
-        cdef int steps = self._order
-
-        # extract memory pointers from ndarrays passed
-        cdef TYPE_IN *pIn = <TYPE_IN *> arrIn.data
-        cdef TYPE_IN *pOut = <TYPE_IN *> arrOut.data
-
-        # allocate temporary buffers in memory
-        cdef TYPE_IN *pA = <TYPE_IN *> malloc(sizeof(TYPE_IN) * N * M)
-        cdef TYPE_IN *pB = <TYPE_IN *> malloc(sizeof(TYPE_IN) * N * M)
-
-        # perform calculation
-        if steps == 1:
-            self._coreLoop[TYPE_IN](pIn, pOut, N, M)
-        else:
-            self._coreLoop[TYPE_IN](pIn, pA, N, M)
-
-        steps -= 1
-
-        while (steps >= 2):
-            steps -= 2
-            self._coreLoop[TYPE_IN](pA, pB, N, M)
-            if steps == 0:
-                self._coreLoop[TYPE_IN](pB, pOut, N, M)
-            else:
-                self._coreLoop[TYPE_IN](pB, pA, N, M)
-
-        if steps == 1:
-            self._coreLoop[TYPE_IN](pA, pOut, N, M)
-
-        # release memory of temporary buffers
-        free(pA)
-        free(pB)
-
     ############################################## class forward / backward
     cpdef _forwardC(
         self,
@@ -176,23 +134,61 @@ cdef class Hadamard(Matrix):
         '''
         Calculate the forward transform of this matrix.
         '''
-        # dispatch input ndarray to type specialization
-        if typeX == TYPE_FLOAT32:
-            self._core[np.float32_t](arrX, arrRes, typeX)
-        elif typeX == TYPE_FLOAT64:
-            self._core[np.float64_t](arrX, arrRes, typeX)
-        elif typeX == TYPE_COMPLEX64:
-            self._core[np.complex64_t](arrX, arrRes, typeX)
-        elif typeX == TYPE_COMPLEX128:
-            self._core[np.complex128_t](arrX, arrRes, typeX)
-        elif typeX == TYPE_INT64:
-            self._core[np.int64_t](arrX, arrRes, typeX)
-        elif typeX == TYPE_INT32:
-            self._core[np.int32_t](arrX, arrRes, typeX)
-        elif typeX == TYPE_INT8:
-            self._core[np.int8_t](arrX, arrRes, typeX)
-        else:
-            raise NotImplementedError("Hadamard: %d not supported." %(typeX))
+        cdef nptype dtype = typeInfo[typeRes].typeNum
+        cdef intsize N = arrX.shape[0], M = arrX.shape[1], order = self._order
+        cdef intsize mm, oo
+        cdef STRIDE_s strInput, strOutput, strA, strB
+        cdef intsize butterflyDistance, butterflyCount
+
+        strideInit(&strInput, arrX, 0)
+        strideInit(&strOutput, arrRes, 0)
+
+        for mm in range(M):
+            opCopyVector(&strOutput, mm, &strInput, mm)
+
+            butterflyDistance = 1
+            butterflyCount = N / 2
+            for oo in range(order):
+                strideCopy(&strA, &strOutput)
+                strideCopy(&strB, &strOutput)
+
+                # Butterfly map over iterations of oo
+                #        oo |0 |1  |2
+                # element 0 |A |A  |A
+                # element 1 |A | B | B
+                # element 2 |B |A  |  C
+                # element 3 |B | B |   D
+                # element 4 |C |C  |A
+                # element 5 |C | D | B
+                # element 6 |D |C  |  C
+                # element 7 |D |D |   D
+                strideSubgridVector(&strA, mm, 0,
+                                    1, butterflyDistance,
+                                    2 * butterflyDistance, butterflyCount)
+                strideSubgridVector(&strB, mm, butterflyDistance,
+                                    1, butterflyDistance,
+                                    2 * butterflyDistance, butterflyCount)
+
+                if typeX == TYPE_FLOAT32:
+                    _hadamardCore[np.float32_t](&strA, &strB, 0)
+                elif typeX == TYPE_FLOAT64:
+                    _hadamardCore[np.float64_t](&strA, &strB, 0)
+                elif typeX == TYPE_COMPLEX64:
+                    _hadamardCore[np.complex64_t](&strA, &strB, 0)
+                elif typeX == TYPE_COMPLEX128:
+                    _hadamardCore[np.complex128_t](&strA, &strB, 0)
+                elif typeX == TYPE_INT64:
+                    _hadamardCore[np.int64_t](&strA, &strB, 0)
+                elif typeX == TYPE_INT32:
+                    _hadamardCore[np.int32_t](&strA, &strB, 0)
+                elif typeX == TYPE_INT8:
+                    _hadamardCore[np.int8_t](&strA, &strB, 0)
+                else:
+                    raise NotImplementedError(
+                        "Hadamard: %d not supported." %(typeX))
+
+                butterflyDistance <<= 1
+                butterflyCount >>= 1
 
     cpdef _backwardC(
         self,
@@ -204,7 +200,7 @@ cdef class Hadamard(Matrix):
         '''
         Calculate the backward transform of this matrix.
         '''
-        self._forwardC(arrX, arrRes, typeX, typeRes)
+        return self._forwardC(arrX, arrRes, typeX, typeRes)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):

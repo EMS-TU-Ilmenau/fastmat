@@ -32,6 +32,9 @@ cimport numpy as np
 
 from .Matrix cimport Matrix
 from .core.types cimport *
+from .core.strides cimport STRIDE_s
+
+cdef void _hadamardCore(STRIDE_s *, STRIDE_s *, TYPE_IN)
 
 ################################################################################
 ################################################## class Hadamard
@@ -41,9 +44,6 @@ cdef class Hadamard(Matrix):
     cdef int         _order                      # order of the hadamard matrix
 
     ############################################## class methods
-    cdef void _coreLoop(self, TYPE_IN *, TYPE_IN *, intsize, intsize)
-    cdef void _core(self, np.ndarray, np.ndarray, TYPE_IN)
-
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)
 
