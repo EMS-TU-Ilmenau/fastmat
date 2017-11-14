@@ -14,6 +14,8 @@ matrix:
     # i.e. platform tags to exclude from the generation
     - python: "3.6"
       os: linux
+#    - python: "2.7"
+#      os: linux
 
 before_install:
   - sudo apt-get update -qq
@@ -33,19 +35,18 @@ script:
     if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
       echo "Running coverage analysis..."
       coverage run --source=fastmat util/bee.py list makedump
-      coverage run -a --source=fastmat util/bee.py test -v
-      coverage run -a --source=fastmat util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
-      coverage run -a --source=fastmat util/bee.py documentation
-      coverage run -a --source=fastmat util/bee.py calibrate
+#      coverage run -a --source=fastmat util/bee.py test -v
+#      coverage run -a --source=fastmat util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
+#      coverage run -a --source=fastmat util/bee.py documentation
+#      coverage run -a --source=fastmat util/bee.py calibrate
     else
       echo "Running regular test set..."
       python util/bee.py test -v
     fi
 
-after_success: >
-  - echo "Finished job for $TRAVIS_PYTHON_VERSION successfully."
-  - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      echo "Submitting coverage analysis results..."
-      coveralls
-    fi
+after_success:
+  - bash -e $(TRAVIS_BUILD_DIR)/.travis.yml.after_success
+
+env:
+  global:
+    secure: lkNTDRCUWdONzpiC3EMFm4jPN+R1INFM88Cw/e3XT1Qh+Eaz8niDt38/ZAPpg3dHRNfseprgvZ4IXjMLm3AslRaEso59CIgVG8cJj1uCr0xkUsUK9q9QKQnAETb633v+kjhIYe/vCYV4fPV7wsHTsCyckJQP6LCOxIjmmbU7u14k2oiMvb8oc2CSlhB1XTEpOMla54gyX1Tr0tSaDe88+sz2m2ATcNgIgIgsxc6u9Ekv+YeTuO4qcsHk3G40umtzWISuuv4m5t6Gxav8H1YXCxy3vUS4H+q4ZAlbB9fMJNoifEEnath7C6RtthU6iQDTFQHD0trLJlNK0iOb4/lmVlGxu02neTbRQFdXRk40BcKZk2ZUWLFBfL+FhBgj/m6ll/EDjCUGVki5BdFcY0fcOmW6rHxG/PLUMgaN/W2U77dCorc+tHpFoh5CBFp+NYoQ8+UXHo1kmgip4gfx2fKICW3dP9ucrPitR2VPAu0HKLZyCx2gPFcr3IdDteSSt138vSsE4c3hgTf8DRp3w0PVsI9GqWk7mQOmC2zm+aPFNnjaoMiyaEHzdWHrMzWfi4/BuZiGINDcfIp42ZnJEdOFnm+5vAkfbs9GbOgjq0i5RqQBxKP0IFVFQzh4bSAii2GLISHQzCnchh4hkEpzYg4HJKtwCLGlq2fWIBbeQigMiIc=

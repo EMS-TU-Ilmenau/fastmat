@@ -1,0 +1,22 @@
+#!/bin/bash
+
+echo "Finished job for $TRAVIS_PYTHON_VERSION successfully."
+
+if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+    echo "Submitting coverage analysis results..."
+    coveralls
+
+    echo "Preparing git to merge into stable..."
+    git config --global user.email "travis@travis-ci.org"
+    git config --global user.name "Travis CI"
+
+    git checkout stable
+    git merge master
+
+    echo "Merging to stable..."
+    git remote add origin-pages https://$(GH_TOKEN)@github.com/ChristophWWagner/fastmat.git > /dev/null 2>&1
+    git push --quiet --set-upstream origin-stable stable
+
+    echo "done."
+
+fi
