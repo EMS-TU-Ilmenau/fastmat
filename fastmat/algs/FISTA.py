@@ -75,7 +75,7 @@ def FISTA(
         raise ValueError("Only n x m arrays are supported for FISTA")
 
     # calculate the largest singular value to get the right step size
-    numL = 1.0 / ( fmatA.largestSV ** 2)
+    numL = 1.0 / (fmatA.largestSV ** 2)
     t = 1
     arrX = np.zeros(
         (fmatA.numM, arrB.shape[1]),
@@ -207,7 +207,8 @@ class FISTAinspect(Algorithm):
         from ..inspect import DOC
         return DOC.SUBSECTION(
             r"""
-Fast Iterative Soft Thresholding Algorithm (FISTA) (\texttt{fastmat.algs.FISTA})""",
+Fast Iterative Soft Thresholding Algorithm (FISTA)
+(\texttt{fastmat.algs.FISTA})""",
             DOC.SUBSUBSECTION(
                 'Definition and Interface', r"""
 For a given matrix $\bm A \in \C^{m \times N}$ with $m \ll N$ and a

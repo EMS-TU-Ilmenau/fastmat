@@ -129,8 +129,8 @@ cdef opCopyVector(STRIDE_s *strideDst, intsize idxVectorDst,
     cdef np.uint8_t sizeItem = strideDst[0].sizeItem
 
     # sanity check
-    if (strideDst[0].sizeItem != strideSrc[0].sizeItem or
-        strideDst[0].numElements != strideSrc[0].numElements):
+    if ((strideDst[0].sizeItem != strideSrc[0].sizeItem or
+         strideDst[0].numElements != strideSrc[0].numElements)):
         raise TypeError("Strides differ in vector length or element size.")
 
     # determine addresses
@@ -208,8 +208,8 @@ cdef opZeroVectors(STRIDE_s *stride):
     cdef char *ptr = stride[0].base
     cdef char *ptrVector
 
-    if (strideElement == sizeItem and
-        strideVector == numElements * sizeItem):
+    if ((strideElement == sizeItem and
+         strideVector == numElements * sizeItem)):
         # both axes are contiguous: jackpot!
         memset(ptr, 0, strideVector * numVectors)
     elif strideElement == sizeItem:
