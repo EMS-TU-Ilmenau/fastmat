@@ -150,8 +150,12 @@ elif strPlatform == 'Linux':
     # assuming Linux and gcc
     compilerArguments = ['-O3', '-march=native', '-fopenmp', '-ffast-math']
     linkerArguments = ['-fopenmp']
+elif strPlatform == 'Darwin':
+    # assuming Linux and gcc
+    compilerArguments = ['-O3', '-march=native', '-ffast-math']
+    linkerArguments = []
 else:
-    raise NotImplementedError("Your platform is not supported by %s: %s" % (
+    WARNING("Your platform is currently not supported by %s: %s" % (
         packageName, strPlatform))
 print("Building %s v%s for %s." % (packageName, packageVersion, strPlatform))
 
@@ -196,7 +200,7 @@ def extensions():
 
     extensionArguments = {
         'include_dirs':
-        lstIncludes + ['fastmat/core', 'util/routines'],
+        lstIncludes + ['fastmat/core', 'fastmat/inspect', 'util'],
         'extra_compile_args': compilerArguments,
         'extra_link_args': linkerArguments
     }
@@ -257,6 +261,7 @@ setup(
         'Natural Language :: English',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
+        'Operating System :: MacOS :: MacOS X',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',

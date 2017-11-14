@@ -72,9 +72,8 @@ the following publication affiliated with the project:
 - `to be announced soon. Please tune back in regularly to check on updates.`
 
 ## Installation
-fastmat currently supports both Linux and Windows. Building the
-documentation and running benchmarks is currently only supported under linux
-with windows support underway. You may choose one of these installation methods:
+fastmat currently supports Linux, Windows and Mac OS. You may choose one of
+these installation methods:
 
 ### installation with pip:
 
