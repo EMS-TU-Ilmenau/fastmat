@@ -172,6 +172,7 @@ CMD_COVERAGE = '--enable-cython-tracing'
 if CMD_COVERAGE in sys.argv:
     sys.argv.remove(CMD_COVERAGE)
     cythonDirectives['linetrace'] = True
+    cythonDirectives['binding'] = True
     defineMacros += [('CYTHON_TRACE_NOGIL', '1'),
                      ('CYTHON_TRACE', '1')]
     print("Enabling cython line tracing allowing code coverage analysis")
