@@ -37,7 +37,7 @@ script:
       coverage run --source=fastmat util/bee.py list makedump
       coverage run -a --source=fastmat util/bee.py test -v
       coverage run -a --source=fastmat util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
-      coverage run -a --source=fastmat util/bee.py documentation
+      coverage run -a --source=fastmat util/bee.py documentation > /dev/null
       coverage run -a --source=fastmat util/bee.py calibrate
     else
       echo "Running regular test set..."
