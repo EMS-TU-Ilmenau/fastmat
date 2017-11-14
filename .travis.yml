@@ -45,7 +45,7 @@ script:
     fi
 
 after_success:
-  - bash -e $(TRAVIS_BUILD_DIR)/.travis.yml.after_success
+  - ./.travis.yml.after_success
 
 env:
   global:
