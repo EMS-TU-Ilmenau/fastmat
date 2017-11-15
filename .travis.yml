@@ -4,6 +4,7 @@ sudo: required
 branches:
   only:
     - master
+    - stable
 
 services:
   - docker
@@ -24,7 +25,7 @@ install:
   - pip install six
   - pip install cython numpy scipy --use-wheel
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+    if [[ [[ "$TRAVIS_BRANCH" == "stable" ]] && [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ]] ; then
       pip install coverage coveralls --use-wheel
     fi
 
@@ -32,7 +33,7 @@ script:
   - echo "Running build for $TRAVIS_PYTHON_VERSION"
   - make compile-coverage
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+    if [[ [[ "$TRAVIS_BRANCH" == "stable" ]] && [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ]] ; then
       echo "Running coverage analysis..."
       coverage run --source=fastmat util/bee.py list makedump
       coverage run -a --source=fastmat util/bee.py test -v
