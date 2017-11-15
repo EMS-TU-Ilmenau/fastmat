@@ -1,3 +1,8 @@
 [run]
-plugins = Cython.Coverage
-omit = *.pxd
+plugins         =   Cython.Coverage
+omit            =   *.pxd
+
+[report]
+exclude_lines   =   cdef
+                    cpdef
+                    def
