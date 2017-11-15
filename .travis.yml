@@ -33,9 +33,9 @@ install:
 
 script:
   - echo "Running build for $TRAVIS_PYTHON_VERSION"
-  - make compile-coverage
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] && [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+      make compile-coverage
       echo "Running coverage analysis..."
       coverage run --source=fastmat util/bee.py list makedump
       coverage run -a --source=fastmat util/bee.py test -v
@@ -43,6 +43,7 @@ script:
       coverage run -a --source=fastmat util/bee.py documentation > /dev/null
       coverage run -a --source=fastmat util/bee.py calibrate
     else
+      make compile
       echo "Running regular test set..."
       python util/bee.py test -v
     fi
