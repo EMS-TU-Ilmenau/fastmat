@@ -1,6 +1,9 @@
 # fastmat
-
-[![Build Status](https://www.travis-ci.org/ChristophWWagner/fastmat.svg?branch=stable)](https://www.travis-ci.org/ChristophWWagner/fastmat)[![Coverage Status](https://coveralls.io/repos/github/ChristophWWagner/fastmat/badge.svg?branch=master)](https://coveralls.io/github/ChristophWWagner/fastmat?branch=master)
+|               | status  |
+| ------------: | --------|
+| master branch | [![Build Status](https://www.travis-ci.org/ChristophWWagner/fastmat.svg?branch=master)](https://www.travis-ci.org/ChristophWWagner/fastmat) |
+| stable branch | [![Build Status](https://www.travis-ci.org/ChristophWWagner/fastmat.svg?branch=stable)](https://www.travis-ci.org/ChristophWWagner/fastmat) |
+| code coverage | [![Coverage Status](https://coveralls.io/repos/github/ChristophWWagner/fastmat/badge.svg?branch=stable)](https://coveralls.io/github/ChristophWWagner/fastmat?branch=stable) |
 
 ## Description
 Scientific computing requires handling large composed or structured matrices.
