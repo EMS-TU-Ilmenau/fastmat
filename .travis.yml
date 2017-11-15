@@ -27,7 +27,7 @@ install:
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION"
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] && [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      echo "pip isntall cov"
+      echo "pip install cov"
       pip install coverage coveralls --use-wheel
     fi
 

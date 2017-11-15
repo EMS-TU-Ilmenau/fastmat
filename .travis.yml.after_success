@@ -13,11 +13,12 @@ if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
         git config --global user.email "travis@travis-ci.org"
         git config --global user.name "Travis CI"
 
+        git remote add origin-stable https://$GH_TOKEN@github.com/ChristophWWagner/fastmat.git > /dev/null 2>&1
+        git fetch
         git checkout stable
         git merge master
 
         echo "Merging to stable..."
-        git remote add origin-stable https://$GH_TOKEN@github.com/ChristophWWagner/fastmat.git > /dev/null 2>&1
         git push --set-upstream origin-stable stable
     fi
 
