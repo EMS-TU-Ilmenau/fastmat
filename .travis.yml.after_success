@@ -9,17 +9,22 @@ if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
     fi
 
     if [[ "$TRAVIS_BRANCH" == "master" ]] ; then
-        echo "Preparing git to merge into stable..."
-        git config --global user.email "travis@travis-ci.org"
-        git config --global user.name "Travis CI"
+        echo "Merging master into stable..."
 
-        git remote add origin-stable https://$GH_TOKEN@github.com/ChristophWWagner/fastmat.git > /dev/null 2>&1
-        git fetch
+        GH_REPO=github.com/ChristophWWagner/fastmat.git
+        REPO_DIR=./repo
+        git clone --branch master https://www.${GH_REPO} ${REPO_DIR}
+        pushd ${REPO_DIR}
+
+        git config --global user.email "travis@travis-ci.org"
+        git config --global user.name "Travis CI deployment bot"
+        git remote add origin-stable https://${GH_TOKEN}@${GH_REPO} > /dev/null 2>&1
+
         git checkout stable
         git merge master
-
-        echo "Merging to stable..."
         git push --set-upstream origin-stable stable
+
+        popd
     fi
 
     echo "done."
