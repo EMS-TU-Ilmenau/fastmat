@@ -60,10 +60,25 @@ __version__ = '%s'
 """
 
 
-def WARNING(str):
-    print("\033[91m WARNING:\033[0m %s" % (str))
+def WARNING(string):
+    print("\033[91m WARNING:\033[0m %s" % (string))
 
 
+###############################################################################
+###  Import setuptools
+###############################################################################
+
+# load setup and extensions from setuptools. If that fails, try distutils
+try:
+    from setuptools import setup, Extension
+except ImportError:
+    WARNING("Could not import setuptools.")
+    raise
+
+
+###############################################################################
+###  Determine package version
+###############################################################################
 def getCurrentVersion():
     global packageVersion
     global fullVersion
@@ -114,16 +129,6 @@ def getCurrentVersion():
                 packageVersion))
 
 
-# load setup and extension from distutils. Under windows systems, setuptools is
-# used, which monkey-patches distutils to get around 'missing vcvarsall.bat'
-try:
-    from setuptools import setup, Extension
-except ImportError:
-    WARNING("Could not import setuptools, falling back to using distutils.")
-    WARNING("You might want to consider installing python-setuptools.")
-    from distutils.core import setup, Extension
-
-
 # get version from git and update fastmat/__init__.py accordingly
 getCurrentVersion()
 
@@ -131,6 +136,10 @@ getCurrentVersion()
 with open(strVersionFile, "w") as f:
     f.write(VERSION_PY % (fullVersion))
 print("Set %s to '%s'" %(strVersionFile, fullVersion))
+
+###############################################################################
+###  Prepare other files and construct compile arguments
+###############################################################################
 
 # get the long description from the README file.
 # CAUTION: Python2/3 utf encoding shit calls needs some adjustments
@@ -142,24 +151,39 @@ f.close()
 
 # define different compiler arguments for each platform
 strPlatform = platform.system()
+compilerArguments = []
+linkerArguments = []
 if strPlatform == 'Windows':
     # Microsoft Visual C++ Compiler 9.0
-    compilerArguments = ['/O2', '/fp:precise']
-    linkerArguments = []
+    compilerArguments += ['/O2', '/fp:precise']
 elif strPlatform == 'Linux':
     # assuming Linux and gcc
-    compilerArguments = ['-O3', '-march=native', '-fopenmp', '-ffast-math']
-    linkerArguments = ['-fopenmp']
+    compilerArguments += ['-O3', '-march=native', '-ffast-math']
 elif strPlatform == 'Darwin':
     # assuming Linux and gcc
-    compilerArguments = ['-O3', '-march=native', '-ffast-math']
-    linkerArguments = []
+    compilerArguments += ['-O3', '-march=native', '-ffast-math']
 else:
     WARNING("Your platform is currently not supported by %s: %s" % (
         packageName, strPlatform))
+
+# define default cython directives, these may get extended along the script
+cythonDirectives = {}
+defineMacros = []
+CMD_COVERAGE = '--enable-cython-tracing'
+if CMD_COVERAGE in sys.argv:
+    sys.argv.remove(CMD_COVERAGE)
+    cythonDirectives['linetrace'] = True
+    cythonDirectives['binding'] = True
+    defineMacros += [('CYTHON_TRACE_NOGIL', '1'),
+                     ('CYTHON_TRACE', '1')]
+    print("Enabling cython line tracing allowing code coverage analysis")
+
 print("Building %s v%s for %s." % (packageName, packageVersion, strPlatform))
 
 
+###############################################################################
+###  Enable flexible dependency handling by installing missing base components
+###############################################################################
 # override list type to allow lazy cythonization: cythonize and compile only
 # after install_requires installed cython
 class lazyCythonize(list):
@@ -202,14 +226,15 @@ def extensions():
         'include_dirs':
         lstIncludes + ['fastmat/core', 'fastmat/inspect', 'util'],
         'extra_compile_args': compilerArguments,
-        'extra_link_args': linkerArguments
+        'extra_link_args': linkerArguments,
+        'define_macros': defineMacros
     }
 
-    return cythonize([
-        Extension("*", ["fastmat/*.pyx"], **extensionArguments),
-        Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
-        Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)
-    ])
+    return cythonize(
+        [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
+         Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
+         Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)],
+        compiler_directives=cythonDirectives)
 
 
 # determine requirements for install and setup
@@ -232,7 +257,7 @@ def checkRequirement(lstRequirements, importName, requirementName):
 setupRequires = []
 installRequires = []
 checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
-checkRequirement(setupRequires, 'Cython', 'cython>=0.18')
+checkRequirement(setupRequires, 'Cython', 'cython>=0.19')
 checkRequirement(setupRequires, 'numpy', 'numpy')
 checkRequirement(installRequires, 'six', 'six')
 checkRequirement(installRequires, 'scipy', 'scipy')
@@ -240,7 +265,9 @@ checkRequirement(installRequires, 'scipy', 'scipy')
 print("Requirements for setup: %s" %(setupRequires))
 print("Requirements for install: %s" %(installRequires))
 
-# setup package
+###############################################################################
+### The actual setup
+###############################################################################
 setup(
     name=packageName,
     version=packageVersion,

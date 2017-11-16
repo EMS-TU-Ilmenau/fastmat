@@ -1,12 +1,16 @@
+branches:
+  only:
+    - stable
+
 environment:
   global:
     CIBW_BEFORE_BUILD: "conda update -y conda && conda install -y numpy scipy"
     CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
 
   matrix:
-    # For Python versions available on Appveyor, see 
+    # For Python versions available on Appveyor, see
     # http://www.appveyor.com/docs/installed-software#python
-    # Use Anaconda as SciPy is a 
+    # Use Anaconda as SciPy is a
     # headache with Windows.
       # 3.6
     - PYTHON: "C:\\Miniconda36"
@@ -50,7 +54,7 @@ build_script:
   - pip install .
 
 test_script:
-  - python util/bee.py test -v"
+  - python util/bee.py test -v
   - cibuildwheel --output-dir wheelhouse
 
 artifacts:

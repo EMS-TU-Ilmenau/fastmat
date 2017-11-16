@@ -1,6 +1,16 @@
 # fastmat
+[![Version](https://img.shields.io/pypi/v/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Status](https://img.shields.io/pypi/status/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Python wheels](https://img.shields.io/pypi/wheel/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/905be92699ae45b0a57ea9eff90605c6)](https://www.codacy.com/app/ChristophWWagner/fastmat?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ChristophWWagner/fastmat&amp;utm_campaign=Badge_Grade)
 
-[![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)[![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
+[![License](https://img.shields.io/pypi/l/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Python versions](https://img.shields.io/pypi/pyversions/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Implementation](https://img.shields.io/pypi/implementation/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+
+[![Coverage Status](https://coveralls.io/repos/github/ChristophWWagner/fastmat/badge.svg?branch=master)](https://coveralls.io/github/ChristophWWagner/fastmat?branch=master) 
+[![GitHub issues](https://img.shields.io/github/issues/EMS-TU-Ilmenau/fastmat.svg)](https://github.com/EMS-TU-Ilmenau/fastmat/issues)
+**master:** [![Build Status](https://www.travis-ci.org/ChristophWWagner/fastmat.svg?branch=stable)](https://www.travis-ci.org/ChristophWWagner/fastmat) **stable:** [![Build Status](https://www.travis-ci.org/ChristophWWagner/fastmat.svg?branch=master)](https://www.travis-ci.org/ChristophWWagner/fastmat)
 
 ## Description
 Scientific computing requires handling large composed or structured matrices.

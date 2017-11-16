@@ -133,6 +133,11 @@ compile:
 	$(info * compiling fastmat package locally)
 	$(PYTHON) setup.py build_ext --inplace
 
+.PHONY: compile-coverage
+compile-coverage:
+	$(info * compiling fastmat package locally, with profiling and tracing)
+	$(PYTHON) setup.py build_ext --inplace --enable-cython-tracing
+
 
 # target 'doc': Compile documentation
 .PHONY: doc

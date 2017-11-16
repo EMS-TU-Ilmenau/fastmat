@@ -4,6 +4,7 @@ sudo: required
 branches:
   only:
     - master
+    - stable
 
 services:
   - docker
@@ -11,8 +12,8 @@ services:
 env:
   global:
     - CIBW_BEFORE_BUILD="{pip} install cython numpy scipy six --use-wheel"
-    - CIBW_TEST_COMMAND="python {project}/util/bee.py test -s Matrix. algs.OMPinspect -v"
-# set user:pass for twine in travis CI setup for project
+    - CIBW_TEST_COMMAND="python {project}/util/bee.py test -v"
+    - secure: lkNTDRCUWdONzpiC3EMFm4jPN+R1INFM88Cw/e3XT1Qh+Eaz8niDt38/ZAPpg3dHRNfseprgvZ4IXjMLm3AslRaEso59CIgVG8cJj1uCr0xkUsUK9q9QKQnAETb633v+kjhIYe/vCYV4fPV7wsHTsCyckJQP6LCOxIjmmbU7u14k2oiMvb8oc2CSlhB1XTEpOMla54gyX1Tr0tSaDe88+sz2m2ATcNgIgIgsxc6u9Ekv+YeTuO4qcsHk3G40umtzWISuuv4m5t6Gxav8H1YXCxy3vUS4H+q4ZAlbB9fMJNoifEEnath7C6RtthU6iQDTFQHD0trLJlNK0iOb4/lmVlGxu02neTbRQFdXRk40BcKZk2ZUWLFBfL+FhBgj/m6ll/EDjCUGVki5BdFcY0fcOmW6rHxG/PLUMgaN/W2U77dCorc+tHpFoh5CBFp+NYoQ8+UXHo1kmgip4gfx2fKICW3dP9ucrPitR2VPAu0HKLZyCx2gPFcr3IdDteSSt138vSsE4c3hgTf8DRp3w0PVsI9GqWk7mQOmC2zm+aPFNnjaoMiyaEHzdWHrMzWfi4/BuZiGINDcfIp42ZnJEdOFnm+5vAkfbs9GbOgjq0i5RqQBxKP0IFVFQzh4bSAii2GLISHQzCnchh4hkEpzYg4HJKtwCLGlq2fWIBbeQigMiIc=
 
 matrix:
   include:
@@ -33,41 +34,49 @@ matrix:
 
 before_install:
   - sudo apt-get update -qq
-  
+
 install:
   - pip install six
   - pip install cython numpy scipy --use-wheel
-  - pip install cibuildwheel==0.5.1 twine --use-wheel
+  - pip install pycodestyle
+  - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION"
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      pip install coverage coveralls --use-wheel
+    if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
+      pip install cibuildwheel==0.5.1 twine --use-wheel
+    else
+      if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+        pip install coverage coveralls --use-wheel
+      fi
     fi
 
 script:
+  - echo "Running code style checks"
+  - make styleCheck
   - echo "Running build for $TRAVIS_PYTHON_VERSION"
-  - make compile
   - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      echo "Running coverage analysis..."
-      coverage run --source=fastmat util/bee.py test -v
-      coverage run -a --source=fastmat util/bee.py list makedump
-      coverage run -a --source=fastmat util/bee.py documentation -s Matrix algs.OMPinspect maxIter=0.0001 maxInit=0.01
-      coverage run -a --source=fastmat util/bee.py calibrate Matrix
-    else
-      echo "Running regular test set..."
-      python util/bee.py test -v
+    if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
+      # all version targets: build a wheel!
+      make compile
+      echo "Generating wheel... (skipping $(CIBW_SKIP)"
+      cibuildwheel --output-dir wheelhouse
+      ls -l wheelhouse/*
+    elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
+      # master branch: regular tests and code coverage analysis
+      if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+        make compile-coverage
+        echo "Running coverage analysis..."
+        coverage run --source=fastmat util/bee.py list makedump
+        coverage run -a --source=fastmat util/bee.py test -v -s .class
+        coverage run -a --source=fastmat util/bee.py test -v -s .algorithm
+        coverage run -a --source=fastmat util/bee.py test -v -s Matrix.transform
+        coverage run -a --source=fastmat util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
+        coverage run -a --source=fastmat util/bee.py documentation > /dev/null
+        coverage run -a --source=fastmat util/bee.py calibrate
+      else
+        make compile
+        python util/bee.py test -v
+      fi
     fi
-  - echo "Beginning wheel generation... (skipping $(CIBW_SKIP))"
-  - cibuildwheel --output-dir wheelhouse
-  - ls -l wheelhouse/*
 
-after_success: >
-  - echo "Finished job for $TRAVIS_PYTHON_VERSION successfully."
-  - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-      echo "Submitting coverage analysis results..."
-      coveralls
-    fi
-  - echo "Uploading generated wheels..."
-  - ls -l wheelhouse/*
-  - twine upload wheelhouse/*.whl
+after_success:
+  - ./.travis.yml.after_success
