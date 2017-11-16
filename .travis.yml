@@ -65,6 +65,7 @@ script:
         echo "Generating wheel... (skipping $(CIBW_SKIP)"
         cibuildwheel --output-dir wheelhouse
         ls -l wheelhouse/*
+      fi
     else
       # master branch: regular tests
       make compile
