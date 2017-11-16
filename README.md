@@ -2,7 +2,7 @@
 [![Version](https://img.shields.io/pypi/v/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Status](https://img.shields.io/pypi/status/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Python wheels](https://img.shields.io/pypi/wheel/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/905be92699ae45b0a57ea9eff90605c6)](https://www.codacy.com/app/EMS-TU-Ilmenau/fastmat?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8af2b42d33cc4f5ba5b91566032c44ed)](https://www.codacy.com/app/ChristophWWagner/fastmat-EMS-TU-Ilmenau?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
 
 [![License](https://img.shields.io/pypi/l/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Python versions](https://img.shields.io/pypi/pyversions/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
