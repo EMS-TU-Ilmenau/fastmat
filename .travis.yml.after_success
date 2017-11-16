@@ -2,13 +2,19 @@
 
 echo "Finished job for $TRAVIS_BRANCH:py$TRAVIS_PYTHON_VERSION successfully. Post processing ..."
 
-if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-    if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
+if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
         echo "Submitting coverage analysis results..."
         coveralls
     fi
 
-    if [[ "$TRAVIS_BRANCH" == "master" ]] ; then
+    echo "Uploading generated wheels..."
+    ls -l wheelhouse/*
+    twine upload wheelhouse/*.whl
+
+elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
+
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
         echo "Merging master into stable..."
 
         GH_REPO=github.com/ChristophWWagner/fastmat.git
@@ -26,6 +32,4 @@ if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
 
         popd
     fi
-
-    echo "done."
 fi
