@@ -668,9 +668,9 @@ class Worker(object):
             raise ValueError("target in init of Runner must be a class type")
 
         # set defaults for options
-        options.set_default('targetOptionMethod', None)
-        options.set_default('runnerDefaults', {})
-        options.set_default('extraOptions', {})
+        options.setdefault('targetOptionMethod', None)
+        options.setdefault('runnerDefaults', {})
+        options.setdefault('extraOptions', {})
 
         self.target=targetClass.__new__(targetClass)
 
