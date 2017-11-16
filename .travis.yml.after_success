@@ -13,7 +13,7 @@ elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
         coveralls
 
         echo "Merging master into stable..."
-        GH_REPO=github.com/ChristophWWagner/fastmat.git
+        GH_REPO=github.com/EMS-TU-Ilmenau/fastmat.git
         REPO_DIR=./repo
         git clone --branch master https://www.${GH_REPO} ${REPO_DIR}
         pushd ${REPO_DIR}
