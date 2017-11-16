@@ -241,29 +241,30 @@ class DOC(NAME):
     ############################################## plot targets using metas
     class PLOTFORWARD(PLOTSPEED):
         def __init__(self, **options):
-            super(PLOTFORWARD, self).__init__(BENCH.FORWARD, **mergeDicts(
+            super(DOC.PLOTFORWARD, self).__init__(BENCH.FORWARD, **mergeDicts(
                 {DOC.TITLE      : 'Forward Projection'}, options))
 
     class PLOTSOLVE(PLOTSPEED):
         def __init__(self, **options):
-            super(PLOTSOLVE, self).__init__(BENCH.SOLVE, **mergeDicts(
+            super(DOC.PLOTSOLVE, self).__init__(BENCH.SOLVE, **mergeDicts(
                 {DOC.TITLE      : 'Solving a LSE'}, options))
 
     class PLOTFORWARDMEMORY(PLOTMEMORY):
         def __init__(self, **options):
-            super(PLOTFORWARDMEMORY, self).__init__(BENCH.FORWARD, **mergeDicts(
-                {DOC.TITLE      : 'Class Memory usage'}, options))
+            super(DOC.PLOTFORWARDMEMORY, self).__init__(
+                BENCH.FORWARD, **mergeDicts({DOC.TITLE: 'Class Memory usage'},
+                                            options))
 
     class PLOTTYPESPEED(PLOTTYPES):
         def __init__(self, **options):
-            super(PLOTTYPESPEED, self).__init__(BENCH.DTYPES, **mergeDicts(
+            super(DOC.PLOTTYPESPEED, self).__init__(BENCH.DTYPES, **mergeDicts(
                 {DOC.TITLE      : 'Datatype Impact (Speed)',
                  DOC.COLUMN     : 'Min',
                  DOC.YLABEL     : 'Runtime [s]'}, options))
 
     class PLOTTYPEMEMORY(PLOTTYPES):
         def __init__(self, **options):
-            super(self.PLOTTYPEMEMORY, self).__init__(
+            super(DOC.PLOTTYPEMEMORY, self).__init__(
                 BENCH.DTYPES,
                 **mergeDicts({DOC.TITLE      : 'Datatype Impact (Memory)',
                               DOC.COLUMN     : 'Mem',
@@ -272,14 +273,14 @@ class DOC(NAME):
     ############################################## stand-alone plot targets
     class PLOTOVERHEAD(PLOTSPEED):
         def __init__(self, **options):
-            super(PLOTOVERHEAD, self).__init__(BENCH.OVERHEAD, **mergeDicts(
+            super(DOC.PLOTOVERHEAD, self).__init__(BENCH.OVERHEAD, **mergeDicts(
                 {DOC.TITLE      : 'Transform Runtime',
                  DOC.DATASETS   : ['forwardMin', 'backwardMin'],
                  DOC.LEGEND     : ['forward', 'backward']}, options))
 
     class PLOTPERFORMANCE(PLOTSPEED):
         def __init__(self, **options):
-            super(PLOTPERFORMANCE, self).__init__(
+            super(DOC.PLOTPERFORMANCE, self).__init__(
                 BENCH.PERFORMANCE, **mergeDicts({
                     DOC.TITLE      : 'Runtime Performance',
                     DOC.DATASETS   : ['perfMin'],
