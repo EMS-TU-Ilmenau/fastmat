@@ -59,8 +59,9 @@ VERSION_PY      = """
 __version__ = '%s'
 """
 
-def WARNING(str):
-    print("\033[91m WARNING:\033[0m %s" % (str))
+
+def WARNING(string):
+    print("\033[91m WARNING:\033[0m %s" % (string))
 
 
 ###############################################################################
@@ -71,13 +72,13 @@ def WARNING(str):
 try:
     from setuptools import setup, Extension
 except ImportError:
-    WARNING("Could not import setuptools. Consider installing python-setuptools.")
+    WARNING("Could not import setuptools.")
     raise
+
 
 ###############################################################################
 ###  Determine package version
 ###############################################################################
-
 def getCurrentVersion():
     global packageVersion
     global fullVersion
@@ -179,10 +180,10 @@ if CMD_COVERAGE in sys.argv:
 
 print("Building %s v%s for %s." % (packageName, packageVersion, strPlatform))
 
+
 ###############################################################################
 ###  Enable flexible dependency handling by installing missing base components
 ###############################################################################
-
 # override list type to allow lazy cythonization: cythonize and compile only
 # after install_requires installed cython
 class lazyCythonize(list):
