@@ -110,7 +110,6 @@ def calibrateClass(target, **options):
                                         nameOvhNested, nameEffNested))
 
         # remove runtimes of nested classes from the result
-        arrN                = arr[:, 0]
         arrTime             = arr[:, 1]
         arrComplexity       = arr[:, 2]
         arrOverheadNested   = arr[:, 3]

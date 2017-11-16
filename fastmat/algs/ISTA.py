@@ -103,7 +103,7 @@ def ISTA(
 class ISTAinspect(Algorithm):
 
     def _getTest(self):
-        from ..inspect import TEST, dynFormat, arrTestDist, arrSparseTestDist
+        from ..inspect import TEST, dynFormat, arrSparseTestDist
         from ..core.types import _getTypeEps
         from ..Product import Product
         from ..Hadamard import Hadamard

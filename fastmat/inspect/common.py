@@ -106,7 +106,7 @@ class paramDict(dict):
 
     def __getattr__(self, key):
         # evaluate nested format-string parameters, update format results
-        value, lastValue = super(self.__class__, self).__getitem__(key), None
+        value, lastValue = super(paramDict, self).__getitem__(key), None
 
         while id(lastValue) != id(value):
             lastValue = value
@@ -212,7 +212,7 @@ def paramPermute(dictionary, copy=True, PermutationClass=Permutation):
     # isolate the permutation parameters from the dictionary
     parameters = {key: list(value)
                   for key, value in dictionary.items()
-                  if type(value) == PermutationClass}
+                  if isinstance(value, PermutationClass)}
 
     # perform a cartesian product -> list of permuted instances
     permutations = [dict(izip(parameters, x))
@@ -650,8 +650,7 @@ class Worker(object):
     cbResult=None
     target=None
 
-    def __init__(self, targetClass, targetOptionMethod=None,
-                 runnerDefaults={}, extraOptions={}):
+    def __init__(self, targetClass, **options):
         '''
         Setup an inspection environment on a fastmat class specified in target.
         Along the way an empty instance of target will be created and aside
@@ -667,6 +666,11 @@ class Worker(object):
         # the test target is a fastmat class to be instantiated in the runners
         if not inspect.isclass(targetClass):
             raise ValueError("target in init of Runner must be a class type")
+
+        # set defaults for options
+        options.set_default('targetOptionMethod', None)
+        options.set_default('runnerDefaults', {})
+        options.set_default('extraOptions', {})
 
         self.target=targetClass.__new__(targetClass)
 

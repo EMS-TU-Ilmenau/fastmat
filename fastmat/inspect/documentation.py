@@ -30,7 +30,6 @@
 import inspect
 import os
 import sys
-import numpy as np
 from datetime import datetime
 
 from .common import *
@@ -242,44 +241,45 @@ class DOC(NAME):
     ############################################## plot targets using metas
     class PLOTFORWARD(PLOTSPEED):
         def __init__(self, **options):
-            super(self.__class__, self).__init__(BENCH.FORWARD, **mergeDicts(
+            super(PLOTFORWARD, self).__init__(BENCH.FORWARD, **mergeDicts(
                 {DOC.TITLE      : 'Forward Projection'}, options))
 
     class PLOTSOLVE(PLOTSPEED):
         def __init__(self, **options):
-            super(self.__class__, self).__init__(BENCH.SOLVE, **mergeDicts(
+            super(PLOTSOLVE, self).__init__(BENCH.SOLVE, **mergeDicts(
                 {DOC.TITLE      : 'Solving a LSE'}, options))
 
     class PLOTFORWARDMEMORY(PLOTMEMORY):
         def __init__(self, **options):
-            super(self.__class__, self).__init__(BENCH.FORWARD, **mergeDicts(
+            super(PLOTFORWARDMEMORY, self).__init__(BENCH.FORWARD, **mergeDicts(
                 {DOC.TITLE      : 'Class Memory usage'}, options))
 
     class PLOTTYPESPEED(PLOTTYPES):
         def __init__(self, **options):
-            super(self.__class__, self).__init__(BENCH.DTYPES, **mergeDicts(
+            super(PLOTTYPESPEED, self).__init__(BENCH.DTYPES, **mergeDicts(
                 {DOC.TITLE      : 'Datatype Impact (Speed)',
                  DOC.COLUMN     : 'Min',
                  DOC.YLABEL     : 'Runtime [s]'}, options))
 
     class PLOTTYPEMEMORY(PLOTTYPES):
         def __init__(self, **options):
-            super(self.__class__, self).__init__(BENCH.DTYPES, **mergeDicts(
-                {DOC.TITLE      : 'Datatype Impact (Memory)',
-                 DOC.COLUMN     : 'Mem',
-                 DOC.YLABEL     : 'Memory [kB]'}, options))
+            super(self.PLOTTYPEMEMORY, self).__init__(
+                BENCH.DTYPES,
+                **mergeDicts({DOC.TITLE      : 'Datatype Impact (Memory)',
+                              DOC.COLUMN     : 'Mem',
+                              DOC.YLABEL     : 'Memory [kB]'}, options))
 
     ############################################## stand-alone plot targets
     class PLOTOVERHEAD(PLOTSPEED):
         def __init__(self, **options):
-            super(self.__class__, self).__init__(BENCH.OVERHEAD, **mergeDicts(
+            super(PLOTOVERHEAD, self).__init__(BENCH.OVERHEAD, **mergeDicts(
                 {DOC.TITLE      : 'Transform Runtime',
                  DOC.DATASETS   : ['forwardMin', 'backwardMin'],
                  DOC.LEGEND     : ['forward', 'backward']}, options))
 
     class PLOTPERFORMANCE(PLOTSPEED):
         def __init__(self, **options):
-            super(self.__class__, self).__init__(
+            super(PLOTPERFORMANCE, self).__init__(
                 BENCH.PERFORMANCE, **mergeDicts({
                     DOC.TITLE      : 'Runtime Performance',
                     DOC.DATASETS   : ['perfMin'],

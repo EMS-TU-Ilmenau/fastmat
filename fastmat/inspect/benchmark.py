@@ -87,11 +87,7 @@ class BENCH(NAME):
 ##################################################  benchmark implementations
 
 ################################################## weightedPercentile()
-def weightedPercentile(
-    data,
-    percentile=([75, 25]),
-    weights=None
-):
+def weightedPercentile(data, **options):
     """
     O(nlgn) implementation for weighted_percentile, with linear interpolation
     #between weights.
@@ -115,7 +111,10 @@ def weightedPercentile(
     ``
 
     """
-    percentile=np.array(percentile) / 100.0
+    # extract options
+    percentile = np.array(options.get('percentile', [75, 25])) / 100.
+    weights = options.get('weights', None)
+
     if weights is None:
         weights=np.ones(data.shape)
 
@@ -201,9 +200,7 @@ def timeCall(call, *args, **options):
     '''
     stats=[]
 
-    # begin with one repetition and approach accumulated runtime (step[1]) to
-    # MEAS_TIME by adjusting number of repetitions (num)
-    MEAS_TIME=0.1
+    # begin with one repetition and approach accumulated runtime (step[1])
     num=1
     step={'avg': 0., 'time': 0., 'cnt': num}
     while step['time'] < (options[BENCH.MEAS_MINTIME] * num) / (num + 1) * 0.9:
@@ -405,7 +402,10 @@ def testInitPerformance(funcConstr, numSize, numN):
 ################################################## class BenchmarkRunner
 class Benchmark(Worker):
 
-    def __init__(self, targetClass, extraOptions={}):
+    def __init__(self, targetClass, **options):
+
+        # extract options
+        extraOptions = options.get('extraOptions', {})
 
         # by default, enable verbosity for issues and isolate problems
         self.cbStatus=self.printStatus
@@ -472,7 +472,7 @@ class Benchmark(Worker):
         }
 
         # call parent initialization with Test-specific options
-        super(self.__class__, self).__init__(
+        super(Benchmark, self).__init__(
             targetClass, targetOptionMethod='_getBenchmark',
             runnerDefaults=defaults, extraOptions=extraOptions)
 

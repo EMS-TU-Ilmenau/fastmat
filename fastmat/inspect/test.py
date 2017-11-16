@@ -560,7 +560,7 @@ class Test(Worker):
         }
 
         # call parent initialization with Test-specific options
-        super(self.__class__, self).__init__(
+        super(Test, self).__init__(
             targetClass, targetOptionMethod='_getTest',
             runnerDefaults=defaults, extraOptions=extraOptions)
 
@@ -593,7 +593,7 @@ class Test(Worker):
         # allow a second level of Permutation for VariantPermutation instances
         # determine variants of target and generate variant description tag name
         lstVariantPermutations=[name for name, value in options.items()
-                                if type(value) == VariantPermutation]
+                                if isinstance(value, VariantPermutation)]
         descrVariants=','.join(lstVariantPermutations)
 
         # determine field lengths for nice printing of columns
@@ -705,7 +705,7 @@ class Test(Worker):
 
     @verbosity.setter
     def verbosity(self, value):
-        if type(value) is bool:
+        if isinstance(value, bool):
             value=(value, )
 
         if isinstance(value, tuple):

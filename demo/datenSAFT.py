@@ -37,7 +37,7 @@ import scipy as sp
 ################################################## import modules
 try:
     from matplotlib.pyplot import *               # plotting
-except:
+except ImportError:
     print("matplotlib not found. Please consider installing it to proceed.")
     sys.exit(0)
 
