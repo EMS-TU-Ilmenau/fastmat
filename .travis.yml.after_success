@@ -3,20 +3,16 @@
 echo "Finished job for $TRAVIS_BRANCH:py$TRAVIS_PYTHON_VERSION successfully. Post processing ..."
 
 if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-        echo "Submitting coverage analysis results..."
-        coveralls
-    fi
-
     echo "Uploading generated wheels..."
     ls -l wheelhouse/*
     twine upload wheelhouse/*.whl
 
 elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
-
     if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-        echo "Merging master into stable..."
+        echo "Submitting coverage analysis results..."
+        coveralls
 
+        echo "Merging master into stable..."
         GH_REPO=github.com/ChristophWWagner/fastmat.git
         REPO_DIR=./repo
         git clone --branch master https://www.${GH_REPO} ${REPO_DIR}
@@ -31,5 +27,7 @@ elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
         git push --set-upstream origin-stable stable
 
         popd
+
+        rm -rf ${REPO_DIR}
     fi
 fi

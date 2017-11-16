@@ -38,6 +38,7 @@ before_install:
 install:
   - pip install six
   - pip install cython numpy scipy --use-wheel
+  - pip install pycodestyle
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION"
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
@@ -48,9 +49,18 @@ install:
     fi
 
 script:
+  - echo "Running code style checks"
+  - make styleCheck
   - echo "Running build for $TRAVIS_PYTHON_VERSION"
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
+      # all version targets: build a wheel!
+      make compile
+      echo "Generating wheel... (skipping $(CIBW_SKIP)"
+      cibuildwheel --output-dir wheelhouse
+      ls -l wheelhouse/*
+    elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
+      # master branch: regular tests and code coverage analysis
       if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
         make compile-coverage
         echo "Running coverage analysis..."
@@ -60,16 +70,9 @@ script:
         coverage run -a --source=fastmat util/bee.py documentation > /dev/null
         coverage run -a --source=fastmat util/bee.py calibrate
       else
-        # all other version targets: build a wheel!
         make compile
-        echo "Generating wheel... (skipping $(CIBW_SKIP)"
-        cibuildwheel --output-dir wheelhouse
-        ls -l wheelhouse/*
+        python util/bee.py test -v
       fi
-    else
-      # master branch: regular tests
-      make compile
-      python util/bee.py test -v
     fi
 
 after_success:
