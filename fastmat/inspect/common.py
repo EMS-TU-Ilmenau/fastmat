@@ -586,7 +586,7 @@ if (currentOS in ['Linux', 'Darwin']) or currentOS.startswith('CYGWIN'):
             try:
                 return struct.unpack(
                     'hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
-            except struct.error:
+            except EnvironmentError:
                 return None
 
         cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
@@ -595,13 +595,13 @@ if (currentOS in ['Linux', 'Darwin']) or currentOS.startswith('CYGWIN'):
                 fd = os.open(os.ctermid(), os.O_RDONLY)
                 cr = ioctl_GWINSZ(fd)
                 os.close(fd)
-            except os.error:
+            except EnvironmentError:
                 pass
 
         if not cr:
             try:
                 cr = (os.environ['LINES'], os.environ['COLUMNS'])
-            except os.error:
+            except EnvironmentError:
                 cr = fallbackConsoleSize
 
         return int(cr[0]), int(cr[1])
@@ -623,7 +623,7 @@ elif currentOS == 'Windows':
                 sizex = right - left + 1
                 sizey = bottom - top + 1
                 cr = (sizex, sizey)
-        except ImportError:
+        except ImportError or EnvironmentError:
             pass
 
         return cr

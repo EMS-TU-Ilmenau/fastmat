@@ -444,7 +444,7 @@ class Bee(CommandArgParser):
                         aVariant = list(test.values())[0]
                         if len(aVariant) > 0:
                             aQuery = list(aVariant.values())[0]
-                            crawlContent(aQuery.get(TEST.INSTANCE, None),
+                            crawlContent(aQuery.get(TEST.INSTANCE, (, )),
                                          targetSet)
 
         # filter out the containers themselves as they are obviousely the
