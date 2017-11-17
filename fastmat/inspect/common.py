@@ -33,6 +33,7 @@ import itertools
 import os
 import re
 import six
+import struct
 import numpy as np
 from scipy import sparse
 from platform import system as pfSystem
@@ -42,7 +43,7 @@ try:
 except ImportError:         # python 3.x
     izip = zip
 
-isLinux = pfSystem() == 'Linux'
+currentOS = pfSystem()
 
 
 ################################################################################
@@ -531,7 +532,9 @@ class COLOR():
 def fmtStr(string, color):
     '''Print a string quoted by some format specifiers.'''
     # colored output only supported with linux
-    return "%s%s%s" %(color, string, COLOR.END) if isLinux else string
+    return ("%s%s%s" %(color, string, COLOR.END)
+            if currentOS == 'Linux'
+            else string)
 
 
 def fmtGreen(string):
@@ -571,9 +574,62 @@ def dynFormat(s, *keys):
 
 
 ################################################## getConsoleSize()
-def getConsoleSize(fallback=(80, 25)):
-    size = tuple(int(dim) for dim in os.popen('stty size', 'r').read().split())
-    return size if len(size) >= 2 else fallback
+
+fallbackConsoleSize = (80, 25)
+if (currentOS in ['Linux', 'Darwin']) or currentOS.startswith('CYGWIN'):
+    import fcntl
+    import termios
+    # source: https://gist.github.com/jtriley/1108174
+
+    def getConsoleSize():
+        def ioctl_GWINSZ(fd):
+            try:
+                return struct.unpack(
+                    'hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
+            except struct.error:
+                return None
+
+        cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+        if not cr:
+            try:
+                fd = os.open(os.ctermid(), os.O_RDONLY)
+                cr = ioctl_GWINSZ(fd)
+                os.close(fd)
+            except os.error:
+                pass
+
+        if not cr:
+            try:
+                cr = (os.environ['LINES'], os.environ['COLUMNS'])
+            except os.error:
+                cr = fallbackConsoleSize
+
+        return int(cr[0]), int(cr[1])
+elif currentOS == 'Windows':
+    def getConsoleSize():
+        cr = fallbackConsoleSize
+        try:
+            from ctypes import windll, create_string_buffer
+            # stdin handle is -10
+            # stdout handle is -11
+            # stderr handle is -12
+            h = windll.kernel32.GetStdHandle(-12)
+            csbi = create_string_buffer(22)
+            res = windll.kernel32.GetConsoleScreenBufferInfo(h, csbi)
+            if res:
+                (bufx, bufy, curx, cury, wattr,
+                 left, top, right, bottom,
+                 maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
+                sizex = right - left + 1
+                sizey = bottom - top + 1
+                cr = (sizex, sizey)
+        except ImportError:
+            pass
+
+        return cr
+else:
+    def getConsoleSize():
+        return fallbackConsoleSize
 
 
 ################################################## worker's CONSTANT classes
@@ -719,9 +775,6 @@ class Worker(object):
             target[NAME.TARGET]=name
             target[NAME.CLASS]=targetClass.__name__
 
-        # determine console width
-        self.consoleWidth=getConsoleSize()[1]
-
         # initialize output
         self.results=AccessDict({})
 
@@ -743,6 +796,9 @@ class Worker(object):
         If *targetNames is empty all targets will be run.
         The output of each $TARGET$ will be written to self.results[$TARGET$]
         '''
+        # determine console width
+        self.consoleWidth=getConsoleSize()[1]
+
         if len(targetNames) == 0:
             targetNames=self.options.keys()
 

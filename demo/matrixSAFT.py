@@ -228,9 +228,6 @@ class SaftMaskClass(fastmat.Matrix):
         return SaftMaskCore(arrX, self._sizeItem, self._numBlocks, self._masks,
                             True)
 
-    def _backward(self, arrX):
-        raise NotImplementedError("No backward() for SaftMask implemented yet.")
-
 ################################################## Use special fastmat class
 print(" %-20s : %s" %("'matSaftMaskClass'",
                       "user-defined fastmat class, cython-optimized"))

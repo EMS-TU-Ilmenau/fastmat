@@ -26,7 +26,6 @@
 
  ------------------------------------------------------------------------------
 '''
-from libc.string cimport memcpy, memset
 from libc.math cimport ceil
 
 import numpy as np
