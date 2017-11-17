@@ -21,17 +21,27 @@ matrix:
       os: linux
       env: CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
     - python: '3.5'
+      if: branch = stable
       os: linux
       env: CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
     - python: '3.4'
+      if: branch = stable
       os: linux
       env: CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
     - python: '2.7'
       os: linux
       env: CIBW_SKIP='cp[!2]?-* cp2[!7]-*'
-
-before_install:
-    - sudo apt-get update -qq
+    # macOS Python 2
+    - os: osx
+      env:
+        - "PYTHON=python2"
+    # macOS Python 3
+    - os: osx
+      env:
+        - "PYTHON=python3"
+      before_install:
+        - brew update
+        - brew install python3
 
 install:
   - pip install six

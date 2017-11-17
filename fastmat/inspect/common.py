@@ -601,7 +601,7 @@ if (currentOS in ['Linux', 'Darwin']) or currentOS.startswith('CYGWIN'):
         if not cr:
             try:
                 cr = (os.environ['LINES'], os.environ['COLUMNS'])
-            except EnvironmentError:
+            except (EnvironmentError, KeyError):
                 cr = fallbackConsoleSize
 
         return int(cr[0]), int(cr[1])
