@@ -567,7 +567,7 @@ class Test(Worker):
             targetClass, targetOptionMethod='_getTest',
             runnerDefaults=defaults, extraOptions=extraOptions)
 
-    def _run(self, name, options):
+    def _runTest(self, name, options):
 
         # build list of tests as complete permutation of parameter variations
         tests=uniqueNameDict({})
@@ -639,6 +639,26 @@ class Test(Worker):
                 }
 
             self.emitStatus(nameTest, resultTest, lenName, descrVariants)
+
+        return resultTarget
+
+    def _run(self, name, options):
+
+        maxTries = 3
+        for numTry in range(maxTries):
+            resultTarget = self._runTest(name, options.copy())
+
+            result = all(all(all(resultQuery[TEST.RESULT]
+                                 for resultQuery in resultVariant.values())
+                             for resultVariant in resultTest.values())
+                         for resultTest in resultTarget.values())
+
+            if result:
+                break
+            else:
+                print("Test %s.%s failed in during try #%d/%d.%s" %(
+                    options[NAME.CLASS], name, numTry + 1, maxTries,
+                    " Retrying ..." if numTry < maxTries - 1 else ""))
 
         return resultTarget
 
