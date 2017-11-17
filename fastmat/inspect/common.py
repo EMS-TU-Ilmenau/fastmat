@@ -617,12 +617,8 @@ elif currentOS == 'Windows':
             csbi = create_string_buffer(22)
             res = windll.kernel32.GetConsoleScreenBufferInfo(h, csbi)
             if res:
-                (bufx, bufy, curx, cury, wattr,
-                 left, top, right, bottom,
-                 maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
-                sizex = right - left + 1
-                sizey = bottom - top + 1
-                cr = (sizex, sizey)
+                (left, top, right, bottom) = struct.unpack("10x4h4x", csbi.raw)
+                cr = (right - left, bottom - top)
         except ImportError or EnvironmentError:
             pass
 
@@ -702,8 +698,8 @@ class Worker(object):
     results - output of each target's as specified in options
     '''
 
-    cbStatus=None
-    cbResult=None
+    cbStatus=lambda x: None
+    cbResult=lambda x: None
     target=None
 
     def __init__(self, targetClass, **options):
