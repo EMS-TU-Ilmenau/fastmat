@@ -619,7 +619,7 @@ elif currentOS == 'Windows':
             if res:
                 (left, top, right, bottom) = struct.unpack("10x4h4x", csbi.raw)
                 cr = (right - left, bottom - top)
-        except ImportError or EnvironmentError:
+        except ImportError, EnvironmentError:
             pass
 
         return cr
@@ -698,8 +698,8 @@ class Worker(object):
     results - output of each target's as specified in options
     '''
 
-    cbStatus=lambda x: None
-    cbResult=lambda x: None
+    cbStatus=None
+    cbResult=None
     target=None
 
     def __init__(self, targetClass, **options):
@@ -773,10 +773,6 @@ class Worker(object):
 
         # initialize output
         self.results=AccessDict({})
-
-    def _run(self, name, options):
-        '''Process the option set in options, return a result object.'''
-        return {}
 
     def emitStatus(self, *args):
         if self.cbStatus is not None:
