@@ -469,7 +469,10 @@ class Test(Worker):
 
     _verboseFull=False
 
-    def __init__(self, targetClass, extraOptions={}):
+    def __init__(self, targetClass, **options):
+
+        # extract options
+        extraOptions = options.get('extraOptions',  {})
 
         # by default, enable verbosity for issues and isolate problems
         self.cbStatus=self.printStatus

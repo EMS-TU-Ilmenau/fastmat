@@ -68,7 +68,6 @@ print("-----------------------------------------------------------")
 # dz - Schrittweite in Tiefe (N) (numS)
 
 
-import scipy.io
 refData = sp.io.loadmat('datenSAFT.mat')
 dX = refData['dx'] * 1000
 dZ = refData['dz'] * 1000
@@ -137,7 +136,7 @@ class SaftMaskClass(fastmat.Matrix):
         return SaftMaskCore(arrX, self._sizeItem, self._numBlocks, self._masks,
                             False)
 
-    def _forward(self, arrX):
+    def _backward(self, arrX):
         return SaftMaskCore(arrX, self._sizeItem, self._numBlocks, self._masks,
                             True)
 
@@ -161,6 +160,7 @@ arrScanData = refData['data'].astype(np.float32)
 #vecInput = arrScanData.reshape((-1, 1)).astype(np.float32)
 vecInput = arrScanData.T.reshape((-1, 1))
 
+vecOutput = None
 def doIt():
     global vecOutput
     vecOutput = matSaftMaskClass * vecInput

@@ -29,8 +29,6 @@
 
  ------------------------------------------------------------------------------
 '''
-from libc.stdlib cimport malloc, free
-
 import numpy as np
 cimport numpy as np
 

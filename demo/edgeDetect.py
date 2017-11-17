@@ -37,7 +37,7 @@ from scipy import ndimage
 ################################################## import modules
 try:
     import matplotlib.pyplot as plt               # plotting
-except:
+except ImportError:
     print("matplotlib not found. Please consider installing it to proceed.")
     sys.exit(0)
 

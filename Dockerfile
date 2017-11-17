@@ -1,27 +1,27 @@
 FROM debian:jessie
-LABEL maintainer="christoph.wagner@tu-ilmenau.de"
+MAINTAINER Christoph Wagner <christoph.wagner@tu-ilmenau.de>
 
 # update distribution
-RUN apt-get update -y
-
-# install general tools
-RUN apt-get install -y --no-install-recommends \
-    apt-utils gcc make automake build-essential git
-
-# install python2 and python3 including the scientific packages (excl. plotting)
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    python cython python-six \
-    python3 cython3 python3-six \
-    python-setuptools python3-setuptools python-pip \
-    python-numpy python-scipy \
-    python3-numpy python3-scipy
-
-# install LaTeX stuff
-RUN apt-get install -y --no-install-recommends \
-    texlive-science texlive-latex-extra
+RUN \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        apt-utils gcc make automake build-essential git && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python cython python-six \
+        python3 cython3 python3-six \
+        python-setuptools python3-setuptools python-pip \
+        python-numpy python-scipy \
+        python3-numpy python3-scipy && \
+    apt-get install -y --no-install-recommends \
+        texlive-science texlive-latex-extra && \
+    apt-get -y autoremove && \
+    apt-get -y autoclean && \
+    apt-get -y clean all && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/cache/apt && \
+    rm -rf /tmp/*
 
 # install python tools for style checking
-RUN pip install autopep8=1.3.3 pycodestyle=2.3.1
-
-# clean up
-RUN apt-get clean
+RUN pip install autopep8=1.3.3 pycodestyle=2.3.1 && \
+    rm -rf /root/.cache/pip && \
+    rm -rf /root/.pip/cache
