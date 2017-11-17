@@ -619,7 +619,7 @@ elif currentOS == 'Windows':
             if res:
                 (left, top, right, bottom) = struct.unpack("10x4h4x", csbi.raw)
                 cr = (right - left, bottom - top)
-        except ImportError, EnvironmentError:
+        except (ImportError, EnvironmentError):
             pass
 
         return cr
