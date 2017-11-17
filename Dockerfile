@@ -17,11 +17,9 @@ RUN \
     apt-get -y autoremove && \
     apt-get -y autoclean && \
     apt-get -y clean all && \
+    pip install autopep8==1.3.3 pycodestyle==2.3.1 && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /var/cache/apt && \
-    rm -rf /tmp/*
-
-# install python tools for style checking
-RUN pip install autopep8=1.3.3 pycodestyle=2.3.1 && \
     rm -rf /root/.cache/pip && \
-    rm -rf /root/.pip/cache
+    rm -rf /root/.pip/cache && \
+    rm -rf /tmp/*
