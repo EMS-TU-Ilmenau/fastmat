@@ -64,12 +64,11 @@ script:
             make compile-coverage
             echo "Running coverage analysis..."
             coverage run --source=fastmat util/bee.py list makedump
-            coverage run -a --source=fastmat util/bee.py test -v -s .class
+            coverage run -a --source=fastmat util/bee.py test -vf -s Matrix.class
             coverage run -a --source=fastmat util/bee.py test -v -s .algorithm
             coverage run -a --source=fastmat util/bee.py test -v -s Matrix.transform
-            coverage run -a --source=fastmat util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
-            coverage run -a --source=fastmat util/bee.py documentation > /dev/null
-            coverage run -a --source=fastmat util/bee.py calibrate
+            coverage run -a --source=fastmat util/bee.py documentation maxIter=0.001 maxInit=0.01 minItems=1 > /dev/null
+            coverage run -a --source=fastmat util/bee.py calibrate all
         else
             make compile
             python util/bee.py test -v
