@@ -74,8 +74,6 @@ install:
      python -c "import sys,platform,struct;
      print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
   # Install the conda supplied packages; msvc_runtime needed for py34
-  - "conda update -y conda"
-  - "conda install -y pip wheel numpy scipy"
 
 build_script:
   - pip install cibuildwheel==0.5.1

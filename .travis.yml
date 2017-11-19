@@ -1,4 +1,5 @@
 language: python
+os: linux
 sudo: required
 
 branches:
@@ -18,30 +19,59 @@ env:
 matrix:
   include:
     - python: '3.6'
-      os: linux
       env: CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
     - python: '3.5'
       if: branch = stable
-      os: linux
       env: CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
     - python: '3.4'
       if: branch = stable
-      os: linux
       env: CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
     - python: '2.7'
-      os: linux
       env: CIBW_SKIP='cp[!2]?-* cp2[!7]-*'
-    # macOS Python 2
     - os: osx
+      language: generic
       env:
-        - "PYTHON=python2"
-    # macOS Python 3
+        - PYTHON=2.7.14
     - os: osx
+      if: branch = stable
+      language: generic
       env:
-        - "PYTHON=python3"
-      before_install:
-        - brew update
-        - brew install python3
+        - PYTHON=3.6.3
+    - os: osx
+      if: branch = stable
+      language: generic
+      env:
+        - PYTHON=3.5.4
+    - os: osx
+      if: branch = stable
+      language: generic
+      env:
+        - PYTHON=3.4.7
+
+before_install: |
+  # macOSX CI environment configuration: https://pythonhosted.org/CodeChat/.travis.yml.html
+  if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+    brew update
+    # Per the `pyenv homebrew recommendations <https://github.com/yyuu/pyenv/wiki#suggested-build-environment>`_.
+    brew install openssl readline
+    # See https://docs.travis-ci.com/user/osx-ci-environment/#A-note-on-upgrading-packages.
+    # I didn't do this above because it works and I'm lazy.
+    brew outdated pyenv || brew upgrade pyenv
+    # virtualenv doesn't work without pyenv knowledge. venv in Python 3.3
+    # doesn't provide Pip by default. So, use `pyenv-virtualenv <https://github.com/yyuu/pyenv-virtualenv/blob/master/README.md>`_.
+    brew install pyenv-virtualenv
+    pyenv install $PYTHON
+    # I would expect something like ``pyenv init; pyenv local $PYTHON`` or
+    # ``pyenv shell $PYTHON`` would work, but ``pyenv init`` doesn't seem to
+    # modify the Bash environment. ??? So, I hand-set the variables instead.
+    export PYENV_VERSION=$PYTHON
+    export PATH="/Users/travis/.pyenv/shims:${PATH}"
+    pyenv-virtualenv venv
+    source venv/bin/activate
+    # A manual check that the correct version of Python is running.
+    python --version
+  fi
+
 
 install:
   - pip install six
@@ -75,8 +105,7 @@ script:
             echo "Running coverage analysis..."
             coverage run --source=fastmat util/bee.py list makedump
             coverage run -a --source=fastmat util/bee.py test -vf -s Matrix.class
-            coverage run -a --source=fastmat util/bee.py test -v -s .algorithm
-            coverage run -a --source=fastmat util/bee.py test -v -s Matrix.transform
+            coverage run -a --source=fastmat util/bee.py test -v
             coverage run -a --source=fastmat util/bee.py documentation maxIter=0.001 maxInit=0.01 minItems=1 > /dev/null
             coverage run -a --source=fastmat util/bee.py calibrate all
         else
