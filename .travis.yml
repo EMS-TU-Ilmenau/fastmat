@@ -47,8 +47,6 @@ matrix:
       language: generic
       env:
         - PYTHON=2.7.14
-  allow_failures:
-    - os: osx
 
 before_install: |
   # macOSX CI environment configuration: https://pythonhosted.org/CodeChat/.travis.yml.html
@@ -107,7 +105,9 @@ script:
             echo "Running coverage analysis..."
             coverage run --source=fastmat util/bee.py list makedump
             coverage run -a --source=fastmat util/bee.py test -vf -s Matrix.class
-            coverage run -a --source=fastmat util/bee.py test -v
+            coverage run -a --source=fastmat util/bee.py test -v -s .class
+            coverage run -a --source=fastmat util/bee.py test -v -s .transform
+            coverage run -a --source=fastmat util/bee.py test -v -s .algorithm
             coverage run -a --source=fastmat util/bee.py documentation maxIter=0.001 maxInit=0.01 minItems=1 > /dev/null
             coverage run -a --source=fastmat util/bee.py calibrate all
         else
