@@ -6,6 +6,18 @@ environment:
   global:
     CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
 
+  TWINE_REPOSITORY:
+    secure: uxrVt8G0aReV23OXS5lWKg==
+
+  TWINE_REPOSITORY_URL:
+    secure: ZOBFk0ZQrSJU2YF/RWZObU/2O9XBbQ42I9vDVg3JPd8=
+
+  TWINE_USERNAME:
+    secure: vmEPVHBcWLBeQoU4t3pl8A==
+
+  TWINE_PASSWORD:
+    secure: s5rlS2aZ0pdnIhWQrN0B0LZO5FU6B7CIp1ON4wriejs=
+
   matrix:
     - PYTHON: "C:\\Python27_32"
       PYTHON_VERSION: "2.7"
@@ -90,6 +102,7 @@ build_script:
 test_script:
   - python util/bee.py test -v
   - cibuildwheel --output-dir wheelhouse
+  - twine upload "wheelhouse\\*.whl"
 
 artifacts:
   - path: "wheelhouse\\*.whl"

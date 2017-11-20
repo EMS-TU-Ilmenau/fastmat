@@ -31,11 +31,6 @@ matrix:
     - os: osx
       language: generic
       env:
-        - PYTHON=2.7.14
-    - os: osx
-      if: branch = stable
-      language: generic
-      env:
         - PYTHON=3.6.3
     - os: osx
       if: branch = stable
@@ -47,6 +42,11 @@ matrix:
       language: generic
       env:
         - PYTHON=3.4.7
+    - os: osx
+      if: branch = stable
+      language: generic
+      env:
+        - PYTHON=2.7.14
   allow_failures:
     - os: osx
 

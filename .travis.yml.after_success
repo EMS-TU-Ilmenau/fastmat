@@ -7,6 +7,11 @@ if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
     ls -l wheelhouse/*
     twine upload wheelhouse/*.whl
 
+    if [[ ""$TRAVIS_PYTHON_VERSION == "3.6" ]] ; then
+        python setup.py sdist
+        twine upload dist/*
+    fi
+
 elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
     if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
         echo "Submitting coverage analysis results..."

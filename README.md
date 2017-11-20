@@ -93,20 +93,22 @@ from the commandline by running one easy and straightforward command:
 
 When installing with pip all dependencies of the package will be installed
 along. With release 0.1.1 python wheels will be offered for many versions
-greatly improving installation time and effort, especially under windows.
+greatly improving installation time and effort.
 
 ### installation from source: doing it manually
 - download the source distribution from our github repository:
-    https://github.com/EMS-TU-Ilmenau/fastmat/archive/master.zip
+    https://github.com/EMS-TU-Ilmenau/fastmat/archive/stable.zip
 - unpack its contents and navigate to the project root directory
-- make sure you have installed all listed dependencies with at least the
-  specified version
-- type `make install` to install fastmat on your computer
-    * If you intend to install the package locally for your user
-      type `make install MODE=--user` instead.
+- run `pip install .` to install fastmat on your computer
+- you may also install fastmat without pip, using the offered makefile:
+    * type `make install` to install fastmat on your computer
+    * If you intend to install the package locally for your user type
+      `make install MODE=--user` instead.
     * If you only would like to compile the package to use it from this local
       directory without installing it, type `make compile`
-
+- if you install fastmat on a windows system please ensure you have a working
+  and compatible compiler installed, all necessary header files in place and
+  all setup prerequisites fulfilled.
 
 ## Demos
 Feel free to have a look at the demos in the `demo/` directory of the source
