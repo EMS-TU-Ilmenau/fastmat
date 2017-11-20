@@ -61,7 +61,7 @@ persists with this version. You may try to bypass the problem by running
 and retrying the installation of fastmat.
 
 #### Windows: Installation fails with various "file not found" errors
-Often, this is causedby missing header files. Unfortunately windows ships
+Often, this is caused by missing header files. Unfortunately windows ships
 without a c-compiler and the header files necessary to compile native binary
 code. If you use the Intel Distribution for Python this can be resolved by
 installing the Visual Studio Build tools with the version as recommended by
@@ -103,13 +103,21 @@ greatly improving installation time and effort.
 - you may also install fastmat without pip, using the offered makefile:
     * type `make install` to install fastmat on your computer
     * If you intend to install the package locally for your user type
-      `make install MODE=--user` instead.
+      `make install MODE=--user` instead
+    * You may add a version specifier for all `make` targets that directly or indirectly invoke Python:
+      `make install PYTHON=python2`
+      `make compile PYTHON=python3`
     * If you only would like to compile the package to use it from this local
       directory without installing it, type `make compile`
-- if you install fastmat on a windows system please ensure you have a working
-  and compatible compiler installed, all necessary header files in place and
-  all setup prerequisites fulfilled.
-
+    * An uninstallation of a previously run `make install`is possible, provided the installation log file `setup.files` has been preserved
+      Invoking `make uninstall` without a local `setup.files` causes another installation for generating the setup file log prior to uninstalling
+- **NOTE: Windows users**
+  If you intent on building fastmat from source on a windows platform, make sure you have installed a c compiler environment and make interpreter. One way to accomplish this is to install these tools for Python 2.7 (you may also chose different ones, of course):
+    * Intel Distribution for Python 2.7
+    * Microsoft Visual C++ Compiler 9.0 for Python 2.7
+    * GNU make for Windows 3.81 or newer
+    * depending on your system: The relevant header files
+  
 ## Demos
 Feel free to have a look at the demos in the `demo/` directory of the source
 distribution. Please make sure to have fastmat already installed when running
