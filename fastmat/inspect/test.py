@@ -648,7 +648,8 @@ class Test(Worker):
         for numTry in range(maxTries):
             resultTarget = self._runTest(name, options.copy())
 
-            result = all(all(all(resultQuery[TEST.RESULT]
+            result = all(all(all(resultQuery[TEST.RESULT] or
+                                 resultQuery[TEST.RESULT_IGNORED]
                                  for resultQuery in resultVariant.values())
                              for resultVariant in resultTest.values())
                          for resultTest in resultTarget.values())
