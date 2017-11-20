@@ -77,7 +77,7 @@ def ISTA(
         raise ValueError("Only n x m arrays are supported for ISTA")
 
     # calculate the largest singular value to get the right step size
-    numL = 1.0 / ( fmatA.largestSV ** 2)
+    numL = 1.0 / (fmatA.largestSV ** 2)
 
     arrX = np.zeros(
         (fmatA.numM, arrB.shape[1]),
@@ -102,8 +102,9 @@ def ISTA(
 ################################################## inspection interface
 class ISTAinspect(Algorithm):
 
-    def _getTest(self):
-        from ..inspect import TEST, dynFormat, arrTestDist, arrSparseTestDist
+    @staticmethod
+    def _getTest():
+        from ..inspect import TEST, dynFormat, arrSparseTestDist
         from ..core.types import _getTypeEps
         from ..Product import Product
         from ..Hadamard import Hadamard
@@ -157,7 +158,8 @@ class ISTAinspect(Algorithm):
             },
         }
 
-    def _getBenchmark(self):
+    @staticmethod
+    def _getBenchmark():
         from ..inspect import BENCH, arrTestDist
         from ..Matrix import Matrix
         from ..Product import Product
@@ -199,7 +201,8 @@ class ISTAinspect(Algorithm):
             }
         }
 
-    def _getDocumentation(self):
+    @staticmethod
+    def _getDocumentation():
         from ..inspect import DOC
         return DOC.SUBSECTION(
             r"""

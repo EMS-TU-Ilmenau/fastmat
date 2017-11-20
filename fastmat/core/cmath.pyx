@@ -26,7 +26,6 @@
 
  ------------------------------------------------------------------------------
 '''
-from libc.string cimport memcpy, memset
 from libc.math cimport ceil
 
 import numpy as np
@@ -246,99 +245,6 @@ cpdef np.ndarray _arrEmpty(
         dtype,                      # Data Type of elements
         fortranStyle                # FORTRAN-style result
     )
-
-
-################################################################################
-###  Array manipulation routines
-################################################################################
-
-################################################## _arrZeroAxis()
-cdef void _arrInitSlice(np.ndarray arr, np.uint8_t axis, SLICE_s *slice):
-    if axis > 1:
-        raise ValueError(
-            "Only the first two dimensions of 2D-arrays can be sliced.")
-
-    slice[0].axis           = axis
-    slice[0].base           = arr.data                  # array base pointer
-    slice[0].strideElement  = arr.strides[axis]         # the selected axis
-    slice[0].strideSlice    = arr.strides[axis ^ 1]     # the other axis
-    slice[0].numElements    = arr.shape[axis]           # element count in slice
-    slice[0].numSlices      = arr.shape[axis ^ 1]       # slice count in array
-    slice[0].sizeItem       = np.PyArray_ITEMSIZE(arr)  # size of one array item
-    slice[0].isContiguous   = slice[0].sizeItem == slice[0].strideElement
-
-
-################################################## _arrZeroAxis()
-cdef void _arrZeroSlice(SLICE_s *slice, intsize idx):
-    cdef intsize mm
-    cdef char *ptr = slice[0].base + slice[0].strideSlice * idx
-
-    if slice[0].isContiguous:
-        # do one rather quick memory fill and be done
-        memset(ptr, 0, slice[0].strideElement * slice[0].numElements)
-    else:
-        # non-contiguous access: slow but steady
-        if slice[0].sizeItem == 1:
-            for mm in range(slice[0].numElements):
-                ptr[0] = 0
-                ptr += slice[0].strideElement
-
-        elif slice[0].sizeItem == 4:
-            for mm in range(slice[0].numElements):
-                (<np.int32_t *> ptr)[0] = 0
-                ptr += slice[0].strideElement
-
-        elif slice[0].sizeItem == 8:
-            for mm in range(slice[0].numElements):
-                (<np.int64_t *> ptr)[0] = 0
-                ptr += slice[0].strideElement
-
-        else:
-            for mm in range(slice[0].numElements):
-                memset(ptr, 0, slice[0].sizeItem)
-                ptr += slice[0].strideElement
-
-
-################################################## _arrMoveAxis()
-cdef void _arrCopySlice(SLICE_s *slcDst, intsize idxDst,
-                        SLICE_s *slcSrc, intsize idxSrc):
-    # sanity check
-    if (slcDst[0].sizeItem != slcSrc[0].sizeItem or
-            slcDst[0].numElements != slcSrc[0].numElements):
-        raise TypeError("Arrays differ in axis shapes or element sizes.")
-
-    # determine addresses
-    cdef char *ptrSrc = slcSrc[0].base + slcSrc[0].strideSlice * idxSrc
-    cdef char *ptrDst = slcDst[0].base + slcDst[0].strideSlice * idxDst
-
-    if slcDst[0].isContiguous and slcSrc[0].isContiguous:
-        # do one rather quick memory copy and be done
-        memcpy(ptrDst, ptrSrc, slcSrc[0].strideElement * slcSrc[0].numElements)
-    else:
-        # non-contiguous access: slow but steady
-        if slcSrc[0].sizeItem == 1:
-            for ii in range(slcSrc[0].numElements):
-                ptrDst[0] = ptrSrc[0]
-                ptrDst += slcDst[0].strideElement
-                ptrSrc += slcSrc[0].strideElement
-
-        elif slcSrc[0].sizeItem == 4:
-            for ii in range(slcSrc[0].numElements):
-                (<np.int32_t *> ptrDst)[0] = (<np.int32_t *> ptrSrc)[0]
-                ptrDst += slcDst[0].strideElement
-                ptrSrc += slcSrc[0].strideElement
-
-        elif slcSrc[0].sizeItem == 8:
-            for ii in range(slcSrc[0].numElements):
-                (<np.int64_t *> ptrDst)[0] = (<np.int64_t *> ptrSrc)[0]
-                ptrDst += slcDst[0].strideElement
-                ptrSrc += slcSrc[0].strideElement
-
-        else:
-            for ii in range(slcSrc[0].numElements):
-                memcpy(ptrDst, ptrSrc, slcSrc[0].sizeItem)
-                ptrDst += slcDst[0].strideElement
-                ptrSrc += slcSrc[0].strideElement
 
 
 cpdef np.ndarray _arrReshape(

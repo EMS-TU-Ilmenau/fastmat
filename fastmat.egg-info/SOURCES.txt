@@ -31,6 +31,8 @@ fastmat/Circulant.pxd
 fastmat/Circulant.pyx
 fastmat/Diag.pxd
 fastmat/Diag.pyx
+fastmat/DiagBlocks.pxd
+fastmat/DiagBlocks.pyx
 fastmat/Eye.pxd
 fastmat/Eye.pyx
 fastmat/Fourier.pxd
@@ -43,6 +45,12 @@ fastmat/LFSRCirculant.pxd
 fastmat/LFSRCirculant.pyx
 fastmat/LowRank.pxd
 fastmat/LowRank.pyx
+fastmat/MLCirculant.pxd
+fastmat/MLCirculant.pyx
+fastmat/MLToeplitz.pxd
+fastmat/MLToeplitz.pyx
+fastmat/MLUltraSound.pxd
+fastmat/MLUltraSound.pyx
 fastmat/Matrix.pxd
 fastmat/Matrix.pyx
 fastmat/Outer.pxd
@@ -72,10 +80,10 @@ fastmat/version.py
 fastmat.egg-info/PKG-INFO
 fastmat.egg-info/SOURCES.txt
 fastmat.egg-info/dependency_links.txt
-fastmat.egg-info/requires.txt
 fastmat.egg-info/top_level.txt
 fastmat/algs/CG.pxd
 fastmat/algs/CG.pyx
+fastmat/algs/FISTA.py
 fastmat/algs/ISTA.py
 fastmat/algs/OMP.py
 fastmat/algs/__init__.py
@@ -84,6 +92,8 @@ fastmat/core/calibration.py
 fastmat/core/cmath.pxd
 fastmat/core/cmath.pyx
 fastmat/core/resource.py
+fastmat/core/strides.pxd
+fastmat/core/strides.pyx
 fastmat/core/types.h
 fastmat/core/types.pxd
 fastmat/core/types.pyx

@@ -37,7 +37,7 @@ import scipy as sp
 ################################################## import modules
 try:
     from matplotlib.pyplot import *               # plotting
-except:
+except ImportError:
     print("matplotlib not found. Please consider installing it to proceed.")
     sys.exit(0)
 
@@ -68,7 +68,6 @@ print("-----------------------------------------------------------")
 # dz - Schrittweite in Tiefe (N) (numS)
 
 
-import scipy.io
 refData = sp.io.loadmat('datenSAFT.mat')
 dX = refData['dx'] * 1000
 dZ = refData['dz'] * 1000
@@ -137,12 +136,9 @@ class SaftMaskClass(fastmat.Matrix):
         return SaftMaskCore(arrX, self._sizeItem, self._numBlocks, self._masks,
                             False)
 
-    def _forward(self, arrX):
+    def _backward(self, arrX):
         return SaftMaskCore(arrX, self._sizeItem, self._numBlocks, self._masks,
                             True)
-
-    def _backward(self, arrX):
-        raise NotImplementedError("No backward() for SaftMask implemented yet.")
 
 ################################################## Use special fastmat class
 print(" %-20s : %s" %("'matSaftMaskClass'",
@@ -161,6 +157,7 @@ arrScanData = refData['data'].astype(np.float32)
 #vecInput = arrScanData.reshape((-1, 1)).astype(np.float32)
 vecInput = arrScanData.T.reshape((-1, 1))
 
+vecOutput = None
 def doIt():
     global vecOutput
     vecOutput = matSaftMaskClass * vecInput

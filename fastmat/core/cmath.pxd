@@ -53,23 +53,8 @@ cpdef float _getFFTComplexity(intsize)
 cpdef np.ndarray _arrZero(int, intsize, intsize, nptype, bint fortranStyle=?)
 cpdef np.ndarray _arrEmpty(int, intsize, intsize, nptype, bint fortranStyle=?)
 
-################################################## Array manipulation routines
-ctypedef struct SLICE_s:
-    char *          base
-    intsize         strideElement
-    intsize         strideSlice
-    intsize         numElements
-    intsize         numSlices
-    np.uint8_t      sizeItem
-    np.uint8_t      axis
-    bint            isContiguous
-
 cpdef np.ndarray _arrReshape(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
 cpdef bint _arrResize(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
-
-cdef void _arrInitSlice(np.ndarray, np.uint8_t, SLICE_s *)
-cdef void _arrZeroSlice(SLICE_s *, intsize)
-cdef void _arrCopySlice(SLICE_s *, intsize, SLICE_s *, intsize)
 
 ################################################## Array formatting
 cpdef np.ndarray _arrCopyExt(np.ndarray, nptype, int)

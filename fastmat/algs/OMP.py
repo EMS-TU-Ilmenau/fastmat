@@ -148,7 +148,8 @@ def OMP(fmatA, arrY, numK):
 ################################################## inspection interface
 class OMPinspect(Algorithm):
 
-    def _getTest(self):
+    @staticmethod
+    def _getTest():
         from ..inspect import TEST, dynFormat, arrSparseTestDist
         from ..Hadamard import Hadamard
         from ..Matrix import Matrix
@@ -190,7 +191,8 @@ class OMPinspect(Algorithm):
             },
         }
 
-    def _getBenchmark(self):
+    @staticmethod
+    def _getBenchmark():
         from ..inspect import BENCH, arrTestDist
         from ..Matrix import Matrix
         from ..Fourier import Fourier
@@ -239,7 +241,8 @@ class OMPinspect(Algorithm):
             }
         }
 
-    def _getDocumentation(self):
+    @staticmethod
+    def _getDocumentation():
         from ..inspect import DOC
         return DOC.SUBSECTION(
             r'Orthogonal matching Pursuit (OMP) (\texttt{fastmat.algs.OMP})',

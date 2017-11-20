@@ -33,6 +33,7 @@ import itertools
 import os
 import re
 import six
+import struct
 import numpy as np
 from scipy import sparse
 from platform import system as pfSystem
@@ -42,7 +43,7 @@ try:
 except ImportError:         # python 3.x
     izip = zip
 
-isLinux = pfSystem() == 'Linux'
+currentOS = pfSystem()
 
 
 ################################################################################
@@ -106,7 +107,7 @@ class paramDict(dict):
 
     def __getattr__(self, key):
         # evaluate nested format-string parameters, update format results
-        value, lastValue = super(self.__class__, self).__getitem__(key), None
+        value, lastValue = super(paramDict, self).__getitem__(key), None
 
         while id(lastValue) != id(value):
             lastValue = value
@@ -212,7 +213,7 @@ def paramPermute(dictionary, copy=True, PermutationClass=Permutation):
     # isolate the permutation parameters from the dictionary
     parameters = {key: list(value)
                   for key, value in dictionary.items()
-                  if type(value) == PermutationClass}
+                  if isinstance(value, PermutationClass)}
 
     # perform a cartesian product -> list of permuted instances
     permutations = [dict(izip(parameters, x))
@@ -432,20 +433,9 @@ def arrAlign(arr, alignment=ALIGNMENT.DONTCARE):
             *(dim * spacing for dim in arr.shape)) - 0.5)).astype(arr.dtype)
 
         # fill-in the array data and return a view of the to-be-aligned array
-        if arrFill.ndim == 1:
-            arrFill[1::spacing] = arr
-            return arrFill[1::spacing]
-        elif arrFill.ndim == 2:
-            arrFill[1::spacing, 1::spacing] = arr
-            return arrFill[1::spacing, 1::spacing]
-        elif arrFill.ndim == 3:
-            arrFill[1::spacing, 1::spacing, 1::spacing] = arr
-            return arrFill[1::spacing, 1::spacing, 1::spacing]
-        elif arrFill.ndim == 4:
-            arrFill[1::spacing, 1::spacing, 1::spacing, 1::spacing] = arr
-            return arrFill[1::spacing, 1::spacing, 1::spacing, 1::spacing]
-        else:
-            raise ValueError("Only arrays of dimensions <5 are supported.")
+        arrPart = arrFill[(np.s_[1::spacing], ) * arrFill.ndim]
+        arrPart[:] = arr
+        return arrPart
     else:
         raise ValueError("Unknown alignment identificator '%s'" %(alignment))
 
@@ -542,7 +532,9 @@ class COLOR():
 def fmtStr(string, color):
     '''Print a string quoted by some format specifiers.'''
     # colored output only supported with linux
-    return "%s%s%s" %(color, string, COLOR.END) if isLinux else string
+    return ("%s%s%s" %(color, string, COLOR.END)
+            if currentOS == 'Linux'
+            else string)
 
 
 def fmtGreen(string):
@@ -582,9 +574,58 @@ def dynFormat(s, *keys):
 
 
 ################################################## getConsoleSize()
-def getConsoleSize(fallback=(80, 25)):
-    size = tuple(int(dim) for dim in os.popen('stty size', 'r').read().split())
-    return size if len(size) >= 2 else fallback
+
+fallbackConsoleSize = (80, 25)
+if (currentOS in ['Linux', 'Darwin']) or currentOS.startswith('CYGWIN'):
+    import fcntl
+    import termios
+    # source: https://gist.github.com/jtriley/1108174
+
+    def getConsoleSize():
+        def ioctl_GWINSZ(fd):
+            try:
+                return struct.unpack(
+                    'hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
+            except EnvironmentError:
+                return None
+
+        cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+        if not cr:
+            try:
+                fd = os.open(os.ctermid(), os.O_RDONLY)
+                cr = ioctl_GWINSZ(fd)
+                os.close(fd)
+            except EnvironmentError:
+                pass
+
+        if not cr:
+            try:
+                cr = (os.environ['LINES'], os.environ['COLUMNS'])
+            except (EnvironmentError, KeyError):
+                cr = fallbackConsoleSize
+
+        return int(cr[0]), int(cr[1])
+elif currentOS == 'Windows':
+    def getConsoleSize():
+        cr = fallbackConsoleSize
+        try:
+            from ctypes import windll, create_string_buffer
+            # stdin handle is -10
+            # stdout handle is -11
+            # stderr handle is -12
+            h = windll.kernel32.GetStdHandle(-12)
+            csbi = create_string_buffer(22)
+            res = windll.kernel32.GetConsoleScreenBufferInfo(h, csbi)
+            if res:
+                (left, top, right, bottom) = struct.unpack("10x4h4x", csbi.raw)
+                cr = (right - left, bottom - top)
+        except (ImportError, EnvironmentError):
+            pass
+
+        return cr
+else:
+    def getConsoleSize():
+        return fallbackConsoleSize
 
 
 ################################################## worker's CONSTANT classes
@@ -661,8 +702,7 @@ class Worker(object):
     cbResult=None
     target=None
 
-    def __init__(self, targetClass, targetOptionMethod=None,
-                 runnerDefaults={}, extraOptions={}):
+    def __init__(self, targetClass, **options):
         '''
         Setup an inspection environment on a fastmat class specified in target.
         Along the way an empty instance of target will be created and aside
@@ -678,6 +718,11 @@ class Worker(object):
         # the test target is a fastmat class to be instantiated in the runners
         if not inspect.isclass(targetClass):
             raise ValueError("target in init of Runner must be a class type")
+
+        # set defaults for options
+        targetOptionMethod = options.get('targetOptionMethod', None)
+        runnerDefaults = options.get('runnerDefaults', {})
+        extraOptions = options.get('extraOptions', {})
 
         self.target=targetClass.__new__(targetClass)
 
@@ -726,15 +771,8 @@ class Worker(object):
             target[NAME.TARGET]=name
             target[NAME.CLASS]=targetClass.__name__
 
-        # determine console width
-        self.consoleWidth=getConsoleSize()[1]
-
         # initialize output
         self.results=AccessDict({})
-
-    def _run(self, name, options):
-        '''Process the option set in options, return a result object.'''
-        return {}
 
     def emitStatus(self, *args):
         if self.cbStatus is not None:
@@ -750,6 +788,9 @@ class Worker(object):
         If *targetNames is empty all targets will be run.
         The output of each $TARGET$ will be written to self.results[$TARGET$]
         '''
+        # determine console width
+        self.consoleWidth=getConsoleSize()[1]
+
         if len(targetNames) == 0:
             targetNames=self.options.keys()
 

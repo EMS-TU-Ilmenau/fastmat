@@ -36,11 +36,7 @@ from ..Matrix import Matrix
 ################################################## getMemoryFootprint()
 
 
-def getMemoryFootprint(
-    obj,
-    handlers={},
-    verbose=False,
-):
+def getMemoryFootprint(obj, **options):
     '''
     Return the approximate memory footprint of an object with all of its
     contents.
@@ -52,6 +48,10 @@ def getMemoryFootprint(
         handlers = {SomeContainerClass: iter,
             OtherContainerClass: OtherContainerClass.get_elements}
     '''
+    # extract options
+    handlers = options.get('handlers', {})
+    verbose = options.get('verbose', False)
+
     # keep track of object ids already seen
     seen = set()
 

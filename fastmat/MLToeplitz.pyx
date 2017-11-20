@@ -135,6 +135,12 @@ cdef class MLToeplitz(Partial):
         else:
             super(MLToeplitz, self).__init__(P, N=arrIndices, M=arrIndices)
 
+        # Currently Fourier matrices bloat everything up to complex double
+        # precision, therefore make sure tenT matches the precision of the
+        # matrix itself
+        if self.dtype != self._tenT.dtype:
+            self._tenT = self._tenT.astype(self.dtype)
+
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
@@ -207,6 +213,58 @@ cdef class MLToeplitz(Partial):
                 arrS
             )
         return arrS
+
+    cpdef Matrix _getNormalized(self):
+        arrNorms = self._normalizeCore(self._tenT)
+
+        return self * Diag(1. / np.sqrt(arrNorms))
+
+    def _normalizeCore(self, tenT):
+        cdef intsize ii, numS1, numS2, numS3
+
+        cdef intsize numL = int((tenT.shape[0] + 1) /2)
+        cdef intsize numEll = tenT.shape[0]
+
+        cdef intsize numD = len(tenT.shape)
+
+        cdef np.ndarray arrT, arrNorms
+        if numD == 1:
+            # if we are deep enough we do the normal toeplitz stuff
+            arrT = tenT
+
+            arrNorms = np.zeros(numL)
+
+            arrNorms[0] = np.linalg.norm(arrT[:numL]) **2
+
+            for ii in range(numL - 1):
+
+                arrNorms[ii + 1] = arrNorms[ii] \
+                    + np.abs(arrT[2 * numL - 2 - ii]) ** 2 \
+                    - np.abs(arrT[numL - ii - 1]) ** 2
+
+        else:
+            numS1 = np.prod(self._arrN[-numD :])
+            numS2 = np.prod(self._arrN[-(numD - 1) :])
+            arrNorms = np.zeros(numS1)
+            arrT = np.zeros((numEll, numS2))
+
+            # go deeper in recursion and get norms of blocks
+            for ii in range(numEll):
+                arrT[ii, :] = self._normalizeCore(tenT[ii, :])
+
+            numS3 = arrT.shape[1]
+            arrNorms[:numS3] = np.sum(arrT[:numL, :], axis=0)
+
+            # now do blockwise subtraction and addition
+            for ii in range(numL - 1):
+
+                arrNorms[
+                    (ii +1) *numS2 : (ii +2) *numS2
+                ] = arrNorms[ii *numS2 : (ii +1) *numS2] + \
+                    + arrT[2 * numL - 2 - ii] \
+                    - arrT[numL - ii - 1]
+
+        return arrNorms
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
@@ -296,58 +354,6 @@ cdef class MLToeplitz(Partial):
             # single level toeplitz block
             return Toeplitz(tenU[:numN], tenU[numN:][::-1]).array
 
-    cpdef Matrix _getNormalized(self):
-        arrNorms = self._normalizeCore(self._tenT)
-
-        return self * Diag(1 / np.sqrt(arrNorms))
-
-    def _normalizeCore(self, tenT):
-        cdef intsize ii, numS1, numS2, numS3
-
-        cdef intsize numL = int((tenT.shape[0] + 1) /2)
-        cdef intsize numEll = tenT.shape[0]
-
-        cdef intsize numD = len(tenT.shape)
-
-        cdef np.ndarray arrT, arrNorms
-        if numD == 1:
-            # if we are deep enough we do the normal toeplitz stuff
-            arrT = tenT
-
-            arrNorms = np.zeros(numL)
-
-            arrNorms[0] = np.linalg.norm(arrT[:numL]) **2
-
-            for ii in range(numL - 1):
-
-                arrNorms[ii + 1] = arrNorms[ii] \
-                    + np.abs(arrT[2 * numL - 2 - ii]) ** 2 \
-                    - np.abs(arrT[numL - ii - 1]) ** 2
-
-        else:
-            numS1 = np.prod(self._arrN[-numD :])
-            numS2 = np.prod(self._arrN[-(numD - 1) :])
-            arrNorms = np.zeros(numS1)
-            arrT = np.zeros((numEll, numS2))
-
-            # go deeper in recursion and get norms of blocks
-            for ii in range(numEll):
-                arrT[ii, :] = self._normalizeCore(tenT[ii, :])
-
-            numS3 = arrT.shape[1]
-            arrNorms[:numS3] = np.sum(arrT[:numL, :], axis=0)
-
-            # now do blockwise subtraction and addition
-            for ii in range(numL - 1):
-
-                arrNorms[
-                    (ii +1) *numS2 : (ii +2) *numS2
-                ] = arrNorms[ii *numS2 : (ii +1) *numS2] + \
-                    + arrT[2 * numL - 2 - ii] \
-                    - arrT[numL - ii - 1]
-
-        return arrNorms
-
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST, dynFormat
@@ -404,8 +410,8 @@ cdef class MLToeplitz(Partial):
             DOC.SUBSUBSECTION(
                 'Definition and Interface',
                 r"""
-Let $d \geqslant 2$. Then, given a $d$-dimensional complex sequence 
-$\bm{t} = [t_{\bm{k}}]$ for $\bm{k} \in \N^d$ a 
+Let $d \geqslant 2$. Then, given a $d$-dimensional complex sequence
+$\bm{t} = [t_{\bm{k}}]$ for $\bm{k} \in \N^d$ a
 $d$-level Toeplitz matrix $\bm{T}_{\bm{n},d}$ is recursively defined as
 %
 \[\bm{T}_{(\bm{n},d)} =
@@ -424,13 +430,13 @@ $d$-level Toeplitz matrix $\bm{T}_{\bm{n},d}$ is recursively defined as
 \endgroup
 \]
 %
-where $\bm m = \bm n_{-1}$ and $\ell = d-1$. So for $\bm n = [2,2]$ and 
+where $\bm m = \bm n_{-1}$ and $\ell = d-1$. So for $\bm n = [2,2]$ and
 $\bm t \in \C^{3 \times 3}$ we get
 %
 \[
 \begingroup
 \setlength\arraycolsep{3pt}
-\bm T_{[2,2],2} = 
+\bm T_{[2,2],2} =
 \begin{bmatrix}
 \bm T_{[1,2],1} & \bm T_{[3,2],1} \\
 \bm T_{[2,2],1} & \bm T_{[1,2],1}
@@ -454,7 +460,7 @@ t_{2,2} & t_{2,1} & t_{1,2} & t_{1,1}
                             'n = 2',
                             'l = 2',
                             't = np.arange(',
-                            '(2*n-1) ** l',
+                            '(2 * n - 1) ** l',
                             ').reshape(',
                             '(2 * n - 1, 2 * n - 1)',
                             ')',

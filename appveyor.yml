@@ -1,32 +1,85 @@
+branches:
+  only:
+    - stable
+
 environment:
   global:
-    CIBW_BEFORE_BUILD: "conda update -y conda && conda install -y numpy scipy"
     CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
 
+  TWINE_REPOSITORY:
+    secure: uxrVt8G0aReV23OXS5lWKg==
+
+  TWINE_REPOSITORY_URL:
+    secure: ZOBFk0ZQrSJU2YF/RWZObU/2O9XBbQ42I9vDVg3JPd8=
+
+  TWINE_USERNAME:
+    secure: vmEPVHBcWLBeQoU4t3pl8A==
+
+  TWINE_PASSWORD:
+    secure: s5rlS2aZ0pdnIhWQrN0B0LZO5FU6B7CIp1ON4wriejs=
+
   matrix:
-    # For Python versions available on Appveyor, see 
+    - PYTHON: "C:\\Python27_32"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "32"
+      CONDA_PY: "27"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!2]?-* cp2[!7]-*'
+
+    - PYTHON: "C:\\Python27_64"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "64"
+      CONDA_PY: "27"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!2]?-* cp2[!7]-*'
+
+    - PYTHON: "C:\\Python34_32"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "32"
+      CONDA_PY: "34"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!3]?-* cp3[!4]-*'
+
+    - PYTHON: "C:\\Python34_64"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "64"
+      CONDA_PY: "34"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!3]?-* cp3[!4]-*'
+
+    - PYTHON: "C:\\Python35_32"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "32"
+      CONDA_PY: "35"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!3]?-* cp3[!5]-*'
+
+    - PYTHON: "C:\\Python35_64"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "64"
+      CONDA_PY: "35"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!3]?-* cp3[!5]-*'
+
+    - PYTHON: "C:\\Python36_32"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "32"
+      CONDA_PY: "36"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!3]?-* cp3[!6]-*'
+
+    - PYTHON: "C:\\Python36_64"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "64"
+      CONDA_PY: "36"
+      CONDA_NPY: "18"
+      CIBW_SKIP: 'cp[!3]?-* cp3[!6]-*'
+    # For Python versions available on Appveyor, see
     # http://www.appveyor.com/docs/installed-software#python
-    # Use Anaconda as SciPy is a 
-    # headache with Windows.
-      # 3.6
-    - PYTHON: "C:\\Miniconda36"
-      # 3.6 64-bit
-    - PYTHON: "C:\\Miniconda36-x64"
-      # 3.5
-    - PYTHON: "C:\\Miniconda35"
-      # 3.5 64-bit
-    - PYTHON: "C:\\Miniconda35-x64"
-      # 3.4
-    - PYTHON: "C:\\Miniconda3"
-      # 3.4 64-bit
-    - PYTHON: "C:\\Miniconda3-x64"
-      # 2.7
-    - PYTHON: "C:\\Miniconda"
-      # 2.7 64-bit
-    - PYTHON: "C:\\Miniconda-x64"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO %CIBW_SKIP%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
 install:
@@ -41,17 +94,15 @@ install:
      %CMD_IN_ENV%
      python -c "import sys,platform,struct;
      print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
-  # Install the conda supplied packages; msvc_runtime needed for py34
-  - "conda update -y conda"
-  - "conda install -y pip wheel numpy scipy"
 
 build_script:
-  - pip install cibuildwheel==0.5.1
+  - pip install cibuildwheel==0.5.1 twine==1.9.1
   - pip install .
 
 test_script:
-  - python util/bee.py test -v"
+  - python util/bee.py test -v
   - cibuildwheel --output-dir wheelhouse
+  - twine upload "wheelhouse\\*.whl"
 
 artifacts:
   - path: "wheelhouse\\*.whl"

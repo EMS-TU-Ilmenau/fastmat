@@ -111,36 +111,15 @@ cdef class MLUltraSound(Partial):
         # call the parent constructor
         super(MLUltraSound, self).__init__(P, N=arrIndicesN, M=arrIndicesN)
 
+        # Currently Fourier matrices bloat everything up to complex double
+        # precision, therefore make sure tenT matches the precision of the
+        # matrix itself
+        if self.dtype != self._tenT.dtype:
+            self._tenT = self._tenT.astype(self.dtype)
+
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
-
-    ############################################## class property override
-    cpdef tuple _getComplexity(self):
-        return (0., 0.)
-
-    ############################################## class reference
-    cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
-        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
-
-        # go through all blocks and construct the corresponding
-        # MLToeplitz instance by calling its reference
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
-                arrRes[
-                    ii * self._numSize1 * self._numSize2:
-                    (ii + 1) * self._numSize1 * self._numSize2,
-                    jj * self._numSize1 * self._numSize2:
-                    (jj + 1) * self._numSize1 * self._numSize2
-                ] = MLToeplitz(
-                    np.copy(self._tenT[ii, jj, :, :])
-                )._reference()
-
-        return arrRes
 
     cpdef Matrix _getNormalized(self):
         cdef intsize ii, jj
@@ -202,6 +181,33 @@ cdef class MLUltraSound(Partial):
                     - arrT[numL - ii - 1]
         return arrNorms
 
+    ############################################## class property override
+    cpdef tuple _getComplexity(self):
+        return (0., 0.)
+
+    ############################################## class reference
+    cpdef np.ndarray _reference(self):
+        '''
+        Return an explicit representation of the matrix without using
+        any fastmat code.
+        '''
+        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
+
+        # go through all blocks and construct the corresponding
+        # MLToeplitz instance by calling its reference
+        for ii in range(self._numBlocksN):
+            for jj in range(self._numBlocksN):
+                arrRes[
+                    ii * self._numSize1 * self._numSize2:
+                    (ii + 1) * self._numSize1 * self._numSize2,
+                    jj * self._numSize1 * self._numSize2:
+                    (jj + 1) * self._numSize1 * self._numSize2
+                ] = MLToeplitz(
+                    np.copy(self._tenT[ii, jj, :, :])
+                )._reference()
+
+        return arrRes
+
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST, dynFormat
@@ -252,16 +258,16 @@ cdef class MLUltraSound(Partial):
             DOC.SUBSUBSECTION(
                 'Definition and Interface',
                 r"""
-                This class is an implementation of matrices, which have a block 
-structure, where each block itself is a $2$-level Toeplitz matrix, as 
-implemented in \texttt{MLToeplitz}. The name originated from the fact, that 
-these matrices pop up, when modeling a ultrasonic pulse echo as a superposition 
+                This class is an implementation of matrices, which have a block
+structure, where each block itself is a $2$-level Toeplitz matrix, as
+implemented in \texttt{MLToeplitz}. The name originated from the fact, that
+these matrices pop up, when modeling a ultrasonic pulse echo as a superposition
 of hyperbolas.
 
-As such we can 
-collect the unique defining elements of $\bm H$ in $\bm h \in \bm \R^{M \times 
-M 
-\times 2 N_x - 1 \times 2 N_y - 1}$ and then set 
+As such we can
+collect the unique defining elements of $\bm H$ in $\bm h \in \bm \R^{M \times
+M
+\times 2 N_x - 1 \times 2 N_y - 1}$ and then set
 %
 \[
     \bm H_{i,j} = \bm T_{([N_x, N_y], 2)}(\bm h_{i,j}).
@@ -277,28 +283,28 @@ To this end we embed each $\bm H_{i,j}$ into a $2$-level circulant matrix
     \mathfrak{T}_2(\bm H_{0,0})   & \dots  & \mathfrak{T}_2(\bm H_{0,M-1}) \\
     \vdots        & \ddots & \vdots \\
     \mathfrak{T}_2(\bm H_{M-1,0}) & \dots  & \mathfrak{T}_2(\bm H_{M-1,M-1}) \\
-    \end{bmatrix} \endgroup = 
+    \end{bmatrix} \endgroup =
 \bm K^\herm \cdot \bm D \cdot \bm K
 \end{align}
 %
-for 
+for
 $\bm F = \bm \Fs_{2 N_x - 1} \otimes \bm \Fs_{2 N_y - 1} $,
 $\bm K = \bm I_{M} \otimes \bm F$
 %
-and 
-\[\bm D = 
+and
+\[\bm D =
 \begingroup
 \setlength\arraycolsep{3pt}
 \begin{bmatrix}
-\diag(\bm F \Vectorize \tilde{\bm h}_{0,0}) & \dots & 
+\diag(\bm F \Vectorize \tilde{\bm h}_{0,0}) & \dots &
 \diag(\bm F \Vectorize \tilde{\bm h}_{0,M-1}) \\
 \vdots & \ddots & \vdots \\
-\diag(\bm F \Vectorize \tilde{\bm h}_{M-1,0}) & \dots & 
+\diag(\bm F \Vectorize \tilde{\bm h}_{M-1,0}) & \dots &
 \diag(\bm F \Vectorize \tilde{\bm h}_{M-1,M-1}) \\
 \end{bmatrix},
 \endgroup
 \]
-which shows, that $\bm H$ simply is a subselection of the above block 
+which shows, that $\bm H$ simply is a subselection of the above block
 diagonalizated matrix. This is exactly, how it is implemented in \fm{}.
                 """,
                 DOC.SNIPPET('# import the package',

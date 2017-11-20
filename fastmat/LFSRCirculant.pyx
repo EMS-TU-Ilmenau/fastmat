@@ -29,8 +29,6 @@
 
  ------------------------------------------------------------------------------
 '''
-from libc.stdlib cimport malloc, free
-
 import numpy as np
 cimport numpy as np
 
@@ -38,6 +36,7 @@ from .Matrix cimport Matrix
 from .Hadamard cimport Hadamard
 from .core.types cimport *
 from .core.cmath cimport *
+from .core.strides cimport *
 
 cdef inline np.int8_t lfsrOutBit(lfsrReg_t state) nogil:
     return (-1 if state & 1 else 1)
@@ -231,7 +230,7 @@ cdef class LFSRCirculant(Matrix):
         cdef lfsrReg_t state, mask  = 1 << self._regSize
         cdef lfsrReg_t taps         = self._regTaps
         cdef np.ndarray arrData
-        cdef SLICE_s slcIn, slcData, slcOut
+        cdef STRIDE_s strIn, strData, strOut
 
         # initialize data Array, no zero init required for maximum length seqs
         if N == mask - 1:
@@ -239,12 +238,12 @@ cdef class LFSRCirculant(Matrix):
         else:
             arrData = _arrZero(2, mask, M, _getNpType(arrIn), False)
 
-        _arrInitSlice(arrIn, 1, &slcIn)
-        _arrInitSlice(arrOut, 1, &slcOut)
-        _arrInitSlice(arrData, 1, &slcData)
+        strideInit(&strIn, arrIn, 1)
+        strideInit(&strOut, arrOut, 1)
+        strideInit(&strData, arrData, 1)
 
         # ensure the first element of each vector in arrData is zero
-        _arrZeroSlice(&slcData, 0)
+        opZeroVector(&strData, 0)
 
         # flipping the arrays achieves circulant shape without actually shifting
         # anything (the original algorithm computes deconvolution which builds
@@ -261,28 +260,30 @@ cdef class LFSRCirculant(Matrix):
         # copy first element from each imput vector to Hadamard transform input
         # data position denoted by the register's start value (copy row to row)
         # then, copy remaining elements (flip them if requested by flipIn)
-        _arrCopySlice(&slcData, state, &slcIn, 0)
+        # don't flip the first item (which we will we copy explicitly now)
+        opCopyVector(&strData, state, &strIn, 0)
+        strideSliceVectors(&strIn, 1, -1, 1)        # equivalent to strIn[1:]
+
         # and now for something completely different: addressing hack!
         # to flip the input we can fiddle around with the array base pointer
         # and its strides. Inverting the slice-stride (keeping row distance but
         # changing direction of traversal) and setting the base pointer to the
-        # first element AFTER the array achieves what we want.
+        # last element in the array achieves what we want.
         # However, index 0 will be mapped directly to the can as it literally
         # starts after the array data. After that however indexing begins with
         # the last row for index 1.
         if flipIn:
-            slcIn.base += slcIn.numSlices * slcIn.strideSlice
-            slcIn.strideSlice = -slcIn.strideSlice
+            strideFlipVectors(&strIn)
 
-        for nn in range(1, N):
+        for nn in range(0, N - 1):
             state = lfsrGenStep(state, taps, mask)
-            _arrCopySlice(&slcData, state, &slcIn, nn)
+            opCopyVector(&strData, state, &strIn, nn)
 
         # apply hadamard-walsh transform from arrData to arrData
         arrData = self._content[0].forward(arrData)
 
         # reinit slice as arrData has changed
-        _arrInitSlice(arrData, 1, &slcData)
+        strideInit(&strData, arrData, 1)
 
         # apply output permutation P(r->t) fromm arrData to arrOut (slices!)
         # reset state for address register T must always be 1 (unclear in paper)
@@ -291,16 +292,17 @@ cdef class LFSRCirculant(Matrix):
         # copy elements from Hadamard transform output denoted by the Tap
         # register's start value to first element of result (copy row to row)
         # then, copy remaining elements (flip them if requested by flipOut)
-        _arrCopySlice(&slcOut, 0, &slcData, state)
+        # don't flip the first item (which we will we copy explicitly now)
+        opCopyVector(&strOut, 0, &strData, state)
+        strideSliceVectors(&strOut, 1, -1, 1)        # equivalent to strOut[1:]
 
         # same addressing hack as above
         if flipOut:
-            slcOut.base += slcOut.numSlices * slcOut.strideSlice
-            slcOut.strideSlice = -slcOut.strideSlice
+            strideFlipVectors(&strOut)
 
-        for nn in range(1, N):
+        for nn in range(0, N - 1):
             state = lfsrTapStep(state, taps, mask)
-            _arrCopySlice(&slcOut, nn, &slcData, state)
+            opCopyVector(&strOut, nn, &strData, state)
 
     ############################################## class forward / backward
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,

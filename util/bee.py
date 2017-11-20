@@ -48,13 +48,10 @@ import sys
 import inspect
 import os
 import argparse
-import importlib
-import pprint
+from pprint import pprint
 import time
 
 import numpy as np
-from scipy import io as spio
-from numbers import Number
 
 
 def importMatplotlib():
@@ -188,7 +185,7 @@ class Bee(CommandArgParser):
         def _printDataset(self, dataset, newline='\n', separator=' '):
             '''List contents of dataset according to modifiers in self.args.'''
             if self.args.extended:
-                pprint.pprint(dataset)
+                pprint(dataset)
             else:
                 # extract all key names of dataset and print the list
                 print(separator.join(
@@ -403,7 +400,7 @@ class Bee(CommandArgParser):
                     '.'.join([nameTest, name]), numTests, timeSingle
                 ) + " (%s%s)" %(
                     (fmtGreen if numProb == 0 else fmtRed)
-                    ("%d problegms" % (numProb)),
+                    ("%d problems" % (numProb)),
                     ("" if numIrr == 0
                      else fmtYellow(
                          ", %d irregularities (ignored)" %(numIrr)))
@@ -434,25 +431,20 @@ class Bee(CommandArgParser):
             for name, classType in testClasses.items()}
 
         # STAGE 2: add dependencies introduced in test case instances
-        def crawlContent(contents, targetSet):
-            if isinstance(contents, (list, tuple)):
-                for item in contents:
-                    crawlContent(item)
-            elif isinstance(contents, dict):
-                for item in contents.values():
-                    crawlContent(item)
-            elif isinstance(contents, classBaseContainers):
-                targetSet.add(contents.__class__)
+        def crawlContent(item, targetSet):
+            for nestedItem in item:
+                targetSet.add(nestedItem.__class__)
+                crawlContent(nestedItem, targetSet)
 
         for name, testWorker in tests.items():
             targetSet = testDependencies[name]
-            for nameTarget, target in testWorker.results.items():
+            for target in testWorker.results.values():
                 for nameTest, test in target.items():
                     if len(test) > 0:
                         aVariant = list(test.values())[0]
                         if len(aVariant) > 0:
                             aQuery = list(aVariant.values())[0]
-                            crawlContent(aQuery.get(TEST.INSTANCE, None),
+                            crawlContent(aQuery.get(TEST.INSTANCE, ()),
                                          targetSet)
 
         # filter out the containers themselves as they are obviousely the
@@ -531,10 +523,6 @@ class Bee(CommandArgParser):
         if self.args.interact and cntProblems > 0:
             # register signaling for graceful exit
             import atexit
-            try:
-                import matplotlib.pyplot as mpl
-            except ImportError:
-                pass
 
             def quitGracefully():
                 print("Leaving interactive testing session.")

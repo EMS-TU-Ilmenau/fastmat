@@ -37,7 +37,7 @@ import scipy.sparse                               # math library
 try:
     import matplotlib.pyplot as plt               # plotting
     import matplotlib.gridspec as gridspec        # grid specification
-except:
+except ImportError:
     print("matplotlib not found. Please consider installing it to proceed.")
     sys.exit(0)
 

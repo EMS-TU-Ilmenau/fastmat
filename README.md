@@ -1,6 +1,16 @@
 # fastmat
+[![Version](https://img.shields.io/pypi/v/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Status](https://img.shields.io/pypi/status/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Python wheels](https://img.shields.io/pypi/wheel/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8af2b42d33cc4f5ba5b91566032c44ed)](https://www.codacy.com/app/ChristophWWagner/fastmat-EMS-TU-Ilmenau?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
 
-[![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)[![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
+[![License](https://img.shields.io/pypi/l/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Python versions](https://img.shields.io/pypi/pyversions/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![Implementation](https://img.shields.io/pypi/implementation/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+
+[![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
+[![GitHub issues](https://img.shields.io/github/issues/EMS-TU-Ilmenau/fastmat.svg)](https://github.com/EMS-TU-Ilmenau/fastmat/issues)
+**master:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=stable)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat) **stable:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)
 
 ## Description
 Scientific computing requires handling large composed or structured matrices.
@@ -72,9 +82,8 @@ the following publication affiliated with the project:
 - `to be announced soon. Please tune back in regularly to check on updates.`
 
 ## Installation
-fastmat currently supports both Linux and Windows. Building the
-documentation and running benchmarks is currently only supported under linux
-with windows support underway. You may choose one of these installation methods:
+fastmat currently supports Linux, Windows and Mac OS. You may choose one of
+these installation methods:
 
 ### installation with pip:
 
@@ -84,44 +93,31 @@ from the commandline by running one easy and straightforward command:
 
 When installing with pip all dependencies of the package will be installed
 along. With release 0.1.1 python wheels will be offered for many versions
-greatly improving installation time and effort, especially under windows.
+greatly improving installation time and effort.
 
 ### installation from source: doing it manually
 - download the source distribution from our github repository:
-    https://github.com/EMS-TU-Ilmenau/fastmat/archive/master.zip
+    https://github.com/EMS-TU-Ilmenau/fastmat/archive/stable.zip
 - unpack its contents and navigate to the project root directory
-#### LINUX
-##### Python 2.x:
-- Make sure you have the following packages installed:
-  * numpy
-  * scipy
-  * cython
-- Call "make install MODE=--user PYTHON=python2" to install fastmat for your local user $PYTHONPATH
-- Call "sudo make install PYTHON=python2" to install fastmat as super user onto your local machine
-- Call "sudo make uninstall" to remove a previous local machine install
-- Call "make uninstall MODE=--user" to remove a previous local user install
-##### Python 3.x:
-- Make sure you have the following packages installed:
-  * numpy
-  * scipy
-  * cython3
-- Call "make install MODE=--user PYTHON=python3" to install fastmat for your local user $PYTHONPATH
-- Call "sudo make install PYTHON=python3" to install fastmat as super user onto your local machine
-- Call "sudo make uninstall" to remove a previous local machine install
-- Call "make uninstall MODE=--user" to remove a previous local user install
-#### WINDOWS
-- Make sure you have the following software packages installed properly:
-  * Intel Distribution for Python 2.7
-  * Microsoft Visual C++ Compiler 9.0 for Python 2.7
-  * GNU make for Windows 3.81 or newer
-- Add the paths to python.exe (Intel Distribution, defaults to C:\IntelPython27\) and make.exe (GNU make) to the @PATH@ environment variable
-- Call "make install MODE=--user" to install fastmat for your local user $PYTHONPATH
-- Call "make install" as super user to install fastmat onto your local machine
-- Call "make uninstall" to remove a previous local machine install.
-- Call "make uninstall MODE=--user" to remove a provious local user install
-
-
-
+- run `pip install .` to install fastmat on your computer
+- you may also install fastmat without pip, using the offered makefile:
+    * type `make install` to install fastmat on your computer
+    * If you intend to install the package locally for your user type
+      `make install MODE=--user` instead
+    * You may add a version specifier for all `make` targets that directly or indirectly invoke Python:
+      `make install PYTHON=python2`
+      `make compile PYTHON=python3`
+    * If you only would like to compile the package to use it from this local
+      directory without installing it, type `make compile`
+    * An uninstallation of a previously run `make install`is possible, provided the installation log file `setup.files` has been preserved
+      Invoking `make uninstall` without a local `setup.files` causes another installation for generating the setup file log prior to uninstalling
+- **NOTE: Windows users**
+  If you intent on building fastmat from source on a windows platform, make sure you have installed a c compiler environment and make interpreter. One way to accomplish this is to install these tools for Python 2.7 (you may also chose different ones, of course):
+    * Intel Distribution for Python 2.7
+    * Microsoft Visual C++ Compiler 9.0 for Python 2.7
+    * GNU make for Windows 3.81 or newer
+    * depending on your system: The relevant header files
+  
 ## Demos
 Feel free to have a look at the demos in the `demo/` directory of the source
 distribution. Please make sure to have fastmat already installed when running
