@@ -416,7 +416,7 @@ cdef class Matrix(object):
             raise ValueError("largestEV: Matrix must be square.")
 
         # sample one point uniformly in space, have a zero-vector reference
-        vecBNew = np.random.randn(self.numM).astype(
+        vecBNew = np.random.randn(self.numM, 1).astype(
             np.promote_types(np.float32, self.dtype))
         vecBNew /= np.linalg.norm(vecBNew)
         vecBOld = np.zeros((<object> vecBNew).shape, vecBNew.dtype)
@@ -479,7 +479,7 @@ cdef class Matrix(object):
                 (self.numN if self.numN >= self.numM else self.numM)
 
         # sample one initial sample, have a zero-vector reference
-        vecB = np.random.randn(self.numM).astype(
+        vecB = np.random.randn(self.numM, 1).astype(
             np.promote_types(np.float64, self.dtype))
         normNew = np.linalg.norm(vecB)
 
