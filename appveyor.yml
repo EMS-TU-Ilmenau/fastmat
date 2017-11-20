@@ -96,7 +96,7 @@ install:
      print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
 build_script:
-  - pip install cibuildwheel==0.5.1
+  - pip install cibuildwheel==0.5.1 twine==1.9.1
   - pip install .
 
 test_script:
