@@ -32,21 +32,25 @@ matrix:
       language: generic
       env:
         - PYTHON=3.6.3
+        - CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
     - os: osx
       if: branch = stable
       language: generic
       env:
         - PYTHON=3.5.4
+        - CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
     - os: osx
       if: branch = stable
       language: generic
       env:
         - PYTHON=3.4.7
+        - CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
     - os: osx
       if: branch = stable
       language: generic
       env:
         - PYTHON=2.7.14
+        - CIBW_SKIP='cp[!2]?-* cp2[!7]-*'
 
 before_install: |
   # macOSX CI environment configuration: https://pythonhosted.org/CodeChat/.travis.yml.html
