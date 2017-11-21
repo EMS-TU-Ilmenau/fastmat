@@ -1,51 +1,65 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Permutation.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Permutation matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-  Author      : sempersn
-  Introduced  : 2017-06-30
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
 from .core.types cimport *
 
-################################################################################
-################################################## class Permutation
 cdef class Permutation(Matrix):
 
+    r"""
+
+    For a given permutation :math:`\sigma \in S_n` and a vector :math:`x \in \mathbb{C}^n` we map
+
+    .. math::
+        x \mapsto \left(x_{\sigma(i)}\right)_{i = 1}^n.
+
+    >>> # import the package
+    >>> import fastmat
+    >>>
+    >>> # set the permutation
+    >>> sigma = np.array([3,1,2,0])
+    >>>
+    >>> # construct the identity
+    >>> P = fastmat.Permutation(sigma)
+
+    .. math::
+        J = \begin{bmatrix}
+        0 & 0 & 0 & 1 \\
+        0 & 1 & 0 & 0 \\
+        0 & 0 & 1 & 0 \\
+        1 & 0 & 0 & 0
+        \end{bmatrix}
+    """
+
     property sigma:
+        r"""Return the defining permutation
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._sigma
 
-    ############################################## class methods
     def __init__(self, sigma):
         '''
         Initialize Matrix instance with its dimensions.
-
-        Generated a [numN x numM] matrix of small integers
         '''
         numN = sigma.shape[0]
 
@@ -127,35 +141,4 @@ cdef class Permutation(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r"Permutation Matrix (\texttt{fastmat.Permutation})",
-            DOC.SUBSUBSECTION(
-                "Definition and Interface", r"""
-For a given permutation $\sigma \in S_n$ and a vector $\bm x \in \C^n$ we map
-\[\bm x \mapsto \left(x_{\sigma(i)}\right)_{i = 1}^n.\]""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat',
-                            '',
-                            '# set the permutation',
-                            'sigma = np.array([3,1,2,0])',
-                            '',
-                            '# construct the identity',
-                            'P = fastmat.Permutation(sigma)',
-                            caption=r"""
-\[\bm J = \left(\begin{array}{cccc}
-    0 & 0 & 0 & 1 \\
-    0 & 1 & 0 & 0 \\
-    0 & 0 & 1 & 0 \\
-    1 & 0 & 0 & 0
-\end{array}\right)\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                "Performance Benchmarks", r"""
-All benchmarks were performed on a Matrix $\bm P_n$ with random permutation.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD()
-            )
-        )
+        return ""

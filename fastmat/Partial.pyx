@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Partial.py
- -------------------------------------------------- part of the fastmat package
 
-  Partial matrices.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -34,22 +22,57 @@ from .Matrix cimport Matrix
 from .core.types cimport *
 from .core.cmath cimport _arrZero
 
-################################################################################
-################################################## class Partial
 cdef class Partial(Matrix):
+    r"""
 
-    ############################################## class properties
-    # indicesN, indicesM - Property (read-only)
-    # Define the support of the base matrix which defines the partial.
+    Let :math:`I \subset \{1,\dots,n\}` and :math:`J \subset \{1,\dots,m\}` index sets and :math:`M \in \mathbb{C}^{n \times m}` a linear transform. Then the partial transform :math:`M_{I,J}` is defined as
+
+    .. math::
+        x \in \mathbb{C}^m \mapsto ( M_J \cdot  x_J)_{i \in I}.
+
+    In other words, we select the rows :math:`I` of :math:`M` and columns J of :math:`M` and rows :math:`J` of :math:`x`.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # define the index set
+    >>> a = np.arange(n)
+    >>> am = np.mod(a, 2)
+    >>> b = np.array(am, dtype='bool')
+    >>> I = a[b]
+    >>>
+    >>> # construct the partial transform
+    >>> M = fm.Partial(F, I)
+
+    Let :math:`{\mathcal{F}}` be the :math:`n`-dimensional Fourier matrix. And let :math:`I` be the set of odd integers. Then we define a partial transform as
+
+    .. math::
+        M = {\mathcal{F}}_I
+    """
+
     property indicesN:
+        r"""Return the support of the base matrix which defines the partial
+
+        Subselected rows
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._indicesN
 
     property indicesM:
+        r"""Return the support of the base matrix which defines the partial
+
+        Subselected columns
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._indicesM
 
-    ############################################## class methods
     def __init__(
         self,
         mat,
@@ -219,41 +242,4 @@ cdef class Partial(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Partial Transform (\texttt{fastmat.Partial})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-Let $I \subset \{1,\dots,n\}$ and $J \subset \{1,\dots,m\}$ index sets and
-$\bm M \in \C^{n \times m}$ a linear transform. Then the partial transform
-$\bm M_{I,J}$ is defined as
-\[\bm x \in \C^m \mapsto (\bm M_J \cdot \bm x_J)_{i \in I}.\]
-In other words, we select the rows $I$ of $\bm M$ and columns J of $\bm M$ and
-rows $J$ of $\bm x$.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# define the index set',
-                            'a = np.arange(n)',
-                            'am = np.mod(a, 2)',
-                            "b = np.array(am, dtype='bool')",
-                            'I = a[b]',
-                            '',
-                            '# construct the partial transform',
-                            'M = fm.Partial(F, I)',
-                            caption=r"""
-Let $\bm{\mathcal{F}}$ be the $n$-dimensional Fourier matrix. And let $I$ be the
-set of odd integers. Then we define a partial transform as
-\[\bm M = \bm{\mathcal{F}}_I\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-The forward projection benchmarks were performed on a partial Hadamard matrix
-$\bm P = \bm \Hs_{2^n,\{1,\dots,n\}}$ while the runtime performance benchmark
-was performed on a partial Identity matrix.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTOVERHEAD()
-            )
-        )
+        return ""

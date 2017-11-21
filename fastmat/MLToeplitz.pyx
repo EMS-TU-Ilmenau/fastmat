@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=True
-'''
-  fastmat/MLToeplitz.py
- -------------------------------------------------- part of the fastmat package
 
-  MLToeplitz matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : sempersn
-  Introduced  : 2017-09-19
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -45,11 +33,76 @@ from .Toeplitz cimport Toeplitz
 ################################################################################
 ################################################## class Toeplitz
 cdef class MLToeplitz(Partial):
+    r"""
 
-    ############################################## class properties
-    # vecC - Property (read-only)
-    # Return the matrix-defining column vector of the circulant matrix
+    Let :math:`d \geqslant 2`. Then, given a :math:`d`-dimensional complex sequence :math:`{t} = [t_{{k}}]` for :math:`{k} \in \mathbb{N}^d` a    :math:`d`-level Toeplitz matrix :math:`{T}_{{n},d}` is recursively defined as
+
+    .. math::
+        {T}_{({n},d)} =
+        \begin{bmatrix}
+        {T}_{(1,{m}),\ell}        & {T}_{(2 n_1 - 1,{m}),\ell}
+        & \dots     & {T}_{(n_1 + 1,{m}),\ell}    \\
+        {T}_{(2,{m}),\ell}        & {T}_{(1,{m}),\ell}
+        & \dots     & {T}_{(n_1 + 2,{m}),\ell}    \\
+        \vdots                          & \vdots
+        & \ddots    & \vdots                            \\
+        {T}_{(n_1,{m}),\ell}      & {T}_{(n_1 - 1,{m}),\ell}
+        & \dots     & {T}_{(1,{m}),\ell}          \\
+        \end{bmatrix},
+
+    where :math:`m =  n_{-1}` and :math:`\ell = d-1`. So for :math:`n = [2,2]` and :math:`t \in \mathbb{C}^{3 \times 3}` we get
+
+    .. math::
+        T_{[2,2],2} =
+        \begin{bmatrix}
+         T_{[1,2],1} &  T_{[3,2],1} \\
+         T_{[2,2],1} &  T_{[1,2],1}
+        \end{bmatrix}
+        =
+        \begin{bmatrix}
+        t_{1,1} & t_{1,3} & t_{3,1} & t_{3,3} \\
+        t_{1,2} & t_{1,1} & t_{3,2} & t_{3,1} \\
+        t_{2,1} & t_{2,2} & t_{1,1} & t_{1,3} \\
+        t_{2,2} & t_{2,1} & t_{1,2} & t_{1,1}
+        \end{bmatrix}.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>> # construct the
+    >>> # parameters
+    >>> n = 2
+    >>> l = 2
+    >>> t = np.arange((2 * n - 1) ** l).reshape(
+    >>>     (2 * n - 1, 2 * n - 1)
+    >>> )
+    >>> # construct the matrix
+    >>> T = fm.MLToeplitz(t)
+
+    This yields
+
+    .. math::
+        t = \begin{bmatrix}
+                1 & 2 & 3 \\
+                4 & 5 & 6 \\
+                7 & 8 & 9
+            \end{bmatrix}
+
+    .. math::
+        T = \begin{bmatrix}
+                1 & 3 & 7 & 9 \\
+                2 & 1 & 8 & 7 \\
+                4 & 5 & 1 & 3 \\
+                5 & 4 & 2 & 1
+            \end{bmatrix}
+
+    This class depends on ``Fourier``, ``Diag``, ``Kron``,
+    ``Product`` and ``Partial``.
+    """
+
     property tenT:
+        r"""Return the matrix-defining tensor of the circulant"""
+
         def __get__(self):
             return self._tenT
 
@@ -404,92 +457,4 @@ cdef class MLToeplitz(Partial):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Multilevel Toeplitz Matrix (\texttt{fastmat.MLToeplitz})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface',
-                r"""
-Let $d \geqslant 2$. Then, given a $d$-dimensional complex sequence
-$\bm{t} = [t_{\bm{k}}]$ for $\bm{k} \in \N^d$ a
-$d$-level Toeplitz matrix $\bm{T}_{\bm{n},d}$ is recursively defined as
-%
-\[\bm{T}_{(\bm{n},d)} =
-\begingroup
-\setlength\arraycolsep{3pt}
-\begin{bmatrix}
-    \bm{T}_{(1,\bm{m}),\ell}        & \bm{T}_{(2 n_1 - 1,\bm{m}),\ell}
-    & \dots     & \bm{T}_{(n_1 + 1,\bm{m}),\ell}    \\
-    \bm{T}_{(2,\bm{m}),\ell}        & \bm{T}_{(1,\bm{m}),\ell}
-    & \dots     & \bm{T}_{(n_1 + 2,\bm{m}),\ell}    \\
-    \vdots                          & \vdots
-    & \ddots    & \vdots                            \\
-    \bm{T}_{(n_1,\bm{m}),\ell}      & \bm{T}_{(n_1 - 1,\bm{m}),\ell}
-    & \dots     & \bm{T}_{(1,\bm{m}),\ell}          \\
-\end{bmatrix},
-\endgroup
-\]
-%
-where $\bm m = \bm n_{-1}$ and $\ell = d-1$. So for $\bm n = [2,2]$ and
-$\bm t \in \C^{3 \times 3}$ we get
-%
-\[
-\begingroup
-\setlength\arraycolsep{3pt}
-\bm T_{[2,2],2} =
-\begin{bmatrix}
-\bm T_{[1,2],1} & \bm T_{[3,2],1} \\
-\bm T_{[2,2],1} & \bm T_{[1,2],1}
-\end{bmatrix}
-=
-\begin{bmatrix}
-t_{1,1} & t_{1,3} & t_{3,1} & t_{3,3} \\
-t_{1,2} & t_{1,1} & t_{3,2} & t_{3,1} \\
-t_{2,1} & t_{2,2} & t_{1,1} & t_{1,3} \\
-t_{2,2} & t_{2,1} & t_{1,2} & t_{1,1}
-\end{bmatrix}.
-\endgroup
-\]
-                """,
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# construct the',
-                            '# parameters',
-                            'n = 2',
-                            'l = 2',
-                            't = np.arange(',
-                            '(2 * n - 1) ** l',
-                            ').reshape(',
-                            '(2 * n - 1, 2 * n - 1)',
-                            ')',
-                            '',
-                            '# construct the matrix',
-                            'T = fm.MLToeplitz(t)',
-                            caption=r"""
-This yields
-\[\bm t = \begin{bmatrix}1 & 2 & 3 \\ 4 & 5 & 6 \\ 7 & 8 & 9 \end{bmatrix}\]
-\[\bm T = \left(\begin{array}{cccc}
-    1 & 3 & 7 & 9 \\
-    2 & 1 & 8 & 7 \\
-    4 & 5 & 1 & 3 \\
-    5 & 4 & 2 & 1
-\end{array}\right)\]"""),
-                r"""
-This class depends on \texttt{Fourier}, \texttt{Diag}, \texttt{Kron},
-\texttt{Product} and \texttt{Partial}."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm{\mathcal{C}} \in \R^{n \times n}$ with $n \in \N$ and all
-entries drawn from a  standard Gaussian distribution.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            )
-        )
+        return ""

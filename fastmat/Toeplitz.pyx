@@ -1,36 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Toeplitz.py
- -------------------------------------------------- part of the fastmat package
 
-  Toeplitz matrix. The first column is vecC1, the first row beginning at the
-  second element is vecC2. We simply use a special circulant matrix to simulate
-  a Toeplitz matrix. Toeplitz matrices can be embedded into larger circulant
-  matrices. These are diagonal in the fourier domain and hence their multipli-
-  cation with a vector can be carried out efficiently.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -46,21 +30,85 @@ from .Diag cimport Diag
 ################################################################################
 ################################################## class Toeplitz
 cdef class Toeplitz(Partial):
+    r"""
 
-    ############################################## class properties
-    # vecC - Property (read-only)
-    # Return the column-defining vector of Toeplitz matrix.
+    A Toeplitz matrix :math:`T \in \mathbb{C}^{n \times m}` realizes the mapping
+
+    .. math::
+        x \mapsto  T \cdot  x,
+
+    where :math:`x \in C^n` and
+
+    .. math::
+        T = \begin{bmatrix}
+        t_1 & t_{-1} & \dots & t_{-(m-1)} \\
+        t_2 & t_1 & \ddots & t_{-(n-2)} \\
+        \vdots & \vdots & \ddots & \vdots \\
+        t_n & t_{n-1} & \dots & t_1
+        \end{bmatrix}.
+
+    This means that a Toeplitz matrix is uniquely defined by the :math:`n + m - 1` values that are on the diagonals.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # define the parameters
+    >>> d1 = np.array([1,0,3,6])
+    >>> d2 = np.array([5,7,9])
+    >>>
+    >>> # construct the transform
+    >>> T = fm.Toeplitz(d1,d2)
+
+    This yields
+
+    .. math::
+        d_1 = (1,0,3,6)^\mathrm{T}
+
+    .. math::
+        d_2 = (5,7,9)^\mathrm{T}
+
+    .. math::
+        T = \begin{bmatrix}
+        1 & 5 & 7 & 9 \\
+        0 & 1 & 5 & 7 \\
+        3 & 0 & 1 & 5 \\
+        6 & 3 & 0 & 1
+        \end{bmatrix}
+
+    Since the multiplication with a Toeplitz matrix makes use of the FFT, it can
+    be very slow, if the sum of the dimensions of :math:`d_1` and :math:`d_2` are far away from a power of :math:`2`, :math:`3` or :math:`4`. This can be alleviated if one applies smart zeropadding during the transformation.
+    This can be activated as follows.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # define the parameters
+    >>> d1 = np.array([1,0,3,6])
+    >>> d2 = np.array([5,7,9])
+    >>>
+    >>> # construct the transform
+    >>> T = fm.Toeplitz(d1,d2,pad='true')
+
+    This yields the same matrix and transformation as above, but it might be faster depending on the dimensions involved in the problem.
+
+    This class depends on ``Fourier``, ``Diag``, ``Product`` and
+    ``Partial``.
+    """
+
     property vecC:
+        r"""Return the column-defining vector of Toeplitz matrix."""
+
         def __get__(self):
             return self._vecC
 
-    # vecR - Property (read-only)
-    # Return the row-defining vector of Toeplitz matrix.
     property vecR:
+        r"""Return the row-defining vector of Toeplitz matrix."""
+
         def __get__(self):
             return self._vecR
 
-    ############################################## class methods
     def __init__(self, vecC, vecR, **options):
         '''
         Initialize Toeplitz Matrix instance.
@@ -313,75 +361,4 @@ cdef class Toeplitz(Partial):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Toeplitz Matrix (\texttt{fastmat.Toeplitz})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-A Toeplitz matrix $\bm T \in \C^{n \times m}$ realizes the mapping
-\[\bm x \mapsto \bm T \cdot \bm x,\]
-where $\bm x \in C^n$ and
-\[\bm T = \left(\begin{array}{cccc}
-    t_1 & t_{-1} & \dots & t_{-(m-1)} \\
-    t_2 & t_1 & \ddots & t_{-(n-2)} \\
-    \vdots & \vdots & \ddots & \vdots \\
-    t_n & t_{n-1} & \dots & t_1
-\end{array}\right).\]
-This means that a Toeplitz matrix is uniquely defined by the $n + m - 1$ values
-that are on the diagonals.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# define the parameters',
-                            'd1 = np.array([1,0,3,6])',
-                            'd2 = np.array([5,7,9])',
-                            '',
-                            '# construct the transform',
-                            'T = fm.Toeplitz(d1,d2)',
-                            caption=r"""
-This yields
-\[\bm d_1 = (1,0,3,6)^T\]
-\[\bm d_2 = (5,7,9)^T\]
-\[\bm T = \left(\begin{array}{cccc}
-    1 & 5 & 7 & 9 \\
-    0 & 1 & 5 & 7 \\
-    3 & 0 & 1 & 5 \\
-    6 & 3 & 0 & 1
-\end{array}\right)\]"""),
-                r"""
-Since the multiplication with a Toeplitz matrix makes use of the FFT, it can
-be very slow, if the sum of the dimensions of $\bm d_1$ and $\bm d_2$ are far
-away from a power of $2$, $3$ or $4$. This can be alleviated if one applies
-smart zeropadding during the transformation.
-This can be activated as follows.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# define the parameters',
-                            'd1 = np.array([1,0,3,6])',
-                            'd2 = np.array([5,7,9])',
-                            '',
-                            '# construct the transform',
-                            "T = fm.Toeplitz(d1,d2,pad='true')",
-                            caption=r"""
-This yields the same matrix and transformation as above, but it might be faster
-depending on the dimensions involved in the problem."""),
-                r"""
-This class depends on \texttt{Fourier}, \texttt{Diag}, \texttt{Product} and
-\texttt{Partial}."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm T \in \R^{n \times n}$ with generating entries drawn from a standard
-Gaussian distribution""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            )
-        )
+        return ""

@@ -1,34 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
-'''
-  fastmat/algs/CG.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Implementation of conjugated gradient method solver for linear equation
-  systems in fastmat.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -40,14 +27,63 @@ from ..Matrix cimport Matrix
 
 
 ################################################################################
-###  CG: Conjugate gradient method solver for linear equation systems
+###  CG:
 ################################################################################
 cpdef np.ndarray CG(
     Matrix fmatA,
     np.ndarray arrB,
     float eps=0
 ):
-    '''Solve linear equation system 'fmatA * x = arrB' for x.'''
+    r"""Conjugate Gradient Method
+
+    **Definition and Interface**:
+    For a given full rank Hermitian matrix :math:`A \in \mathbb{C}^n` and a vector :math:`b \in \mathbb{C}^n`, we solve
+
+    .. math::
+        A \cdot x = b
+
+    for :math:`x \in \mathbb{C}^n`, i.e. :math:`x = A^{-1} \cdot b`. If :math:`A` is not Hermitian, we solve
+
+    .. math::
+        A^\mathrm{H} \cdot A \cdot x = A^\mathrm{H} \cdot b
+
+    instead. In this case it should be noted, that the condition number of :math:`A^\mathrm{H} \cdot A` might be a lot larger than the one of :math:`A` an thus we might run into stability problems for large and already ill-conditioned systems.
+
+    This algorithm was originally described in [3]_ and is applicable here, because it only uses the backward and forward projection of a matrix.
+
+    >>> # import the packages
+    >>> import numpy.random as npr
+    >>> import numpy as np
+    >>> import fastmat as fm
+    >>> import fastmat.algs as fma
+    >>> # construct the matrix
+    >>> n = 26
+    >>> H = fm.Hadamard(n)
+    >>> # define the right hand side
+    >>> b = npr.randn(2 ** n)
+    >>> # solve the system
+    >>> y = fma.CG(H, b)
+    >>> # check if solution is correct
+    >>> print(np.allclose(b, H.forward(y)))
+
+    We construct a Hadamard matrix of order :math:`26`, which would consume
+    \SI{4.5}{\peta\byte} of memory if we used \SI{1}{byte} integers to represent it and solve above system of linear equations.
+
+    Parameters
+    ----------
+    fmatA : fm.Matrix
+        the system matrix
+    arrB : np.ndarray
+        the right hand side of the system of equations
+    eps : float, optional
+        threshold for stopping the iteration; default is 0
+
+    Returns
+    -------
+    np.ndarray
+        solution array
+    """
+
     if arrB.ndim > 2:
         raise ValueError("Only N x M arrays are supported for CG")
 
@@ -79,24 +115,24 @@ cdef np.ndarray _CGcore(
     TYPE_FLOAT typeTag,
     float eps
 ):
-    '''
-    Solve linear equation system 'fmatA * x = arrB' for x.
-    The following variables are used:
-    arrB         - input data array
-    fmatA        - input system matrix
-    arrR         - residual vector (TYPE_FLOAT, CONT)
-    vecR         - residual vector (TYPE_FLOAT[:] in arrR)
-    arrP         - next krylov subspace vector (TYPE_FLOAT[:N], CONT)
-    vecP         - next krylov subspace vector (TYPE_FLOAT[:] in arrP)
-    vecQ         - projection of krylov subspace vector onto cols of matA
-    arrIn        - symmetrized right-hand side [TYPE_FLOAT, F, CONT]
-    arrOut       - current solution [TYPE_FLOAT, F, CONT]
-    vecOut       - vector of current solution (TYPE_FLOAT[:] in arrOut)
-    numAlpha     - optimal step with
-    numRNormNew  - new residual norm
-    numRNormOld  - old residual norm
-    eps          - stopping condition to the projected residual
-    '''
+
+    # Solve linear equation system 'fmatA * x = arrB' for x.
+    # The following variables are used:
+    # arrB         - input data array
+    # fmatA        - input system matrix
+    # arrR         - residual vector (TYPE_FLOAT, CONT)
+    # vecR         - residual vector (TYPE_FLOAT[:] in arrR)
+    # arrP         - next krylov subspace vector (TYPE_FLOAT[:N], CONT)
+    # vecP         - next krylov subspace vector (TYPE_FLOAT[:] in arrP)
+    # vecQ         - projection of krylov subspace vector onto cols of matA
+    # arrIn        - symmetrized right-hand side [TYPE_FLOAT, F, CONT]
+    # arrOut       - current solution [TYPE_FLOAT, F, CONT]
+    # vecOut       - vector of current solution (TYPE_FLOAT[:] in arrOut)
+    # numAlpha     - optimal step with
+    # numRNormNew  - new residual norm
+    # numRNormOld  - old residual norm
+    # eps          - stopping condition to the projected residual
+
     # NOTE: typeTag is used for telling the compiler the used specialization
     # fetch dimensions of arrB
     cdef intsize mm, nn, numStep
@@ -250,7 +286,7 @@ class CGinspect(Algorithm):
         return {
             BENCH.COMMON: {
                 BENCH.NAME      : 'Method of Conjugate Gradients',
-                BENCH.DOCU      : r'$\bm A = \diag(\{1,\dots,n\})$',
+                BENCH.DOCU      : r'`A = \diag(\{1,\dots,n\})`',
                 BENCH.FUNC_GEN  : (lambda c: createTarget(c, np.double))
             },
             BENCH.PERFORMANCE: {
@@ -265,75 +301,4 @@ class CGinspect(Algorithm):
 
     def _getDocumentation(self):
         from ..inspect import DOC
-        return DOC.SUBSECTION(
-            r'Conjugate Gradient Method (CG) (\texttt{fastmat.algs.CG})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-For a given full rank hermitian matrix $\bm A \in \C^n$ and a vector $\bm b \in
-\C^n$, we solve
-
-\begin{align}
-\bm A \cdot \bm x = \bm b
-\end{align}
-
-for $\bm x \in \C^n$, i.e. $\bm x = \bm A^{-1} \cdot \bm b$. If $\bm A$ is not
-hermitian, we solve
-
-\begin{align}
-\bm A^\herm \cdot \bm A \cdot \bm x = \bm A^\herm \cdot \bm b
-\end{align}
-instead. In this case it should be noted, that the condition number of $\bm
-A^\herm \cdot \bm A$ might be a lot larger than the one of $\bm A$ an thus we
-might run into stability problems for large and already ill-conditioned systems.
-
-\begin{itemize}
-\item \textbf{Input:} System matrix $\bm A$, right hand side $\bm b$ and
-stopping tolerance for the residual $0 < \varepsilon \ll 1$.
-\item \textbf{Output:} Solution $\bm x = \bm A^{-1} \cdot \bm b$
-\end{itemize}
-
-This algorithm was originally described in \cite{cg_stiefel1952cg} and is
-applicable here, because it only uses the backward and forward projection of a
-matrix.""",
-                DOC.SNIPPET('# import the packages',
-                            'import numpy.random as npr',
-                            'import numpy as np',
-                            'import fastmat as fm',
-                            'import fastmat.algs as fma',
-                            '',
-                            '# construct the matrix',
-                            'n = 26',
-                            'H = fm.Hadamard(n)',
-                            '',
-                            '# define the right hand side',
-                            'b = npr.randn(2 ** n)',
-                            '',
-                            '# solve the system',
-                            'y = fma.CG(H, b)',
-                            '',
-                            '# check if solution is correct',
-                            'print(np.allclose(',
-                            '    b, H.forward(y)))',
-                            caption=r"""
-We construct a Hadamard matrix of order $26$, which would consume
-\SI{4.5}{\peta\byte} of memory if we used \SI{1}{byte} integers to represent it
-and solve above system of linear equations.""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm \Hs_k$ and $n = 2^k$ with $n, k in \N$""",
-                DOC.PLOTPERFORMANCE(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            ),
-            DOC.BIBLIO(
-                cg_stiefel1952cg=DOC.BIBITEM(
-                    r'Hestenes, Magnus R., Stiefel, Eduard',
-                    r"""
-Methods of Conjugate Gradients for Solving Linear Systems""",
-                    r"""
-The Springer International Series in Engineering and Computer Science,
-Volume 383, 1997""")
-            )
-        )
+        return ""

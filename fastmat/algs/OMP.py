@@ -1,60 +1,100 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/algs/OMP.py
- -------------------------------------------------- part of the fastmat package
 
-  Implementation of orthogonal matching pursuit (OMP) in
-  fastmat.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-
-  TODO:
-    - optimize einsum-stuff
-'''
 import numpy as np
 import numpy.linalg as npl
 
 from ..base import Algorithm
 
-################################################################################
-###  OMP: Sparse recovery algorithm
-################################################################################
-
 
 def OMP(fmatA, arrY, numK):
-    '''
-    Wrapper around the ISTA algrithm to allow processing of arrays of signals
-        fmatA           - input system matrix
-        arrY            - input data vector (measurements)
-        numK            - specified sparsity order, i.e. number of iterations
-                          to run
-        numN,numM       - number of rows / columns of the system matrix
-        numL            - number of problems to solve
-        arrDiag         - array that contains column norms of fmatA
-        numStrideSize   - size of strides during norm calculation
-        numStrides      - number of whole strides to go through
-        numPreSteps     - number of entries that do not fit in whoel strides
-    '''
+    r"""Orthogonal Matching Pursuit
+
+    **Definition and Interface**:
+    For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with :math:`m \ll N` and a
+    vector :math:`b \in \mathbb{C}^m` we approximately solve
+
+    .. math::
+        \min\limits_{ x \in \mathbb{C}^N} \Vert x \Vert_0 \quad\mathrm{s.t.}\quad A \cdot x =  x.
+
+    If it holds that :math:`b =  A \cdot  x_0` for some :math:`k`-sparse :math:`x_0` and
+    :math:`k` is low enough, we can recover :math:`x_0` via OMP [2]_.
+
+    This type of problem as the one described above occurs in Compressed Sensing
+    and Sparse Signal Recovery, where signals are approximated by sparse
+    representations.
+
+    >>> # import the packages
+    >>> import numpy.linalg as npl
+    >>> import numpy as np
+    >>> import fastmat as fm
+    >>> import fastmat.algs as fma
+    >>> # define the dimensions
+    >>> # and the sparsity
+    >>> n, k = 512, 3
+    >>> # define the sampling positions
+    >>> t = np.linspace(0, 20 * np.pi, n)
+    >>> # construct the convolution matrix
+    >>> c = np.cos(2 * t)
+    >>> C = fm.Circulant(c)
+    >>> # create the ground truth
+    >>> x = np.zeros(n)
+    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> b = C * x
+    >>> # reconstruct it
+    >>> y = fma.OMP(C, b, k)
+    >>> # test if they are close in the
+    >>> # domain of C
+    >>> print(npl.norm(C * y - b))
+
+    We describe a sparse deconvolution problem, where the signal is in :math:`\mathbb{R}^{512}` and consists of :math:`3` windowed cosine pulses of the form :math:`c` with circulant displacement. Then we take the convolution and try to recover the location of the pulses using the OMP algorithm.
+
+    .. note::
+     The algorithm exploits two mathematical shortcuts. First it obviously uses the fast transform of the involved system matrix during the correlation step and second it uses a method to calculate the pseudo inverse after a rank-:math:`1` update of the matrix.
+
+    .. todo::
+      - optimize einsum-stuff
+
+    Parameters
+    ----------
+    fmatA : fm.Matrix
+        the system matrix
+    arrB : np.ndarray
+        the measurement vector
+    numK : int
+        the desired sparsity order
+
+    Returns
+    -------
+    np.ndarray
+        solution array
+    """
+    # Wrapper around the ISTA algrithm to allow processing of arrays of signals
+    #     fmatA           - input system matrix
+    #     arrY            - input data vector (measurements)
+    #     numK            - specified sparsity order, i.e. number of iterations
+    #                       to run
+    #     numN,numM       - number of rows / columns of the system matrix
+    #     numL            - number of problems to solve
+    #     arrDiag         - array that contains column norms of fmatA
+    #     numStrideSize   - size of strides during norm calculation
+    #     numStrides      - number of whole strides to go through
+    #     numPreSteps     - number of entries that do not fit in whoel strides
+    #
     if len(arrY.shape) > 2:
         raise ValueError("Only n x m arrays are supported for OMP")
 
@@ -222,12 +262,7 @@ class OMPinspect(Algorithm):
         return {
             BENCH.COMMON: {
                 BENCH.NAME      : 'OMP Algorithm',
-                BENCH.DOCU      : r"""We use $\bm A = \bm M \cdot \bm \Fs$,
-                    where $\bm M$ was drawn from a standard Gaussian
-                    distribution and $\bm \Fs$ is a Fourier matrix. The vector
-                    $\bm b \in \C^m$ of equation \eqref{omp_problem} is
-                    generated from multiplying $\bm A$ with a sparse vector
-                    $\bm x$.""",
+                BENCH.DOCU      : r"""""",
                 BENCH.FUNC_GEN  : (lambda c: createTarget(10 * c, np.float64)),
                 BENCH.FUNC_SIZE : (lambda c: 10 * c)
             },
@@ -244,86 +279,4 @@ class OMPinspect(Algorithm):
     @staticmethod
     def _getDocumentation():
         from ..inspect import DOC
-        return DOC.SUBSECTION(
-            r'Orthogonal matching Pursuit (OMP) (\texttt{fastmat.algs.OMP})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-For a given matrix $\bm A \in \C^{m \times N}$ with $m \ll N$ and a
-vector $\bm b \in \C^m$ we approximately solve
-
-\begin{align}\label{omp_problem}
-    \Min\limits_{\bm x \in \C^N}\Norm{\bm x}_0 \Text{s.t.} \bm A \cdot
-    \bm x = \bm x.
-\end{align}
-
-If it holds that $\bm b = \bm A \cdot \bm x_0$ for some $k$-sparse $\bm x_0$ and
-$k$ is low enough, we can recover $\bm x_0$ via OMP \cite{omp_mallat1952omp}.
-
-\begin{itemize}
-\item \textbf{Input:} Full rank matrix $\bm A$, measurements $\bm b$, desired
-    sparsity order $k$ of the reconstruction
-\item \textbf{Output:} Reconstruction vector $\bm x$.
-\end{itemize}
-
-This type of problem as the one described above occurs in Compressed Sensing
-and Sparse Signal Recovery, where signals are approximated by sparse
-representations.""",
-                DOC.SNIPPET('# import the packages',
-                            'import numpy.linalg as npl',
-                            'import numpy as np',
-                            'import fastmat as fm',
-                            'import fastmat.algs as fma',
-                            '',
-                            '# define the dimensions',
-                            '# and the sparsity',
-                            'n, k = 512, 3',
-                            '',
-                            '# define the sampling positions',
-                            't = np.linspace(0, 20 * np.pi, n)',
-                            '',
-                            '# construct the convolution matrix',
-                            'c = np.cos(2 * t)',
-                            'C = fm.Circulant(c)',
-                            '',
-                            '# create the ground truth',
-                            'x = np.zeros(n)',
-                            'x[npr.choice(range(n),',
-                            '             k, replace=0)] = 1',
-                            'b = C * x',
-                            '',
-                            '# reconstruct it',
-                            'y = fma.OMP(C, b, k)',
-                            '',
-                            '# test if they are close in the',
-                            '# domain of C',
-                            'print(npl.norm(C * y - b))',
-                            caption=r"""
-We describe a sparse deconvolution problem, where the signal is in $\R^{512}$
-and consists of $3$ windowed osine pulses of the form $\bm c$ with circulant
-displacement. Then we take the convolution and try to recover the location of
-the pulses using the OMP algorithm."""),
-                r"""
-\textit{Hint:} The algorithm exploits two mathematical shortcuts. First it
-obviously uses the fast transform of the involved system matrix during the
-correlation step and second it uses a method to calculate the pseudo
-inverse after a rank-$1$ update of the matrix."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-We use $\bm A = \bm M \cdot \bm \Fs$, where $\bm M$ was drawn from a standard
-Gaussian distribution and $\bm \Fs$ is a Fourier matrix. The vector $\bm b \in
-\C^m$ of equation \eqref{ista_lasso} is generated from multiplying $\bm A$ with
-a sparse vector $\bm x$.""",
-                DOC.PLOTPERFORMANCE(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            ),
-            DOC.BIBLIO(
-                omp_mallat1952omp=DOC.BIBITEM(
-                    r'S. G. Mallat and Zhifeng Zhang',
-                    r'Matching pursuits with time-frequency dictionaries',
-                    r"""
-IEEE Transactions on Signal Processing, vol. 41, no. 12, pp. 3397-3415,
-Dec 1993""")
-            )
-        )
+        return ""

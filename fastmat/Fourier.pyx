@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Fourier.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Fourier matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -35,20 +23,44 @@ from .Eye cimport Eye
 from .core.cmath cimport *
 from .core.strides cimport *
 
-################################################################################
-################################################## class Fourier
 cdef class Fourier(Matrix):
+    r"""
 
-    ############################################## class properties
-    # num_order - Property (read-only)
-    # Return the Order of the fourier matrix.
+    The Fourier Transform realizes the mapping
+
+    .. math::
+        x \mapsto {\mathcal{F}}_n \cdot  x,
+
+    where the Fourier matrix :math:`{\mathcal{F}}_n` is uniquely defined by the size of the vectors it acts on.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define parameter
+    >>> n = 4
+    >>>
+    >>> # construct the matrix
+    >>> F = fm.Fourier(n)
+
+    This yields a Fourier :math:`{\mathcal{F}}_4` matrix of size :math:`4`. As a library to provide the Fast Fourier Transform we used the one provided by
+    NumPy [1]_.
+
+    .. todo::
+        - real valued transforms
+    """
+
     property order:
+        r"""Return the Order of the Fourier matrix.
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return self._order
 
-    ############################################## class methods
     def __init__(self, order, **options):
         '''Initialize Matrix instance with a list of child matrices'''
+
         cdef intsize paddedSize
         cdef np.ndarray arrSamples, vecConv
 
@@ -244,46 +256,4 @@ cdef class Fourier(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC, BENCH
-        return DOC.SUBSECTION(
-            r'Fourier transform (\texttt{fastmat.Fourier})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-The Fourier Transform realizes the mapping
-\[\bm x \mapsto \bm{\mathcal{F}}_n \cdot \bm x,\]
-where the Fourier matrix $\bm{\mathcal{F}}_n$
-is uniquely defined by the size of the vectors it acts on.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define parameter',
-                            'n = 4',
-                            '',
-                            '# construct the matrix',
-                            'F = fm.Fourier(n)',
-                            caption=r"""
-This yields a Fourier $\bm{\mathcal{F}}_4$ matrix of size $4$."""),
-                r"""
-As a library to provide the Fast Fourier Transform we used the one provided by
-NumPy \cite{four_walt2011numpy}."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix $\bm{\mathcal{F}}_n$ with
-$n \in \N$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED()
-            ),
-            DOC.BIBLIO(
-                four_walt2011numpy=DOC.BIBITEM(
-                    r"""
-St\'efan van der Walt, S. Chris Colbert and Ga\"el Varoquaux""",
-                    r"""
-The NumPy Array: A Structure for Efficient Numerical Computation""",
-                    r"""
-Computing in Science and Engineering, Volume 13, 2011.""")
-            )
-        )
+        return ""

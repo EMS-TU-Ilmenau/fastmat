@@ -1,37 +1,21 @@
 # -*- coding: utf-8 -*-
+
 #cython: boundscheck=False, wraparound=False
-'''
-  fastmat/Circulant.py
- -------------------------------------------------- part of the fastmat package
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-  Circulant matrix.
-
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-
-  TODO:
-    - sort out when optimizations are possible (real/complex, such stuff)
-    - specify when this transform was introduced
-'''
 import numpy as np
 cimport numpy as np
 
@@ -48,10 +32,62 @@ from .Diag cimport Diag
 ################################################## class Circulant
 cdef class Circulant(Partial):
 
-    ############################################## class properties
-    # vecC - Property (read-only)
-    # Return the matrix-defining column vector of the circulant matrix
+    r"""Circulant Matrix ``fastmat.Circulant``
+
+
+
+    Circulant matrices realize the following mapping
+
+    .. math::
+        x \mapsto  C \cdot  x =  c *  x,
+
+    with :math:`x \in \mathbb{C}^n` and
+
+    .. math::
+        C = \begin{bmatrix}
+            c_1     & c_n       & \dots     & c_2       \\
+            c_2     & c_1       & \ddots    & c_3       \\
+            \vdots  & \vdots    & \ddots    & \vdots    \\
+            c_n     & c_{n-1}   & \dots     & c_1
+        \end{bmatrix}.
+
+    This means that :math:`C` is completely defined by its first column and realizes the convolution with the vector :math:`c`.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # construct the
+    >>> # parameter
+    >>> n = 4
+    >>> c = np.array([1, 0, 3, 6])
+    >>>
+    >>> # construct the matrix
+    >>> C = fm.Circulant(c)
+
+    This yields
+
+    .. math::
+        c = (1,0,3,6)^\mathrm{T}
+
+    .. math::
+        C = \begin{bmatrix}
+            1 & 6 & 3 & 0 \\
+            0 & 1 & 6 & 3 \\
+            3 & 0 & 1 & 6 \\
+            6 & 3 & 0 & 1
+        \end{bmatrix}
+
+    This class depends on ``Fourier``, ``Diag``, ``Product`` and
+    ``Partial``.
+
+    .. todo::
+        - sort out when optimizations are possible (real/complex, such stuff)
+    """
+
     property vecC:
+        r"""Return the matrix-defining column vector of the circulant matrix"""
+
         def __get__(self):
             return self._vecC
 
@@ -253,57 +289,4 @@ cdef class Circulant(Partial):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Circulant Matrix (\texttt{fastmat.Circulant})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface',
-                r"""
-Circulant matrices realize the following mapping
-\[\bm x \mapsto \bm C \cdot \bm x = \bm c * \bm x,\]
-with $\bm x \in \C^n$ and
-\[\bm C = \left(\begin{array}{cccc}
-    c_1     & c_n       & \dots     & c_2       \\
-    c_2     & c_1       & \ddots    & c_3       \\
-    \vdots  & \vdots    & \ddots    & \vdots    \\
-    c_n     & c_{n-1}   & \dots     & c_1
-\end{array}\right).\]
-This means that $\bm C$ is completely defined by its first column and realizes
-the convolution with the vector $\bm c$.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# construct the',
-                            '# parameter',
-                            'n = 4',
-                            'c = np.array([1, 0, 3, 6])',
-                            '',
-                            '# construct the matrix',
-                            'C = fm.Circulant(c)',
-                            caption=r"""
-This yields
-\[\bm c = (1,0,3,6)^T\]
-\[\bm C = \left(\begin{array}{cccc}
-    1 & 6 & 3 & 0 \\
-    0 & 1 & 6 & 3 \\
-    3 & 0 & 1 & 6 \\
-    6 & 3 & 0 & 1
-\end{array}\right)\]"""),
-                r"""
-This class depends on \texttt{Fourier}, \texttt{Diag}, \texttt{Product} and
-\texttt{Partial}."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm{\mathcal{C}} \in \R^{n \times n}$ with $n \in \N$ and first columns
-entries drawn from a  standard Gaussian distribution.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            )
-        )
+        return ""

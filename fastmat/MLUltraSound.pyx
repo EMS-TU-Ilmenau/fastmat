@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False
-'''
-  fastmat/MLUltraSound.py
- -------------------------------------------------- part of the fastmat package
 
-  MLUltraSound matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : sempersn
-  Introduced  : 2017-10-06
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -43,19 +31,88 @@ from .Kron cimport Kron
 from .MLToeplitz cimport MLToeplitz
 from .DiagBlocks cimport DiagBlocks
 
-
-################################################################################
-################################################## class Toeplitz
 cdef class MLUltraSound(Partial):
+    r"""
+    Multilevel Ultrasound Matrix ``fastmat.MLUltraSound``
 
-    ############################################## class properties
-    # vecC - Property (read-only)
-    # Return the matrix-defining column vector of the circulant matrix
+
+    This class is an implementation of matrices, which have a block
+    structure, where each block itself is a :math:`2`-level Toeplitz matrix, as
+    implemented in ``MLToeplitz``. The name originated from the fact, that
+    these matrices pop up, when modeling a ultrasonic pulse echo as a superposition
+    of hyperbolas.
+
+    As such we can collect the unique defining elements of :math:`H` in :math:`h \in \mathbb{R}^{M \times M \times 2 N_x - 1 \times 2 N_y - 1}` and then set
+
+    .. math::
+        H_{i,j} =  T_{([N_x, N_y], 2)}( h_{i,j}).
+
+    Moreover, we can diagonalize each :math:`H_{i,j}`.
+    To this end we embed each :math:`H_{i,j}` into a :math:`2`-level circulant matrix
+
+    .. math::
+        \begin{bmatrix}
+        \mathfrak{T}_2( H_{0,0})   & \dots  & \mathfrak{T}_2( H_{0,M-1}) \\
+        \vdots        & \ddots & \vdots \\
+        \mathfrak{T}_2( H_{M-1,0}) & \dots  & \mathfrak{T}_2( H_{M-1,M-1}) \\
+        \end{bmatrix}  =
+        K^\mathrm{H} \cdot  D \cdot  K
+
+    for :math:`F =  \mathcal{F}_{2 N_x - 1} \otimes  \mathcal{F}_{2 N_y - 1} `, :math:`K =  I_{M} \otimes  F` and
+
+    .. math::
+        D =
+        \begin{bmatrix}
+        \mathrm{diag}( F \mathrm{vec} \tilde{ h}_{0,0}) & \dots &
+        \mathrm{diag}( F \mathrm{vec} \tilde{ h}_{0,M-1}) \\
+        \vdots & \ddots & \vdots \\
+        \mathrm{diag}( F \mathrm{vec} \tilde{ h}_{M-1,0}) & \dots &
+        \mathrm{diag}( F \mathrm{vec} \tilde{ h}_{M-1,M-1}) \\
+        \end{bmatrix},
+
+    which shows, that :math:`H` simply is a subselection of the above block
+    diagonalizated matrix. This is exactly, how it is implemented in ``fastmat``.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # construct the
+    >>> # parameters
+    >>> n = 2
+    >>> l = 2
+    >>> t = np.arange(
+    >>> 2 *2 *(2 *n - 1) ** l
+    >>> ).reshape(
+    >>> (n, n, 2 *n - 1, 2 *n - 1)
+    >>> )
+    >>>
+    >>> # construct the matrix
+    >>> T = fm.MLUltraSound(t)
+
+    This yields
+
+    .. math::
+        t = \begin{bmatrix}1 & 2 & 3 \\ 4 & 5 & 6 \\ 7 & 8 & 9 \end{bmatrix}
+
+    .. math::
+        T = \begin{bmatrix}
+        1 & 3 & 7 & 9 \\
+        2 & 1 & 8 & 7 \\
+        4 & 5 & 1 & 3 \\
+        5 & 4 & 2 & 1
+        \end{bmatrix}
+
+    This class depends on ``Fourier``, ``DiagBlocks``, ``Kron``,
+    ``Product`` and ``Partial``.
+    """
+
     property tenT:
+        r"""Return the matrix-defining tensor of the matrix"""
+
         def __get__(self):
             return self._tenT
 
-    ############################################## class methods
     def __init__(self, tenT, **options):
         '''
         Initialize MLUltraSound Matrix instance.
@@ -252,100 +309,4 @@ cdef class MLUltraSound(Partial):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Multilevel Ultrasound Matrix (\texttt{fastmat.MLUltraSound})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface',
-                r"""
-                This class is an implementation of matrices, which have a block
-structure, where each block itself is a $2$-level Toeplitz matrix, as
-implemented in \texttt{MLToeplitz}. The name originated from the fact, that
-these matrices pop up, when modeling a ultrasonic pulse echo as a superposition
-of hyperbolas.
-
-As such we can
-collect the unique defining elements of $\bm H$ in $\bm h \in \bm \R^{M \times
-M
-\times 2 N_x - 1 \times 2 N_y - 1}$ and then set
-%
-\[
-    \bm H_{i,j} = \bm T_{([N_x, N_y], 2)}(\bm h_{i,j}).
-\]
-%
-Moreover, we can diagonalize each $\bm H_{i,j}$.
-To this end we embed each $\bm H_{i,j}$ into a $2$-level circulant matrix
-%
-\begin{align}\label{eff_mlultra}
-    \begingroup
-    \setlength\arraycolsep{3pt}
-    \begin{bmatrix}
-    \mathfrak{T}_2(\bm H_{0,0})   & \dots  & \mathfrak{T}_2(\bm H_{0,M-1}) \\
-    \vdots        & \ddots & \vdots \\
-    \mathfrak{T}_2(\bm H_{M-1,0}) & \dots  & \mathfrak{T}_2(\bm H_{M-1,M-1}) \\
-    \end{bmatrix} \endgroup =
-\bm K^\herm \cdot \bm D \cdot \bm K
-\end{align}
-%
-for
-$\bm F = \bm \Fs_{2 N_x - 1} \otimes \bm \Fs_{2 N_y - 1} $,
-$\bm K = \bm I_{M} \otimes \bm F$
-%
-and
-\[\bm D =
-\begingroup
-\setlength\arraycolsep{3pt}
-\begin{bmatrix}
-\diag(\bm F \Vectorize \tilde{\bm h}_{0,0}) & \dots &
-\diag(\bm F \Vectorize \tilde{\bm h}_{0,M-1}) \\
-\vdots & \ddots & \vdots \\
-\diag(\bm F \Vectorize \tilde{\bm h}_{M-1,0}) & \dots &
-\diag(\bm F \Vectorize \tilde{\bm h}_{M-1,M-1}) \\
-\end{bmatrix},
-\endgroup
-\]
-which shows, that $\bm H$ simply is a subselection of the above block
-diagonalizated matrix. This is exactly, how it is implemented in \fm{}.
-                """,
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# construct the',
-                            '# parameters',
-                            'n = 2',
-                            'l = 2',
-                            't = np.arange(',
-                            '2 *2 *(2 *n - 1) ** l',
-                            ').reshape(',
-                            '(n, n, 2 *n - 1, 2 *n - 1)',
-                            ')',
-                            '',
-                            '# construct the matrix',
-                            'T = fm.MLUltraSound(t)',
-                            caption=r"""
-This yields
-\[\bm t = \begin{bmatrix}1 & 2 & 3 \\ 4 & 5 & 6 \\ 7 & 8 & 9 \end{bmatrix}\]
-\[\bm T = \left(\begin{array}{cccc}
-    1 & 3 & 7 & 9 \\
-    2 & 1 & 8 & 7 \\
-    4 & 5 & 1 & 3 \\
-    5 & 4 & 2 & 1
-\end{array}\right)\]"""),
-                r"""
-This class depends on \texttt{Fourier}, \texttt{DiagBlocks}, \texttt{Kron},
-\texttt{Product} and \texttt{Partial}."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm{\mathcal{C}} \in \R^{n \times n}$ with $n \in \N$ and all
-entries drawn from a  standard Gaussian distribution.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            )
-        )
+        return ""

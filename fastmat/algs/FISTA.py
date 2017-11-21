@@ -1,45 +1,23 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/algs/FISTA.py
- -------------------------------------------------- part of the fastmat package
 
-  Implementation of Fast Iterative Shrinking-Thresholding Algorithm (FISTA) in
-  fastmat.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : kirchhjn
-  Introduced  : 2017-11-06
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-
-  TODO:
-    - Todos for ISTA
-    - Check if its working
-'''
 import numpy as np
 
 from ..base import Algorithm
-
-
-################################################################################
-###  FISTA: Sparse recovery algorithm
-################################################################################
 
 
 def _softThreshold(arrX, numAlpha):
@@ -53,23 +31,80 @@ def _softThreshold(arrX, numAlpha):
     return np.multiply((arrM / (arrM + numAlpha)), arrX)
 
 
-##################################################
-
 def FISTA(
         fmatA,
         arrB,
         numLambda=0.1,
         numMaxSteps=100
 ):
-    '''
-    Wrapper around the FISTA algrithm to allow processing of arrays of signals
-        fmatA         - input system matrix
-        arrB          - input data vector (measurements)
-        numLambda     - balancing parameter in optimization problem
-                        between data fidelity and sparsity
-        numMaxSteps   - maximum number of steps to run
-        numL          - step size during the conjugate gradient step
-    '''
+    r"""Fast Iterative Shrinking-Thresholding Algorithm (FISTA)
+
+    **Definition and Interface**:
+    For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with :math:`m \ll N` and a
+    vector :math:`b \in \mathbb{C}^m` we approximately solve
+
+    .. math::
+        \min\limits_{ x \in \mathbb{C}^N}\Vert{ A \cdot  x -  b}\Vert^2_2 +
+        \lambda \cdot \Vert x \Vert_1,
+
+    where :math:`\lambda > 0` is a regularization parameter to steer the trade-off
+    between data fidelity and sparsity of the solution.
+
+    >>> # import the packages
+    >>> import numpy.linalg as npl
+    >>> import numpy as np
+    >>> import fastmat as fm
+    >>> import fastmat.algs as fma
+    >>> # define the dimensions and the sparsity
+    >>> n, k = 512, 3
+    >>> # define the sampling positions
+    >>> t = np.linspace(0, 20 * np.pi, n)
+    >>> # construct the convolution matrix
+    >>> c = np.cos(2 * t)
+    >>> C = fm.Circulant(c)
+    >>> # create the ground truth
+    >>> x = np.zeros(n)
+    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> b = C * x
+    >>> # reconstruct it
+    >>> y = fma.FISTA(C, b, 0.005, 1000)
+    >>> # test if they are close in the
+    >>> # domain of C
+    >>> print(npl.norm(C * y - b))
+
+    We solve a sparse deconvolution problem, where the atoms are harmonics windowed by a gaussian envelope. The ground truth :math:`x` is build out of three pulses at arbitrary locations.
+
+    .. note::
+        The proper choice of :math:`\lambda` is crucial for good perfomance of this algorithm, but this is not an easy task. Unfortunately we are not in the place here to give you a rule of thumb what to do, since it highly depends on the application at hand. Again, consult [1]_ for any further considerations of this matter.
+
+    .. todo::
+        - Todos for ISTA
+        - Check if its working
+
+    Parameters
+    ----------
+    fmatA : fm.Matrix
+        the system matrix
+    arrB : np.ndarray
+        the measurement vector
+    numLambda : float, optional
+        the thresholding parameter; default is 0.1
+    numMaxSteps : int, optional
+        maximum number of steps; default is 100
+
+    Returns
+    -------
+    np.ndarray
+        solution array
+    """
+
+    # Wrapper around the FISTA algrithm to allow processing of arrays of signals
+    #     fmatA         - input system matrix
+    #     arrB          - input data vector (measurements)
+    #     numLambda     - balancing parameter in optimization problem
+    #                     between data fidelity and sparsity
+    #     numMaxSteps   - maximum number of steps to run
+    #     numL          - step size during the conjugate gradient step
 
     if len(arrB.shape) > 2:
         raise ValueError("Only n x m arrays are supported for FISTA")
@@ -208,87 +243,4 @@ class FISTAinspect(Algorithm):
     @staticmethod
     def _getDocumentation():
         from ..inspect import DOC
-        return DOC.SUBSECTION(
-            r"""
-Fast Iterative Soft Thresholding Algorithm (FISTA)
-(\texttt{fastmat.algs.FISTA})""",
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-For a given matrix $\bm A \in \C^{m \times N}$ with $m \ll N$ and a
-vector $\bm b \in \C^m$ we approximately solve
-
-\begin{align}\label{fista_lasso}
-    \Min\limits_{\bm x \in \C^N}\Norm{\bm A \cdot \bm x - \bm b}^2_2 +
-    \lambda\cdot\Norm{\bm x}_1,
-\end{align}
-
-where $\lambda > 0$ is a regularization parameter to steer the trade-off between
-data fidelity and sparsity of the solution.
-
-\begin{itemize}
-\item \textbf{Input:} Full rank matrix $\bm A$, measurements $\bm b$, trade-off
-    parameter $\lambda$
-\item \textbf{Output:} Reconstruction vector $\bm x$.
-\end{itemize}
-
-FISTA is a performance upgrade for the standard ISTA algorithm as described
- in\cite{fista_beck1952fista}.""",
-                DOC.SNIPPET('# import the packages',
-                            'import numpy.linalg as npl',
-                            'import numpy as np',
-                            'import fastmat as fm',
-                            'import fastmat.algs as fma',
-                            '',
-                            '# define the dimensions',
-                            '# and the sparsity',
-                            'n, k = 512, 3',
-                            '',
-                            '# define the sampling positions',
-                            't = np.linspace(0, 20 * np.pi, n)',
-                            '',
-                            '# construct the convolution matrix',
-                            'c = np.cos(2 * t),',
-                            'C = fm.Circulant(c)',
-                            '',
-                            '# create the ground truth',
-                            'x = np.zeros(n)',
-                            'x[npr.choice(range(n),',
-                            '             k, replace=0)] = 1',
-                            'b = C * x',
-                            '',
-                            '# reconstruct it',
-                            'y = fma.FISTA(C, b, 0.005, 1000)',
-                            '',
-                            '# test if they are close in the',
-                            '# domain of C',
-                            'print(npl.norm(C * y - b))',
-                            caption=r"""
-We solve a sparse deconvolution problem, where the atoms are harmonics windowed
-by a gaussian envelope. The ground truth $\bm x$ is build out of three pulses at
-arbitrary locations."""),
-                r"""
-\textit{Hint:} The proper choice of $\lambda$ is crucial for good perfomance of
-    this algorithm, but this is not an easy task. Unfortunately we are not
-    in the place here to give you a rule of thumb what to do, since it
-    highly depends on the application at hand. Again, consult
-    \cite{fista_beck1952fista} for any further considerations of this matter."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-We use $\bm A = \bm M \cdot \bm \Fs$, where $\bm M$ was drawn from a standard
-Gaussian distribution and $\bm \Fs$ is a Fourier matrix. The vector $\bm b \in
-\C^m$ of equation \eqref{fista_lasso} is generated from multiplying $\bm A$ with
-a sparse vector $\bm x$.""",
-                DOC.PLOTPERFORMANCE(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            ),
-            DOC.BIBLIO(
-                fista_beck1952fista=DOC.BIBITEM(
-                    r'Amir Beck and Marc Teboulle',
-                    r"""
-A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems
-""",
-                    r'SIAM Journal on Imaging Sciences 2009 2:1, 183-202')
-            )
-        )
+        return ""

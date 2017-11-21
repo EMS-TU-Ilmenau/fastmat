@@ -1,9 +1,19 @@
 # -*- coding: utf-8 -*-
-'''
-  setup.py
- -------------------------------------------------- part of the fastmat package
-
-  Setup script for installation of fastmat package
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+'''Setup script for installation of fastmat package
 
   Usecases:
     - install fastmat package system-wide on your machine (needs su privileges)
@@ -14,28 +24,6 @@
 
     - compile all cython source files locally
         EXAMPLE:        'python setup.py build_ext --inplace'
-
-
-  Author      : sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
 '''
 
 # import modules
@@ -234,7 +222,9 @@ def extensions():
         [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)],
-        compiler_directives=cythonDirectives)
+        compiler_directives=cythonDirectives,
+        nthreads=4
+    )
 
 
 # determine requirements for install and setup
@@ -264,6 +254,28 @@ checkRequirement(installRequires, 'scipy', 'scipy')
 
 print("Requirements for setup: %s" %(setupRequires))
 print("Requirements for install: %s" %(installRequires))
+
+###############################################################################
+### The documentation
+###############################################################################
+
+
+def doc_opts():
+    try:
+        from sphinx.setup_command import BuildDoc
+    except ModuleNotFoundError:
+        return {}
+
+    class OwnDoc(BuildDoc):
+
+        def __init__(self, *args, **kwargs):
+            # os.system(
+            #     sys.executable + " util/bee.py benchmark -p doc/_static/bench"
+            # )
+            super(OwnDoc, self).__init__(*args, **kwargs)
+
+    return OwnDoc
+
 
 ###############################################################################
 ### The actual setup
@@ -307,5 +319,13 @@ setup(
         'fastmat/core',
         'fastmat/inspect'
     ],
+    cmdclass={'build_doc': doc_opts()},
+    command_options={
+        'build_doc' : {
+            'project': ('setup.py', packageName),
+            'version': ('setup.py', packageVersion),
+            'release': ('setup.py', fullVersion),
+            'copyright': ('setup.py', '2017, ' + packageName)
+        }},
     ext_modules=lazyCythonize(extensions)
 )

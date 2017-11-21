@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/inspect/benchmark.py
- -------------------------------------------------- part of the fastmat package
 
-  Implementations for class benchmarking (quality management).
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw
-  Introduced  : 2017-07-19
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import os
 import numpy as np
 from timeit import timeit
@@ -663,5 +651,43 @@ class Benchmark(Worker):
         np.savetxt(filename, arrResult,
                    header=chrDelimiter.join(lstHeader), comments='',
                    fmt=strFormat, newline=chrNewline, delimiter=chrDelimiter)
+
+        return filename
+
+    def plotResult(self, nameResult, outPath='', addVersionTag=True,
+                   strFormat='%.6e', chrDelimiter=',', chrNewline=os.linesep):
+        '''
+        Print data table to csv file. The result is organized as a list of
+        dicts containing information in key=value pairs. The header will be
+        extracted from the keys of the result data dictionaries. If the file
+        does not exist it will be created.
+        '''
+        if nameResult not in self.results:
+            raise ValueError("No benchmark result of such name found")
+
+        result=self.results[nameResult]
+        arrResult=result[BENCH.RESULT]
+        lstHeader=result[BENCH.HEADER]
+
+        filename=self.getFilename(nameResult, path=outPath,
+                                  addVersionTag=addVersionTag)
+
+        filename = filename.replace('csv', 'png')
+
+        # force existance of output file
+        dirname=os.path.dirname(filename)
+        if dirname != '' and not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        import matplotlib.pyplot as plt
+
+        plt.loglog(arrResult[:, 0], arrResult[:, 1:])
+
+        plt.savefig(
+            filename,
+            dpi=300,
+            transparent=True,
+            bbox_inches='tight'
+        )
 
         return filename

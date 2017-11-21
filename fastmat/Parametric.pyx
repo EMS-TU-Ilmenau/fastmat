@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
-'''
-  fastmat/Parametric.py
- -------------------------------------------------- part of the fastmat package
 
-  Parametric matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -35,31 +23,83 @@ from .Matrix cimport Matrix
 from .core.types cimport *
 from .core.cmath cimport _dotSingleRow, _conjugateInplace, _arrEmpty
 
-
-################################################################################
-################################################## class Parametric
 cdef class Parametric(Matrix):
+    r"""
 
-    ############################################## class properties
-    # vecY - Property (read-only)
-    # Return the support vector in Y dimension.
+    Let :math:`f \D \mathbb{C}^2 \rightarrow \mathbb{C}` be any function and two vectors :math:`x \in \mathbb{C}^m` and :math:`y \in \mathbb{C}^n` such that :math:`(x_j,y_i) \in \Dom(f)` for :math:`i \in [n]` and :math:`j    \in [m]`. Then the matrix :math:`F \in \mathbb{C}^{n \times m}` is defined as
+
+    .. math::
+        F_{i,j} = f(x_j,y_i).
+
+    This class is not designed to be super fast, but memory efficient. This means, that everytime the forward or backward projections are called, the elements are generated according to the specified function on the fly.
+
+    .. note::
+        For small dimensions, where the matrix fits into memory, it is    definately more efficient to cast the matrix to a regular Matrix object.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define parameter
+    >>> # function for the elements
+    >>> def f(x, y):
+    >>>     return x ** 2 - y ** 2
+    >>>
+    >>> # define the input array
+    >>> # for the function f
+    >>> x = np.linspace(1, 4, 4)
+    >>>
+    >>> # construct the transform
+    >>> F = fm.Parametric(x, x, f)
+
+    This yields
+
+    .. math::
+        f : \mathbb{C} \rightarrow \mathbb{C}
+
+    .. math::
+        (x_1,x_2)^\mathrm{T} \mapsto x_1^2 - x_2^2
+
+    .. math::
+        x = (1,2,3,4)^\mathrm{T}
+
+    .. math::
+        F = \begin{bmatrix}
+        1 &   3 &  8 & 15 \\
+        -3 &   0 &  5 & 12 \\
+        -8 &  -5 &  0 &  7 \\
+        -15 & -12 & -7 &  0
+        \end{bmatrix}
+
+    We used Cython [3]_ to get an efficient implementation in order to reduce computation time. Moreover, it is generally assumed the the defined function is able to use row and column broadcasting during evaluation.    If this is not the case, one has to set the flag ``rangeAccess`` to    ``False``.
+    """
+
     property vecY:
+        r"""Return the support vector in Y dimension.
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._vecY
 
-    # vecX - Property (read-only)
-    # Return the support vector in X dimension.
     property vecX:
+        r"""Return the support vector in X dimension.
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._vecX
 
-    # funF - Property (read-only)
-    # Return the parameterizing function
     property fun:
+        r"""Return the parameterizing function
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._fun
 
-    ############################################## class methods
     def __init__(
         self,
         vecX,
@@ -321,79 +361,4 @@ cdef class Parametric(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Parametric Matrix (\texttt{fastmat.Parametric})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-Let $f \D \C^2 \rightarrow \C$ be any function and two vectors $\bm x \in \C^m$
-and $\bm y \in \C^n$ such that $(x_j,y_i) \in \Dom(f)$ for $i \in [n]$ and $j
-\in [m]$. Then the matrix $\bm F \in \C^{n \times m}$ is defined as
-
-\[F_{i,j} = f(x_j,y_i).\]
-
-This class is not designed to be super fast, but memory efficient. This means,
-that everytime the forward or backward projections are called, the elements are
-generated according to the specified function on the fly.
-
-\textbf{Hint:} For small dimensions, where the matrix fits into memory, it is
-definately more efficient to cast the matrix to a regular Matrix object.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define parameter',
-                            '# function for the elements',
-                            'def f(x, y):',
-                            '    return x ** 2 - y ** 2',
-                            '',
-                            '# define the input array',
-                            '# for the function f',
-                            'x = np.linspace(1, 4, 4)',
-                            '',
-                            '# construct the transform',
-                            'F = fm.Parametric(x, x, f)',
-                            caption=r"""
-This yields
-\[f : \C \rightarrow \C\]
-\[(x_1,x_2)^T \mapsto x_1^2 - x_2^2\]
-\[\bm x = (1,2,3,4)^T\]
-\[\bm F = \left(\begin{array}{cccc}
-      1 &   3 &  8 & 15 \\
-     -3 &   0 &  5 & 12 \\
-     -8 &  -5 &  0 &  7 \\
-    -15 & -12 & -7 &  0
-\end{array}\right)\]"""),
-                r"""
-We used Cython \cite{para_smith2011cython} to get an efficient implementation in
-order to reduce computation time. Moreover, it is generally assumed the the
-defined function is able to use row and column broadcasting during evaluation.
-If this is not the case, one has to set the flag \texttt{rangeAccess} to
-\texttt{False}."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix of $\bm \P_{n x n}$ with $n \in \N$
-and their support vectors $\bm s_x, \bm s_y \in \R$ each representing a linear
-slope along the interval $[0, 1]$.
-The defining function varies throughout the benchmarks and is specified
-separately for each plot.""",
-                DOC.PLOTFORWARD(doc=r"""
-$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
-                DOC.PLOTFORWARDMEMORY(doc=r"""
-$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
-                DOC.PLOTSOLVE(doc=r"""
-$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
-                DOC.PLOTOVERHEAD(doc=r"""
-$f(x,y) = \exp(2 \pi \cdot x \cdot y)$, $\bm P \in \R^{n \times n}$"""),
-                DOC.PLOTTYPESPEED(doc=r'$f(x,y) = 1$'),
-                DOC.PLOTTYPEMEMORY(doc=r'$f(x,y) = 1$')
-            ),
-            DOC.BIBLIO(
-                para_smith2011cython=DOC.BIBITEM(
-                    r"""
-Stefan Behnel, Robert Bradshaw, Craig Citro, Lisandro Dalcin,
-Dag Sverre Seljebotn and Kurt Smith,""",
-                    r'Cython: The Best of Both Worlds',
-                    r'Computing in Science and Engineering, Volume 13, 2011.')
-            )
-        )
+        return ""
