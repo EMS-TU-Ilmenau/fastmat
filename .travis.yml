@@ -102,7 +102,7 @@ script:
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
         # all version targets: build a wheel!
         make compile
-        echo "Generating wheel... (skipping $(CIBW_SKIP)"
+        echo "Generating wheel... (skipping $(CIBW_SKIP))"
         cibuildwheel --output-dir wheelhouse
         ls -l wheelhouse/*
     elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then

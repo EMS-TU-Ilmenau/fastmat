@@ -65,8 +65,8 @@ cdef void _SaftMaskCore(
     numMasks = len(masks)
     for mm in range(numMasks):
         # get mask and determine number of elements
-        maskRow = masks[mm][:, 0 if backward else 1]
-        maskCol = masks[mm][:, 1 if backward else 0]
+        maskRow = masks[mm][:, 1 if backward else 0]
+        maskCol = masks[mm][:, 0 if backward else 1]
         numElements = maskRow.shape[0]
 
         for bb in range(numBlocks):

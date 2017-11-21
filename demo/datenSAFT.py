@@ -32,7 +32,8 @@ from timeit import timeit
 
 # import numpy functionality
 import numpy as np
-import scipy as sp
+import scipy.io as sio
+import scipy.sparse as sps
 
 ################################################## import modules
 try:
@@ -68,7 +69,7 @@ print("-----------------------------------------------------------")
 # dz - Schrittweite in Tiefe (N) (numS)
 
 
-refData = sp.io.loadmat('datenSAFT.mat')
+refData = sio.loadmat('datenSAFT.mat')
 dX = refData['dx'] * 1000
 dZ = refData['dz'] * 1000
 numN        = 2040
@@ -111,9 +112,8 @@ for kk in range(0, numK):
         break
 
     matSparse.append(
-        sp.sparse.coo_matrix(
-                    (mapping[:, 2], (mapping[:, 0], mapping[:, 1])),
-                    shape=(sizeItem, sizeItem), dtype=np.int8))
+        sps.coo_matrix((mapping[:, 2], (mapping[:, 0], mapping[:, 1])),
+                       shape=(sizeItem, sizeItem), dtype=np.int8))
 fastmatSparse = [fastmat.Sparse(mat.tocsc()) for mat in matSparse]
 cntK = len(matSparse)
 
