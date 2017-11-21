@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
+
 #cython: boundscheck=False, wraparound=False
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 '''
-  fastmat/DiagBlocks.py
- -------------------------------------------------- part of the fastmat package
-
-  DiagBlocks matrix.
-
-
-  Author      : sempersn
-  Introduced  : 2017-10-06
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-
   TODO:
     - DiagBlocks should simply skip all Zero Matrices (flag them as "None")?
 '''
@@ -40,6 +28,36 @@ from .Matrix cimport Matrix
 ################################################################################
 ################################################## class DiagBlocks
 cdef class DiagBlocks(Matrix):
+    r"""
+
+    For given :math:`n,m \in \mathbb{N}` this class allows to define a block matrix :math:`M \in \mathbb{C}^{nm \times nm}`, where each block is a diagonal matrix :math:`D_{ij} \in \mathbb{C}^{m \times m}`. This obviously allows efficient storage and computations.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> # define the sizes
+    >>> n,m = 2,
+    >>> # define the diagonals
+    >>> d = np.random.randn(
+    >>>        n,
+    >>>        n,
+    >>>        m)
+    >>> # define the block
+    >>> # matrix diagonal-wise
+    >>> M = fm.DiagBlocks(d)
+
+    We have randomly drawn the defining elements :math:`d` from a standard Gaussian distribution, which results in
+
+    .. math::
+        M =
+        \begin{bmatrix}
+            d_{1,1,1} & & & d_{1,2,1} & & \\
+            & d_{1,1,2} & & & d_{1,2,2} & \\
+            & & d_{1,1,3} & & & d_{1,2,3} \\
+            d_{2,1,1} & & & d_{2,2,1} & & \\
+            & d_{2,1,2} & & & d_{2,2,2} & \\
+            & & d_{2,1,3} & & & d_{2,2,3} \\
+        \end{bmatrix}.
+    """
 
     ############################################## class methods
     def __init__(self, tenDiags):
@@ -159,54 +177,4 @@ cdef class DiagBlocks(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Diagonal Block Matrix (\texttt{fastmat.DiagBlocks})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface',
-                r"""
-For given $n,m \in \N$ this class allows to define a block matrix $\bm M \in
-\C^{nm \times nm}$, where each block is a diagonal matrix $\bm D_{ij} \in
-\C^{m \times m}$. This obviously allows efficient storage and computations.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the sizes',
-                            'n,m = 2,3'
-                            '',
-                            '# define the diagonals',
-                            'd = np.random.randn(',
-                            '       n,',
-                            '       n,',
-                            '       m)',
-                            '',
-                            '# define the block',
-                            '# matrix diagonal-wise',
-                            'M = fm.DiagBlocks(d)',
-                            caption=r"""
-We have randomly drawn the defining elements $\bm d$ from a standard Gaussian
-distribution, which results in
-\[
-    \bm M =
-        \left(\begin{array}{cccccc}
-                d_{1,1,1} & & & d_{1,2,1} & & \\
-                & d_{1,1,2} & & & d_{1,2,2} & \\
-                & & d_{1,1,3} & & & d_{1,2,3} \\
-                d_{2,1,1} & & & d_{2,2,1} & & \\
-                & d_{2,1,2} & & & d_{2,2,2} & \\
-                & & d_{2,1,3} & & & d_{2,2,3} \\
-              \end{array}\right).\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks',
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTOVERHEAD(doc=r"""
-$\bm B = \begin{pmatrix}
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} \\
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} \\
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} \\
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k}
-\end{pmatrix}$, $n = 2^{k+2}$ for $k \in \N$""")
-            )
-        )
+        return ""

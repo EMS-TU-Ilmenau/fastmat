@@ -1,35 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Matrix.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Base class for all fast matrix transformations in fastmat.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#    https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-TODO:
-    - add caches for cols / rows
-    - implement generation of normalized matrix of general matrices
-'''
 from libc.string cimport memset
 from libc.math cimport isnan
 
@@ -113,69 +98,105 @@ cdef bint profileUpdate(PROFILE_s *profile, intsize numM, bint allowBypass,
 ################################################################################
 ################################################## class Matrix
 cdef class Matrix(object):
-    '''
-    class Matrix of fastmat
+    r"""Matrix Base Class
 
-    Matrix is the base class of which all fastmat matrices are derived from.
-    Many routines, which are available for all classes, are defined here.
-    Please note: Many properties defined here link to private variables which
-    are overwritten in child classes.
-        e.g. self.numN --> self._numN, which may be overwritten in
-        child.__init__() to reflect childs' dimension.
-    '''
+    **Description:**
+    The baseclass of all matrix classes in fastmat. It also serves as wrapper around the standard Numpy Array [1]_.
+
+    **Performance Benchmarks**
+
+    .. figure:: _static/bench/Matrix.overhead.png
+        :width: 50%
+
+        Overhead Benchmarking of this class
+
+    .. figure:: _static/bench/Matrix.dtypes.png
+        :width: 50%
+
+        Dtypes Benchmarking of this class
+
+    .. figure:: _static/bench/Matrix.forward.png
+        :width: 50%
+
+        Forward Multiplication numbers
+
+    .. todo::
+        - extend docu
+        - add caches for cols / rows
+        - implement generation of normalized matrix of general matrices
+
+    """
 
     ############################################## basic class properties
-    # dtype - Property (read-only)
-    # Report the matrix elements' data type
     property dtype:
+        # r"""Report the matrix elements' data type
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return np.PyArray_TypeObjectFromType(self._info.dtype.typeNum)
 
-    # dtypeNum - Property (read-only)
-    # Report the matrix elements' data type (fastmat fused type number)
     property dtypeNum:
+        # r"""Report the matrix elements data type
+        #
+        # (fastmat fused type number)
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return self._info.dtype[0].fusedType
 
-    # numN - Property (read-only)
-    # Report the matrix row count
     property numN:
+        # r"""Report the matrix row count
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return self._info.numN
 
-    # numM - Property (read-only)
-    # Report the matrix column count
     property numM:
+        # r"""Report the matrix column count
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return self._info.numM
 
-    # shape - Property (read-only)
-    # Report the matrix shape as tuple of (rows, columns)
     property shape:
+        # r"""Report the matrix shape as tuple of (rows, columns)
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return (self.numN, self.numM)
 
-    # tag - Property (read-write)
-    # Description tag of Matrix
     property tag:
+        # r"""Description tag of Matrix
+        #
+        # *(read-write)*
+        # """
         def __get__(self):
             return (self._tag)
 
         def __set__(self, tag):
             self._tag = tag
 
-    # bypassAllow - Property (read-write)
-    # enable or disable transform bypassing based on performance estimates
     property bypassAllow:
+        # r"""Enable or disable transform bypassing based on performance estimates
+        #
+        # *(read-write)*
+        # """
         def __get__(self):
             return self._bypassAllow
 
         def __set__(self, value):
             self._bypassAllow = value
 
-    # bypassAutoArray - Property (read-write)
-    # enable or disable automatic dense array generation for transform bypass
     property bypassAutoArray:
+        # r"""Enable or disable automatic dense array generation for transform bypass
+        #
+        # *(read-write)*
+        # """
         def __get__(self):
             return self._bypassAutoArray
 
@@ -186,6 +207,8 @@ cdef class Matrix(object):
     # nbytes - Property(read)
     # Size of the Matrix object
     property nbytes:
+        # r"""Number of bytes
+        # """
         def __get__(self):
             global getMemoryFootprint
             if getMemoryFootprint is None:
@@ -198,6 +221,9 @@ cdef class Matrix(object):
     # _nbytesReference - Property(read)
     # Size of the Matrix object
     property nbytesReference:
+        # r"""Number of Bytes Reference
+        #
+        # """
         def __get__(self):
             if self._forwardReferenceMatrix is None:
                 self._forwardReferenceInit()
@@ -211,31 +237,32 @@ cdef class Matrix(object):
             return getMemoryFootprint(self._forwardReferenceMatrix)
 
     def __copy__(self):
-        '''
-        Performs a copy() on this class instance. As fastmat matrix classes are
-        defined immutable nothing must be copied, so retuning self suffices.
-        '''
+        # r"""
+        #
+        # Performs a copy() on this class instance. As fastmat matrix classes are
+        # defined immutable nothing must be copied, so retuning self suffices.
+        # """
         return self
 
     def __deepcopy__(self, dict memo):
-        '''
-        Performs a deepcopy() on this class instance. As fastmat matrix classes
-        are defined immutable nothing must be copied, so retuning self suffices.
-        '''
+        # r"""
+        #
+        # Performs a deepcopy() on this class instance. As fastmat matrix classes
+        # are defined immutable nothing must be copied, so retuning self suffices.
+        # """
+
         return self
 
     ############################################## array, col, row & item access
-    # array - Property (read-only)
-    # Return a dense array representation of the matrix
     property array:
+        # r"""Return a dense array representation of the matrix
+        # """
         def __get__(self):
             return (self.getArray() if self._array is None else self._array)
 
     def __array__(self):
-        '''
-        Return an expanded array representation of matrix. Invoked internally
-        during broadcasting, redirect to self._getArray().
-        '''
+        # r"""Array
+        # """
         return self._getArray()
 
     cpdef np.ndarray getArray(self):
@@ -245,9 +272,8 @@ cdef class Matrix(object):
         return self._array
 
     cpdef np.ndarray _getArray(self):
-        '''
-        Return an explicit representation of the matrix as numpy-array.
-        '''
+        # r"""
+        # """
         # check whether this instance is a Matrix or some child class
         if self.__class__ == Matrix:
             # it is a Matrix, so return our internal data
@@ -260,7 +286,9 @@ cdef class Matrix(object):
             return self._forward(np.eye(self.numM, dtype=self.dtype))
 
     def getCols(self, indices):
-        '''Return selected columns of self.getArray()'''
+        r"""
+
+        """
         cdef np.ndarray arrResult, arrIdx
         cdef intsize ii, numSize
 
@@ -285,7 +313,9 @@ cdef class Matrix(object):
         return arrResult
 
     def getCol(self, idx):
-        # TODO it might be nice to offer some cache for the columns here
+        r"""
+
+        """
         if idx < 0 or idx >= self.numM:
             raise ValueError("Column index exceeds matrix dimensions.")
 
@@ -296,13 +326,18 @@ cdef class Matrix(object):
         return self._getCol(idx)
 
     cpdef np.ndarray _getCol(self, intsize idx):
+        r"""
+
+        """
         cdef np.ndarray arrData = _arrZero(1, self._info.numM, 1,
                                            self._info.dtype[0].typeNum)
         arrData[idx] = 1
         return self.forward(arrData)
 
     def getRows(self, indices):
-        '''Return selected rows of self.getArray()'''
+        r"""
+
+        """
         cdef np.ndarray arrResult, arrIdx
         cdef intsize ii, numSize
 
@@ -327,7 +362,9 @@ cdef class Matrix(object):
         return arrResult
 
     def getRow(self, idx):
-        # TODO it might be nice to offer some cache for the columns here
+        r"""
+
+        """
         if idx < 0 or idx >= self.numN:
             raise ValueError("Row index exceeds matrix dimensions.")
 
@@ -338,18 +375,18 @@ cdef class Matrix(object):
         return self._getRow(idx)
 
     cpdef np.ndarray _getRow(self, intsize idx):
+        r"""
+
+        """
         cdef np.ndarray arrData = _arrZero(1, self._info.numN, 1,
                                            self._info.dtype[0].typeNum)
         arrData[idx] = 1
         return self.backward(arrData).conj()
 
     def __getitem__(self, tplIdx):
-        '''
-        Return the element at index tplIdx. The element is evaluated using
-        self.forward() on a column-selecting vector, which is then indexed at
-        the row-index to retrieve the element. This is quite slow and memory
-        consuming for large matrices due to the use of numpy.eye().
-        '''
+        r"""
+
+        """
         if len(tplIdx) != 2:
             raise ValueError("Matrix element access requires two indices.")
 
@@ -370,22 +407,68 @@ cdef class Matrix(object):
         return self._getCol(idxM)[idxN]
 
     ############################################## Matrix content property
-    # content - Property (read-only)
-    # Return the Matrix contents
     property content:
+        # r"""Return the Matrix contents
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return self._content
 
     ############################################## algorithmic properties
-    # largestEV - Property (read-only)
-    # Return the largest eigenvalue for this matrix instance
     property largestEV:
+        # r"""Return the largest eigenvalue for this matrix instance
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return (self.getLargestEV() if self._largestEV is None
                     else self._largestEV)
 
     def getLargestEV(self, maxSteps=10000,
                      relEps=1., eps=0., alwaysReturn=False):
+        # r"""
+        # Largest Singular Value
+        #
+        # For a given matrix :math:`A \in \mathbb{C}^{n \times n}`, so :math:`A` square, we calculate the absolute value of the largest eigenvalue :math:`\lambda \in \mathbb{C}`. The eigenvalues obey the equation
+        #
+        # .. math::
+        #      A \cdot  v= \lambda \cdot  v,
+        #
+        # where :math:`v` is a non-zero vector.
+        #
+        # Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as a
+        # stopping criterion
+        # Output largest eigenvalue :math:`\sigma_{\rm max}( A)`
+        #
+        # .. note::
+        #     This algorithm performs well if the two largest eigenvalues are not very close to each other on a relative scale with respect to their absolute value. Otherwise it might get trouble converging properly.
+        #
+        # >>> # import the packages
+        # >>> import numpy.linalg as npl
+        # >>> import numpy as np
+        # >>> import fastmat as fm
+        # >>>
+        # >>> # define the matrices
+        # >>> n = 5
+        # >>> H = fm.Hadamard(n)
+        # >>> D = fm.Diag(np.linspace
+        # >>>         1, 2 ** n, 2 ** n))
+        # >>>
+        # >>> K1 = fm.Product(H, D)
+        # >>> K2 = K1.array
+        # >>>
+        # >>> # calculate the eigenvalue
+        # >>> x1 = K1.largestEV
+        # >>> x2 = npl.eigvals(K2)
+        # >>> x2 = np.sort(np.abs(x2))[-1]
+        # >>>
+        # >>> # check if the solutions match
+        # >>> print(x1 - x2)
+        #
+        # We define a matrix-matrix product of a Hadamard matrix and a diagonal matrix. Then we also cast it into a numpy-array and use the integrated EVD. For demonstration, try to increase :math:`n`to :math:`>10`and see what happens.
+        # """
+
         if self._numN != self._numM:
             raise ValueError("largestEV: Matrix must be square.")
 
@@ -395,16 +478,16 @@ cdef class Matrix(object):
 
     cpdef object _getLargestEV(self, intsize maxSteps,
                                float relEps, float eps, bint alwaysReturn):
-        '''
-        Determine largest eigen-value of a fastmat matrix.
+        # r"""Determine largest eigen-value of a fastmat matrix.
+        # """
 
-        The following variables are used:
-        eps            - relative stopping threshold
-        numNormOld     - norm of vector from last iteration
-        numNormNew     - norm of vector in current iteration
-        vecBNew        - normalized current iterate
-        vecBOld        - normalized last iterate
-        '''
+        # The following variables are used:
+        # eps            - relative stopping threshold
+        # numNormOld     - norm of vector from last iteration
+        # numNormNew     - norm of vector in current iteration
+        # vecBNew        - normalized current iterate
+        # vecBOld        - normalized last iterate
+
         cdef np.ndarray vecBOld, vecBNew, vecBNewHat
 
         # determine an convergance threshold if eps is deliberately set to zero
@@ -446,29 +529,66 @@ cdef class Matrix(object):
         else:
             return vecBNew.dtype.type(np.NaN)
 
-    # largestSV - Property (read-only)
-    # Return the largestSV for this matrix instance
     property largestSV:
+        # r"""Return the largestSV for this matrix instance
+        #
+        # *(read-only)*
+        # """
         def __get__(self):
             return (self.getLargestSV() if self._largestSV is None
                     else self._largestSV)
 
     def getLargestSV(self, maxSteps=10000,
                      relEps=1., eps=0., alwaysReturn=False):
+        r"""Largest Singular Value
+
+        For a given matrix :math:`A \in \mathbb{C}^{n \times m}`, we calculate the largest singular value :math:`\sigma_{\rm max}( A) > 0`, which is the largest entry of the diagonal matrix :math:`\Sigma \in \mathbb{C}^{n \times m}` in the decomposition
+
+        .. math::
+             A =  U  \Sigma  V^{\rm H},
+
+        where :math:`U` and :math:`V` are matrices of the appropriate dimensions. This is done via the so called power iteration of :math:`A^{\rm H} \cdot  A`.
+
+        - Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as a
+        stopping criterion
+        - Output largest singular value :math:`\sigma_{\rm max}( A)`
+
+        .. note::
+            This algorithm performs well if the two largest singular values  are not very close to each other on a relative scale. Otherwise it might get trouble converging properly.
+
+        >>> # import packages
+        >>> import numpy.linalg as npl
+        >>> import numpy as np
+        >>> import fastmat
+        >>>
+        >>> # define involved matrices
+        >>> n = 5
+        >>> H = fm.Hadamard(n)
+        >>> F = fm.Fourier(2**n)
+        >>> K1 = fm.Kron(H, F)
+        >>> K2 = K1
+        >>>
+        >>> # calculate the largest SV
+        >>> # and a reference solution
+        >>> x1 = largestSV(K1.largestSV
+        >>> x2 = npl.svd(K2,compute_uv
+        >>> # check if they match
+        >>> print(x1-x2)
+
+        We define a Kronecker product of a Hadamard matrix and a Fourier matrix.
+        Then we also cast it into a numpy-array and use the integrated
+        SVD. For demonstration, try to increase :math:`n` to `>10` and see what happens.
+        """
+
         result = self._getLargestSV(maxSteps, relEps, eps, alwaysReturn)
         self._largestSV = self._largestSV if np.isnan(result) else result
         return result
 
     cpdef object _getLargestSV(self, intsize maxSteps,
                                float relEps, float eps, bint alwaysReturn):
-        '''
-        Determine largest singular value of a fastmat matrix.
-
-        The following variables are used:
-        eps            - relative stopping threshold
-        vecBNew        - normalized current iterate
-        vecBOld        - normalized last iterate
-        '''
+        # r"""
+        #
+        # """
         cdef np.ndarray vecBOld, vecBNew
         cdef Matrix matGram = self.gram
         cdef intsize ii
@@ -501,29 +621,41 @@ cdef class Matrix(object):
         # did not converge - return NaN
         return (np.sqrt(normNew) if alwaysReturn else np.float64(np.NaN))
 
-    ############################################## generic algebric properties
-    # gram - Property (read-only)
-    # Return the gram matrix for this fastmat class
+    ############################################## generic algebraic properties
     property gram:
+        r"""Return the gram matrix for this fastmat class
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return (self.getGram() if self._gram is None
                     else self._gram)
 
     def getGram(self):
+        r"""
+
+        """
         self._gram = self._getGram()
         return self._gram
 
     cpdef Matrix _getGram(self):
         return Product(self.H, self)
 
-    # normalized - Property (read-only)
-    # Return a normalized matrix for this instance
     property normalized:
+        r"""Return a normalized matrix for this instance
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return (self.getNormalized() if self._normalized is None
                     else self._normalized)
 
     def getNormalized(self):
+        r"""
+
+        """
         self._normalized = self._getNormalized()
         return self._normalized
 
@@ -562,39 +694,57 @@ cdef class Matrix(object):
         # finally invert the diagonal and generate normalized matrix
         return self * Diag(1. / arrDiag)
 
-    # T - Property (read-only)
-    # Return the transpose of the matrix as fastmat class
     property T:
+        r"""Return the transpose of the matrix as fastmat class
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return (self.getT() if self._T is None else self._T)
 
     def getT(self):
+        r"""
+
+        """
         self._T = self._getT()
         return self._T
 
     cpdef Matrix _getT(self):
         return Transpose(self)
 
-    # H - Property (read-only)
-    # Return the hermitian transpose of the matrix as fastmat class
     property H:
+        r"""Return the hermitian transpose
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return (self.getH() if self._H is None else self._H)
 
     def getH(self):
+        r"""
+
+        """
         self._H = self._getH()
         return self._H
 
     cpdef Matrix _getH(self):
         return Hermitian(self)
 
-    # conj - Property (read-only)
-    # Return the conjugate of the matrix as fastmat class
     property conj:
+        r"""Return the conjugate of the matrix as fastmat class
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return (self.getConj() if self._conj is None else self._conj)
 
     def getConj(self):
+        r"""
+
+        """
         self._conj = self._getConj()
         return self._conj
 
@@ -602,15 +752,23 @@ cdef class Matrix(object):
         return getConjugate(self)
 
     ############################################## computation complexity
-    # complexityForward - Property (read-only)
-    # Return the computational complexity of all functionality implemented in
-    # the class itself, not including calls of external code.
     property complexity:
+        r"""Complexity
+
+        *(read-only)*
+
+        Return the computational complexity of all functionality implemented in
+        the class itself, not including calls of external code.
+        """
+
         def __get__(self):
             return (self._profileForward.complexity,
                     self._profileBackward.complexity)
 
     def getComplexity(self):
+        r"""
+
+        """
         cdef tuple complexity = self._getComplexity()
         assert complexity is not None
         self._profileForward.complexity = complexity[0]
@@ -620,32 +778,56 @@ cdef class Matrix(object):
         cdef float complexity = self.numN * self.numM
         return (complexity, complexity)
 
-    # profile - Property (read-only)
-    # Return the timing profiles of this specific class. These are also used to
-    # determine which computation strategy to use for a perticular input.
-    # (distinct amount of vectors)
     property profile:
+        r"""
+
+        *(read-only)*
+
+        Return the timing profiles of this specific class. These are also used
+        to determine which computation strategy to use for a perticular input.
+        (distinct amount of vectors)
+        """
+
         def __get__(self):
             return (profileToTuple(self._profileForward),
                     profileToTuple(self._profileBackward))
 
     property profileForward:
+        r"""
+
+        """
+
         def __get__(self):
             return self._profileForward
 
     property profileBackward:
+        r"""
+
+        """
+
         def __get__(self):
             return self._profileBackward
 
     property profileBypassFwd:
+        r"""
+
+        """
+
         def __get__(self):
             return self._profileBypassFwd
 
     property profileBypassBwd:
+        r"""
+
+        """
+
         def __get__(self):
             return self._profileBypassBwd
 
     def estimateRuntime(self, intsize M=1):
+        r"""Estimate Runtime
+
+        """
         cdef float estimateForward  = (self._profileForward.overhead +
                                        self._profileForward.effort * M)
         cdef float estimateBypassFwd = (self._profileBypassFwd.overhead +
@@ -666,7 +848,8 @@ cdef class Matrix(object):
                 else estimateBackward)
 
     cdef void _initProfiles(self):
-        '''
+        """Initialize Profiles
+
         Generate performance profiles based on intrinsic complexity and
         external dependencies (e.g. nested class calls) and condense results
         in an overall figure of merit based on:
@@ -686,7 +869,7 @@ cdef class Matrix(object):
         Separate profiles will be generated for the
           - forward and backward transforms of this particular class instance
           - a bypass transform based on dot-product complexity
-        '''
+        """
         # initialize profiles
         memset(&(self._profileForward), 0, sizeof(PROFILE_s))
         memset(&(self._profileBackward), 0, sizeof(PROFILE_s))
@@ -721,12 +904,13 @@ cdef class Matrix(object):
                       calBase.gainBackward if calBase is not None else nan)
 
     cpdef _exploreNestedProfiles(self):
-        '''
+        r"""Explore Nested Profiles
+
         Explore the runtime properties of all nested fastmat matrices. Use ane
         iterator on self._content by default to sum the profile properties of
         all nested classes of meta-classes by default. basic-classes either
         have an empty tuple for _content or need to overwrite this method.
-        '''
+        """
         cdef Matrix item
         cdef bint bypass
 
@@ -740,7 +924,9 @@ cdef class Matrix(object):
 
     ############################################## class methods
     def __init__(self, arrMatrix):
-        '''Initialize Matrix instance with numpy-array from arrMatrix.'''
+        r"""Initialize Matrix instance
+
+        """
         if not isinstance(arrMatrix, np.ndarray):
             raise TypeError("Matrix: Use Sparse() for scipy spmatrix."
                             if isinstance(arrMatrix, spmatrix)
@@ -768,10 +954,9 @@ cdef class Matrix(object):
         object dataType,
         **properties
     ):
-        '''
-        Initialize properties of the matrix representation.
-        Use explicit values for type properties.
-        '''
+        r"""Initial Properties
+
+        """
 
         # assign basic class properties (at c-level)
         self._info.nDim = 2
@@ -799,11 +984,13 @@ cdef class Matrix(object):
         self._initProfiles()
 
     def __repr__(self):
-        '''
+        r"""Representation
+
         Return a string representing this very class instance. For
         identification module name, class name, instance id and shape will be
         returned formatted as string.
-        '''
+        """
+
         return "<%s[%dx%d]:0x%12x>" %(
             self.__class__.__name__,
             self.numN,
@@ -812,54 +999,55 @@ cdef class Matrix(object):
         )
 
     def __str__(self):
-        '''
+        r"""String
+
         Return a string representing the classes' contents in a more
         human-readable and human-interpretable fashion. Currently the
         call is redirected to self.__repr__().
-        '''
+        """
         return self.getArray().__str__()
 
     def __len__(self):
-        '''Return number of nested elements in matrix instance.'''
+        """Return number of nested elements in matrix instance."""
         return 0 if self._content is None else len(self._content)
 
     def __iter__(self):
-        '''Iterate through all nested objects of this matrix instance.'''
+        """Iterate through all nested objects of this matrix instance."""
         return self if self._content is None else self._content.__iter__()
 
     def __next__(self):
-        '''Stop iteration as __iter__ redirected here. Python3-Style.'''
+        """Stop iteration as __iter__ redirected here. Python3-Style."""
         raise StopIteration
 
     def next(self):
-        '''Stop iteration as __iter__ redirected here. Python2-Style.'''
+        """Stop iteration as __iter__ redirected here. Python2-Style."""
         raise StopIteration
 
     ############################################## class operator overloading
     def __add__(self, element):
-        '''Return the sum of this matrix instance and another.'''
+        """Return the sum of this matrix instance and another."""
         return Sum(self, element)
 
     def __sub__(self, element):
-        '''Return the difference of this matrix instance and another.'''
+        """Return the difference of this matrix instance and another."""
         return Sum(self, (-1) * element)
 
     def __mul__(self, factor):
-        '''Return the product of this matrix and another or a scalar.'''
+        """Return the product of this matrix and another or a scalar."""
         if isinstance(factor, np.ndarray):
             return self.forward(factor)
         else:
             return Product(self, factor)
 
     def __rmul__(self, factor):
-        '''Return the product of a scalar and this matrix.'''
+        """Return the product of a scalar and this matrix."""
         if np.isscalar(factor) or isinstance(factor, Matrix):
             return Product(factor, self)
         else:
             raise TypeError("Invalid product term for fastmat Matrix.")
 
     def __div__(self, divisor):
-        '''Return the product of a matrix by the reciproce of a given scalar.'''
+        """Return the product of a matrix by the reciproce of a given scalar."""
         if np.isscalar(divisor):
             if divisor != 0:
                 return Product(self, 1. / divisor)
@@ -885,7 +1073,8 @@ cdef class Matrix(object):
         raise NotImplementedError("No _forwardC method implemented in class.")
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''
+        """Forward
+
         Perform a forward transform for general matrices. This method will get
         overwritten in child classes of Matrix to implement specific transforms.
         This base function will also be called when a cython-call object does
@@ -895,7 +1084,7 @@ cdef class Matrix(object):
         _getArray() cannot simply call forward() as this would leed to an
         infinite loop. Then, _forward() will be called directly, leading to this
         issue with cythonCall classes that only define a _forwardC()
-        '''
+        """
         cdef nptype typeInput, typeOutput
         if self._cythonCall:
             # Create output array
@@ -911,18 +1100,14 @@ cdef class Matrix(object):
             return self._array.dot(arrX)
 
     cpdef np.ndarray forward(self, np.ndarray arrX):
-        '''
-        Calculate the forward transform (self * x).
-        Dimension-checking is performed to ensure valid fast transforms as these
-        may succeed even when dimensions do not match. To support both single-
-        and multidimensional input vectors x, single dimensional input will be
-        reshaped to (n, 1) before processing and flattened to (n) after
-        completion. This allows the use of both vectors and arrays. The actual
-        transform code gets called by the callbacks specified in funcPython and
-        funcCython, depending on the state of self._cythonCall.
+        """Forward
 
-        !!! Do not override this method !!!
-        '''
+        Calculate the forward transform A * x. Dimension-checking is performed to ensure valid fast transforms as these may succeed even when dimensions do not match. To support both single- and multidimensional input vectors x, single dimensional input will be reshaped to (n, 1) before processing and flattened to (n) after        completion. This allows the use of both vectors and arrays. The actual transform code gets called by the callbacks specified in funcPython and funcCython, depending on the state of self._cythonCall.
+
+        .. warning::
+            Do not override this method!
+
+        """
         # local variable holding return array
         cdef np.ndarray arrInput = arrX, arrOutput
         cdef int ndimInput = arrInput.ndim
@@ -997,17 +1182,18 @@ cdef class Matrix(object):
         raise NotImplementedError("No _backwardC method implemented in class.")
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''
+        """Backward
+
         Perform a backward transform for general matrices. This method
         may get overwritten in child classes of Matrix
-        '''
+        """
         return _conjugate(self._array.T).dot(arrX)
 
     cpdef np.ndarray backward(self, np.ndarray arrX):
-        '''
-        Calculate the backward transform (self ^ H * x) where ^H is the
-        hermitian transpose operator.
-        Dimension-checking is performed to ensure valid fast transforms as these
+        r"""Backward Transform
+
+        Calculate the backward transform A^\mathrm{H}*x where H is the
+        hermitian transpose. Dimension-checking is performed to ensure valid fast transforms as these
         may succeed even when dimensions do not match. To support both single-
         and multidimensional input vectors x, single dimensional input will be
         reshaped to (n, 1) before processing and flattened to (n) after
@@ -1015,8 +1201,10 @@ cdef class Matrix(object):
         transform code gets called by the callbacks specified in funcPython and
         funcCython, depending on the state of self._cythonCall.
 
-        !!! Do not override this method !!!
-        '''
+        .. warning::
+            Do not override this method
+
+        """
         # local variable holding return array
         cdef np.ndarray arrInput = arrX, arrOutput
         cdef int ndimInput = arrInput.ndim
@@ -1087,11 +1275,12 @@ cdef class Matrix(object):
 
     ############################################## class reference
     cpdef np.ndarray reference(self):
-        '''
-        Return an explicit representation of the matrix without using any
-        fastmat code. Provides type checks and raises errors if the matrix type
-        (self.dtype) cannot hold the reference data.
-        '''
+        # r"""Return Slow Explicit Version of Instance
+        #
+        # Return an explicit representation of the matrix without using any
+        # fastmat code. Provides type checks and raises errors if the matrix type
+        # (self.dtype) cannot hold the reference data.
+        # """
         cdef np.ndarray arrRes
 
         # self._reference() may be overwritten by a child class with either a
@@ -1123,10 +1312,11 @@ cdef class Matrix(object):
         return arrRes
 
     cpdef np.ndarray _reference(self):
-        '''
-        Return matrix representation without using a single bit of fastmat code.
-        Overwrite this method in child classes to define its reference.
-        '''
+        # r"""Reference
+        #
+        # Return matrix representation without using a single bit of fastmat code.
+        # Overwrite this method in child classes to define its reference.
+        # """
         return self._array
 
     def _forwardReferenceInit(self):
@@ -1135,7 +1325,8 @@ cdef class Matrix(object):
     def _forwardReference(self,
                           arrX
                           ):
-        '''Calculate the forward transform by non-fastmat means.'''
+        # r"""Calculate the forward transform by non-fastmat means.
+        # """
         if self._forwardReferenceMatrix is None:
             self._forwardReferenceInit()
 
@@ -1245,163 +1436,15 @@ cdef class Matrix(object):
 
     def _getDocumentation(self):
         from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'General Matrix (\texttt{fastmat.Matrix})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-This class serves several purposes. The first one is, that it provides the
-functionality to also work with unstructured matrices in conjunction with the
-other structured matrices. This is enabled by simply being a wrapper around a
-standard NumPy Array \cite{mat_walt2011numpy}.
-
-Second, it serves as the base where all other clases are derived from. This
-means it contains properties and methods that are shared across all other \fm{}
-classes.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the parameter',
-                            'n = 10',
-                            '',
-                            '# construct the matrix',
-                            'I = fm.Matrix(np.zeros((4,4)))',
-                            caption=r"""
-This yields a $4 \times 4$ zero matrix which is represented by a \np{} array
-and as such does not make use of the structural information anymore."""),
-            ),
-            DOC.SUBSUBSECTION(
-                'Properties', r"""
-\begin{itemize}
-    \item{Mathematical properties of Matrices}
-    \item{Result generated on first request only, then cached}
-    \item{Defined in Baseclass, available in all subclasses}
-    \item{Behaviour override in child classes possible}
-\end{itemize}
-
-These are the properties currently available for all matrices across \fm{}.
-\begin{itemize}
-\item Transpose (\texttt{Matrix.T})
-\item Hermitian Transpose (\texttt{Matrix.H})
-\item Conjugate (\texttt{Matrix.conj})
-\item Normalized Matrix (\texttt{Matrix.normalized})
-\item Gram Matrix (\texttt{Matrix.gram})
-\item Largest Eigenvalue (\texttt{Matrix.largestEV})
-\end{itemize}"""
-            ),
-            DOC.SUBSUBSECTION(
-                r'Largest Singular Value (\texttt{Matrix.largestSV})', r"""
-For a given matrix $\bm A \in \C^{n \times n}$, so $\bm A$ square, we calculate
-the absolute value of the largest eigenvalue $\lambda \in \C$. The eigenvalues
-obey the equation
-\begin{align}
-\bm A \cdot \bm v= \lambda \cdot \bm v,
-\end{align}
-where $\bm v$ is a non-zero vector.
-
-\begin{itemize}
-\item \textbf{Input:} matrix $\bm A$, parameter $0 < \varepsilon \ll 1$ as a
-stopping criterion
-\item \textbf{Output:} largest eigenvalue $\sigma_{\rm max}(\bm A)$
-\end{itemize}
-
-\textit{Note:} This algorithm performs well if the two largest eigenvalues are
-not very close to each other on a relative scale with respect to their absolute
-value. Otherwise it might get trouble converging properly.""",
-                DOC.SNIPPET('# import the packages',
-                            'import numpy.linalg as npl',
-                            'import numpy as np',
-                            'import fastmat as fm',
-                            '',
-                            '# define the matrices',
-                            'n = 5',
-                            'H = fm.Hadamard(n)',
-                            'D = fm.Diag(np.linspace('
-                            '        1, 2 ** n, 2 ** n))',
-                            '',
-                            'K1 = fm.Product(H, D)',
-                            'K2 = K1.array',
-                            '',
-                            '# calculate the eigenvalue',
-                            'x1 = K1.largestEV',
-                            'x2 = npl.eigvals(K2)',
-                            'x2 = np.sort(np.abs(x2))[-1]',
-                            '',
-                            '# check if the solutions match',
-                            'print(x1 - x2)',
-                            center=r"""
-We define a matrix-matrix product of a Hadamard matrix and a diagonal matrix.
-Then we also cast it into a \texttt{numpy}-array and use the integrated EVD. For
-demonstration, try to increase $n$ to $>10$ and see what happens.""")
-            ),
-            DOC.SUBSUBSECTION(
-                r'Largest Singular Value (\texttt{Matrix.largestSV})', r"""
-For a given matrix $\bm A \in \C^{n \times m}$, we calculate the largest
-singular value $\sigma_{\rm max}(\bm A) > 0$, which is the largest entry of the
-diagonal matrix $\bm \Sigma \in \C^{n \times m}$ in the decomposition
-\begin{align}
-\bm A = \bm U \bm \Sigma \bm V^\herm,
-\end{align}
-where $\bm U$ and $\bm V$ are matrices of the appropriate dimensions. This is
-done via the so called power iteration of $\bm A^\herm \cdot \bm A$.
-
-\begin{itemize}
-\item \textbf{Input:} matrix $\bm A$, parameter $0 < \varepsilon \ll 1$ as a
-stopping criterion
-\item \textbf{Output:} largest singular value $\sigma_{\rm max}(\bm A)$
-\end{itemize}
-
-\textit{Note:} This algorithm performs well if the two largest singular values
-are not very close to each other on a relative scale. Otherwise it might get
-trouble converging properly.""",
-                DOC.SNIPPET('# import packages',
-                            'import numpy.linalg as npl',
-                            'import numpy as np',
-                            'import fastmat as fm',
-                            '',
-                            '# define involved matrices',
-                            'n = 5',
-                            'H = fm.Hadamard(n)',
-                            'F = fm.Fourier(2**n)',
-                            'K1 = fm.Kron(H, F)',
-                            'K2 = K1.array',
-                            '',
-                            '# calculate the largest SV',
-                            '# and a reference solution',
-                            'x1 = largestSV(K1.largestSV',
-                            'x2 = npl.svd(K2,compute_uv=0)[0]',
-                            '',
-                            '# check if they match',
-                            'print(x1-x2)',
-                            caption=r"""
-We define a Kronecker product of a Hadamard matrix and a Fourier matrix. Then
-we also cast it into a \texttt{numpy}-array and use the integrated SVD. For
-demonstration, try to increase $n$ to $>10$ and see what happens.""")),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm M = \bm 0_{2^k \times 2^k}$; so $n = 2^k$ for $k \in \N$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            ),
-            DOC.BIBLIO(
-                mat_walt2011numpy=DOC.BIBITEM(
-                    r"""
-St\'efan van der Walt, S. Chris Colbert and Ga\"el Varoquaux""",
-                    r"""
-The NumPy Array: A Structure for Efficient Numerical Computation""",
-                    r"""
-Computing in Science and Engineering, Volume 13, 2011.""")
-            )
-        ) if self.__class__ == Matrix else ""
+        return ""
 
 ################################################################################
-################################################## Hermitian transpose class
 cdef class Hermitian(Matrix):
+    r""" Hermitian Transpose of a Matrix
 
+    """
     ############################################## class methods
+
     def __init__(self, Matrix matrix):
         if not isinstance(matrix, Matrix):
             raise TypeError("Hermitian: Not a fastmat Matrix")
@@ -1414,11 +1457,9 @@ cdef class Hermitian(Matrix):
                              forceInputAlignment=matrix._forceInputAlignment)
 
     def __repr__(self):
-        '''
-        Return a string representation of this class instance.
-        The __repr__() method of the nested transformation gets extended by an
-        info about the applied transposition.
-        '''
+        r"""
+
+        """
         return "<%s.H>" %(self._nested.__repr__())
 
     ############################################## class property override
@@ -1455,49 +1496,51 @@ cdef class Hermitian(Matrix):
     cpdef tuple _getComplexity(self):
         return (self.numM + self.numN, self.numN + self.numM)
 
-    ############################################## class forward / backward
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,
                     ftype typeX, ftype typeRes):
-        '''Calculate the forward transform of this matrix, cython-style.'''
+        r"""Calculate the forward transform of this matrix, cython-style."""
         self._nested._backwardC(arrX, arrRes, typeX, typeRes)
 
     cpdef _backwardC(self, np.ndarray arrX, np.ndarray arrRes,
                      ftype typeX, ftype typeRes):
-        '''Calculate the backward transform of this matrix, cython-style.'''
+        r"""Calculate the backward transform of this matrix, cython-style."""
         self._nested._forwardC(arrX, arrRes, typeX, typeRes)
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
+        r"""Calculate the forward transform of this matrix"""
         return self._nested._backward(arrX)
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
+        r"""Calculate the backward transform of this matrix"""
         return self._nested._forward(arrX)
 
-    ########################################## references: test / benchmark
     cpdef np.ndarray _reference(self):
-        '''
+        r"""Reference
+
         Return an explicit representation of the matrix without using any
         fastmat code.
-        '''
+        """
         return self._nested.reference().T.conj()
 
 
 ################################################################################
-################################################## Conjugate factory
+
 cdef inline Matrix getConjugate(Matrix matrix):
-    '''
+    """ Conjugate factory
+
     Return the conjugate of matrix if matrix has a complex data type. Otherwise
     return matrix. Acts as factory for the Conjugate metaclass.
-    '''
+    """
     return (Conjugate(matrix) if matrix._info.dtype[0].isComplex else matrix)
 
 
 ################################################################################
-################################################## Conjugate class
 cdef class Conjugate(Matrix):
+    r""" Conjugate of a Matrix
 
+    """
     ############################################## class methods
+
     def __init__(self, Matrix matrix):
         if not isinstance(matrix, Matrix):
             raise TypeError("Conjugate: Not a fastmat Matrix")
@@ -1510,11 +1553,9 @@ cdef class Conjugate(Matrix):
                              forceInputAlignment=matrix._forceInputAlignment)
 
     def __repr__(self):
-        '''
-        Return a string representation of this class instance.
-        The __repr__() method of the nested transformation gets extended by an
-        info about the applied transposition.
-        '''
+        r"""Representation
+
+        """
         return "<conj(%s)>" %(self._nested.__repr__())
 
     ############################################## class property override
@@ -1555,43 +1596,53 @@ cdef class Conjugate(Matrix):
     ############################################## class forward / backward
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,
                     ftype typeX, ftype typeRes):
-        '''Calculate the forward transform of this matrix, cython-style.'''
+        r"""Calculate the forward transform of this matrix, cython-style.
+        """
         cdef np.ndarray arrInput = _conjugate(arrX)
         self._nested.forwardC(arrInput, arrRes, typeX, typeRes)
         _conjugateInplace(arrRes)
 
     cpdef _backwardC(self, np.ndarray arrX, np.ndarray arrRes,
                      ftype typeX, ftype typeRes):
-        '''Calculate the backward transform of this matrix, cython-style.'''
+        r"""Calculate the backward transform of this matrix, cython-style.
+        """
         cdef np.ndarray arrInput = _conjugate(arrX)
         self._nested.backwardC(arrInput, arrRes, typeX, typeRes)
         _conjugateInplace(arrRes)
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
+        r"""Calculate the forward transform of this matrix
+        """
         cdef np.ndarray arrRes = self._nested._forward(_conjugate(arrX))
         _conjugateInplace(arrRes)
         return arrRes
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
+        r"""Calculate the backward transform of this matrix
+
+        """
         cdef np.ndarray arrRes = self._nested._backward(_conjugate(arrX))
         _conjugateInplace(arrRes)
         return arrRes
 
     ########################################## references: test / benchmark
     cpdef np.ndarray _reference(self):
-        '''
+        r"""Reference
+
         Return an explicit representation of the matrix without using any
         fastmat code.
-        '''
+        """
         return self._nested._reference().conj()
 
 
 ################################################################################
 ################################################## Transpose class
 cdef class Transpose(Hermitian):
+    r"""Transpose of a Matrix
+
+    """
     ############################################## class methods
+
     def __init__(self, Matrix matrix):
         if not isinstance(matrix, Matrix):
             raise TypeError("Transpose: Not a fastmat Matrix")
@@ -1611,11 +1662,9 @@ cdef class Transpose(Hermitian):
                              forceInputAlignment=matrix._forceInputAlignment)
 
     def __repr__(self):
-        '''
-        Return a string representation of this class instance.
-        The __repr__() method of the nested transformation gets extended by an
-        info about the applied transposition.
-        '''
+        r"""
+
+        """
         return "<%s.T>" %(self._nestedConj.__repr__())
 
     ############################################## class property override
@@ -1650,8 +1699,9 @@ cdef class Transpose(Hermitian):
 
     ########################################## references: test / benchmark
     cpdef np.ndarray _reference(self):
-        '''
+        r""" Return reference array
+
         Return an explicit representation of the matrix without using any
         fastmat code.
-        '''
+        """
         return self._nestedConj._reference().T

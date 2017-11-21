@@ -1,36 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
-'''
-  fastmat/BlockDiag.py
- -------------------------------------------------- part of the fastmat package
 
-  Block diagonal matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-
-  TODO:
-    - BlockDiag should simply skip all Zero Matrices (flag them as "None")?
-'''
 import numpy as np
 cimport numpy as np
 
@@ -40,6 +25,67 @@ from .core.types cimport *
 ################################################################################
 ################################################## class BlockDiag
 cdef class BlockDiag(Matrix):
+    r"""
+
+
+    .. math::
+        M = \mathrm{diag}\left\{\left(  A_{i}\right)_{i}\right\},
+
+    where the :math:`A_{i}` can be fast transforms of \*any\* type.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define the blocks
+    >>> A = fm.Circulant(x_A)
+    >>> B = fm.Circulant(x_B)
+    >>> C = fm.Fourier(n)
+    >>> D = fm.Diag(x_D)
+    >>>
+    >>> # define the block
+    >>> # diagonal matrix
+    >>> M = fm.BlockDiag(A, B, C, D)
+
+    Assume we have two circulant matrices :math:`A` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix :math:`D`. Then we define
+
+    .. math::
+        M = \begin{bmatrix}
+        A & & & \\
+        &  B & & \\
+        & &  C & \\
+        & & &  D
+        \end{bmatrix}.
+
+    Meta types can also be nested, so that a block diagonal matrix can contain products of block matrices as its entries. Note that the efficiency of the fast transforms decreases the more building blocks they have.
+
+    >>> import fastmat as fm
+    >>> # import the package
+    >>>
+    >>> # define the blocks
+    >>> A = fm.Circulant(x_A)
+    >>> B = fm.Circulant(x_B)
+    >>> F = fm.Fourier(n)
+    >>> D = fm.Diag(x_D)
+    >>>
+    >>> # define a product
+    >>> P = fm.Product(A.H, B)
+    >>>
+    >>> # define the block
+    >>> # diagonal matrix
+    >>> M = fm.BlockDiag(P, F, D)
+
+    Assume we have a product :math:`P` of two matrices :math:`A^\mathrm{H}` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`{\mathcal{F}}` and a diagonal matrix :math:`D`. Then we define
+
+    .. math::
+        M = \begin{bmatrix}
+        A^\mathrm{H} \cdot  B &                  &        \\
+                              & {\mathcal{F}}    &        \\
+                              &                  &  D
+        \end{bmatrix}.
+
+    .. todo::
+        - BlockDiag should simply skip all Zero Matrices (flag them as "None")?
+    """
 
     ############################################## class methods
     def __init__(self, *matrices):
@@ -202,73 +248,4 @@ cdef class BlockDiag(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Block Diagonal Matrix (\texttt{fastmat.BlockDiag})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface',
-                r"""
-\[\bm M = \mathrm{diag}\left\{\left( \bm A_{i}\right)_{i}\right\},\]
-where the $\bm A_{i}$ can be fast transforms of \emph{any} type.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the blocks',
-                            'A = fm.Circulant(x_A)',
-                            'B = fm.Circulant(x_B)',
-                            'C = fm.Fourier(n)',
-                            'D = fm.Diag(x_D)',
-                            '',
-                            '# define the block',
-                            '# diagonal matrix',
-                            'M = fm.BlockDiag(A, B, C, D)',
-                            caption=r"""
-Assume we have two circulant matrices $\bm A$ and $\bm B$, an $N$-dimensional
-Fourier matrix $\bm C$ and a diagonal matrix $\bm D$. Then we define
-\[\bm M = \left(\begin{array}{cccc}
-    \bm A & & & \\
-    & \bm B & & \\
-    & & \bm C & \\
-    & & & \bm D
-\end{array}\right).\]"""),
-                r"""
-Meta types can also be nested, so that a block diagonal matrix can contain
-products of block matrices as its entries. Note that the efficiency of the fast
-transforms decreases the more building blocks they have.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the blocks',
-                            'A = fm.Circulant(x_A)',
-                            'B = fm.Circulant(x_B)',
-                            'F = fm.Fourier(n)',
-                            'D = fm.Diag(x_D)',
-                            '',
-                            '# define a product',
-                            'P = fm.Product(A.H, B)',
-                            '',
-                            '# define the block',
-                            '# diagonal matrix',
-                            'M = fm.BlockDiag(P, F, D)',
-                            caption=r"""
-Assume we have a product $\bm P$ of two matrices $\bm A^\herm$ and $\bm B$, an
-$N$-dimensional Fourier matrix $\bm{\mathcal{F}}$ and a diagonal matrix
-$\bm D$. Then we define
-\[\bm M = \left(\begin{array}{cccc}
-    \bm A^\herm \cdot \bm B &                  &        \\
-                            & \bm{\mathcal{F}} &        \\
-                            &                  & \bm D
-\end{array}\right).\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks',
-                DOC.PLOTFORWARD(doc=r'(Matrix as in snippet)'),
-                DOC.PLOTFORWARDMEMORY(doc=r'(same as in snippet)'),
-                DOC.PLOTOVERHEAD(doc=r"""
-$\bm B = \begin{pmatrix}
-    \bm I_{2^k} & \dots     & 0             \\
-                & \ddots    &               \\
-    0           & \dots     & \bm I_{2^k}
-\end{pmatrix}$"""),
-            )
-        )
+        return ""

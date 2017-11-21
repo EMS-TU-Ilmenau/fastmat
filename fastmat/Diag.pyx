@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Diag.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Diagonal matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -39,11 +27,45 @@ from .core.types cimport *
 ################################################################################
 ################################################## class Diag
 cdef class Diag(Matrix):
+    r"""
 
-    ############################################## class properties
-    # vecD - Property (read-only)
-    # Return the matrix-defining vector of diagonal entries.
+
+    .. math::
+        x \mapsto {\mathrm{diag}}(d_1,\dots,d_n) \cdot  x
+
+    A diagonal matrix is uniquely defined by the entries of its diagonal.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # build the parameters
+    >>> n = 4
+    >>> d = np.array([1, 0, 3, 6])
+    >>>
+    >>> # construct the matrix
+    >>> D = fm.Diagonal(d)
+
+    This yields
+
+    .. math::
+        d = (1, 0, 3, 6)^\mathrm{T}
+
+    .. math::
+        D = \begin{bmatrix}
+            1 & & & \\
+            & 0 & & \\
+            & & 3 & \\
+            & & & 6
+        \end{bmatrix}
+    """
+
     property vecD:
+        r"""Return the matrix-defining vector of diagonal entries.
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return self._vecD
 
@@ -184,43 +206,4 @@ cdef class Diag(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Diagonal Matrix (\texttt{fastmat.Diagonal})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-\[x \mapsto \bm{\mathrm{diag}}(d_1,\dots,d_n) \cdot \bm x\]
-A diagonal matrix is uniquely defined by the entries of its diagonal.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# build the parameters',
-                            'n = 4',
-                            'd = np.array([1, 0, 3, 6])',
-                            '',
-                            '# construct the matrix',
-                            'D = fm.Diagonal(d)',
-                            caption=r"""
-This yields
-\[\bm d = (1, 0, 3, 6)^T\]
-\[\bm D = \left(\begin{array}{cccc}
-    1 & & & \\
-    & 0 & & \\
-    & & 3 & \\
-    & & & 6
-\end{array}\right)\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm D \in \R^{n \times n}$ with $n \in \N$ and diagonal entries drawn from a
-uniform distribution on $[2,3]$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            )
-        )
+        return ""

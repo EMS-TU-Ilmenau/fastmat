@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
-'''
-  fastmat/Kron.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Kronecker Product of matrices.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -36,11 +24,48 @@ from .Product cimport Product
 from .core.types cimport *
 from .core.cmath cimport _arrReshape, _arrEmpty
 
-################################################################################
-################################################## class Kron
 cdef class Kron(Matrix):
+    r"""
 
+    For matrices :math:`A_i \in \mathbb{C}^{n_i \times n_i}` for :math:`i = 1,\dots,k` the Kronecker product
+
+    .. math::
+        A_1 \otimes  A_2 \otimes \dots \otimes  A_k
+
+    can be defined recursively because of associativity from the Kronecker product of :math:`A \in \mathbb{C}^{n \times m}` and :math:`B \in \mathbb{C}^{r \times s}` defined as
+
+    .. math::
+        A \otimes  B =
+        \begin{bmatrix}
+            a_{11}  B    & \dots     & a_{1m}  B  \\
+            \vdots       & \ddots    & \vdots     \\
+            a_{n1}  B    & \dots     & a_{nm}  B
+        \end{bmatrix}.
+
+    We make use of a decomposition into a standard matrix product to speed up the matrix-vector multiplication which is introduced in [4]_. This then yields multiple benefits:
+
+        - It already brings down the complexity of the forward and backward    projection if the factors :math:`A_i` have no fast transformations.
+        - It is not necessary to compute the matrix representation of the product, which saves *a lot* of memory.
+        - When fast transforms of the factors are available the calculations can be sped up further.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define the factors
+    >>> C = fm.Circulant(x_C)
+    >>> H = fm.Hadamard(n)
+    >>>
+    >>> # define the Kronecker
+    >>> # product
+    >>> P = fm.Kron(C.H, H)
+
+    Assume we have a circulant matrix :math:`C` with first column :math:`x_c` and a Hadamard matrix :math:`{\mathcal{H}}_n` of order :math:`n`. Then we define
+
+    .. math::
+        P =  C^\mathrm{H} \otimes  H_n.
+    """
     ############################################## class methods
+
     def __init__(self, *matrices, **options):
         '''Initialize Matrix instance with a list of child matrices'''
 
@@ -334,69 +359,4 @@ cdef class Kron(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Kronecker Product (\texttt{fastmat.Kron})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-For matrices $\bm A_i \in \C^{n_i \times n_i}$ for $i = 1,\dots,k$ the
-Kronecker product
-\[\bm A_1 \otimes \bm A_2 \otimes \dots \otimes \bm A_k\]
-can be defined recursively because of associativity from the Kronecker product
-of $\bm A \in \C^{n \times m}$ and $\bm B \in \C^{r \times s}$ defined as
-\[\bm A \otimes \bm B =
-\left(\begin{array}{ccc}
-    a_{11} \bm B    & \dots     & a_{1m} \bm B  \\
-    \vdots          & \ddots    & \vdots        \\
-    a_{n1} \bm B    & \dots     & a_{nm} \bm B
-\end{array}\right).\]
-We make use of a decomposition into a standard matrix product to speed up the
-matrix-vector multiplication which is introduced in
-\cite{kron_fernandes1998automata_networks}. This then yields multiple benefits:
-\begin{itemize}
-\item It already brings down the complexity of the forward and backward
-    projection if the factors $\bm A_i$ have no fast transformations.
-\item It is not necessary to compute the matrix representation of the product,
-    which saves \textbf{a lot} of memory.
-\item When fast transforms of the factors are available the calculations can be
-    sped up further.
-\end{itemize}""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the factors',
-                            'C = fm.Circulant(x_C)',
-                            'H = fm.Hadamard(n)',
-                            '',
-                            '# define the Kronecker',
-                            '# product',
-                            'P = fm.Kron(C.H, H)',
-                            caption=r"""
-Assume we have a circulant matrix $\bm C$ with first column $\bm x_c$ and a
-Hadamard matrix $\bm{\mathcal{H}}_n$ of order $n$. Then we define
-    \[\bm P = \bm C^H \otimes \bm H_n.\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All but the overhead benchmarks were performed on a matrix
-$\bm K = \bm \Fs_{2k} \otimes \bm D_{2k} \otimes \bm M_{2k}$, where $\bm \Fs$
-is a Fourier Matrix, $\bm D$ is diagonal and $\bm M$ is unstructured and
-complex valued; so $n = 8 k^3$ for $k \in \N$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(doc=r"""
-$\bm K = \prod_k \bm I_k$;
-so $n=k^4$ for $k \in \N$"""),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            ),
-            DOC.BIBLIO(
-                kron_fernandes1998automata_networks=DOC.BIBITEM(
-                    r"""
-Fernandes, Paulo and Plateau, Brigitte and Stewart, William J.,""",
-                    r"""
-Efficient Descriptor-Vector Multiplications in Stochastic Automata Networks""",
-                    r'Journal of the ACM, New York, Volume 45, 1998')
-            )
-        )
+        return ""

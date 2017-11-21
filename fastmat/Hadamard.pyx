@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
-'''
-  fastmat/Hadamard.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Hadamard matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 #from libc.stdlib cimport malloc, free
 #from libc.string cimport memcpy
 
@@ -72,19 +60,42 @@ cdef void _hadamardCore(STRIDE_s *strA, STRIDE_s *strB, TYPE_IN dummy):
         ptrVectorA += strA.strideVector
         ptrVectorB += strB.strideVector
 
-
-################################################################################
-################################################## class Hadamard
 cdef class Hadamard(Matrix):
+    r"""
 
-    ############################################## class properties
-    # order - Property (read-only)
-    # Return the order of the hadamard matrix.
+    A Hadamard Matrix is recursively defined as
+
+    .. math::
+        H_n =  H_1 \otimes  H_{n-1},
+
+    where
+
+    .. math::
+        H_1 = \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix}
+
+    and :math:`H_0 = (1)`. Obviously the dimension of :math:`H_n` is :math:`2^n`. The transform is realized with the Fast Hadamard Transform (FHT).
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define the parameter
+    >>> n = 4
+    >>>
+    >>> # construct the matrix
+    >>> H = fm.Hadamard(n)
+
+    This yields a Hadamard matrix :math:`{\mathcal{H}}_4` of order :math:`4`,
+    i.e. with :math:`16` rows and columns.
+
+    The algorithm we used is described in [2]_ and was implemented in Cython [3]_.
+    """
+
     property order:
+        r"""Return the order of the hadamard matrix."""
+
         def __get__(self):
             return self._order
 
-    ############################################## class methods
     def __init__(self, order):
         '''Initialize Matrix instance'''
         if order < 1:
@@ -251,57 +262,4 @@ cdef class Hadamard(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Hadamard Matrix (\texttt{fastmat.Hadamard})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-A Hadamard Matrix is recursively defined as
-    \[\bm H_n = \bm H_1 \otimes \bm H_{n-1},\]
-where
-    \[\bm H_1 = \left(\begin{array}{cc} 1 & 1 \\ 1 & -1 \end{array}\right)\]
-and $\bm H_0 = (1)$. Obviously the dimension of $\bm H_n$ is $2^n$. The
-transform is realized with the Fast Hadamard Transform (FHT).""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the parameter',
-                            'n = 4',
-                            '',
-                            '# construct the matrix',
-                            'H = fm.Hadamard(n)',
-                            caption=r"""
-This yields a Hadamard matrix $\bm{\mathcal{H}}_4$ of order $4$,
- i.e. with $16$ rows and columns."""),
-                r"""
-The algorithm we used is described in \cite{hada_hershey1997hadamard} and was
-implemented in Cython \cite{hada_smith2011cython}."""
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm \Hs_k$ and $n = 2^k$ with $n, k \in \N$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            ),
-            DOC.BIBLIO(
-                hada_hershey1997hadamard=DOC.BIBITEM(
-                    r'Rao K. Yarlagadda, John E. Hershey',
-                    r"""
-Hadamard Matrix Analysis and Synthesis, With Applications to Communications
-and Signal/Image Processing""",
-                    r"""
-The Springer International Series in Engineering and Computer Science,
-Volume 383, 1997"""),
-                hada_smith2011cython=DOC.BIBITEM(
-                    r"""
-Stefan Behnel, Robert Bradshaw, Craig Citro, Lisandro Dalcin,
-Dag Sverre Seljebotn and Kurt Smith""",
-                    r'Cython: The Best of Both Worlds',
-                    r'Computing in Science and Engineering, Volume 13,2011.')
-            )
-        )
+        return ""

@@ -1,49 +1,37 @@
 # -*- coding: utf-8 -*-
-'''
-  util/bee.py
- -------------------------------------------------- part of the fastmat package
 
-  Utility for shell interaction with class code from python packages.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+# https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-  Usecases:
-    - find all modules in a (sub-)package, which contain certain functions
-        --check-only --function
+r"""Utility for shell interaction with class code from python packages.
 
-    - provide a string interface to module-level functions enabling shell
-      piping to python package internals
-        --argument --function
+Usecases:
+ -  find all modules in a (sub-)package, which contain certain functions
+    --check-only --function
+ -  provide a string interface to module-level functions enabling shell
+    piping to python package internals --argument --function
+ - flexible options for character encoding --encode utf-8
 
-    - flexible options for character encoding
-        --encode utf-8
+Example:  retrieve LaTeX documentation of class Circulant, execute the
+following one-liner from the doc/ directory of fastmat:
 
-  Example:  retrieve LaTeX documentation of class Circulant, execute the
-            following one-liner from the doc/ directory of fastmat:
+python doc_extract.py --path .. --package fastmat --name Circulant
+--function docLaTeX --encode utf-8
 
-            python doc_extract.py --path .. --package fastmat --name Circulant
-            --function docLaTeX --encode utf-8
+"""
 
-
-  Author      : wcw
-  Introduced  : 2017-01-03
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import sys
 import inspect
 import os
@@ -597,12 +585,25 @@ class Bee(CommandArgParser):
             def cbResult(name, targetResult):
                 # output, anyone?
                 if len(self.args.path_results) > 0:
-                    print("   > saved result '%s' to '%s'" % (
+                    print("   > saved data '%s' to '%s'" % (
                         name,
                         bench.saveResult(
+<<<<<<< HEAD
                             name, outPath=self.args.path_results,
                             addVersionTag=not self.args.no_version_tag)))
 
+=======
+                            name,
+                            outPath=self.args.path_results,
+                            addVersionTag=False
+                        )))
+                    print("   > saved plot '%s' to '%s'" % (
+                        name,
+                        bench.plotResult(
+                            name,
+                            outPath=self.args.path_results,
+                            addVersionTag=False)))
+>>>>>>> 923102b... Migration to Sphinx
                 print("")
 
             # start tests of all targets of this element

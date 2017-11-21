@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Eye.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Eye matrix.
-ii
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -34,11 +22,26 @@ from .Matrix cimport Matrix
 from .core.types cimport *
 from .core.cmath cimport _arrZero
 
-################################################################################
-################################################## class Eye
 cdef class Eye(Matrix):
+    r"""
 
-    ############################################## class methods
+    For :math:`x \in \mathbb{C}^n` we
+
+    map .. math::
+        x \mapsto  x.
+
+    The identity matrix only needs the dimension :math:`n` of the vectors it acts on.
+
+    >>> # import the package
+    >>> import fastmat
+    >>> # set the parameter
+    >>> n = 10
+    >>> # construct the identity
+    >>> I = fastmat.Eye(n)
+
+    This yields the identity matrix :math:`I_{10}` with dimension :math:`10`.
+    """
+
     def __init__(self, numN):
         '''
         Initialize Matrix instance with its dimensions.
@@ -142,30 +145,4 @@ cdef class Eye(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Identity Transform (\texttt{fastmat.Eye})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-For $\bm x \in \C^n$ we map \[\bm x \mapsto \bm x.\]
-The identity matrix only needs the dimension $n$ of the vectors it acts on.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat',
-                            '',
-                            '# set the parameter',
-                            'n = 10',
-                            '',
-                            '# construct the identity',
-                            'I = fastmat.Eye(n)',
-                            caption=r"""
-This yields the identity matrix $\bm I_{10}$ with dimension $10$.""")
-            ),
-            DOC.SUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix $\bm I_n$ with $n \in \N$.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD()
-            )
-        )
+        return ""

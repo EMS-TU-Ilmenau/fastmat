@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Product.py
- -------------------------------------------------- part of the fastmat package
 
-  Product of fastmat matrices.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -35,11 +23,32 @@ from .core.cmath cimport _conjugate
 from .core.types cimport *
 
 
-################################################################################
-################################################## class Product
 cdef class Product(Matrix):
+    r"""
 
-    ############################################## class methods
+
+    .. math::
+        M = \prod\limits_i  A_i
+
+    where the :math:`A_{i}` can be fast transforms of \*any\* type.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define the product terms
+    >>> A = fm.Circulant(x_A)
+    >>> B = fm.Circulant(x_B)
+    >>>
+    >>> # construct the product
+    >>> M = fm.Product(A.H, B)
+
+    Assume we have two circulant matrices :math:`A` and :math:`B`. Then we define
+
+    .. math::
+        M =  A_c^\mathrm{H}  B_c.
+
+    """
+
     def __init__(self, *matrices, **options):
         '''Initialize Matrix instance'''
 
@@ -309,35 +318,4 @@ cdef class Product(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Product (\texttt{fastmat.Product})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-\[\bm M = \prod\limits_i \bm A_i \]
-where the $A_{i}$ can be fast transforms of \emph{any} type.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the product terms',
-                            'A = fm.Circulant(x_A)',
-                            'B = fm.Circulant(x_B)',
-                            '',
-                            '# construct the product',
-                            'M = fm.Product(A.H, B)',
-                            caption=r"""
-Assume we have two circulant matrices $\bm A$ and $\bm B$. Then we define
-\[\bm M = \bm A_c^\herm \bm B_c.\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-The \emph{forward} and \emph{solve} benchmarks were performed on a matrix
-$\bm P = \bm \Hs_k \cdot \bm \Fs_{2^k}$; so $n = 2^k$
-whereas the \emph{overhead} benchmark was performed on a
-Produkt of $2^k$ Identity matrices $\bm I_{2^k}$; so $n = 2^k$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD()
-            )
-        )
+        return ""

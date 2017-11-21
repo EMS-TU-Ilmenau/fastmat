@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Zero.pyx
- -------------------------------------------------- part of the fastmat package
 
-  All-Zero matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 cimport numpy as np
 import numpy as np
 
@@ -34,11 +22,26 @@ from .Matrix cimport Matrix
 from .core.cmath cimport _arrZero
 from .core.types cimport *
 
-################################################################################
-################################################## class Zero
+
 cdef class Zero(Matrix):
 
-    ############################################## class methods
+    r"""
+
+
+    .. math::
+        x \mapsto  0
+
+    The zero matrix only needs the dimension :math:`n` of the vectors it acts on. It is very fast and very good!
+
+    >>> import fastmat as fm
+    >>>
+    >>> # define the parameter
+    >>> n = 10
+    >>>
+    >>> # construct the matrix
+    >>> O = fm.Zero(n)
+    """
+
     def __init__(self, numN, numM):
         '''Initialize Matrix instance with its dimensions'''
         # set properties of matrix
@@ -133,29 +136,4 @@ cdef class Zero(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Zero Transform (\texttt{fastmat.Zero})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-    \[\bm x \mapsto \bm 0\]
-The zero matrix only needs the dimension $n$ of the vectors it acts on. It is
-very fast and very good!""",
-                DOC.SNIPPET('import fastmat as fm',
-                            '',
-                            '# define the parameter',
-                            'n = 10',
-                            '',
-                            '# construct the matrix',
-                            'O = fm.Zero(n)',
-                            caption=r"This yields something trivial.")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix
-$\bm M = \bm 0_{2^k \times 2^k}$; so $n = 2^k$ for $k \in \N$.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTOVERHEAD()
-            )
-        )
+        return ""

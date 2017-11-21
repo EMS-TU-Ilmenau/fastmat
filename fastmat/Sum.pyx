@@ -1,43 +1,54 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Sum.py
- -------------------------------------------------- part of the fastmat package
 
-  Linear combination of matrices.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
 from .core.types cimport *
 from .Matrix cimport Matrix
 
-################################################################################
-################################################## class Sum
 cdef class Sum(Matrix):
+    r"""
 
-    ############################################## class methods
+    For matrices :math:`A_k \in \mathbb{C}^{n \times m}` with :math:`k = 1,\dots,N` we define a new mapping :math:`M` as the sum
+
+    .. math::
+        M = \sum\limits_{k = 1}^{N} A_k,
+
+    which then also is a mapping in :math:`\mathbb{C}^{n \times m}`.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define the components
+    >>> A = fm.Circulant(x_A)
+    >>> B = fm.Circulant(x_B)
+    >>> C = fm.Fourier(n)
+    >>> D = fm.Diag(x_D)
+    >>>
+    >>> # construct the sum of transformations
+    >>> M = fm.Sum(A, B, C, D)
+
+    Assume we have two circulant matrices :math:`A` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix :math:`D`. Then we define
+
+    .. math::
+        M =  A +  B +  C +  D.
+    """
+
     def __init__(self, *matrices):
         '''
         Initialize Matrix instance with a list of other matrices to be summed.
@@ -222,38 +233,4 @@ cdef class Sum(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Sum of Matrices (\texttt{fastmat.Sum})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-For matrices $\bm A_k \in \C^{n \times m}$ with $k = 1,\dots,N$ we define a new
-mapping $\bm M$ as the sum \[\bm M = \Sum{k = 1}{N}{\bm A_k},\] which then also
-is a mapping in $\C^{n \times m}$.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the components',
-                            'A = fm.Circulant(x_A)',
-                            'B = fm.Circulant(x_B)',
-                            'C = fm.Fourier(n)',
-                            'D = fm.Diag(x_D)',
-                            '',
-                            '# construct the sum of transformations',
-                            'M = fm.Sum(A, B, C, D)',
-                            caption=r"""
-Assume we have two circulant matrices $\bm A$ and $\bm B$, an $N$-dimensional
-Fourier matrix $\bm C$ and a diagonal matrix $\bm D$. Then we define
-\[\bm M = \bm A + \bm B + \bm C + \bm D.\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-The \emph{forward} and \emph{solve} benchmarks were performed on a matrix
-$\bm L = \bm \Fs_{k} + \bm I_{k} + \bm C_{k}$
-whereas the \emph{overhead} benchmark was performed on a matrix
-$\bm L = \sum\limits_{i = 1}^{k} \bm I_{2^k}$; so $n = 2^k$ for $k \in \N$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD()
-            )
-        )
+        return ""

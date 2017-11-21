@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Polynomial.py
- -------------------------------------------------- part of the fastmat package
 
-  Determine the Polynomial of a fastmat matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -34,18 +22,43 @@ from .core.types cimport *
 from .Matrix cimport Matrix
 
 
-################################################################################
-################################################## class Polynomial
 cdef class Polynomial(Matrix):
+    r"""
 
-    ############################################## class properties
-    # coeff - Property (read-only)
-    # Return the polynomial coefficient vector.
+    For given coefficients :math:`a_k,\dots,a_0 \in \mathbb{C}` and a linear mapping :math:`A \in \mathbb{C}^{n \times n}`, we define
+
+    .. math::
+        M = a_n  A^n + a_{n-1}  A^{n-1} + a_1  A + a_0  I.
+
+    The transform :math:`M \cdot  x` can be calculated efficiently with Horner's method.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define the transforms
+    >>> H = fm.Hadamard(n)
+    >>>
+    >>> # define the coefficient array
+    >>> arr_a = [1, 2 + 1j, -3.0, 0.0]
+    >>>
+    >>> # define the polynomial
+    >>> M = fm.Polynomial(H, arr_a)
+
+    Let :math:`H_n` be the Hadamard matrix of order :math:`n`. And let :math:`a = (1, 2 + i, -3, 0) \in \mathbb{C}^{4}` be a coefficient vector, then the polynomial is defined as
+
+    .. math::
+        M =  H_n^3 + (2+i)  H_n^2 - 3  H_n.
+    """
+
     property coeff:
+        r"""Return the polynomial coefficient vector.
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._coeff
 
-    ############################################## class methods
     def __init__(self, mat, coeff, **options):
         '''Initialize Matrix instance'''
 
@@ -175,42 +188,4 @@ cdef class Polynomial(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Polynomial (\texttt{fastmat.Polynomial})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-For given coefficients $a_k,\dots,a_0 \in \C$ and a linear mapping $\bm A \in
-\C^{n \times n}$, we define
-\[\bm M = a_n \bm A^n + a_{n-1} \bm A^{n-1} + a_1 \bm A + a_0 \bm I.\]
-The transform $\bm M \cdot \bm x$ can be calculated efficiently with Horner's
-method.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the transforms',
-                            'H = fm.Hadamard(n)',
-                            '',
-                            '# define the coefficient array',
-                            'arr_a = [1, 2 + 1j, -3.0, 0.0]',
-                            '',
-                            '# define the polynomial',
-                            'M = fm.Polynomial(H, arr_a)',
-                            caption=r"""
-Let $\bm H_n$ be the Hadamard matrix of order $n$. And let
-$\bm a = (1, 2 + i, -3, 0) \in \C^{4}$ be a coefficient vector,
-then the polynomial is defined as
-\[\bm M = \bm H_n^3 + (2+i) \bm H_n^2 - 3 \bm H_n.\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-The \emph{forward} and \emph{solve} benchmarks were performed on a matrix
-$\bm P = a_2 \cdot \bm \Hs_k^2 + a_1 \cdot \bm \Hs_k^1 + a_0 \cdot \bm I_{2^k}$
-""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTSOLVE(),
-                DOC.PLOTOVERHEAD(doc=r"""
-Polynomial of Identity $\bm I_{2^k}$ matrices with degree $10$""")
-            )
-        )
+        return ""

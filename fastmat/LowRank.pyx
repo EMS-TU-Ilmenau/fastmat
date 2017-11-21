@@ -1,32 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/LowRank.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Low Rank Matrix
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : sempersn
-  Introduced  : 2017-02-02
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
@@ -38,31 +26,65 @@ from .Diag cimport Diag
 
 from .core.types cimport *
 
-################################################################################
-################################################## class LowRank
 cdef class LowRank(Product):
+    r"""
 
-    ############################################## class properties
-    # vecS - Property (read-only)
-    # Return the vector of non-zero singular values entries.
+    Generally one can consider the "complexity" of a matrix as the number of its rows :math:`n` and columns :math:`m`. The rank of a matrix :math:`A \in \mathbb{C}^{n \times m}` always obeys the bound
+
+    .. math::
+        \mathrm{rk}(A) \leqslant \min \{n,m\}.
+
+    If one carries out the normal matrix vector multiplication, one assumes the rank to be essentially close to this upper bound. However if the rank of :math:`A` is far lower than the minimum of its dimensions, then one carries out a lot of redundant tasks, when applying this matrix to a vector. But if one computes the singular value decomposition (SVD) of :math:`A =  U  \Sigma  V^\mathrm{H}`, then one can express :math:`A` as a sum of rank-:math:`1` matrices as
+
+    .. math::
+        A = \sum\limits_{i = 1}^{r} \sigma_i  u_{i}  v^\mathrm{H}_{i}.
+
+    If :math:`r = \mathrm{rk}(A)` is much smaller than the minimum of the dimensions, then one can save a lot of computational effort in applying :math:`A` to a vector.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # define all parameters
+    >>> S = np.random.randn(2)
+    >>> U = np.random.randn(20,2)
+    >>> V = np.random.randn(20,2)
+    >>>
+    >>> # define the matrix
+    >>> L = fm.LowRank(S, U, V)
+
+    We define a matrix :math:`L =  U  S  V^\mathrm{H} \in \mathbb{R}^{20 \times 20}` with rank :math:`2`.
+    """
+
     property vecS:
+        r"""Return the vector of non-zero singular values entries.
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return self._vecS
 
-    # arrU - Property (read-only)
-    # Return the array of left orthogonal vectors, i.e. the image
     property arrU:
+        r"""Return the array of left orthogonal vectors, i.e. the image
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return self._arrU
 
-    # arrV - Property (read-only)
-    # Return the array of right orthogonal vectors, i.e.
-    # the orthogonal complement of the kernel
     property arrV:
+        r"""Return the array of right orthogonal vectors
+
+        the orthogonal complement of the kernel
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return self._arrV
 
-    ########################################## Class methods
     def __init__(self, vecS, arrU, arrV):
 
         # complain if dimension does not match
@@ -176,47 +198,4 @@ cdef class LowRank(Product):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Low Rank Matrix (\texttt{fastmat.LowRank})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-Generally one can consider the "complexity" of a matrix as the number of its
-rows $n$ and columns $m$. The rank of a matrix $\bm A \in \C^{n \times m}$
-always obeys the bound
-    \[\Rk(\bm A) \leqslant \Min\{n,m\}.\]
-If one carries out the normal matrix vector multiplication, one assumes the rank
-to be essentially close to this upper bound. However if the rank of $\bm A$ is
-far lower than the minimum of its dimensions, then one carries out a lot of
-redundant tasks, when applying this matrix to a vector. But if one computes the
-singular value decomposition (SVD) of $\bm A = \bm U \bm \Sigma \bm V^\herm$,
-then one can express $\bm A$ as a sum of rank-$1$ matrices as
-    \[\bm A = \Sum{i = 1}{r}{\sigma_i \bm u_{i} \bm v^\herm_{i}}.\]
-If $r = \Rk $ is much smaller than the minimum of the dimensions, then one can
-save a lot of computational effort in applying $\bm A$ to a vector.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# define all parameters',
-                            'S = np.random.randn(2)',
-                            'U = np.random.randn(20,2)',
-                            'V = np.random.randn(20,2)',
-                            '',
-                            '# define the matrix',
-                            'L = fm.LowRank(S, U, V)',
-                            center=r"""
-We define a matrix $\bm L = \bm U \bm S \bm V^\herm \in \R^{20 \times 20}$
-with rank $2$""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix $\bm A \in \R^{n \times n}$ with
-rank approximately $n/10$.""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            )
-        )
+        return ""

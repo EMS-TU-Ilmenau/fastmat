@@ -1,56 +1,83 @@
 # -*- coding: utf-8 -*-
-'''
-  fastmat/Outer.pyx
- -------------------------------------------------- part of the fastmat package
 
-  Outer product (rank one) matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : sempersn
-  Introduced  : 2017-31-01
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-'''
 import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
 from .core.cmath cimport _conjugate, _multiply
 
-################################################################################
-################################################## class Outer
 cdef class Outer(Matrix):
+    r"""
 
-    ############################################## class properties
-    # vecV - Property (read-only)
-    # Return the matrix-defining vector of vertical defining entries.
+    The outer product is a special case of the Kronecker product of one-dimensional vectors. For given :math:`a \in \mathbb{C}^n` and :math:`b \in \mathbb{C}^m` it is defined as
+
+    .. math::
+        x \mapsto  a \cdot  b^\mathrm{T} \cdot  x.
+
+    It is clear, that this matrix has at most rank :math:`1` and as such has a fast transformation.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>> import numpy as np
+    >>>
+    >>> # define parameter
+    >>> n, m = 4, 5
+    >>> v = np.arange(n)
+    >>> h = np.arange(m)
+    >>>
+    >>> # construct the matrix
+    >>> M = fm.Outer(v, h)
+
+    This yields
+
+    .. math::
+        v = (0,1,2,3,4)^\mathrm{T}
+
+    .. math::
+        h = (0,1,2,3,4,5)^\mathrm{T}
+
+    .. math::
+        M = \begin{bmatrix}
+        0 & 0 & 0 & 0 & 0  \\
+        0 & 1 & 2 & 3 & 4  \\
+        0 & 2 & 4 & 6 & 8  \\
+        0 & 3 & 6 & 9 & 12
+        \end{bmatrix}
+    """
+
     property vecV:
+        r"""Return the matrix-defining vector of vertical defining entries.
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._vecV
 
-    # vecH - Property (read-only)
-    # Return the matrix-defining vector of horizontal defining entries.
     property vecH:
+        r"""Return the matrix-defining vector of horizontal defining entries.
+
+        *(read only)*
+        """
+
         def __get__(self):
             return self._vecH
 
-    ############################################## class methods
     def __init__(self, vecV, vecH):
 
         # check dimensions
@@ -174,46 +201,4 @@ cdef class Outer(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Outer Product Matrix (\texttt{fastmat.Outer})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface', r"""
-The outer product is a special case of the Kronecker product of one-dimensional
-vectors. For given $\bm a \in \C^n$ and $\bm b \in \C^m$ it is defined as
-    \[\bm x \mapsto \bm a \cdot \bm b^\trans \cdot \bm x.\]
-It is clear, that this matrix has at most rank $1$ and as such has a fast
-transformation.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            'import numpy as np',
-                            '',
-                            '# define parameter',
-                            'n, m = 4, 5',
-                            'v = np.arange(n)',
-                            'h = np.arange(m)',
-                            '',
-                            '# construct the matrix',
-                            'M = fm.Outer(v, h)',
-                            caption=r"""
-This yields
-\[\bm v = (0,1,2,3,4)^T\]
-\[\bm h = (0,1,2,3,4,5)^T\]
-\[\bm M = \left(\begin{array}{ccccc}
-    0 & 0 & 0 & 0 & 0  \\
-    0 & 1 & 2 & 3 & 4  \\
-    0 & 2 & 4 & 6 & 8  \\
-    0 & 3 & 6 & 9 & 12
-\end{array}\right)\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks', r"""
-All benchmarks were performed on a matrix $\bm M \in \R^{n \times n}$ with
-defining vectors' entries drawn from a uniform distribution on $[2,3]$""",
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTOVERHEAD(),
-                DOC.PLOTTYPESPEED(),
-                DOC.PLOTTYPEMEMORY()
-            )
-        )
+        return ""

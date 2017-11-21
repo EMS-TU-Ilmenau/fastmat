@@ -1,36 +1,21 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
-'''
-  fastmat/Blocks.py
- -------------------------------------------------- part of the fastmat package
 
-  Block matrix.
+# Copyright 2016 Sebastian Semper, Christoph Wagner
+#     https://www.tu-ilmenau.de/it-ems/
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-
-  Author      : wcw, sempersn
-  Introduced  : 2016-04-08
- ------------------------------------------------------------------------------
-
-   Copyright 2016 Sebastian Semper, Christoph Wagner
-       https://www.tu-ilmenau.de/ems/
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
- ------------------------------------------------------------------------------
-
-  TODO:
-    - Blocks should simply skip all Zero Matrices (flag them as "None")?
-'''
 import numpy as np
 cimport numpy as np
 
@@ -40,6 +25,39 @@ from .Matrix cimport Matrix
 ################################################################################
 ################################################## class Blocks
 cdef class Blocks(Matrix):
+    r"""
+
+
+    .. math::
+        M = \left(  A_{i,j}\right)_{i,j},
+
+    where the :math:`A_{i,j}` can be a fast transforms of *any* type.
+
+    >>> # import the package
+    >>> import fastmat as fm
+    >>>
+    >>> # define the blocks
+    >>> A = fm.Circulant(x_A)
+    >>> B = fm.Circulant(x_B)
+    >>> C = fm.Fourier(n)
+    >>> D = fm.Diag(x_D
+    >>>
+    >>> # define the block
+    >>> # matrix row-wise
+    >>> M = fm.Blocks([[A,B],[C,D]])
+
+    Assume we have two circulant matrices :math:`A` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix :math:`D`. Then we define
+
+    .. math::
+        M =
+        \begin{bmatrix}
+            A &  B \\
+            C &  D
+        \end{bmatrix}.
+
+    .. todo::
+        - Blocks should simply skip all Zero Matrices (flag them as "None")?
+    """
 
     ############################################## class methods
     def __init__(self, arrMatrices):
@@ -316,45 +334,4 @@ cdef class Blocks(Matrix):
         }
 
     def _getDocumentation(self):
-        from .inspect import DOC
-        return DOC.SUBSECTION(
-            r'Block Matrix (\texttt{fastmat.Blocks})',
-            DOC.SUBSUBSECTION(
-                'Definition and Interface',
-                r"""
-\[\bm M = \left( \bm A_{i,j}\right)_{i,j},\] where the $\bm A_{i,j}$ can be
-fast transforms of \emph{any} type.""",
-                DOC.SNIPPET('# import the package',
-                            'import fastmat as fm',
-                            '',
-                            '# define the blocks',
-                            'A = fm.Circulant(x_A)',
-                            'B = fm.Circulant(x_B)',
-                            'C = fm.Fourier(n)',
-                            'D = fm.Diag(x_D)'
-                            '',
-                            '# define the block',
-                            '# matrix row-wise',
-                            'M = fm.Blocks([[A,B],[C,D]])',
-                            caption=r"""
-Assume we have two circulant matrices $\bm A$ and $\bm B$, an $N$-dimensional
-Fourier matrix $\bm C$ and a diagonal matrix $\bm D$. Then we define
-\[
-    \bm M =
-        \left(\begin{array}{cc}
-                \bm A & \bm B \\ \bm C & \bm D
-              \end{array}\right).\]""")
-            ),
-            DOC.SUBSUBSECTION(
-                'Performance Benchmarks',
-                DOC.PLOTFORWARD(),
-                DOC.PLOTFORWARDMEMORY(),
-                DOC.PLOTOVERHEAD(doc=r"""
-$\bm B = \begin{pmatrix}
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} \\
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} \\
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} \\
-    \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k} & \bm I_{2^k}
-\end{pmatrix}$, $n = 2^{k+2}$ for $k \in \N$""")
-            )
-        )
+        return ""
