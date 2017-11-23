@@ -92,8 +92,10 @@ cdef class Toeplitz(Partial):
 
         # save generating vectors. Matrix sizes will be set by Product
         dataType = np.promote_types(vecC.dtype, vecR.dtype)
-        self._vecC = vecC.astype(dataType)
-        self._vecR = vecR.astype(dataType)
+        self._vecC = vecC = np.atleast_1d(np.squeeze(np.astype(dataType,
+                                                               copy=True)))
+        self._vecR = vecR = np.atleast_1d(np.squeeze(np.astype(dataType,
+                                                               copy=True)))
 
         # evaluate options passed to class
         cdef bint optimize = options.get('optimize', True)
@@ -128,7 +130,7 @@ cdef class Toeplitz(Partial):
 
         # Create inner product
         cdef Fourier FN = Fourier(vecSize)
-        cdef Product P = Product(FN.H, Diag(np.fft.fft(vec) / vecSize),
+        cdef Product P = Product(FN.H, Diag(np.fft.fft(vec, axis=0) / vecSize),
                                  FN, **options)
 
         # initialize Partial of Product

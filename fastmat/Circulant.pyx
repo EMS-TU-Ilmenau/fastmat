@@ -92,7 +92,7 @@ cdef class Circulant(Partial):
 
         # save generating vector. Matrix sizes will be set by Product
         # during its intitalization (invoked by 'super' below)
-        self._vecC = np.atleast_1d(np.squeeze(np.copy(vecC)))
+        self._vecC = vecC = np.atleast_1d(np.squeeze(np.copy(vecC)))
 
         assert self._vecC.ndim == 1, "Column-definition vector must be 1D."
         assert len(self._vecC) >= 1, "Vector must have at least one entry"
@@ -125,7 +125,7 @@ cdef class Circulant(Partial):
 
         # Create inner product
         cdef Fourier FN = Fourier(size)
-        cdef Product P = Product(FN.H, Diag(np.fft.fft(vecC) / size),
+        cdef Product P = Product(FN.H, Diag(np.fft.fft(vecC, axis=0) / size),
                                  FN, **options)
 
         # initialize Partial of Product. Only use Partial when padding size
