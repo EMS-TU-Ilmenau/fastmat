@@ -568,6 +568,11 @@ class Bee(CommandArgParser):
             help="Filename to read calibration data from. Loads calibration " +
             "data for fastmat classes which is then used by the package."
         )
+        self.argParser.add_argument(
+            '-t', '--no-version-tag',
+            action='store_true',
+            help="Do not add version tag to csv benchmark output."
+        )
         selection = self._select(
             BENCH.BENCHMARK, arguments, packageIndex.keys())
 
@@ -594,7 +599,9 @@ class Bee(CommandArgParser):
                 if len(self.args.path_results) > 0:
                     print("   > saved result '%s' to '%s'" % (
                         name,
-                        bench.saveResult(name, outPath=self.args.path_results)))
+                        bench.saveResult(
+                            name, outPath=self.args.path_results,
+                            addVersionTag=not self.args.no_version_tag)))
 
                 print("")
 
@@ -634,6 +641,11 @@ class Bee(CommandArgParser):
             help="Filename to read calibration data from. Loads calibration " +
             "data for fastmat classes which is then used by the package."
         )
+        self.argParser.add_argument(
+            '-t', '--no-version-tag',
+            action='store_true',
+            help="Do not add version tag to csv benchmark output."
+        )
 
         # parse arguments, all extra stuff goes to 'extraParam'
         self.args, extraArgs = self.argParser.parse_known_args(arguments)
@@ -650,6 +662,7 @@ class Bee(CommandArgParser):
                                             for name in self.args.units
                                             if '=' in name])
         options = {'benchmarkOptions'   : benchmarkOptions,
+                   'addVersionTag'      : not self.args.no_version_tag,
                    DOC.OUTPATH          : self.args.path_results}
 
         selection = [name for name in self.args.units if '=' not in name]
