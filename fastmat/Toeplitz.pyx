@@ -92,10 +92,10 @@ cdef class Toeplitz(Partial):
 
         # save generating vectors. Matrix sizes will be set by Product
         dataType = np.promote_types(vecC.dtype, vecR.dtype)
-        self._vecC = vecC = np.atleast_1d(np.squeeze(np.astype(dataType,
-                                                               copy=True)))
-        self._vecR = vecR = np.atleast_1d(np.squeeze(np.astype(dataType,
-                                                               copy=True)))
+        self._vecC = vecC = np.atleast_1d(np.squeeze(vecC.astype(dataType,
+                                                                 copy=True)))
+        self._vecR = vecR = np.atleast_1d(np.squeeze(vecR.astype(dataType,
+                                                                 copy=True)))
 
         # evaluate options passed to class
         cdef bint optimize = options.get('optimize', True)
