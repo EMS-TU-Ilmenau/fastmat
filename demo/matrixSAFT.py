@@ -117,32 +117,15 @@ cntK = len(matSparse)
 ###  Generate SAFT matrix using fastmat Kronecker approach
 ###############################################################################
 
-################################################## multi-diag-eye fastmat class
-# define a fastmat class for a special type of eye matrix
-class SparseEye(fastmat.Matrix):
-    def __init__(self, numN, offset):
-        self._offset = offset
-        self._start = offset
-        self._stop = numN - offset
-        self._initProperties(numN, numN, np.int8)
-
-    def _forward(self, arrX):
-        arrRes = np.zeros((self.numN, arrX.shape[1]), dtype=arrX.dtype)
-        arrRes[:self._stop, :] = arrX[self._start:, :]
-        if self._offset > 0:
-            arrRes[self._start:, :] += arrX[:self._stop, :]
-        return arrRes
-
-    def _backward(self, arrX):
-        return self._forward(arrX)
-
 ################################################## generate actual matrix
 print(" %-20s : %s" %("'matSaftKron'",
                       "using fastmat built-in classes"))
 matSaftKron = fastmat.Sum(
     *[fastmat.Kron(
-            fastmat.Eye(numD) if kk == 0 else SparseEye(numD, kk),
-            fastmat.Sparse(mat.tocsc()))
+            fastmat.Eye(numD) if kk == 0
+            else fastmat.Sparse(sp.sparse.eye(numD, k=kk, dtype=np.int8) +
+                                sp.sparse.eye(numD, k=-kk, dtype=np.int8)),
+            fastmat.Sparse(mat.tocsr()))
       for kk, mat in enumerate(matSparse)])
 print(" " * 4 + repr(matSaftKron))
 

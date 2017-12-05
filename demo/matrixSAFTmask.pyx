@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#cython: boundscheck=False, wraparound=False
+# cython: boundscheck=False, wraparound=False
 '''
   demo/matrixSAFT.py
  -------------------------------------------------- part of the fastmat demos
