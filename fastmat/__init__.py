@@ -55,6 +55,7 @@ from .LFSRCirculant import LFSRCirculant
 from .MLCirculant import MLCirculant
 from .MLToeplitz import MLToeplitz
 from .MLUltraSound import MLUltraSound
+from .NDFourier import NDFourier
 
 # import algorithms subpackage
 from .base import Algorithm
