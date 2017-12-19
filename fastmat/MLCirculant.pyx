@@ -180,6 +180,7 @@ cdef class MLCirculant(Partial):
         arrNout,
         verbose=False
     ):
+<<<<<<< HEAD
         '''
         Iteratively filter out the non-zero elements in the padded version
         of X. I know, that one can achieve this from a zero-padded
@@ -187,6 +188,22 @@ cdef class MLCirculant(Partial):
         helpful for understanding how the nested levels have an impact on
         the padding structure
         '''
+=======
+        # Variables
+        ########################################################################
+        # arrN,                 the original sizes of the defining tensor
+        # arrNout,              the desired sizes of the tensor
+        # verbose=False         verbositiy, yes or no?
+        # numNout               output size of the matrix we embedd into
+        # arrS                  the output array which does the selection
+
+        # Iteratively filter out the non-zero elements in the padded version
+        # of X. I know, that one can achieve this from a zero-padded
+        # version of the tensor Xpadten, but the procedure itself is very
+        # helpful for understanding how the nested levels have an impact on
+        # the padding structure
+
+>>>>>>> 531ee56... Add initial implementation of NDFourier Transform
         n = arrN.shape[0]
         numNout = np.prod(arrNout)
         arrS = np.arange(numNout) >= 0
@@ -213,7 +230,10 @@ cdef class MLCirculant(Partial):
             )
         return arrS
 
+<<<<<<< HEAD
     ############################################## class reference
+=======
+>>>>>>> 531ee56... Add initial implementation of NDFourier Transform
     cpdef np.ndarray _reference(self):
         '''
         Return an explicit representation of the matrix without using
@@ -228,9 +248,28 @@ cdef class MLCirculant(Partial):
         tenC,               # defining elements
         verbose=False       # verbosity flag
     ):
+<<<<<<< HEAD
         '''
             Construct a multilevel circulant matrix
         '''
+=======
+        # Variables
+        ########################################################################
+        # arrN,                 dimensions in each level
+        # tenC,                 defining elements
+        # verbose=False         verbosity flag
+        # numD                  number of levels = d
+        # arrNprod              product of all dimensions
+        # C                     the resulting d-level matrix
+        # subC                  the submatrix, which is (d-1)-level at
+        #                       the current iteration position
+
+        # this is a recursive routine, which takes an d-dimensional tensor
+        # and builds up the d-level circulant matrix, by first building up
+        # the (d-1)-level matrices and putting them to the correct locations
+        # in the case d=1 we simply
+
+>>>>>>> 531ee56... Add initial implementation of NDFourier Transform
         # number of dimensions
         numD = arrN.shape[0]
 
