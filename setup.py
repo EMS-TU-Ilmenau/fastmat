@@ -46,7 +46,7 @@ import re
 import subprocess
 
 packageName     = 'fastmat'
-packageVersion  = '0.1.1'           # provide a version tag as fallback
+packageVersion  = '0.1.2'           # provide a version tag as fallback
 fullVersion     = packageVersion
 strVersionFile  = "%s/version.py" %(packageName)
 

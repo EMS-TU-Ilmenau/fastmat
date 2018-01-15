@@ -94,6 +94,10 @@ cdef void finishProfile(PROFILE_s *profile, float offset, float gain):
     profile[0].overhead = profile[0].overheadNested + offset
     profile[0].effort   = profile[0].effortNested + gain * profile[0].complexity
 
+cdef bint profileIsValid(PROFILE_s *profile):
+    return (np.isfinite(profile[0].overhead) and profile[0].overhead > 0 and
+            np.isfinite(profile[0].effort) and profile[0].effort > 0)
+
 cdef bint profileUpdate(PROFILE_s *profile, intsize numM, bint allowBypass,
                         PROFILE_s *profClass, PROFILE_s *profBypass):
     cdef float estimateClass, estimateBypass
@@ -703,22 +707,35 @@ cdef class Matrix(object):
         # Fills in the profile fields overheadNested and effortNested
         self._exploreNestedProfiles()
 
-        # compute performance profile of this class
+        # compile profile of this class to determine transform performance
         cdef float nan = np.nan
         cdef MatrixCalibration calClass = getMatrixCalibration(self.__class__)
+        if calClass is None:
+            finishProfile(&(self._profileForward), nan, nan)
+            finishProfile(&(self._profileBackward), nan, nan)
+        else:
+            finishProfile(&(self._profileForward),
+                          calClass.offsetForward, calClass.gainForward)
+            finishProfile(&(self._profileBackward),
+                          calClass.offsetBackward, calClass.gainBackward)
+
+        # compile profile of base class to determine bypass performance
         cdef MatrixCalibration calBase  = getMatrixCalibration(Matrix)
-        finishProfile(&(self._profileForward),
-                      calClass.offsetForward if calClass is not None else nan,
-                      calClass.gainForward if calClass is not None else nan)
-        finishProfile(&(self._profileBackward),
-                      calClass.offsetBackward if calClass is not None else nan,
-                      calClass.gainBackward if calClass is not None else nan)
-        finishProfile(&(self._profileBypassFwd),
-                      calBase.offsetForward if calBase is not None else nan,
-                      calBase.gainForward if calBase is not None else nan)
-        finishProfile(&(self._profileBypassBwd),
-                      calBase.offsetBackward if calBase is not None else nan,
-                      calBase.gainBackward if calBase is not None else nan)
+        if calBase is None:
+            finishProfile(&(self._profileBypassFwd), nan, nan)
+            finishProfile(&(self._profileBypassBwd), nan, nan)
+        else:
+            finishProfile(&(self._profileBypassFwd),
+                          calBase.offsetForward, calBase.gainForward)
+            finishProfile(&(self._profileBypassBwd),
+                          calBase.offsetBackward, calBase.gainBackward)
+
+        # disable transform bypass if profile is either missing or incomplete
+        if not (profileIsValid(&self._profileForward) and
+                profileIsValid(&self._profileBackward) and
+                profileIsValid(&self._profileBypassFwd) and
+                profileIsValid(&self._profileBypassBwd)):
+            self._bypassAllow = False
 
     cpdef _exploreNestedProfiles(self):
         '''
@@ -787,15 +804,22 @@ cdef class Matrix(object):
         self._bypassAllow         = properties.pop('bypassAllow',
                                                    flags.bypassAllow)
 
-        # determine new value of _bypassAutoArray: take the setting of `flags`
-        # as default but heck (if True) that no child class has bypassAutoArray
-        # set to False. In this case the class AutoArray function will be
-        # triggered indirectly if the parent class disregards this setting.
+        # determine new value of _bypassAutoArray: take the value in `flags`
+        # as default but check that no nested child instance has set
+        # bypassAutoArray to False. If the parent class would disregard this,
+        # A nested instances' AutoArray function would be called implicitly
+        # although it shouldn't be.
         cdef bint autoArray = (flags.bypassAutoArray and
                                all(not item.bypassAutoArray for item in self))
         self._bypassAutoArray     = properties.pop('bypassAutoArray', autoArray)
 
         # initialize performance profile
+        # NOTE: If a valid profile is not available (either no calibration data
+        # is found or the complexity model could not be evaluated properly),
+        # self._bypassAllow will be disabled explicitly in self._initProfiles()
+        # This way bypassing decisions are no longer dependent on (potentially)
+        # volatile floating-point comparisions against NaN values, as was the
+        # case previously)
         self._initProfiles()
 
     def __repr__(self):

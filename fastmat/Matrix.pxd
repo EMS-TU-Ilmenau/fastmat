@@ -55,6 +55,7 @@ ctypedef struct PROFILE_s:
     float effortNested
 
 cdef bint profileUpdate(PROFILE_s *, intsize M, bint, PROFILE_s *, PROFILE_s *)
+cdef bint profileIsValid(PROFILE_s *)
 
 ################################################## class Matrix
 cdef class Matrix:
