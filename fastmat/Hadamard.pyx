@@ -88,7 +88,13 @@ cdef class Hadamard(Matrix):
     def __init__(self, order):
         '''Initialize Matrix instance'''
         if order < 1:
-            raise ValueError("Hadamrd: Order must be larger than 0.")
+            raise ValueError("Hadamard: Order must be larger than 0.")
+
+        cdef int maxOrder = sizeof(self._numN) * 8 - 2
+        if order > maxOrder:
+            raise ValueError(
+                "Hadamard: Order exceeds maximum for this platform: %d" %(
+                    maxOrder))
 
         self._order = order
 
