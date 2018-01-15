@@ -352,14 +352,14 @@ def arrTestDist(shape, dtype, center=0):
     if np.prod(shape) < 1:
         return np.array([])
 
-    if np.issubdtype(dtype, np.int):
+    if np.issubdtype(dtype, np.integer):
         result = np.random.choice(
             [center - 2, center - 1, center + 1, center + 2], shape).astype(
                 dtype)
     else:
-        if np.issubdtype(dtype, np.float):
+        if np.issubdtype(dtype, np.floating):
             result = _draw(shape).astype(dtype) + center
-        elif np.issubdtype(dtype, np.complex):
+        elif np.issubdtype(dtype, np.complexfloating):
             result = (_draw(shape) + np.real(center) +
                       1j * (_draw(shape) + np.imag(center))).astype(dtype)
         else:
@@ -369,7 +369,7 @@ def arrTestDist(shape, dtype, center=0):
     # too close neighbours to the largest element in the distribution
     # this helps at least largestSV in Diag matrices to converge ;)
     idxMax = np.unravel_index(np.abs(result).argmax(), result.shape)
-    if np.issubdtype(dtype, np.int):
+    if np.issubdtype(dtype, np.integer):
         result[idxMax] += np.sign(result[idxMax])
     else:
         result[idxMax] *= 1.5
