@@ -279,18 +279,6 @@ cdef class MLCirculant(Partial):
         arrNout,
         verbose=False
     ):
-<<<<<<< HEAD
-<<<<<<< HEAD
-        '''
-        Iteratively filter out the non-zero elements in the padded version
-        of X. I know, that one can achieve this from a zero-padded
-        version of the tensor Xpadten, but the procedure itself is very
-        helpful for understanding how the nested levels have an impact on
-        the padding structure
-        '''
-=======
-=======
->>>>>>> 923102b... Migration to Sphinx
         # Variables
         ########################################################################
         # arrN,                 the original sizes of the defining tensor
@@ -299,20 +287,12 @@ cdef class MLCirculant(Partial):
         # numNout               output size of the matrix we embedd into
         # arrS                  the output array which does the selection
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 923102b... Migration to Sphinx
         # Iteratively filter out the non-zero elements in the padded version
         # of X. I know, that one can achieve this from a zero-padded
         # version of the tensor Xpadten, but the procedure itself is very
         # helpful for understanding how the nested levels have an impact on
         # the padding structure
 
-<<<<<<< HEAD
->>>>>>> 531ee56... Add initial implementation of NDFourier Transform
-=======
->>>>>>> 923102b... Migration to Sphinx
         n = arrN.shape[0]
         numNout = np.prod(arrNout)
 
@@ -354,14 +334,6 @@ cdef class MLCirculant(Partial):
             )
         return arrS
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    ############################################## class reference
-=======
->>>>>>> 531ee56... Add initial implementation of NDFourier Transform
-=======
-
->>>>>>> 923102b... Migration to Sphinx
     cpdef np.ndarray _reference(self):
         # Return an explicit representation of the matrix without using
         # any fastmat code.
@@ -374,14 +346,6 @@ cdef class MLCirculant(Partial):
         tenC,
         verbose=False
     ):
-<<<<<<< HEAD
-<<<<<<< HEAD
-        '''
-            Construct a multilevel circulant matrix
-        '''
-=======
-=======
->>>>>>> 923102b... Migration to Sphinx
         # Variables
         ########################################################################
         # arrN,                 dimensions in each level
@@ -398,11 +362,6 @@ cdef class MLCirculant(Partial):
         # the (d-1)-level matrices and putting them to the correct locations
         # in the case d=1 we simply
 
-<<<<<<< HEAD
->>>>>>> 531ee56... Add initial implementation of NDFourier Transform
-=======
-
->>>>>>> 923102b... Migration to Sphinx
         # number of dimensions
         numD = arrN.shape[0]
 
