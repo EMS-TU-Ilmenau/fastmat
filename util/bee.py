@@ -588,22 +588,8 @@ class Bee(CommandArgParser):
                     print("   > saved data '%s' to '%s'" % (
                         name,
                         bench.saveResult(
-<<<<<<< HEAD
                             name, outPath=self.args.path_results,
                             addVersionTag=not self.args.no_version_tag)))
-
-=======
-                            name,
-                            outPath=self.args.path_results,
-                            addVersionTag=False
-                        )))
-                    print("   > saved plot '%s' to '%s'" % (
-                        name,
-                        bench.plotResult(
-                            name,
-                            outPath=self.args.path_results,
-                            addVersionTag=False)))
->>>>>>> 923102b... Migration to Sphinx
                 print("")
 
             # start tests of all targets of this element

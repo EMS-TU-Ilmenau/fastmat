@@ -83,10 +83,11 @@ cdef class NDFourier(Matrix):
         # store order of Fourier Transform
         self._order = np.copy(np.array([*order]))
 
-        # store number of dimensions to tranfsform over
+        # store number of dimensions to transform over
         self._numD = len(order)
 
         self._paddedSize = np.empty_like(self._order)
+        self._numL = np.empty_like(self._order)
         # determine if computation of the FFT via convolution is beneficial
         # first, detect the smallest size of a reasonably fast chirp-Z transform
         # start with the minimal size of 2 * N - 1
@@ -197,7 +198,7 @@ cdef class NDFourier(Matrix):
             arrRes[..., ii] = np.fft.ifftn(
                 arrX[:, ii].reshape((*self._order,))
             ).reshape(self.numN)
-        return arrRes
+        return arrRes * self.numN
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
