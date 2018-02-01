@@ -25,12 +25,14 @@ from .Matrix cimport Matrix
 cdef class Polynomial(Matrix):
     r"""
 
-    For given coefficients :math:`a_k,\dots,a_0 \in \mathbb{C}` and a linear mapping :math:`A \in \mathbb{C}^{n \times n}`, we define
+    For given coefficients :math:`a_k,\dots,a_0 \in \mathbb{C}` and a linear
+    mapping :math:`A \in \mathbb{C}^{n \times n}`, we define
 
     .. math::
         M = a_n  A^n + a_{n-1}  A^{n-1} + a_1  A + a_0  I.
 
-    The transform :math:`M \cdot  x` can be calculated efficiently with Horner's method.
+    The transform :math:`M \cdot  x` can be calculated efficiently with
+    Horner's method.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -44,7 +46,9 @@ cdef class Polynomial(Matrix):
     >>> # define the polynomial
     >>> M = fm.Polynomial(H, arr_a)
 
-    Let :math:`H_n` be the Hadamard matrix of order :math:`n`. And let :math:`a = (1, 2 + i, -3, 0) \in \mathbb{C}^{4}` be a coefficient vector, then the polynomial is defined as
+    Let :math:`H_n` be the Hadamard matrix of order :math:`n`. And let
+    :math:`a = (1, 2 + i, -3, 0) \in \mathbb{C}^{4}` be a coefficient vector,
+    then the polynomial is defined as
 
     .. math::
         M =  H_n^3 + (2+i)  H_n^2 - 3  H_n.

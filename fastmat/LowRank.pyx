@@ -29,17 +29,27 @@ from .core.types cimport *
 cdef class LowRank(Product):
     r"""
 
-    Generally one can consider the "complexity" of a matrix as the number of its rows :math:`n` and columns :math:`m`. The rank of a matrix :math:`A \in \mathbb{C}^{n \times m}` always obeys the bound
+    Generally one can consider the "complexity" of a matrix as the number of
+    its rows :math:`n` and columns :math:`m`. The rank of a matrix
+    :math:`A \in \mathbb{C}^{n \times m}` always obeys the bound
 
     .. math::
         \mathrm{rk}(A) \leqslant \min \{n,m\}.
 
-    If one carries out the normal matrix vector multiplication, one assumes the rank to be essentially close to this upper bound. However if the rank of :math:`A` is far lower than the minimum of its dimensions, then one carries out a lot of redundant tasks, when applying this matrix to a vector. But if one computes the singular value decomposition (SVD) of :math:`A =  U  \Sigma  V^\mathrm{H}`, then one can express :math:`A` as a sum of rank-:math:`1` matrices as
+    If one carries out the normal matrix vector multiplication, one assumes
+    the rank to be essentially close to this upper bound. However if the rank
+    of :math:`A` is far lower than the minimum of its dimensions, then one
+    carries out a lot of redundant tasks, when applying this matrix to a
+    vector. But if one computes the singular value decomposition (SVD) of
+    :math:`A =  U  \Sigma  V^\mathrm{H}`, then one can express :math:`A` as a
+    sum of rank-:math:`1` matrices as
 
     .. math::
         A = \sum\limits_{i = 1}^{r} \sigma_i  u_{i}  v^\mathrm{H}_{i}.
 
-    If :math:`r = \mathrm{rk}(A)` is much smaller than the minimum of the dimensions, then one can save a lot of computational effort in applying :math:`A` to a vector.
+    If :math:`r = \mathrm{rk}(A)` is much smaller than the minimum of the
+    dimensions, then one can save a lot of computational effort in applying
+    :math:`A` to a vector.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -53,7 +63,9 @@ cdef class LowRank(Product):
     >>> # define the matrix
     >>> L = fm.LowRank(S, U, V)
 
-    We define a matrix :math:`L =  U  S  V^\mathrm{H} \in \mathbb{R}^{20 \times 20}` with rank :math:`2`.
+    We define a matrix
+    :math:`L =  U  S  V^\mathrm{H} \in \mathbb{R}^{20 \times 20}` with rank
+    :math:`2`.
     """
 
     property vecS:

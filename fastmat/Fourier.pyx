@@ -31,7 +31,8 @@ cdef class Fourier(Matrix):
     .. math::
         x \mapsto {\mathcal{F}}_n \cdot  x,
 
-    where the Fourier matrix :math:`{\mathcal{F}}_n` is uniquely defined by the size of the vectors it acts on.
+    where the Fourier matrix :math:`{\mathcal{F}}_n` is uniquely defined by
+    the size of the vectors it acts on.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -42,8 +43,9 @@ cdef class Fourier(Matrix):
     >>> # construct the matrix
     >>> F = fm.Fourier(n)
 
-    This yields a Fourier :math:`{\mathcal{F}}_4` matrix of size :math:`4`. As a library to provide the Fast Fourier Transform we used the one provided by
-    NumPy [1]_.
+    This yields a Fourier :math:`{\mathcal{F}}_4` matrix of size :math:`4`.
+    As a library to provide the Fast Fourier Transform we used the one provided
+    by NumPy [1]_.
 
     .. todo::
         - real valued transforms

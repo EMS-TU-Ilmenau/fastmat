@@ -37,19 +37,25 @@ cpdef np.ndarray CG(
     r"""Conjugate Gradient Method
 
     **Definition and Interface**:
-    For a given full rank Hermitian matrix :math:`A \in \mathbb{C}^n` and a vector :math:`b \in \mathbb{C}^n`, we solve
+    For a given full rank Hermitian matrix :math:`A \in \mathbb{C}^n` and a
+    vector :math:`b \in \mathbb{C}^n`, we solve
 
     .. math::
         A \cdot x = b
 
-    for :math:`x \in \mathbb{C}^n`, i.e. :math:`x = A^{-1} \cdot b`. If :math:`A` is not Hermitian, we solve
+    for :math:`x \in \mathbb{C}^n`, i.e. :math:`x = A^{-1} \cdot b`. If
+    :math:`A` is not Hermitian, we solve
 
     .. math::
         A^\mathrm{H} \cdot A \cdot x = A^\mathrm{H} \cdot b
 
-    instead. In this case it should be noted, that the condition number of :math:`A^\mathrm{H} \cdot A` might be a lot larger than the one of :math:`A` an thus we might run into stability problems for large and already ill-conditioned systems.
+    instead. In this case it should be noted, that the condition number of
+    :math:`A^\mathrm{H} \cdot A` might be a lot larger than the one of
+    :math:`A` an thus we might run into stability problems for large and already
+    ill-conditioned systems.
 
-    This algorithm was originally described in [3]_ and is applicable here, because it only uses the backward and forward projection of a matrix.
+    This algorithm was originally described in [3]_ and is applicable here,
+    because it only uses the backward and forward projection of a matrix.
 
     >>> # import the packages
     >>> import numpy.random as npr
@@ -67,7 +73,8 @@ cpdef np.ndarray CG(
     >>> print(np.allclose(b, H.forward(y)))
 
     We construct a Hadamard matrix of order :math:`26`, which would consume
-    \SI{4.5}{\peta\byte} of memory if we used \SI{1}{byte} integers to represent it and solve above system of linear equations.
+    \SI{4.5}{\peta\byte} of memory if we used \SI{1}{byte} integers to
+    represent it and solve above system of linear equations.
 
     Parameters
     ----------

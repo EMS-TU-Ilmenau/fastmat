@@ -47,7 +47,8 @@ cdef class Toeplitz(Partial):
         t_n & t_{n-1} & \dots & t_1
         \end{bmatrix}.
 
-    This means that a Toeplitz matrix is uniquely defined by the :math:`n + m - 1` values that are on the diagonals.
+    This means that a Toeplitz matrix is uniquely defined by the
+    :math:`n + m - 1` values that are on the diagonals.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -76,8 +77,11 @@ cdef class Toeplitz(Partial):
         6 & 3 & 0 & 1
         \end{bmatrix}
 
-    Since the multiplication with a Toeplitz matrix makes use of the FFT, it can
-    be very slow, if the sum of the dimensions of :math:`d_1` and :math:`d_2` are far away from a power of :math:`2`, :math:`3` or :math:`4`. This can be alleviated if one applies smart zeropadding during the transformation.
+    Since the multiplication with a Toeplitz matrix makes use of the FFT, it
+    can be very slow, if the sum of the dimensions of :math:`d_1` and
+    :math:`d_2` are far away from a power of :math:`2`, :math:`3` or
+    :math:`4`. This can be alleviated if one applies smart zeropadding during
+    the transformation.
     This can be activated as follows.
 
     >>> # import the package
@@ -91,7 +95,8 @@ cdef class Toeplitz(Partial):
     >>> # construct the transform
     >>> T = fm.Toeplitz(d1,d2,pad='true')
 
-    This yields the same matrix and transformation as above, but it might be faster depending on the dimensions involved in the problem.
+    This yields the same matrix and transformation as above, but it might be
+    faster depending on the dimensions involved in the problem.
 
     This class depends on ``Fourier``, ``Diag``, ``Product`` and
     ``Partial``.

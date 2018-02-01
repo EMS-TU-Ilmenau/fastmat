@@ -10,7 +10,7 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
 [![GitHub issues](https://img.shields.io/github/issues/EMS-TU-Ilmenau/fastmat.svg)](https://github.com/EMS-TU-Ilmenau/fastmat/issues)
-**master:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=stable)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat) **stable:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)
+**stable:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=stable)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat) **master:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)
 
 ## Description
 Scientific computing requires handling large composed or structured matrices.
@@ -22,7 +22,6 @@ dense matrix representations.
 
 ### Dependencies
 - Python >= 2.7 or >=3.4
-<<<<<<< HEAD
 - Numpy >= 1.7
 - Scipy >= 1.0
 - Cython >= 1.19
@@ -34,53 +33,7 @@ dense matrix representations.
   Technische Universität Ilmenau, Institute for Mathematics, EMS Group
 - Christoph Wagner | christoph.wagner@tu-ilmenau.de  
   Technische Universität Ilmenau, Institute for Information Technology, EMS Group
-- **<https://www.tu-ilmenau.de/ems/>**
-=======
-- Numpy >= 1.07
-- Scipy >= 1.08
-- Cython >= 1.18
-
-### soft-dependencies
-- matplotlib: for demos and tools that make use of plotting functions
-
-### Authors
-- Sebastian Semper - Technische Universität Ilmenau, Institute for Mathematics
-- Christoph Wagner - Technische Universität Ilmenau,
-                     Institute for Information Technology, EMS Group
-
-### Contact
-- sebastian.semper@tu-ilmenau.de
-- christoph.wagner@tu-ilmenau.de
-- https://www.tu-ilmenau.de/it-ems/
-
-## Documentation / HELP !
-Please have a look at the documentation, which is included in the source
-distribution at github or may be built locally on your machine by running
-    `make doc`
-
-If you experience any trouble please do not hesitate to contact us or to open
-an issue on our github projectpage: https://github.com/EMS-TU-Ilmenau/fastmat
-
-### FAQ
-
-#### Installation fails with *ImportError: No module named Cython.Build*
-Something went wrong with resolving the dependencies of fastmat during setup.
-This issue will be addressed in release 0.1.1. Please check if the problem
-persists with this version. You may try to bypass the problem by running
-    `pip install cython numpy scipy`
-and retrying the installation of fastmat.
-
-#### Windows: Installation fails with various "file not found" errors
-Often, this is causedby missing header files. Unfortunately windows ships
-without a c-compiler and the header files necessary to compile native binary
-code. If you use the Intel Distribution for Python this can be resolved by
-installing the Visual Studio Build tools with the version as recommended by
-the version of the Intel Distribution for Python that you are using.
-
-#### Issue not resolved yet?
-Please contact us or leave your bug report in the *issue* section. Thank You!
-
->>>>>>> 923102b... Migration to Sphinx
+- **<https://www.tu-ilmenau.de/it-ems/>**
 
 ## Citation / Acknowledgements
 If you use fastmat, or parts of it, for commercial purposes you are required
@@ -94,6 +47,8 @@ project:
  > arXiV:1710.09578, 2017
  >
  > -- <cite>https://arxiv.org/abs/1710.09578</cite>
+
+- **<https://www.tu-ilmenau.de/it-ems/>**
 
 ## Installation
 fastmat currently supports Linux, Windows and Mac OS. You may choose one of

@@ -25,12 +25,15 @@ from .core.cmath cimport _arrZero
 cdef class Partial(Matrix):
     r"""
 
-    Let :math:`I \subset \{1,\dots,n\}` and :math:`J \subset \{1,\dots,m\}` index sets and :math:`M \in \mathbb{C}^{n \times m}` a linear transform. Then the partial transform :math:`M_{I,J}` is defined as
+    Let :math:`I \subset \{1,\dots,n\}` and :math:`J \subset \{1,\dots,m\}`
+    index sets and :math:`M \in \mathbb{C}^{n \times m}` a linear transform.
+    Then the partial transform :math:`M_{I,J}` is defined as
 
     .. math::
         x \in \mathbb{C}^m \mapsto ( M_J \cdot  x_J)_{i \in I}.
 
-    In other words, we select the rows :math:`I` of :math:`M` and columns J of :math:`M` and rows :math:`J` of :math:`x`.
+    In other words, we select the rows :math:`I` of :math:`M` and columns J
+    of :math:`M` and rows :math:`J` of :math:`x`.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -45,7 +48,9 @@ cdef class Partial(Matrix):
     >>> # construct the partial transform
     >>> M = fm.Partial(F, I)
 
-    Let :math:`{\mathcal{F}}` be the :math:`n`-dimensional Fourier matrix. And let :math:`I` be the set of odd integers. Then we define a partial transform as
+    Let :math:`{\mathcal{F}}` be the :math:`n`-dimensional Fourier matrix.
+    And let :math:`I` be the set of odd integers. Then we define a partial
+    transform as
 
     .. math::
         M = {\mathcal{F}}_I

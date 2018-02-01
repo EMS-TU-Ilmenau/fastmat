@@ -51,7 +51,8 @@ cdef class Circulant(Partial):
             c_n     & c_{n-1}   & \dots     & c_1
         \end{bmatrix}.
 
-    This means that :math:`C` is completely defined by its first column and realizes the convolution with the vector :math:`c`.
+    This means that :math:`C` is completely defined by its first column and
+    realizes the convolution with the vector :math:`c`.
 
     >>> # import the package
     >>> import fastmat as fm
