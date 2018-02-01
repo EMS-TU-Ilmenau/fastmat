@@ -25,18 +25,21 @@ def OMP(fmatA, arrY, numK):
     r"""Orthogonal Matching Pursuit
 
     **Definition and Interface**:
-    For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with :math:`m \ll N` and a
-    vector :math:`b \in \mathbb{C}^m` we approximately solve
+    For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with
+    :math:`m \ll N` and a vector :math:`b \in \mathbb{C}^m` we approximately
+    solve
 
     .. math::
-        \min\limits_{ x \in \mathbb{C}^N} \Vert x \Vert_0 \quad\mathrm{s.t.}\quad A \cdot x =  x.
+        \min\limits_{ x \in \mathbb{C}^N} \Vert x \Vert_0
+        \quad\mathrm{s.t.}\quad A \cdot x =  x.
 
-    If it holds that :math:`b =  A \cdot  x_0` for some :math:`k`-sparse :math:`x_0` and
-    :math:`k` is low enough, we can recover :math:`x_0` via OMP [2]_.
+    If it holds that :math:`b =  A \cdot  x_0` for some :math:`k`-sparse
+    :math:`x_0` and :math:`k` is low enough, we can recover :math:`x_0` via
+    OMP [2]_.
 
-    This type of problem as the one described above occurs in Compressed Sensing
-    and Sparse Signal Recovery, where signals are approximated by sparse
-    representations.
+    This type of problem as the one described above occurs in Compressed
+    Sensing and Sparse Signal Recovery, where signals are approximated by
+    sparse representations.
 
     >>> # import the packages
     >>> import numpy.linalg as npl
@@ -61,10 +64,17 @@ def OMP(fmatA, arrY, numK):
     >>> # domain of C
     >>> print(npl.norm(C * y - b))
 
-    We describe a sparse deconvolution problem, where the signal is in :math:`\mathbb{R}^{512}` and consists of :math:`3` windowed cosine pulses of the form :math:`c` with circulant displacement. Then we take the convolution and try to recover the location of the pulses using the OMP algorithm.
+    We describe a sparse deconvolution problem, where the signal is in
+    :math:`\mathbb{R}^{512}` and consists of :math:`3` windowed cosine pulses
+    of the form :math:`c` with circulant displacement. Then we take the
+    convolution and try to recover the location of the pulses using the OMP
+    algorithm.
 
     .. note::
-     The algorithm exploits two mathematical shortcuts. First it obviously uses the fast transform of the involved system matrix during the correlation step and second it uses a method to calculate the pseudo inverse after a rank-:math:`1` update of the matrix.
+     The algorithm exploits two mathematical shortcuts. First it obviously
+     uses the fast transform of the involved system matrix during the
+     correlation step and second it uses a method to calculate the pseudo
+     inverse after a rank-:math:`1` update of the matrix.
 
     .. todo::
       - optimize einsum-stuff

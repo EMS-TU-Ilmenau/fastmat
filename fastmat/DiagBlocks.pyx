@@ -30,7 +30,10 @@ from .Matrix cimport Matrix
 cdef class DiagBlocks(Matrix):
     r"""
 
-    For given :math:`n,m \in \mathbb{N}` this class allows to define a block matrix :math:`M \in \mathbb{C}^{nm \times nm}`, where each block is a diagonal matrix :math:`D_{ij} \in \mathbb{C}^{m \times m}`. This obviously allows efficient storage and computations.
+    For given :math:`n,m \in \mathbb{N}` this class allows to define a block
+    matrix :math:`M \in \mathbb{C}^{nm \times nm}`, where each block is a
+    diagonal matrix :math:`D_{ij} \in \mathbb{C}^{m \times m}`. This obviously
+    allows efficient storage and computations.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -45,7 +48,8 @@ cdef class DiagBlocks(Matrix):
     >>> # matrix diagonal-wise
     >>> M = fm.DiagBlocks(d)
 
-    We have randomly drawn the defining elements :math:`d` from a standard Gaussian distribution, which results in
+    We have randomly drawn the defining elements :math:`d` from a standard
+    Gaussian distribution, which results in
 
     .. math::
         M =

@@ -73,7 +73,9 @@ cdef class Hadamard(Matrix):
     .. math::
         H_1 = \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix}
 
-    and :math:`H_0 = (1)`. Obviously the dimension of :math:`H_n` is :math:`2^n`. The transform is realized with the Fast Hadamard Transform (FHT).
+    and :math:`H_0 = (1)`. Obviously the dimension of :math:`H_n` is
+    :math:`2^n`. The transform is realized with the Fast Hadamard Transform
+    (FHT).
 
     >>> # import the package
     >>> import fastmat as fm
@@ -87,7 +89,8 @@ cdef class Hadamard(Matrix):
     This yields a Hadamard matrix :math:`{\mathcal{H}}_4` of order :math:`4`,
     i.e. with :math:`16` rows and columns.
 
-    The algorithm we used is described in [2]_ and was implemented in Cython [3]_.
+    The algorithm we used is described in [2]_ and was implemented in
+    Cython [3]_.
     """
 
     property order:

@@ -26,15 +26,23 @@ from .core.cmath cimport _dotSingleRow, _conjugateInplace, _arrEmpty
 cdef class Parametric(Matrix):
     r"""
 
-    Let :math:`f \D \mathbb{C}^2 \rightarrow \mathbb{C}` be any function and two vectors :math:`x \in \mathbb{C}^m` and :math:`y \in \mathbb{C}^n` such that :math:`(x_j,y_i) \in \Dom(f)` for :math:`i \in [n]` and :math:`j    \in [m]`. Then the matrix :math:`F \in \mathbb{C}^{n \times m}` is defined as
+    Let :math:`f \D \mathbb{C}^2 \rightarrow \mathbb{C}` be any function and
+    two vectors :math:`x \in \mathbb{C}^m` and :math:`y \in \mathbb{C}^n` such
+    that :math:`(x_j,y_i) \in \Dom(f)` for :math:`i \in [n]` and
+    :math:`j    \in [m]`. Then the matrix :math:`F \in \mathbb{C}^{n \times m}`
+    is defined as
 
     .. math::
         F_{i,j} = f(x_j,y_i).
 
-    This class is not designed to be super fast, but memory efficient. This means, that everytime the forward or backward projections are called, the elements are generated according to the specified function on the fly.
+    This class is not designed to be super fast, but memory efficient. This
+    means, that everytime the forward or backward projections are called, the
+    elements are generated according to the specified function on the fly.
 
     .. note::
-        For small dimensions, where the matrix fits into memory, it is    definately more efficient to cast the matrix to a regular Matrix object.
+        For small dimensions, where the matrix fits into memory, it is
+        definately more efficient to cast the matrix to a regular Matrix
+        object.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -70,7 +78,11 @@ cdef class Parametric(Matrix):
         -15 & -12 & -7 &  0
         \end{bmatrix}
 
-    We used Cython [3]_ to get an efficient implementation in order to reduce computation time. Moreover, it is generally assumed the the defined function is able to use row and column broadcasting during evaluation.    If this is not the case, one has to set the flag ``rangeAccess`` to    ``False``.
+    We used Cython [3]_ to get an efficient implementation in order to reduce
+    computation time. Moreover, it is generally assumed the the defined
+    function is able to use row and column broadcasting during evaluation.
+    If this is not the case, one has to set the flag ``rangeAccess`` to
+    ``False``.
     """
 
     property vecY:

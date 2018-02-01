@@ -774,7 +774,8 @@ class Worker(object):
         '''
         Execute all selected targets by a list of targetNames.
         If *targetNames is empty all targets will be run.
-        The output of each :math:`TARGET` will be written to self.results[:math:`TARGET`]
+        The output of each :math:`TARGET` will be written to
+        self.results[:math:`TARGET`]
         '''
         # determine console width
         self.consoleWidth=getConsoleSize()[1]

@@ -31,7 +31,8 @@ cdef class Zero(Matrix):
     .. math::
         x \mapsto  0
 
-    The zero matrix only needs the dimension :math:`n` of the vectors it acts on. It is very fast and very good!
+    The zero matrix only needs the dimension :math:`n` of the vectors it acts
+    on. It is very fast and very good!
 
     >>> import fastmat as fm
     >>>

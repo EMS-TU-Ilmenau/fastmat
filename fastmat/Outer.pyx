@@ -24,12 +24,15 @@ from .core.cmath cimport _conjugate, _multiply
 cdef class Outer(Matrix):
     r"""
 
-    The outer product is a special case of the Kronecker product of one-dimensional vectors. For given :math:`a \in \mathbb{C}^n` and :math:`b \in \mathbb{C}^m` it is defined as
+    The outer product is a special case of the Kronecker product of
+    one-dimensional vectors. For given :math:`a \in \mathbb{C}^n` and
+    :math:`b \in \mathbb{C}^m` it is defined as
 
     .. math::
         x \mapsto  a \cdot  b^\mathrm{T} \cdot  x.
 
-    It is clear, that this matrix has at most rank :math:`1` and as such has a fast transformation.
+    It is clear, that this matrix has at most rank :math:`1` and as such
+    has a fast transformation.
 
     >>> # import the package
     >>> import fastmat as fm

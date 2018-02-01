@@ -35,7 +35,10 @@ from .Toeplitz cimport Toeplitz
 cdef class MLToeplitz(Partial):
     r"""
 
-    Let :math:`d \geqslant 2`. Then, given a :math:`d`-dimensional complex sequence :math:`{t} = [t_{{k}}]` for :math:`{k} \in \mathbb{N}^d` a    :math:`d`-level Toeplitz matrix :math:`{T}_{{n},d}` is recursively defined as
+    Let :math:`d \geqslant 2`. Then, given a :math:`d`-dimensional complex
+    sequence :math:`{t} = [t_{{k}}]` for :math:`{k} \in \mathbb{N}^d` a
+    :math:`d`-level Toeplitz matrix :math:`{T}_{{n},d}` is recursively defined
+    as
 
     .. math::
         {T}_{({n},d)} =
@@ -50,7 +53,8 @@ cdef class MLToeplitz(Partial):
         & \dots     & {T}_{(1,{m}),\ell}          \\
         \end{bmatrix},
 
-    where :math:`m =  n_{-1}` and :math:`\ell = d-1`. So for :math:`n = [2,2]` and :math:`t \in \mathbb{C}^{3 \times 3}` we get
+    where :math:`m =  n_{-1}` and :math:`\ell = d-1`. So for :math:`n = [2,2]`
+    and :math:`t \in \mathbb{C}^{3 \times 3}` we get
 
     .. math::
         T_{[2,2],2} =

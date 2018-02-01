@@ -30,7 +30,8 @@ cdef class Eye(Matrix):
     map .. math::
         x \mapsto  x.
 
-    The identity matrix only needs the dimension :math:`n` of the vectors it acts on.
+    The identity matrix only needs the dimension :math:`n` of the vectors it
+    acts on.
 
     >>> # import the package
     >>> import fastmat

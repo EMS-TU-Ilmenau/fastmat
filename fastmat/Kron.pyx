@@ -27,12 +27,15 @@ from .core.cmath cimport _arrReshape, _arrEmpty
 cdef class Kron(Matrix):
     r"""
 
-    For matrices :math:`A_i \in \mathbb{C}^{n_i \times n_i}` for :math:`i = 1,\dots,k` the Kronecker product
+    For matrices :math:`A_i \in \mathbb{C}^{n_i \times n_i}` for
+    :math:`i = 1,\dots,k` the Kronecker product
 
     .. math::
         A_1 \otimes  A_2 \otimes \dots \otimes  A_k
 
-    can be defined recursively because of associativity from the Kronecker product of :math:`A \in \mathbb{C}^{n \times m}` and :math:`B \in \mathbb{C}^{r \times s}` defined as
+    can be defined recursively because of associativity from the Kronecker
+    product of :math:`A \in \mathbb{C}^{n \times m}` and
+    :math:`B \in \mathbb{C}^{r \times s}` defined as
 
     .. math::
         A \otimes  B =
@@ -42,11 +45,16 @@ cdef class Kron(Matrix):
             a_{n1}  B    & \dots     & a_{nm}  B
         \end{bmatrix}.
 
-    We make use of a decomposition into a standard matrix product to speed up the matrix-vector multiplication which is introduced in [4]_. This then yields multiple benefits:
+    We make use of a decomposition into a standard matrix product to speed up
+    the matrix-vector multiplication which is introduced in [4]_. This then
+    yields multiple benefits:
 
-        - It already brings down the complexity of the forward and backward    projection if the factors :math:`A_i` have no fast transformations.
-        - It is not necessary to compute the matrix representation of the product, which saves *a lot* of memory.
-        - When fast transforms of the factors are available the calculations can be sped up further.
+        - It already brings down the complexity of the forward and backward
+          projection if the factors :math:`A_i` have no fast transformations.
+        - It is not necessary to compute the matrix representation of the
+          product, which saves *a lot* of memory.
+        - When fast transforms of the factors are available the calculations
+          can be sped up further.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -59,7 +67,9 @@ cdef class Kron(Matrix):
     >>> # product
     >>> P = fm.Kron(C.H, H)
 
-    Assume we have a circulant matrix :math:`C` with first column :math:`x_c` and a Hadamard matrix :math:`{\mathcal{H}}_n` of order :math:`n`. Then we define
+    Assume we have a circulant matrix :math:`C` with first column :math:`x_c`
+    and a Hadamard matrix :math:`{\mathcal{H}}_n` of order :math:`n`. Then we
+    define
 
     .. math::
         P =  C^\mathrm{H} \otimes  H_n.

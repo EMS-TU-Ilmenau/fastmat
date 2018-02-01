@@ -46,7 +46,9 @@ cdef class Blocks(Matrix):
     >>> # matrix row-wise
     >>> M = fm.Blocks([[A,B],[C,D]])
 
-    Assume we have two circulant matrices :math:`A` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix :math:`D`. Then we define
+    Assume we have two circulant matrices :math:`A` and :math:`B`, an
+    :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix
+    :math:`D`. Then we define
 
     .. math::
         M =

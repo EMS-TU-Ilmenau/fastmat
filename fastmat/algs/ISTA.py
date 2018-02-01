@@ -43,15 +43,16 @@ def ISTA(
     Iterative Soft Thresholding Algorithm
 
     **Definition and Interface**:
-    For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with :math:`m \ll N` and a
-    vector :math:`b \in \mathbb{C}^m` we approximately solve
+    For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with
+    :math:`m \ll N` and a vector :math:`b \in \mathbb{C}^m` we approximately
+    solve
 
     .. math::
         \min\limits_{ x \in \mathbb{C}^N}\Vert{ A \cdot  x -  b}\Vert^2_2 +
         \lambda \cdot \Vert x \Vert_1,
 
-    where :math:`\lambda > 0` is a regularization parameter to steer the trade-off
-    between data fidelity and sparsity of the solution.
+    where :math:`\lambda > 0` is a regularization parameter to steer the
+    trade-off between data fidelity and sparsity of the solution.
 
     >>> # import the packages
     >>> import numpy.linalg as npl
@@ -75,10 +76,16 @@ def ISTA(
     >>> # domain of C
     >>> print(npl.norm(C * y - b))
 
-    We solve a sparse deconvolution problem, where the atoms are harmonics windowed by a gaussian envelope. The ground truth :math:`x` is build out of three pulses at arbitrary locations.
+    We solve a sparse deconvolution problem, where the atoms are harmonics
+    windowed by a gaussian envelope. The ground truth :math:`x` is build out
+    of three pulses at arbitrary locations.
 
     .. note::
-        The proper choice of :math:`\lambda` is crucial for good perfomance of this algorithm, but this is not an easy task. Unfortunately we are not in the place here to give you a rule of thumb what to do, since it highly depends on the application at hand. Again, consult [1]_ for any further considerations of this matter.
+        The proper choice of :math:`\lambda` is crucial for good perfomance
+        of this algorithm, but this is not an easy task. Unfortunately we are
+        not in the place here to give you a rule of thumb what to do, since
+        it highly depends on the application at hand. Again, consult [1]_ for
+        any further considerations of this matter.
 
     .. todo::
      - test ISTA for correctness

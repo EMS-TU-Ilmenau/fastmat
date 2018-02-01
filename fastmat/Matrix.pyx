@@ -105,7 +105,8 @@ cdef class Matrix(object):
     r"""Matrix Base Class
 
     **Description:**
-    The baseclass of all matrix classes in fastmat. It also serves as wrapper around the standard Numpy Array [1]_.
+    The baseclass of all matrix classes in fastmat. It also serves as wrapper
+    around the standard Numpy Array [1]_.
 
     **Performance Benchmarks**
 
@@ -186,7 +187,8 @@ cdef class Matrix(object):
             self._tag = tag
 
     property bypassAllow:
-        # r"""Enable or disable transform bypassing based on performance estimates
+        # r"""Enable or disable transform bypassing based on performance
+        # estimates
         #
         # *(read-write)*
         # """
@@ -197,7 +199,8 @@ cdef class Matrix(object):
             self._bypassAllow = value
 
     property bypassAutoArray:
-        # r"""Enable or disable automatic dense array generation for transform bypass
+        # r"""Enable or disable automatic dense array generation for
+        # transform bypass
         #
         # *(read-write)*
         # """
@@ -243,16 +246,18 @@ cdef class Matrix(object):
     def __copy__(self):
         # r"""
         #
-        # Performs a copy() on this class instance. As fastmat matrix classes are
-        # defined immutable nothing must be copied, so retuning self suffices.
+        # Performs a copy() on this class instance. As fastmat matrix classes
+        # are defined immutable nothing must be copied, so retuning self
+        # suffices.
         # """
         return self
 
     def __deepcopy__(self, dict memo):
         # r"""
         #
-        # Performs a deepcopy() on this class instance. As fastmat matrix classes
-        # are defined immutable nothing must be copied, so retuning self suffices.
+        # Performs a deepcopy() on this class instance. As fastmat matrix
+        # classes are defined immutable nothing must be copied, so retuning
+        # self suffices.
         # """
 
         return self
@@ -434,7 +439,9 @@ cdef class Matrix(object):
         # r"""
         # Largest Singular Value
         #
-        # For a given matrix :math:`A \in \mathbb{C}^{n \times n}`, so :math:`A` square, we calculate the absolute value of the largest eigenvalue :math:`\lambda \in \mathbb{C}`. The eigenvalues obey the equation
+        # For a given matrix :math:`A \in \mathbb{C}^{n \times n}`, so :math:`A`
+        # square, we calculate the absolute value of the largest eigenvalue
+        # :math:`\lambda \in \mathbb{C}`. The eigenvalues obey the equation
         #
         # .. math::
         #      A \cdot  v= \lambda \cdot  v,
@@ -446,7 +453,10 @@ cdef class Matrix(object):
         # Output largest eigenvalue :math:`\sigma_{\rm max}( A)`
         #
         # .. note::
-        #     This algorithm performs well if the two largest eigenvalues are not very close to each other on a relative scale with respect to their absolute value. Otherwise it might get trouble converging properly.
+        #     This algorithm performs well if the two largest eigenvalues are
+        #     not very close to each other on a relative scale with respect to
+        #     their absolute value. Otherwise it might get trouble converging
+        #     properly.
         #
         # >>> # import the packages
         # >>> import numpy.linalg as npl
@@ -470,7 +480,10 @@ cdef class Matrix(object):
         # >>> # check if the solutions match
         # >>> print(x1 - x2)
         #
-        # We define a matrix-matrix product of a Hadamard matrix and a diagonal matrix. Then we also cast it into a numpy-array and use the integrated EVD. For demonstration, try to increase :math:`n`to :math:`>10`and see what happens.
+        # We define a matrix-matrix product of a Hadamard matrix and a diagonal
+        # matrix. Then we also cast it into a numpy-array and use the integrated
+        # EVD. For demonstration, try to increase :math:`n`to :math:`>10`and see
+        # what happens.
         # """
 
         if self._numN != self._numM:
@@ -546,19 +559,26 @@ cdef class Matrix(object):
                      relEps=1., eps=0., alwaysReturn=False):
         r"""Largest Singular Value
 
-        For a given matrix :math:`A \in \mathbb{C}^{n \times m}`, we calculate the largest singular value :math:`\sigma_{\rm max}( A) > 0`, which is the largest entry of the diagonal matrix :math:`\Sigma \in \mathbb{C}^{n \times m}` in the decomposition
+        For a given matrix :math:`A \in \mathbb{C}^{n \times m}`, we calculate
+        the largest singular value :math:`\sigma_{\rm max}( A) > 0`, which is
+        the largest entry of the diagonal matrix
+        :math:`\Sigma \in \mathbb{C}^{n \times m}` in the decomposition
 
         .. math::
              A =  U  \Sigma  V^{\rm H},
 
-        where :math:`U` and :math:`V` are matrices of the appropriate dimensions. This is done via the so called power iteration of :math:`A^{\rm H} \cdot  A`.
+        where :math:`U` and :math:`V` are matrices of the appropriate
+        dimensions. This is done via the so called power iteration of
+        :math:`A^{\rm H} \cdot  A`.
 
         - Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as a
         stopping criterion
         - Output largest singular value :math:`\sigma_{\rm max}( A)`
 
         .. note::
-            This algorithm performs well if the two largest singular values  are not very close to each other on a relative scale. Otherwise it might get trouble converging properly.
+            This algorithm performs well if the two largest singular values
+            are not very close to each other on a relative scale. Otherwise
+            it might get trouble converging properly.
 
         >>> # import packages
         >>> import numpy.linalg as npl
@@ -579,9 +599,10 @@ cdef class Matrix(object):
         >>> # check if they match
         >>> print(x1-x2)
 
-        We define a Kronecker product of a Hadamard matrix and a Fourier matrix.
-        Then we also cast it into a numpy-array and use the integrated
-        SVD. For demonstration, try to increase :math:`n` to `>10` and see what happens.
+        We define a Kronecker product of a Hadamard matrix and a Fourier
+        matrix. Then we also cast it into a numpy-array and use the integrated
+        SVD. For demonstration, try to increase :math:`n` to `>10` and see what
+        happens.
         """
 
         result = self._getLargestSV(maxSteps, relEps, eps, alwaysReturn)
@@ -1126,7 +1147,14 @@ cdef class Matrix(object):
     cpdef np.ndarray forward(self, np.ndarray arrX):
         """Forward
 
-        Calculate the forward transform A * x. Dimension-checking is performed to ensure valid fast transforms as these may succeed even when dimensions do not match. To support both single- and multidimensional input vectors x, single dimensional input will be reshaped to (n, 1) before processing and flattened to (n) after        completion. This allows the use of both vectors and arrays. The actual transform code gets called by the callbacks specified in funcPython and funcCython, depending on the state of self._cythonCall.
+        Calculate the forward transform A * x. Dimension-checking is performed
+        to ensure valid fast transforms as these may succeed even when
+        dimensions do not match. To support both single- and multidimensional
+        input vectors x, single dimensional input will be reshaped to (n, 1)
+        before processing and flattened to (n) after        completion. This
+        allows the use of both vectors and arrays. The actual transform code
+        gets called by the callbacks specified in funcPython and funcCython,
+        depending on the state of self._cythonCall.
 
         .. warning::
             Do not override this method!
@@ -1217,13 +1245,14 @@ cdef class Matrix(object):
         r"""Backward Transform
 
         Calculate the backward transform A^\mathrm{H}*x where H is the
-        hermitian transpose. Dimension-checking is performed to ensure valid fast transforms as these
-        may succeed even when dimensions do not match. To support both single-
-        and multidimensional input vectors x, single dimensional input will be
-        reshaped to (n, 1) before processing and flattened to (n) after
-        completion. This allows the use of both vectors and arrays. The actual
-        transform code gets called by the callbacks specified in funcPython and
-        funcCython, depending on the state of self._cythonCall.
+        hermitian transpose. Dimension-checking is performed to ensure valid
+        fast transforms as these may succeed even when dimensions do not match.
+        To support both single- and multidimensional input vectors x, single
+        dimensional input will be reshaped to (n, 1) before processing and
+        flattened to (n) after completion. This allows the use of both vectors
+        and arrays. The actual transform code gets called by the callbacks
+        specified in funcPython and funcCython, depending on the state of
+        self._cythonCall.
 
         .. warning::
             Do not override this method
@@ -1302,8 +1331,8 @@ cdef class Matrix(object):
         # r"""Return Slow Explicit Version of Instance
         #
         # Return an explicit representation of the matrix without using any
-        # fastmat code. Provides type checks and raises errors if the matrix type
-        # (self.dtype) cannot hold the reference data.
+        # fastmat code. Provides type checks and raises errors if the matrix
+        # type (self.dtype) cannot hold the reference data.
         # """
         cdef np.ndarray arrRes
 
@@ -1338,8 +1367,9 @@ cdef class Matrix(object):
     cpdef np.ndarray _reference(self):
         # r"""Reference
         #
-        # Return matrix representation without using a single bit of fastmat code.
-        # Overwrite this method in child classes to define its reference.
+        # Return matrix representation without using a single bit of fastmat
+        # code. Overwrite this method in child classes to define its
+        # reference.
         # """
         return self._array
 

@@ -30,7 +30,11 @@ cdef class Sparse(Matrix):
     .. math::
         x \mapsto  S x,
 
-    where :math:`S` is a ``scipy.sparse`` matrix. To provide a high level of generality, the user has to make use of the standard ``scipy.sparse`` matrix constructors and pass them to ``fastmat`` during construction. After that a ``Sparse`` matrix can be used like every other type in ``fastmat``
+    where :math:`S` is a ``scipy.sparse`` matrix. To provide a high level of
+    generality, the user has to make use of the standard ``scipy.sparse``
+    matrix constructors and pass them to ``fastmat`` during construction.
+    After that a ``Sparse`` matrix can be used like every other type in
+    ``fastmat``
 
     >>> # import the package
     >>> import fastmat as fm
@@ -51,9 +55,11 @@ cdef class Sparse(Matrix):
     >>>             format='csr'
     >>>         ))
 
-    This yields a random sparse matrix with 1\% of its entries occupied drawn from a random distribution.
+    This yields a random sparse matrix with 1\% of its entries occupied drawn
+    from a random distribution.
 
-    It is also possible to directly cast SciPy sparse matrices into the ``fastmat`` sparse matrix format as follows.
+    It is also possible to directly cast SciPy sparse matrices into the
+    `fastmat`` sparse matrix format as follows.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -75,9 +81,13 @@ cdef class Sparse(Matrix):
     >>> S = fm.Sparse(S_scipy)
 
     .. note::
-        The ``format`` specifier drastically influences performance during multiplication of these matrices. From our experience ``'csr'`` works best in these cases.
+        The ``format`` specifier drastically influences performance during
+        multiplication of these matrices. From our experience ``'csr'`` works
+        best in these cases.
 
-    For this matrix class we used the already tried and tested routines of SciPy [1]_, so we merely provide a convenient wrapper to integrate nicely into ``fastmat``.
+    For this matrix class we used the already tried and tested routines of
+    SciPy [1]_, so we merely provide a convenient wrapper to integrate nicely
+    into ``fastmat``.
     """
 
     property spArray:

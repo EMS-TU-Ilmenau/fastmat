@@ -109,16 +109,17 @@ cdef class NDFourier(Matrix):
             # transform in the latter case self._numL specifies the internal
             # dimension
             self._numL[ii] = (0 if (_getFFTComplexity(self._order[ii]) <
-                                    _getFFTComplexity(self._paddedSize[ii]) * 2 + self._paddedSize[ii])
+                                    (_getFFTComplexity(self._paddedSize[ii]) *
+                                     2 + self._paddedSize[ii]))
                               else self._paddedSize[ii])
         #
         #     # if we convolve, then we should prepare some stuff
-        #     # the presence (non-None) of self._vecConvHat controls the behaviour
-        #     # of the forward() and backward() transforms.
+        #     # the presence (non-None) of self._vecConvHat controls the
+        #     # behaviour of the forward() and backward() transforms.
         #     if self._numL[ii] > 0:
         #
         #         # create the sampling grid
-        #         arrSamples = np.linspace(0, self.order[ii] - 1, self.order[ii])
+        #         arrSamples = np.arange(self.order[ii])
         #
         #         # evaluate at these samples for the first numL elements
         #         # of the vector
@@ -126,9 +127,10 @@ cdef class NDFourier(Matrix):
         #         vecConv[ii,: self.order] = np.exp(
         #             +1j * (arrSamples ** 2) * np.pi / self.order)
         #
-        #         # now put a flipped version of the above at the very end to get
-        #         # a circular convolution
-        #         vecConv[ii, self._numL[ii] - self.order[ii] + 1:] = vecConv[ii, 1:self.order[ii]][::-1]
+        #         # now put a flipped version of the above at the very end to
+        #         # get a circular convolution
+        #         vecConv[ii, self._numL[ii] - self.order[ii] + 1:] = \
+        #             vecConv[ii, 1:self.order[ii]][::-1]
         #
         #         # get a premultiplication array for preprocessing before the
         #         # convolution
@@ -170,7 +172,8 @@ cdef class NDFourier(Matrix):
         return Eye(self.numN) * self.numN
 
     # cpdef object _getItem(self, intsize idxN, intsize idxM):
-    #     return np.exp(idxN * idxM * -2j * np.pi / self.order).astype(self.dtype)
+    #     return np.exp(idxN * idxM * -2j * np.pi / self.order).astype(
+    #         self.dtype)
 
     # ############################################## class property override
     # cpdef tuple _getComplexity(self):

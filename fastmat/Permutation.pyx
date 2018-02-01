@@ -25,7 +25,8 @@ cdef class Permutation(Matrix):
 
     r"""
 
-    For a given permutation :math:`\sigma \in S_n` and a vector :math:`x \in \mathbb{C}^n` we map
+    For a given permutation :math:`\sigma \in S_n` and a vector
+    :math:`x \in \mathbb{C}^n` we map
 
     .. math::
         x \mapsto \left(x_{\sigma(i)}\right)_{i = 1}^n.

@@ -46,7 +46,9 @@ cdef class BlockDiag(Matrix):
     >>> # diagonal matrix
     >>> M = fm.BlockDiag(A, B, C, D)
 
-    Assume we have two circulant matrices :math:`A` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix :math:`D`. Then we define
+    Assume we have two circulant matrices :math:`A` and :math:`B`, an
+    :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix
+    :math:`D`. Then we define
 
     .. math::
         M = \begin{bmatrix}
@@ -56,7 +58,9 @@ cdef class BlockDiag(Matrix):
         & & &  D
         \end{bmatrix}.
 
-    Meta types can also be nested, so that a block diagonal matrix can contain products of block matrices as its entries. Note that the efficiency of the fast transforms decreases the more building blocks they have.
+    Meta types can also be nested, so that a block diagonal matrix can contain
+    products of block matrices as its entries. Note that the efficiency of the
+    fast transforms decreases the more building blocks they have.
 
     >>> import fastmat as fm
     >>> # import the package
@@ -74,7 +78,9 @@ cdef class BlockDiag(Matrix):
     >>> # diagonal matrix
     >>> M = fm.BlockDiag(P, F, D)
 
-    Assume we have a product :math:`P` of two matrices :math:`A^\mathrm{H}` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`{\mathcal{F}}` and a diagonal matrix :math:`D`. Then we define
+    Assume we have a product :math:`P` of two matrices :math:`A^\mathrm{H}` and
+    :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`{\mathcal{F}}`
+    and a diagonal matrix :math:`D`. Then we define
 
     .. math::
         M = \begin{bmatrix}

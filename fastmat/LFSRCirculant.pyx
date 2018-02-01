@@ -53,14 +53,43 @@ cdef class LFSRCirculant(Matrix):
     r"""
 
 
-    Linear Feedback Shift Registers (LFSR) as implemented in this class are finite state machines generating sequences of symbols from the finite field :math:`F=[-1, +1]`. A shift register of size :math:`N` is a cascade of :math:`N` storage elements :math:`a_n` for :math:`n = 0,\dots,N-1`, each holding one symbol of :math:`F`. The state of the shift register is defined by the states of :math:`a_0,\dots,a_{N-1}`.
+    Linear Feedback Shift Registers (LFSR) as implemented in this class are
+    finite state machines generating sequences of symbols from the finite
+    field :math:`F=[-1, +1]`. A shift register of size :math:`N` is a cascade
+    of :math:`N` storage elements :math:`a_n` for :math:`n = 0,\dots,N-1`,
+    each holding one symbol of :math:`F`. The state of the shift register is
+    defined by the states of :math:`a_0,\dots,a_{N-1}`.
     [5]_
 
-    The next state of the register is generated from the current state by moving the contents of each storage element to the next lower index by setting :math:`a_{n-1} = a_n` for :math:`n \geq 1`, hence the name shift register. The element :math:`a_0` of the current state is discarded completely in the next state. A subset :math:`T` of all storage elements with cardinality of 1 or greater is used for generating the next symbol :math:`a_{N-1}` by multiplication within :math:`F`. :math:`T` is called the tap configuration of the shift register.
+    The next state of the register is generated from the current state by
+    moving the contents of each storage element to the next lower index by
+    setting :math:`a_{n-1} = a_n` for :math:`n \geq 1`, hence the name shift
+    register. The element :math:`a_0` of the current state is discarded
+    completely in the next state. A subset :math:`T` of all storage elements
+    with cardinality of 1 or greater is used for generating the next symbol
+    :math:`a_{N-1}` by multiplication within :math:`F`. :math:`T` is called
+    the tap configuration of the shift register.
 
-    The output sequence of the register is the sequence of symbols :math:`a_0` for each state of the register. When the shift register repeats one of its previous states after :math:`L` state transistions, the output sequence also repeats and thus is periodic with a length :math:`L`. Evaluation of the sequence starts with all storage elements set to an initial state :math:`I`. Only periodic sequences of length :math:`L > 1` are considered if they also repeat all states including the initial state and thus form a hamilton circle an the graph corresponding to the chosen shift register size :math:`N` and tap configuration :math:`T`.
+    The output sequence of the register is the sequence of symbols
+    :math:`a_0` for each state of the register. When the shift register
+    repeats one of its previous states after :math:`L` state transistions,
+    the output sequence also repeats and thus is periodic with a length
+    :math:`L`. Evaluation of the sequence starts with all storage elements set
+    to an initial state :math:`I`. Only periodic sequences of length
+    :math:`L > 1` are considered if they also repeat all states including the
+    initial state and thus form a hamilton circle an the graph corresponding
+    to the chosen shift register size :math:`N` and tap configuration
+    :math:`T`.
 
-    Instanciation of this matrix class requires supplying the requested register size :math:`N`, the tap configuration and the initial state. The latter two are required to be supplied as binary words of up to :math:`N` bits. A one bit on position :math:`i` in the tap configuration adds :math:`a_i` as \*feedback tap\* to :math:`T`. At least one feedback tap must be supplied. The bits in the given initial state word :math:`r`    will be mapped to the initial register state, where :math:`r_n = 0` sets :math:`a_n = +1` and :math:`r_n = 1` sets :math:`a_n = -1`. If no :math:`r` is given, it is assumed to be all-ones.
+    Instanciation of this matrix class requires supplying the requested
+    register size :math:`N`, the tap configuration and the initial state.
+    The latter two are required to be supplied as binary words of up to
+    :math:`N` bits. A one bit on position :math:`i` in the tap configuration
+    adds :math:`a_i` as \*feedback tap\* to :math:`T`. At least one feedback
+    tap must be supplied. The bits in the given initial state word :math:`r`
+    will be mapped to the initial register state, where :math:`r_n = 0` sets
+    :math:`a_n = +1` and :math:`r_n = 1` sets :math:`a_n = -1`. If no :math:`r`
+    is given, it is assumed to be all-ones.
 
     >>> # import the package
     >>> import fastmat as fm
@@ -74,7 +103,10 @@ cdef class LFSRCirculant(Matrix):
     >>> L = fm.LFSRCirculant(size, taps, initial)
     >>> s = L.vecC
 
-    This yields a Circulant matrix where the column-definition vector is the output of a LFSR of size 4, which is configured to generate a maximum length sequence of length 15 and a cyclic shift corresponding to the given initial state.
+    This yields a Circulant matrix where the column-definition vector is the
+    output of a LFSR of size 4, which is configured to generate a maximum
+    length sequence of length 15 and a cyclic shift corresponding to the given
+    initial state.
 
     .. math::
         s = [+1, -1, +1, -1, -1, +1, +1, -1, +1, +1, +1, -1, -1, -1, -1]

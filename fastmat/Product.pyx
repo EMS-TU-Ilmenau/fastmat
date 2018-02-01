@@ -42,7 +42,8 @@ cdef class Product(Matrix):
     >>> # construct the product
     >>> M = fm.Product(A.H, B)
 
-    Assume we have two circulant matrices :math:`A` and :math:`B`. Then we define
+    Assume we have two circulant matrices :math:`A` and :math:`B`. Then we
+    define
 
     .. math::
         M =  A_c^\mathrm{H}  B_c.

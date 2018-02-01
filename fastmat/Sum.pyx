@@ -24,7 +24,8 @@ from .Matrix cimport Matrix
 cdef class Sum(Matrix):
     r"""
 
-    For matrices :math:`A_k \in \mathbb{C}^{n \times m}` with :math:`k = 1,\dots,N` we define a new mapping :math:`M` as the sum
+    For matrices :math:`A_k \in \mathbb{C}^{n \times m}` with
+    :math:`k = 1,\dots,N` we define a new mapping :math:`M` as the sum
 
     .. math::
         M = \sum\limits_{k = 1}^{N} A_k,
@@ -43,7 +44,9 @@ cdef class Sum(Matrix):
     >>> # construct the sum of transformations
     >>> M = fm.Sum(A, B, C, D)
 
-    Assume we have two circulant matrices :math:`A` and :math:`B`, an :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix :math:`D`. Then we define
+    Assume we have two circulant matrices :math:`A` and :math:`B`, an
+    :math:`N`-dimensional Fourier matrix :math:`C` and a diagonal matrix
+    :math:`D`. Then we define
 
     .. math::
         M =  A +  B +  C +  D.

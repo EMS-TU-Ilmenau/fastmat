@@ -39,16 +39,19 @@ cdef class MLUltraSound(Partial):
     This class is an implementation of matrices, which have a block
     structure, where each block itself is a :math:`2`-level Toeplitz matrix, as
     implemented in ``MLToeplitz``. The name originated from the fact, that
-    these matrices pop up, when modeling a ultrasonic pulse echo as a superposition
-    of hyperbolas.
+    these matrices pop up, when modeling a ultrasonic pulse echo as a
+    superposition of hyperbolas.
 
-    As such we can collect the unique defining elements of :math:`H` in :math:`h \in \mathbb{R}^{M \times M \times 2 N_x - 1 \times 2 N_y - 1}` and then set
+    As such we can collect the unique defining elements of :math:`H` in
+    :math:`h \in \mathbb{R}^{M \times M \times 2 N_x - 1 \times 2 N_y - 1}` and
+    then set
 
     .. math::
         H_{i,j} =  T_{([N_x, N_y], 2)}( h_{i,j}).
 
     Moreover, we can diagonalize each :math:`H_{i,j}`.
-    To this end we embed each :math:`H_{i,j}` into a :math:`2`-level circulant matrix
+    To this end we embed each :math:`H_{i,j}` into a :math:`2`-level circulant
+    matrix
 
     .. math::
         \begin{bmatrix}
@@ -58,7 +61,8 @@ cdef class MLUltraSound(Partial):
         \end{bmatrix}  =
         K^\mathrm{H} \cdot  D \cdot  K
 
-    for :math:`F =  \mathcal{F}_{2 N_x - 1} \otimes  \mathcal{F}_{2 N_y - 1} `, :math:`K =  I_{M} \otimes  F` and
+    for :math:`F =  \mathcal{F}_{2 N_x - 1} \otimes  \mathcal{F}_{2 N_y - 1} `,
+    :math:`K =  I_{M} \otimes  F` and
 
     .. math::
         D =
@@ -71,7 +75,8 @@ cdef class MLUltraSound(Partial):
         \end{bmatrix},
 
     which shows, that :math:`H` simply is a subselection of the above block
-    diagonalizated matrix. This is exactly, how it is implemented in ``fastmat``.
+    diagonalizated matrix. This is exactly, how it is implemented in
+    ``fastmat``.
 
     >>> # import the package
     >>> import fastmat as fm
