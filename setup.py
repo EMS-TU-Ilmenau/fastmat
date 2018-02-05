@@ -263,7 +263,7 @@ print("Requirements for install: %s" %(installRequires))
 def doc_opts():
     try:
         from sphinx.setup_command import BuildDoc
-    except ModuleNotFoundError:
+    except ImportError:
         return {}
 
     class OwnDoc(BuildDoc):
