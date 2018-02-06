@@ -1,2 +1,3 @@
 sphinx
+scipy>=1.0
 numpydoc
