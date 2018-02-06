@@ -18,4 +18,4 @@
 cimport numpy as np
 from ..Matrix cimport Matrix
 
-cpdef np.ndarray CG(Matrix, np.ndarray, float eps=?)
+cpdef np.ndarray CG(Matrix, np.ndarray, bint hermitian=?, float errorTol=?)

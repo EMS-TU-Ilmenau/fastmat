@@ -32,7 +32,8 @@ from ..Matrix cimport Matrix
 cpdef np.ndarray CG(
     Matrix fmatA,
     np.ndarray arrB,
-    float eps=0
+    bint hermitian=False,
+    float errorTol=0
 ):
     r"""Conjugate Gradient Method
 
@@ -52,7 +53,8 @@ cpdef np.ndarray CG(
     instead. In this case it should be noted, that the condition number of
     :math:`A^\mathrm{H} \cdot A` might be a lot larger than the one of
     :math:`A` an thus we might run into stability problems for large and already
-    ill-conditioned systems.
+    ill-conditioned systems. So for Hermitian :math:`A` it should be called
+    with parameter `hermitian=True`
 
     This algorithm was originally described in [3]_ and is applicable here,
     because it only uses the backward and forward projection of a matrix.
@@ -68,7 +70,7 @@ cpdef np.ndarray CG(
     >>> # define the right hand side
     >>> b = npr.randn(2 ** n)
     >>> # solve the system
-    >>> y = fma.CG(H, b)
+    >>> y = fma.CG(H, b, hermitian=True)
     >>> # check if solution is correct
     >>> print(np.allclose(b, H.forward(y)))
 
@@ -82,7 +84,9 @@ cpdef np.ndarray CG(
         the system matrix
     arrB : np.ndarray
         the right hand side of the system of equations
-    eps : float, optional
+    hermitian : bool, optional
+        flag whether the system matrix is Hermitian or not
+    errorTol : float, optional
         threshold for stopping the iteration; default is 0
 
     Returns
@@ -98,19 +102,46 @@ cpdef np.ndarray CG(
         np.float32, np.promote_types(fmatA.dtype, arrB.dtype))
     cdef ntype npTypeOut = typeOut.type_num
     arrIn = _arrForceTypeAlignment(arrB, npTypeOut, np.NPY_FORCECAST)
-    if eps == 0:
-        eps = getTypeEps(typeOut)
+    if errorTol == 0:
+        errorTol = _getTypeEps(typeOut)
 
     # dispatch specialization of core routine according tOptor
     if typeOut == np.float32:
-        return _CGcore[np.float32_t](fmatA, arrIn, npTypeOut, 0., eps)
+        return _CGcore[np.float32_t](
+            fmatA,
+            arrIn,
+            npTypeOut,
+            0.,
+            hermitian,
+            errorTol
+        )
     elif typeOut == np.float64:
-        return _CGcore[np.float64_t](fmatA, arrIn, npTypeOut, 0., eps)
+        return _CGcore[np.float64_t](
+            fmatA,
+            arrIn,
+            npTypeOut,
+            0.,
+            hermitian,
+            errorTol
+        )
     elif typeOut == np.complex64:
-        return _CGcore[np.complex64_t](fmatA, arrIn, npTypeOut, 0., eps)
+        return _CGcore[np.complex64_t](
+            fmatA,
+            arrIn,
+            npTypeOut,
+            0.,
+            hermitian,
+            errorTol
+        )
     elif typeOut == np.complex128:
-        return \
-            _CGcore[np.complex128_t](fmatA, arrIn, npTypeOut, 0., eps)
+        return _CGcore[np.complex128_t](
+                fmatA,
+                arrIn,
+                npTypeOut,
+                0.,
+                hermitian,
+                errorTol
+            )
     else:
         raise NotImplementedError("Output type %d not supported." % (typeOut))
 
@@ -120,7 +151,8 @@ cdef np.ndarray _CGcore(
     np.ndarray arrB,
     ntype npTypeOut,
     TYPE_FLOAT typeTag,
-    float eps
+    bint hermitian,
+    float errorTol
 ):
 
     # Solve linear equation system 'fmatA * x = arrB' for x.
@@ -138,7 +170,8 @@ cdef np.ndarray _CGcore(
     # numAlpha     - optimal step with
     # numRNormNew  - new residual norm
     # numRNormOld  - old residual norm
-    # eps          - stopping condition to the projected residual
+    # hermitian    - flag whether system is Hermitian
+    # errorTol     - stopping condition to the projected residual
 
     # NOTE: typeTag is used for telling the compiler the used specialization
     # fetch dimensions of arrB
@@ -158,8 +191,19 @@ cdef np.ndarray _CGcore(
 
     # change right hand side of equation system according to symmetrization
     # force to be F-contiguous and of consistent data type (no ints here)
-    cdef np.ndarray arrR = _arrForceTypeAlignment(
-        fmatA.backward(arrB), npTypeOut, np.NPY_FORCECAST)
+    cdef np.ndarray arrR
+    if hermitian == False:
+        arrR = _arrForceTypeAlignment(
+            fmatA.backward(arrB),
+            npTypeOut,
+            np.NPY_FORCECAST
+        )
+    else:
+        arrR = _arrForceTypeAlignment(
+            arrB,
+            npTypeOut,
+            np.NPY_FORCECAST
+        )
 
     # as projections may just return the input vector unchanged, force arrR to
     # be an independent of the input (as we intent to change it)
@@ -190,8 +234,12 @@ cdef np.ndarray _CGcore(
         numStep = 0
 
         # iterate until stopping criterion is met
-        while numRNormOld > eps:
-            arrQ = fmatA.gram.forward(arrP)
+        while numRNormOld > errorTol:
+            if hermitian == False:
+                arrQ = fmatA.gram.forward(arrP)
+            else:
+                arrQ = fmatA.forward(arrP)
+
             vecQ = <TYPE_FLOAT * > arrQ.data
 
             # calculate next optimal step width according to
@@ -247,7 +295,7 @@ class CGinspect(Algorithm):
         def testCG(test):
 
             # prepare vectors
-            test[TEST.RESULT_REF]    = arrTestDist((test[TEST.NUM_M],
+            test[TEST.RESULT_REF]    = arrTestDist((test[TEST.NUM_N],
                                                     test[TEST.DATACOLS]),
                                                    dtype=test[TEST.DATATYPE])
             test[TEST.RESULT_INPUT]  = (test[TEST.INSTANCE] *
@@ -258,7 +306,7 @@ class CGinspect(Algorithm):
         return {
             TEST.ALGORITHM: {
                 TEST.NUM_N      : 27,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_M      : 3,
 
                 'typeA'         : TEST.Permutation(TEST.ALLTYPES),
                 'arrA'          : TEST.ArrayGenerator({
