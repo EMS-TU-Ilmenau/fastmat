@@ -3,6 +3,7 @@
 [![Status](https://img.shields.io/pypi/status/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Python wheels](https://img.shields.io/pypi/wheel/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8af2b42d33cc4f5ba5b91566032c44ed)](https://www.codacy.com/app/ChristophWWagner/fastmat-EMS-TU-Ilmenau?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
+[![Documentation Status](https://readthedocs.org/projects/fastmat/badge/?version=latest)](http://fastmat.readthedocs.io/en/latest/?badge=latest)
 
 [![License](https://img.shields.io/pypi/l/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Python versions](https://img.shields.io/pypi/pyversions/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
@@ -105,6 +106,8 @@ If you experience any trouble please do not hesitate to contact us or to open
 an issue on our github projectpage: https://github.com/EMS-TU-Ilmenau/fastmat
 
 ### FAQ
+
+Please check out our project documentation at [readthedocs](https://fastmat.readthedocs.io/).
 
 #### Windows: Installation fails with various "file not found" errors
 Often, this is caused by missing header files. Unfortunately windows ships
