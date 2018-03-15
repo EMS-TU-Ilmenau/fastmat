@@ -28,10 +28,17 @@ cdef class BlkTwoLvlToep(Partial):
     ############################################## class variables
     cdef public np.ndarray _tenT            # defining elements
     cdef public np.ndarray _diags           # matrix diagonals tensor
-    cdef intsize _numBlocksN
-    cdef intsize _numSize1
-    cdef intsize _numSize2
-    cdef np.ndarray _arrN
+    cdef intsize _numBlocks
+    cdef intsize _numSizeLvl1
+    cdef intsize _numSizeLvl2
+    cdef np.ndarray _arrSizeLvls
 
     ############################################## class methods
     cpdef np.ndarray _reference(self)
+    cpdef np.ndarray _preProcSlice(
+            self,
+            np.ndarray,
+            int,
+            np.ndarray,
+            np.ndarray
+        )

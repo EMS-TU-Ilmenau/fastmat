@@ -30,6 +30,7 @@ from .Diag cimport Diag
 from .Kron cimport Kron
 from .MLToeplitz cimport MLToeplitz
 from .DiagBlocks cimport DiagBlocks
+from .NDFourier cimport NDFourier
 
 cdef class BlkTwoLvlToep(Partial):
     r"""
@@ -124,15 +125,15 @@ cdef class BlkTwoLvlToep(Partial):
         '''
 
         # store the defining elements and extract the needed dimensions
-        self._tenT = np.copy(tenT)
-        self._numBlocksN = tenT.shape[0]
-        self._numSize1 = int((tenT.shape[2] + 1) /2)
-        self._numSize2 = int((tenT.shape[3] + 1) /2)
-        self._arrN = np.array([self._numSize1, self._numSize2], dtype='int')
+        self._tenT = tenT
+        self._numBlocks = tenT.shape[0]
+        self._numSizeLvl1 = int((tenT.shape[2] + 1) /2)
+        self._numSizeLvl2 = int((tenT.shape[3] + 1) /2)
+        self._arrSizeLvls = np.array([self._numSizeLvl1, self._numSizeLvl2])
 
         # construct one sample MLToeplitz instance to get optimal fourier
         # sizes
-        _T = MLToeplitz(np.copy(tenT[0, 0, :, :]))
+        _T = MLToeplitz(np.copy(tenT[0, 0, :, :]), optimize=False)
 
         # subselection index of the embedded partials
         indK = _T.indicesN.reshape((-1, 1))
@@ -141,43 +142,71 @@ cdef class BlkTwoLvlToep(Partial):
         F = _T._content[0]._content[-1]
 
         # build up the whole diagonalizing matrix
-        # TODO checkout if this can be speeded up by doing FFTs
         K = Kron(
-            Eye(self._numBlocksN),
-            *F._content
+            Eye(self._numBlocks),
+            NDFourier(tenT.shape[2], tenT.shape[3])
         )
 
         # allocate memory for the diagonal matrix
         diags = np.empty((
-            self._numBlocksN,
-            self._numBlocksN,
-            F.numN
+            self._numBlocks,
+            self._numBlocks,
+            tenT.shape[2] * tenT.shape[3]
         ), dtype='complex')
 
         # calculate the large subselection index array for the whole matrix
-        rgn = np.arange(self._numBlocksN) *F.numN
+        rgn = np.arange(self._numBlocks) *F.numN
         arrIndicesN = (rgn + np.repeat(
-            indK, self._numBlocksN, 1
-        )).reshape(-1, order='F')
+                        indK, self._numBlocks, 1
+                    )).reshape(-1, order='F')
+
 
         # extract the diagonalizing stuff from the nested toeplitz matrices
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
-                T = MLToeplitz(np.copy(tenT[ii, jj, :, :]))
-                diags[ii, jj, :] = (T._content[0]._content[1].vecD)[:]
+
+        diags = np.fft.fftn(
+                    tenT,
+                    axes=(2,3)
+                ).reshape((self._numBlocks, self._numBlocks, -1)) / (
+                        tenT.shape[2] * tenT.shape[3]
+                    )
 
         # construct the composing matrices
         B = DiagBlocks(diags)
         P = Product(K.H, B, K)
 
         # call the parent constructor
-        super(BlkTwoLvlToep, self).__init__(P, N=arrIndicesN, M=arrIndicesN)
+        super(BlkTwoLvlToep, self).__init__(
+            P,
+            N=arrIndicesN,
+            M=arrIndicesN
+        )
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the
         # matrix itself
-        if self.dtype != self._tenT.dtype:
-            self._tenT = self._tenT.astype(self.dtype)
+        # if self.dtype != tenT.dtype:
+        #     self._tenT = self._tenT.astype(self.dtype)
+
+    cpdef np.ndarray _preProcSlice(
+        self,
+        np.ndarray theSlice,
+        int numSliceInd,
+        np.ndarray arrNopt,
+        np.ndarray arrN
+    ):
+
+        # preprocess one axis of the defining tensor. here we check for one
+        # dimension, whether we have to zero pad
+
+        if arrNopt[numSliceInd] > 2 * arrN[numSliceInd] -1:
+            z = np.zeros(arrNopt[numSliceInd] - 2 *arrN[numSliceInd] +1)
+            return np.concatenate((
+                np.copy(theSlice[:arrN[numSliceInd]]),
+                z,
+                np.copy(theSlice[arrN[numSliceInd]:])
+            ))
+        else:
+            return np.copy(theSlice)
 
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
@@ -186,12 +215,12 @@ cdef class BlkTwoLvlToep(Partial):
     cpdef Matrix _getNormalized(self):
         cdef intsize ii, jj
 
-        cdef intsize stride = np.prod(self._arrN)
+        cdef intsize stride = np.prod(self._arrSizeLvls)
 
         cdef np.ndarray arrNorms = np.zeros(self.numM)
 
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
+        for ii in range(self._numBlocks):
+            for jj in range(self._numBlocks):
                 arrNorms[jj *stride:(jj +1) *stride] += self._normalizeCore(
                     self._tenT[ii, jj, :, :]
                 )
@@ -222,8 +251,8 @@ cdef class BlkTwoLvlToep(Partial):
                     - np.abs(arrT[numL - ii - 1]) ** 2
 
         else:
-            numS1 = np.prod(self._arrN[-numD :])
-            numS2 = np.prod(self._arrN[-(numD - 1) :])
+            numS1 = np.prod(self._arrSizeLvls[-numD :])
+            numS2 = np.prod(self._arrSizeLvls[-(numD - 1) :])
             arrNorms = np.zeros(numS1)
             arrT = np.zeros((tenT.shape[0], numS2))
 
@@ -257,13 +286,13 @@ cdef class BlkTwoLvlToep(Partial):
 
         # go through all blocks and construct the corresponding
         # MLToeplitz instance by calling its reference
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
+        for ii in range(self._numBlocks):
+            for jj in range(self._numBlocks):
                 arrRes[
-                    ii * self._numSize1 * self._numSize2:
-                    (ii + 1) * self._numSize1 * self._numSize2,
-                    jj * self._numSize1 * self._numSize2:
-                    (jj + 1) * self._numSize1 * self._numSize2
+                    ii * self._numSizeLvl1 * self._numSizeLvl2:
+                    (ii + 1) * self._numSizeLvl1 * self._numSizeLvl2,
+                    jj * self._numSizeLvl1 * self._numSizeLvl2:
+                    (jj + 1) * self._numSizeLvl1 * self._numSizeLvl2
                 ] = MLToeplitz(
                     np.copy(self._tenT[ii, jj, :, :])
                 )._reference()
