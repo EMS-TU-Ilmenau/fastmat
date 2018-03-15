@@ -74,71 +74,11 @@ cdef class NDFourier(Matrix):
     def __init__(self, *order, **options):
         '''Initialize Matrix instance with a list of child matrices'''
 
-        cdef intsize paddedSize
-        cdef np.ndarray arrSamples, vecConv
-
-        cdef bint optimize = options.get('optimize', True)
-        cdef int maxStage = options.get('maxStage', 4)
-
         # store order of Fourier Transform
         self._order = np.copy(np.squeeze(np.array(order)))
 
         # store number of dimensions to transform over
         self._numD = len(order)
-
-        self._paddedSize = np.empty_like(self._order)
-        self._numL = np.empty_like(self._order)
-        # determine if computation of the FFT via convolution is beneficial
-        # first, detect the smallest size of a reasonably fast chirp-Z transform
-        # start with the minimal size of 2 * N - 1
-        # we do this for every dimension individually
-        if optimize:
-
-            # iterate through all dimensions
-            for ii in range(self._numD):
-                self._paddedSize[ii] = _findOptimalFFTSize(
-                    self._order[ii] * 2 - 1,
-                    4
-                )
-                # check once more nothing went wrong up to this point
-                assert self._paddedSize[ii] >= self._order[ii] * 2 - 1
-
-            # now as we know where to pad to if we choose to, decide what is a
-            # lesser pain to do. self._numL acts as a marker on whether to act
-            # as a plain fft wrapper (== 0) or whether to use the chirp-z
-            # transform in the latter case self._numL specifies the internal
-            # dimension
-            self._numL[ii] = (0 if (_getFFTComplexity(self._order[ii]) <
-                                    (_getFFTComplexity(self._paddedSize[ii]) *
-                                     2 + self._paddedSize[ii]))
-                              else self._paddedSize[ii])
-        #
-        #     # if we convolve, then we should prepare some stuff
-        #     # the presence (non-None) of self._vecConvHat controls the
-        #     # behaviour of the forward() and backward() transforms.
-        #     if self._numL[ii] > 0:
-        #
-        #         # create the sampling grid
-        #         arrSamples = np.arange(self.order[ii])
-        #
-        #         # evaluate at these samples for the first numL elements
-        #         # of the vector
-        #         vecConv[ii,:] = _arrZero(1, self._numL, 1, np.NPY_COMPLEX128)
-        #         vecConv[ii,: self.order] = np.exp(
-        #             +1j * (arrSamples ** 2) * np.pi / self.order)
-        #
-        #         # now put a flipped version of the above at the very end to
-        #         # get a circular convolution
-        #         vecConv[ii, self._numL[ii] - self.order[ii] + 1:] = \
-        #             vecConv[ii, 1:self.order[ii]][::-1]
-        #
-        #         # get a premultiplication array for preprocessing before the
-        #         # convolution
-        #         self._preMult[ii] = np.exp(
-        #             -1j * (arrSamples ** 2) * np.pi / self.order)
-        #
-        #         # transfer function of convolution
-        #         self._vecConvHat[ii] = np.fft.fft(vecConv)
 
         # set properties of matrix
         self._initProperties(
@@ -184,24 +124,26 @@ cdef class NDFourier(Matrix):
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         '''Calculate the forward transform of this matrix'''
 
-        arrRes = np.empty((self.numN, arrX.shape[1]), dtype=self.dtype)
-
-        for ii in range(arrX.shape[1]):
-            arrRes[..., ii] = np.fft.fftn(
-                arrX[:, ii].reshape((*self._order,))
-            ).reshape(self.numN)
-
-        return arrRes
+        # first we reshape the input to the size of the ND transform
+        # and then we apply the transform along the last axis over the first
+        # d axes and finally reshape everything back
+        return np.fft.fftn(
+            arrX.reshape(tuple(self._order) + (-1, )),
+            axes=tuple(range(self._numD))
+        ).reshape((-1, arrX.shape[1]))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         '''Calculate the backward transform of this matrix'''
-        arrRes = np.empty((self.numM, arrX.shape[1]), dtype=self.dtype)
 
-        for ii in range(arrX.shape[1]):
-            arrRes[..., ii] = np.fft.ifftn(
-                arrX[:, ii].reshape((*self._order,))
-            ).reshape(self.numN)
-        return arrRes * self.numN
+        # first we reshape the input to the size of the ND transform
+        # and then we apply the transform along the last axis over the first
+        # d axes and finally reshape everything back
+        # since we do a backward and not the inverse, we have to apply a
+        # scaling factor
+        return np.fft.ifftn(
+            arrX.reshape(tuple(self._order) + (-1, )),
+            axes=tuple(range(self._numD))
+        ).reshape((-1, arrX.shape[1])) * self.numN
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
