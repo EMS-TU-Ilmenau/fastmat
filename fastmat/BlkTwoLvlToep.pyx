@@ -31,9 +31,9 @@ from .Kron cimport Kron
 from .MLToeplitz cimport MLToeplitz
 from .DiagBlocks cimport DiagBlocks
 
-cdef class MLUltraSound(Partial):
+cdef class BlkTwoLvlToep(Partial):
     r"""
-    Multilevel Ultrasound Matrix ``fastmat.MLUltraSound``
+    Multilevel Ultrasound Matrix ``fastmat.BlkTwoLvlToep``
 
 
     This class is an implementation of matrices, which have a block
@@ -93,7 +93,7 @@ cdef class MLUltraSound(Partial):
     >>> )
     >>>
     >>> # construct the matrix
-    >>> T = fm.MLUltraSound(t)
+    >>> T = fm.BlkTwoLvlToep(t)
 
     This yields
 
@@ -120,7 +120,7 @@ cdef class MLUltraSound(Partial):
 
     def __init__(self, tenT, **options):
         '''
-        Initialize MLUltraSound Matrix instance.
+        Initialize BlkTwoLvlToep Matrix instance.
         '''
 
         # store the defining elements and extract the needed dimensions
@@ -171,7 +171,7 @@ cdef class MLUltraSound(Partial):
         P = Product(K.H, B, K)
 
         # call the parent constructor
-        super(MLUltraSound, self).__init__(P, N=arrIndicesN, M=arrIndicesN)
+        super(BlkTwoLvlToep, self).__init__(P, N=arrIndicesN, M=arrIndicesN)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the
@@ -285,7 +285,7 @@ cdef class MLUltraSound(Partial):
                     TEST.SHAPE  : (2, 2, 7, 9)
                 }),
                 TEST.INITARGS   : (lambda param : [param['vecC']()]),
-                TEST.OBJECT     : MLUltraSound,
+                TEST.OBJECT     : BlkTwoLvlToep,
                 TEST.TOL_POWER  : 2.,
                 TEST.TOL_MINEPS : _getTypeEps(np.float64)
             },
@@ -298,7 +298,7 @@ cdef class MLUltraSound(Partial):
         return {
             BENCH.COMMON: {
                 BENCH.FUNC_GEN  : (lambda c:
-                                   MLUltraSound(np.random.randn(
+                                   BlkTwoLvlToep(np.random.randn(
                                        c , c, 2 * c - 1, 2 * c - 1)
                                    )),
                 BENCH.FUNC_SIZE : (lambda c: c ** 3),
@@ -308,7 +308,7 @@ cdef class MLUltraSound(Partial):
             BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, dt: MLUltraSound(
+                BENCH.FUNC_GEN  : (lambda c, dt: BlkTwoLvlToep(
                     np.random.randn(c, c, 2 * c - 1, 2 * c - 1).astype(dt)))
             }
         }

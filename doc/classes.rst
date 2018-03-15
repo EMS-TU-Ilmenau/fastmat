@@ -96,7 +96,7 @@ The fastmat main module
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: fastmat.MLUltraSound
+.. autoclass:: fastmat.BlkTwoLvlToep
     :members:
     :undoc-members:
     :show-inheritance:

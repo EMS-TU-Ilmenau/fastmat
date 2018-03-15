@@ -22,8 +22,8 @@ from .Partial cimport Partial
 from .core.types cimport *
 
 ################################################################################
-################################################## class MLUltraSound
-cdef class MLUltraSound(Partial):
+################################################## class BlkTwoLvlToep
+cdef class BlkTwoLvlToep(Partial):
 
     ############################################## class variables
     cdef public np.ndarray _tenT            # defining elements

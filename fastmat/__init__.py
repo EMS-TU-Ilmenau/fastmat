@@ -80,7 +80,7 @@ Here we list the classes in the package for easy referencing and access.
  * :py:class:`fastmat.LowRank`
  * :py:class:`fastmat.MLCirculant`
  * :py:class:`fastmat.MLToeplitz`
- * :py:class:`fastmat.MLUltraSound`
+ * :py:class:`fastmat.BlkTwoLvlToep`
  * :py:class:`fastmat.Outer`
  * :py:class:`fastmat.Parametric`
  * :py:class:`fastmat.Partial`
@@ -133,7 +133,7 @@ from .DiagBlocks import DiagBlocks
 from .LFSRCirculant import LFSRCirculant
 from .MLCirculant import MLCirculant
 from .MLToeplitz import MLToeplitz
-from .MLUltraSound import MLUltraSound
+from .BlkTwoLvlToep import BlkTwoLvlToep
 from .NDFourier import NDFourier
 
 # import algorithms subpackage
