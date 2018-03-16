@@ -87,8 +87,11 @@ cdef class Product(Matrix):
                 else:
                     # store fastmat-matrix-content: determine data type
                     # -> promotion of factor types
-                    __promoteType(factor.dtype)
                     lstFactors.append(factor)
+
+                # promote data type for all fastmat matrices
+                __promoteType(factor.dtype)
+
         __addFactors(matrices)
         dtype = datatype[0]
 
