@@ -44,7 +44,7 @@ cdef class Diag(Matrix):
     >>> d = np.array([1, 0, 3, 6])
     >>>
     >>> # construct the matrix
-    >>> D = fm.Diagonal(d)
+    >>> D = fm.Diag(d)
 
     This yields
 
