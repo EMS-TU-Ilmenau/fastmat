@@ -140,9 +140,10 @@ ctypedef struct INFO_TYPE_s:
     np.float64_t    min
     np.float64_t    max
     int             dsize
-    bint            isComplex
-    bint            isInt
     bint            isNumber
+    bint            isInt
+    bint            isFloat
+    bint            isComplex
 
 
 ctypedef struct INFO_ARR_s:
@@ -165,6 +166,11 @@ cpdef np.float64_t _getTypeEps(object dtype)
 cpdef np.float64_t _getTypeMin(object dtype)
 cpdef np.float64_t _getTypeMax(object dtype)
 
+################################################## type class checks
+
+cpdef isInteger(object obj)
+cpdef isFloat(object obj)
+cpdef isComplex(object obj)
 
 ################################################## type Promotion stuff
 

@@ -26,6 +26,8 @@ import numpy as np
 from scipy import sparse
 from platform import system as pfSystem
 
+from ..core.types import isInteger
+
 try:
     from itertools import izip
 except ImportError:         # python 3.x
@@ -340,14 +342,14 @@ def arrTestDist(shape, dtype, center=0):
     if np.prod(shape) < 1:
         return np.array([])
 
-    if np.issubdtype(dtype, np.integer):
+    if dtype in (np.int8, np.uint8, np.int32, np.uint32, np.int64, np.uint64):
         result = np.random.choice(
             [center - 2, center - 1, center + 1, center + 2], shape).astype(
                 dtype)
     else:
-        if np.issubdtype(dtype, np.floating):
+        if dtype in (np.float32, np.float64):
             result = _draw(shape).astype(dtype) + center
-        elif np.issubdtype(dtype, np.complexfloating):
+        elif dtype in (np.complex64, np.complex128):
             result = (_draw(shape) + np.real(center) +
                       1j * (_draw(shape) + np.imag(center))).astype(dtype)
         else:
@@ -357,7 +359,7 @@ def arrTestDist(shape, dtype, center=0):
     # too close neighbours to the largest element in the distribution
     # this helps at least largestSV in Diag matrices to converge ;)
     idxMax = np.unravel_index(np.abs(result).argmax(), result.shape)
-    if np.issubdtype(dtype, np.integer):
+    if isInteger(dtype):
         result[idxMax] += np.sign(result[idxMax])
     else:
         result[idxMax] *= 1.5

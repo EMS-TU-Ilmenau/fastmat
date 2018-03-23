@@ -199,7 +199,7 @@ cdef class Sparse(Matrix):
                 BENCH.FUNC_GEN  : (lambda c, dt: (
                     Sparse(sps.rand(2 ** c, 2 ** c, 0.1,
                                     format='csr', dtype=dt))
-                    if np.issubdtype(dt, np.floating) else None))
+                    if isFloat(dt) else None))
             }
         }
 
