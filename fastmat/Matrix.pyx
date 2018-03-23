@@ -269,11 +269,6 @@ cdef class Matrix(object):
         def __get__(self):
             return (self.getArray() if self._array is None else self._array)
 
-    def __array__(self):
-        # r"""Array
-        # """
-        return self._getArray()
-
     cpdef np.ndarray getArray(self):
         if self.__class__ is not Matrix:
             self._array = self._getArray()
