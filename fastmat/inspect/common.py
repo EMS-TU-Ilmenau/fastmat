@@ -492,9 +492,48 @@ class ArrayGenerator(dict):
     def __repr__(self):
         return self.__str__()
 
+################################################################################
+################################################## inspection routines
+
+
+def showContent(instance, seen=None, prefix=""):
+    '''
+    Print a readable dependency tree of fastmat class instances
+
+    Parameters
+    ----------
+    instance : :py:class:`fastmat.Matrix`
+        Matrix instance to get inspected
+
+    Notes
+    -----
+    The function outputs instance as top-level node and then walks through all
+    elements of instance.content, recursively calling itself with extended
+    prefix. To avoid endless loops, the function ensures the recursion is only
+    applied once to every element by keeping track already visited elements.
+
+    >>> showContent(Eye(4) * -1 * -1 + Eye(4) - Eye(4))
+    <Sum[4x4]:0x7fe447f40770>
+    +-<Product[4x4]:0x7fe447f3d188>
+    | +-<Eye[4x4]:0x7fe447f402b0>
+    +-<Eye[4x4]:0x7fe447f403e0>
+    +-<Product[4x4]:0x7fe447f3da10>
+      +-<Eye[4x4]:0x7fe447f40640>
+    '''
+    if seen is None:
+        seen = set([])
+
+    print((prefix[:-2] + "+-" if len(prefix) > 0 else "") + repr(instance))
+    if instance not in seen:
+        seen.add(instance)
+        last = len(instance)
+        for ii, item in enumerate(instance):
+            showContent(item, seen=seen,
+                        prefix=prefix + ("| " if ii < last - 1 else "  "))
 
 ################################################################################
 ################################################## CONSTANT definitions
+
 
 ################################################## class TypeDict
 class TypeDict(dict):
