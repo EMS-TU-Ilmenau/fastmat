@@ -258,6 +258,18 @@ def testArray(test):
     return compareResults(test, query)
 
 
+################################################## testInterface()
+def testInterface(test):
+    query={}
+    instance=test[TEST.INSTANCE]
+    query[TEST.RESULT_OUTPUT] = (
+        instance - instance + (np.int8(-1) * instance * np.int8(-1)) +
+        instance - instance
+    ).array
+    query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
+    return compareResults(test, query)
+
+
 ################################################## testGetItem()
 def testGetItem(test):
     query={}
@@ -482,6 +494,7 @@ class Test(Worker):
                 # define tests
                 TEST.QUERY: IgnoreDict({
                     'arr'   : testArray,
+                    'iface' : testInterface,
                     'item'  : testGetItem,
                     'gCs'   : testGetColsSingle,
                     'gCm'   : testGetColsMultiple,

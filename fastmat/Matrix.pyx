@@ -1064,25 +1064,50 @@ cdef class Matrix(object):
         raise StopIteration
 
     ############################################## class operator overloading
+
+    __array_priority__ = 20.
+
     def __add__(self, element):
         """Return the sum of this matrix instance and another."""
-        return Sum(self, element)
+        if isinstance(element, Matrix):
+            return Sum(self, element)
+        else:
+            raise TypeError("Not an addition of fastmat matrices.")
+
+    def __radd__(self, element):
+        """Return the sum of another matrix instance and this."""
+        if isinstance(element, Matrix):
+            return Sum(self, element)
+        else:
+            raise TypeError("Not an addition of fastmat matrices.")
 
     def __sub__(self, element):
         """Return the difference of this matrix instance and another."""
-        return Sum(self, (-1) * element)
+        if isinstance(element, Matrix):
+            return Sum(
+                self, Product(element, np.int8(-1), typeExpansion=np.int8))
+        else:
+            raise TypeError("Not a subtraction of fastmat matrices.")
+
+    def __rsub__(self, element):
+        """Return the difference of another matrix instance and this."""
+        if isinstance(element, Matrix):
+            return Sum(
+                element, Product(self, np.int8(-1), typeExpansion=np.int8))
+        else:
+            raise TypeError("Not a subtraction of fastmat matrices.")
 
     def __mul__(self, factor):
         """Return the product of this matrix and another or a scalar."""
         if isinstance(factor, np.ndarray):
             return self.forward(factor)
         else:
-            return Product(self, factor)
+            return Product(self, factor, typeExpansion=np.int8)
 
     def __rmul__(self, factor):
         """Return the product of a scalar and this matrix."""
         if np.isscalar(factor) or isinstance(factor, Matrix):
-            return Product(factor, self)
+            return Product(factor, self, typeExpansion=np.int8)
         else:
             raise TypeError("Invalid product term for fastmat Matrix.")
 
