@@ -65,7 +65,7 @@ cdef class Partial(Matrix):
         """
 
         def __get__(self):
-            return self._indicesN
+            return self._indicesN if self._pruneN else np.arange(self.numN)
 
     property indicesM:
         r"""Return the support of the base matrix which defines the partial
@@ -76,7 +76,7 @@ cdef class Partial(Matrix):
         """
 
         def __get__(self):
-            return self._indicesM
+            return self._indicesM if self._pruneM else np.arange(self.numM)
 
     def __init__(
         self,
@@ -89,8 +89,9 @@ cdef class Partial(Matrix):
         # initialize matrix for full support (used anyway for checking)
         if not isinstance(mat, Matrix):
             raise ValueError("Partial: fastmat Matrix required.")
-        self._indicesM = np.arange(mat.numM)
-        self._indicesN = np.arange(mat.numN)
+
+        self._indicesM = None
+        self._indicesN = None
         self._content = (mat, )
 
         # check if anything needs to be done in N- or M-dimension
@@ -98,7 +99,16 @@ cdef class Partial(Matrix):
         self._pruneN = False
         if N is not None:
             N = np.array(N)
-            if (len(N) != mat.numN) or (np.sum(N - self._indicesN) != 0):
+            if N.dtype == np.bool:
+                # convert specification of boolean decisions to indices
+                N = np.arange(mat.numN)[N]
+            elif isInteger(N):
+                pass
+            else:
+                raise TypeError(
+                    "Partial: Type of row indices must be integer or bool.")
+
+            if (len(N) != mat.numN) or (np.sum(N - np.arange(mat.numN)) != 0):
                 if np.any((N >= mat.numN) | (N < 0)):
                     raise ValueError(
                         "Partial: A row index exceed matrix dimensions.")
@@ -109,7 +119,16 @@ cdef class Partial(Matrix):
         self._pruneM = False
         if M is not None:
             M = np.array(M)
-            if (len(M) != mat.numM) or (np.sum(M - self._indicesM) != 0):
+            if M.dtype == np.bool:
+                # convert specification of boolean decisions to indices
+                M = np.arange(mat.numM)[M]
+            elif isInteger(M):
+                pass
+            else:
+                raise TypeError(
+                    "Partial: Type of column indices must be integer or bool.")
+
+            if (len(M) != mat.numM) or (np.sum(M - np.arange(mat.numM)) != 0):
                 if np.any((M >= mat.numM) | (M < 0)):
                     raise ValueError(
                         "Partial: A column index exceeds matrix dimensions.")
@@ -117,9 +136,11 @@ cdef class Partial(Matrix):
             self._indicesM = M
             self._pruneM = True
 
-        # set properties of matrix
+        # set properties of matrix.
         self._initProperties(
-            len(self._indicesN), len(self._indicesM), mat.dtype)
+            len(self._indicesN) if self._pruneN else mat.numN,
+            len(self._indicesM) if self._pruneM else mat.numM,
+            mat.dtype)
 
     def __repr__(self):
         '''
@@ -173,12 +194,12 @@ cdef class Partial(Matrix):
 
         if self._pruneM:
             arrInput = _arrZero(
-                2, self._content[0].numM, arrX.shape[1], _getNpType(arrX))
+                2, self.content[0].numM, arrX.shape[1], _getNpType(arrX))
             arrInput[self._indicesM, :] = arrX
         else:
             arrInput = arrX
 
-        return (self._content[0].forward(arrInput)[self._indicesN, :]
+        return (self.content[0].forward(arrInput)[self._indicesN, :]
                 if self._pruneN else self._content[0].forward(arrInput))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
@@ -188,13 +209,13 @@ cdef class Partial(Matrix):
 
         if self._pruneN:
             arrInput = _arrZero(
-                2, self._content[0].numN, arrX.shape[1], _getNpType(arrX))
+                2, self.content[0].numN, arrX.shape[1], _getNpType(arrX))
             arrInput[self._indicesN, :] = arrX
         else:
             arrInput = arrX
 
-        return (self._content[0].backward(arrInput)[self._indicesM, :]
-                if self._pruneM else self._content[0].backward(arrInput))
+        return (self.content[0].backward(arrInput)[self._indicesM, :]
+                if self._pruneM else self.content[0].backward(arrInput))
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
@@ -202,8 +223,10 @@ cdef class Partial(Matrix):
         Return an explicit representation of the matrix without using
         any fastmat code.
         '''
-        cdef np.ndarray arrFull = self._content[0].reference()
-        return arrFull[self._indicesN, :][:, self._indicesM]
+        cdef np.ndarray arrFull = self.content[0].reference()
+        return arrFull[
+            self._indicesN if self._pruneN else np.s_, :][
+            :, self._indicesM if self._pruneM else np.s_]
 
     ############################################## class inspection, QM
     def _getTest(self):
@@ -214,19 +237,47 @@ cdef class Partial(Matrix):
                 'order'         : 4,
                 'num_N'         : (lambda param: 2 ** param['order']),
                 'num_M'         : 'num_N',
-                TEST.NUM_N      : (lambda param: len(param['subRows'])),
-                TEST.NUM_M      : (lambda param: len(param['subCols'])),
-
-                'subCols'       : TEST.Permutation([np.array([1, 2, 3, 11, 12]),
-                                                    np.array([6])]),
-                'subRows'       : TEST.Permutation([np.array([7, 8, 9, 13]),
-                                                    np.array([10])]),
-                TEST.INITARGS   : (lambda param: [Hadamard(param['order']),
-                                                  param['subRows'],
-                                                  param['subCols']]),
+                TEST.NUM_N      : (lambda param: (
+                    np.count_nonzero(param['subRows'])
+                    if param['subRows'].dtype == np.bool
+                    else len(param['subRows'])
+                )),
+                TEST.NUM_M      : (lambda param: (
+                    np.count_nonzero(param['subCols'])
+                    if param['subCols'].dtype == np.bool
+                    else len(param['subCols'])
+                )),
+                'subCols'       : TEST.Permutation([
+                    np.array([1, 2, 3, 11, 12]),
+                    np.array([6]),
+                    np.array([
+                        True, True, False, False, True, False, False, True,
+                        False, True, True, False, False, True, False, True
+                    ])
+                ]),
+                'subRows'       : TEST.Permutation([
+                    np.array([7, 8, 9, 13]),
+                    np.array([10]),
+                    np.array([
+                        False, True, True, False, False, True, False, True,
+                        True, True, False, False, True, False, False, True
+                    ])
+                ]),
+                TEST.INITARGS   : (lambda param: [
+                    Hadamard(param['order']),
+                    param['subRows'],
+                    param['subCols']
+                ]),
+                'strIndexTypeM' : (lambda param: (
+                    'B' if param['subCols'].dtype == np.bool else 'I'
+                )),
+                'strIndexTypeN' : (lambda param: (
+                    'B' if param['subRows'].dtype == np.bool else 'I'
+                )),
                 TEST.OBJECT     : Partial,
-                TEST.NAMINGARGS : dynFormat("Hadamard(%d)->%dx%d",
-                                            'order', TEST.NUM_N, TEST.NUM_M)
+                TEST.NAMINGARGS : dynFormat("Hadamard(%d)->%dx%d,%s%s",
+                                            'order', TEST.NUM_N, TEST.NUM_M,
+                                            'strIndexTypeM', 'strIndexTypeN')
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}
@@ -241,8 +292,8 @@ cdef class Partial(Matrix):
                     Eye(2 * c), N=np.arange(c), M=np.arange(c)))
             },
             BENCH.OVERHEAD: {
-                BENCH.FUNC_GEN  : (lambda c:
-                                   Partial(Eye(2 ** c), np.arange(2 ** c)))
+                BENCH.FUNC_GEN  : (lambda c: Partial(
+                    Eye(2 ** c), np.arange(2 ** c)))
             }
         }
 
