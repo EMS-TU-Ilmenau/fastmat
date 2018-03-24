@@ -173,7 +173,7 @@ cdef class Matrix(object):
         # *(read-only)*
         # """
         def __get__(self):
-            return (self.numN, self.numM)
+            return (self._info.numN, self._info.numM)
 
     property tag:
         # r"""Description tag of Matrix
@@ -287,7 +287,7 @@ cdef class Matrix(object):
             # representation of this matrix. This calculation is very slow but
             # also very general. Therefore it is used also in child classes
             # when no explicit code for self._getArray() is provided.
-            return self._forward(np.eye(self.numM, dtype=self.dtype))
+            return self._forward(np.eye(self._info.numM, dtype=self.dtype))
 
     def getCols(self, indices):
         r"""
@@ -320,7 +320,7 @@ cdef class Matrix(object):
         r"""
 
         """
-        if idx < 0 or idx >= self.numM:
+        if idx < 0 or idx >= self._info.numM:
             raise ValueError("Column index exceeds matrix dimensions.")
 
         # if a dense representation already exists, use it!
@@ -369,7 +369,7 @@ cdef class Matrix(object):
         r"""
 
         """
-        if idx < 0 or idx >= self.numN:
+        if idx < 0 or idx >= self._info.numN:
             raise ValueError("Row index exceeds matrix dimensions.")
 
         # if a dense representation already exists, use it!
@@ -481,7 +481,7 @@ cdef class Matrix(object):
         # what happens.
         # """
 
-        if self._numN != self._numM:
+        if self._info.numN != self._info.numM:
             raise ValueError("largestEV: Matrix must be square.")
 
         result = self._getLargestEV(maxSteps, relEps, eps, alwaysReturn)
@@ -504,14 +504,15 @@ cdef class Matrix(object):
 
         # determine an convergance threshold if eps is deliberately set to zero
         if eps == 0:
-            eps = relEps * _getTypeEps(safeTypeExpansion(self.dtype)) * \
-                (self.numN if self.numN >= self.numM else self.numM)
+            eps = relEps * _getTypeEps(safeTypeExpansion(self.dtype)) * (
+                self._info.numN if self._info.numN >= self._info.numM
+                else self._info.numM)
 
-        if self.numN != self.numM:
+        if self._info.numN != self._info.numM:
             raise ValueError("largestEV: Matrix must be square.")
 
         # sample one point uniformly in space, have a zero-vector reference
-        vecBNew = np.random.randn(self.numM, 1).astype(
+        vecBNew = np.random.randn(self._info.numM, 1).astype(
             np.promote_types(np.float32, self.dtype))
         vecBNew /= np.linalg.norm(vecBNew)
         vecBOld = np.zeros((<object> vecBNew).shape, vecBNew.dtype)
@@ -615,11 +616,12 @@ cdef class Matrix(object):
 
         # determine an convergance threshold if eps is deliberately set to zero
         if eps == 0:
-            eps = relEps * _getTypeEps(safeTypeExpansion(self.dtype)) * \
-                (self.numN if self.numN >= self.numM else self.numM)
+            eps = relEps * _getTypeEps(safeTypeExpansion(self.dtype)) * (
+                self._info.numN if self._info.numN >= self._info.numM
+                else self._info.numM)
 
         # sample one initial sample, have a zero-vector reference
-        vecB = np.random.randn(self.numM, 1).astype(
+        vecB = np.random.randn(self._info.numM, 1).astype(
             np.promote_types(np.float64, self.dtype))
         normNew = np.linalg.norm(vecB)
 
@@ -684,17 +686,18 @@ cdef class Matrix(object):
         diagType = safeTypeExpansion(self.dtype)
 
         # array that contains the norms of each column
-        cdef np.ndarray arrDiag = np.empty(self.numM, dtype=diagType)
+        cdef np.ndarray arrDiag = np.empty(self._info.numM, dtype=diagType)
 
         # number of elements we consider at once during normalization
         cdef intsize numStrideSize = 256
 
         cdef np.ndarray arrSelector = np.zeros(
-            (self.numM, min(numStrideSize, self.numM)), dtype=diagType)
+            (self._info.numM, min(numStrideSize, self._info.numM)),
+            dtype=diagType)
 
         cdef int ii
-        for ii in range(0, self.numM, numStrideSize):
-            vecIndices = np.arange(ii, min(ii + numStrideSize, self.numM))
+        for ii in range(0, self._info.numM, numStrideSize):
+            vecIndices = np.arange(ii, min(ii + numStrideSize, self._info.numM))
             if ii == 0 or vecSlice.size != vecIndices.size:
                 vecSlice = np.arange(0, vecIndices.size)
 
@@ -795,7 +798,7 @@ cdef class Matrix(object):
         self._profileBackward.complexity = complexity[1]
 
     cpdef tuple _getComplexity(self):
-        cdef float complexity = self.numN * self.numM
+        cdef float complexity = self._info.numN * self._info.numM
         return (complexity, complexity)
 
     property profile:
@@ -1033,8 +1036,8 @@ cdef class Matrix(object):
 
         return "<%s[%dx%d]:0x%12x>" %(
             self.__class__.__name__,
-            self.numN,
-            self.numM,
+            self._info.numN,
+            self._info.numM,
             id(self)
         )
 
@@ -1157,7 +1160,7 @@ cdef class Matrix(object):
             typeOutput = typeInfo[typeInput].promote[
                 self._info.dtype[0].fusedType]
 
-            arrOutput = _arrEmpty(2, self.numN, arrX.shape[1],
+            arrOutput = _arrEmpty(2, self._info.numN, arrX.shape[1],
                                   typeInfo[typeOutput].typeNum)
             self._forwardC(arrX, arrOutput, typeInput, typeOutput)
             return arrOutput
@@ -1190,13 +1193,14 @@ cdef class Matrix(object):
             raise ValueError("Input data array must be at most 2D")
 
         # arrInput.N must match self.M in forward() and .N in backward()
-        if arrInput.shape[0] != self.numM:
+        if arrInput.shape[0] != self._info.numM:
             raise ValueError("Dimension mismatch %s <-!-> %s" %(
                 str(self.shape), str((<object> arrInput).shape)))
 
         # force array of data to be two-dimensional and determine vector count
         if ndimInput == 1:
-            arrInput = _arrReshape(arrInput, 2, self.numM, 1, np.NPY_ANYORDER)
+            arrInput = _arrReshape(
+                arrInput, 2, self._info.numM, 1, np.NPY_ANYORDER)
         cdef intsize M = arrInput.shape[1]
 
         # Determine output data type
@@ -1229,7 +1233,7 @@ cdef class Matrix(object):
             if self._cythonCall:
                 # Create output array
                 arrOutput = _arrEmpty(
-                    2, self.numN, M if ndimInput > 1 else 1,
+                    2, self._info.numN, M if ndimInput > 1 else 1,
                     typeInfo[typeOutput].typeNum)
 
                 # Call calculation routine (fused type dispatch must be
@@ -1240,7 +1244,8 @@ cdef class Matrix(object):
 
         if ndimInput == 1:
             # reshape back to single-dimensional vector
-            arrOutput = _arrReshape(arrOutput, 1, self.numN, 1, np.NPY_ANYORDER)
+            arrOutput = _arrReshape(
+                arrOutput, 1, self._info.numN, 1, np.NPY_ANYORDER)
 
         return arrOutput
 
@@ -1289,13 +1294,14 @@ cdef class Matrix(object):
             raise ValueError("Input data array must be at most 2D")
 
         # arrInput.N must match self.M in forward() and .N in backward()
-        if arrInput.shape[0] != self.numN:
+        if arrInput.shape[0] != self._info.numN:
             raise ValueError("Dimension mismatch %s.H <-!-> %s" %(
                 str(self.shape), str((<object> arrInput).shape)))
 
         # force array of data to be two-dimensional and determine vector count
         if ndimInput == 1:
-            arrInput = _arrReshape(arrInput, 2, self.numN, 1, np.NPY_ANYORDER)
+            arrInput = _arrReshape(
+                arrInput, 2, self._info.numN, 1, np.NPY_ANYORDER)
         cdef intsize M = arrInput.shape[1]
 
         # Determine output data type
@@ -1331,7 +1337,8 @@ cdef class Matrix(object):
             if self._cythonCall:
                 # Create output array
                 arrOutput = _arrEmpty(
-                    2, self.numM, arrInput.shape[1] if ndimInput > 1 else 1,
+                    2, self._info.numM,
+                    arrInput.shape[1] if ndimInput > 1 else 1,
                     typeInfo[typeOutput].typeNum)
 
                 # Call calculation routine (fused type dispatch must be
@@ -1342,7 +1349,8 @@ cdef class Matrix(object):
 
         if ndimInput == 1:
             # reshape back to single-dimensional vector
-            arrOutput = _arrReshape(arrOutput, 1, self.numM, 1, np.NPY_ANYORDER)
+            arrOutput = _arrReshape(
+                arrOutput, 1, self._info.numM, 1, np.NPY_ANYORDER)
 
         return arrOutput
 
@@ -1568,7 +1576,8 @@ cdef class Hermitian(Matrix):
 
     ############################################## class performance estimation
     cpdef tuple _getComplexity(self):
-        return (self.numM + self.numN, self.numN + self.numM)
+        return (self._info.numM + self._info.numN,
+                self._info.numN + self._info.numM)
 
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,
                     ftype typeX, ftype typeRes):
@@ -1664,7 +1673,7 @@ cdef class Conjugate(Matrix):
 
     ############################################## class performance estimation
     cpdef tuple _getComplexity(self):
-        cdef float complexity = self.numN + self.numM
+        cdef float complexity = self._info.numN + self._info.numM
         return (complexity, complexity)
 
     ############################################## class forward / backward
