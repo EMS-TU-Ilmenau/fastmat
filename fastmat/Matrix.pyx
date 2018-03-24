@@ -391,24 +391,73 @@ cdef class Matrix(object):
         r"""
 
         """
-        if len(tplIdx) != 2:
-            raise ValueError("Matrix element access requires two indices.")
+        if tplIdx is Ellipsis:
+            return self.array
+        elif not isinstance(tplIdx, tuple) or len(tplIdx) != 2:
+            raise ValueError("Applied matrix indexing not supported.")
 
-        cdef intsize idxN = tplIdx[0], idxM = tplIdx[1]
-        cdef intsize N = self._info.numN, M = self._info.numM
+        cdef bint fullAccessCols, fullAccessRows
+        cdef slice slcCol, slcRow
+        cdef tuple idxCols, idxRows
+        cdef intsize numCols, numRows
 
-        if idxN < 0 or idxN >= N or idxM < 0 or idxM >= M:
-            raise IndexError("Index %s exceeds matrix dimensions %s." %(
-                str(tplIdx), str(self.shape)))
-
-        # if a dense representation already exists, use it!
+        # from here on we know it's a 2D tuple. Access the _array if available
         if self._array is not None:
-            return self._array[idxN, idxM]
+            return self._array[tplIdx[0], tplIdx[1]]
+        elif isinstance(tplIdx[0], slice):
+            slcRow = tplIdx[0]
+            if isinstance(tplIdx[1], slice):
+                # double slice! Check if complete cols or rows may be requested
+                slcCol = tplIdx[1]
 
-        return self._getItem(idxN, idxM)
+                # determine slice index ranges, number of requested elements
+                # along each axis and whether full axis access is possible
+                idxRows = slcRow.indices(self._info.numN)
+                idxCols = slcCol.indices(self._info.numM)
+                numRows = (idxRows[1] - idxRows[0]) // idxRows[2]
+                numCols = (idxCols[1] - idxCols[0]) // idxCols[2]
+                fullAccessCols = (numRows == self._info.numN and
+                                  idxRows == (0, self._info.numN, 1))
+                fullAccessRows = (numCols == self._info.numM and
+                                  idxCols == (0, self._info.numM, 1))
+
+                # check if the slices result in a true element access
+                if numRows == 1 and numCols == 1:
+                    return self._getItem(idxRows[0], idxCols[0])
+
+                # depending on this information access the array in the most
+                # efficient way
+                if fullAccessCols and fullAccessRows:
+                    return self.array
+                elif fullAccessCols:
+                    return self.getCols(np.arange(*idxRows))
+                elif fullAccessRows:
+                    return self.getRows(np.arange(*idxCols))
+                else:
+                    # do what involves less resulting memory
+                    if numCols * self._info.numN < numRows * self._info.numM:
+                        return self.getCols(np.arange(*idxCols))[slcRow, ...]
+                    else:
+                        return self.getRows(np.arange(*idxRows))[..., slcCol]
+
+            else:
+                # Column-access!
+                return self.getCols(tplIdx[1])[slcRow, ...]
+        elif np.isscalar(tplIdx[0]) and np.isscalar(tplIdx[1]):
+            # True element access!
+            return self._getItem(*tplIdx)
+        else:
+            # Row access!
+            return self.getRows(tplIdx[0])[..., tplIdx[1]]
 
     cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._getCol(idxM)[idxN]
+        if self._array is not None:
+            return self._array[idxN, idxM]
+        else:
+            if self._info.numN < self._info.numM:
+                return self._getCol(idxM)[idxN]
+            else:
+                return self._getRow(idxN)[idxM]
 
     ############################################## Matrix content property
     property content:
