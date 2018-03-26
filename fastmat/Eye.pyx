@@ -30,6 +30,10 @@ cdef class Eye(Matrix):
     map .. math::
         x \mapsto  x.
 
+    note::
+        Eye.forward(x) returns the exact same object as the given input array x.
+        Make sure to issue an explicit .copy() in case you need it!
+
     The identity matrix only needs the dimension :math:`n` of the vectors it
     acts on.
 

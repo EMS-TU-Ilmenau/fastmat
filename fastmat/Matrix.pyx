@@ -1231,6 +1231,10 @@ cdef class Matrix(object):
         .. warning::
             Do not override this method!
 
+        .. note::
+            The returned ndarray object may own its data, may be a view into
+            another ndarray and may even be identical to the input array.
+
         """
         # local variable holding return array
         cdef np.ndarray arrInput = arrX, arrOutput
@@ -1330,6 +1334,10 @@ cdef class Matrix(object):
 
         .. warning::
             Do not override this method
+
+        .. note::
+            The returned ndarray object may own its data, may be a view into
+            another ndarray and may even be identical to the input array.
 
         """
         # local variable holding return array

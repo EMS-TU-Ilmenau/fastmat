@@ -160,6 +160,12 @@ cdef np.ndarray _CGcore(
     # force to be F-contiguous and of consistent data type (no ints here)
     cdef np.ndarray arrR = _arrForceTypeAlignment(
         fmatA.backward(arrB), npTypeOut, np.NPY_FORCECAST)
+
+    # as projections may just return the input vector unchanged, force arrR to
+    # be an independent of the input (as we intent to change it)
+    if id(arrR) == id(arrB):
+        arrR = arrR.copy()
+
     cdef TYPE_FLOAT * pArrR = <TYPE_FLOAT * > arrR.data
     cdef TYPE_FLOAT * vecR
     arrOut = _arrZero(2, fmatA.numM, M, npTypeOut)
@@ -236,6 +242,7 @@ class CGinspect(Algorithm):
 
     def _getTest(self):
         from ..inspect import TEST, dynFormat, arrTestDist
+        from ..Eye import Eye
 
         def testCG(test):
 
@@ -259,14 +266,17 @@ class CGinspect(Algorithm):
                     TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_N)
                 }),
 
-                TEST.OBJECT     : Matrix,
-                TEST.INITARGS   : (lambda param: [param.arrA()]),
-
+                TEST.OBJECT     : TEST.Permutation([Matrix, Eye]),
+                TEST.INITARGS   : (lambda param:
+                    [param.arrA()] if param[TEST.OBJECT] is Matrix
+                    else [param[TEST.NUM_N]]
+                ),
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT : TEST.IgnoreFunc(testCG),
 
+                'strType'       : (lambda param: param[TEST.OBJECT].__name__),
                 'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
-                TEST.NAMINGARGS : dynFormat("%s", 'arrA'),
+                TEST.NAMINGARGS : dynFormat("%s,%s", 'strType', 'strTypeA'),
 
                 # matrix inversion always expands data type to floating-point
                 TEST.TYPE_PROMOTION : np.float32,
