@@ -35,10 +35,3 @@ cdef class BlkTwoLvlToep(Partial):
 
     ############################################## class methods
     cpdef np.ndarray _reference(self)
-    cpdef np.ndarray _preProcSlice(
-            self,
-            np.ndarray,
-            int,
-            np.ndarray,
-            np.ndarray
-        )

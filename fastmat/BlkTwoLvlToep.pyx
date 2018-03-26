@@ -109,7 +109,7 @@ cdef class BlkTwoLvlToep(Partial):
         5 & 4 & 2 & 1
         \end{bmatrix}
 
-    This class depends on ``Fourier``, ``DiagBlocks``, ``Kron``,
+    This class depends on ``NDFourier``, ``DiagBlocks``, ``Kron``,
     ``Product`` and ``Partial``.
     """
 
@@ -127,48 +127,54 @@ cdef class BlkTwoLvlToep(Partial):
         # store the defining elements and extract the needed dimensions
         self._tenT = tenT
         self._numBlocks = tenT.shape[0]
+        if tenT.shape[0] != tenT.shape[1]:
+            raise ValueError("First two dimensions must be of same size!")
+
         self._numSizeLvl1 = int((tenT.shape[2] + 1) /2)
         self._numSizeLvl2 = int((tenT.shape[3] + 1) /2)
         self._arrSizeLvls = np.array([self._numSizeLvl1, self._numSizeLvl2])
 
         # construct one sample MLToeplitz instance to get optimal fourier
         # sizes
+        # we do not use optimization, since we have not implemented that
+        # for the NDFourier matrix yet
         _T = MLToeplitz(np.copy(tenT[0, 0, :, :]), optimize=False)
 
         # subselection index of the embedded partials
+        # they come from the embedding of a multilevel toeplitz
+        # matrix into a multilevel circulant matrix
+        # from this array, we only need to produce shifted versions
+        # since every block is two level toeplitz
         indK = _T.indicesN.reshape((-1, 1))
 
         # the diagonalizing matrices of each embedded block
         F = _T._content[0]._content[-1]
 
+        # calculate the large subselection index array for the whole matrix
+        rgn = np.arange(self._numBlocks) *F.numN
+        arrIndicesN = (rgn + np.repeat(
+                indK, self._numBlocks, 1
+            )).reshape(-1, order='F')
+
         # build up the whole diagonalizing matrix
+        # because each block itself is 2level toeplitz we need the identity
+        # matrix to account for the non existing structure in the first
+        # dimension
         K = Kron(
             Eye(self._numBlocks),
             NDFourier(tenT.shape[2], tenT.shape[3])
         )
 
-        # allocate memory for the diagonal matrix
-        diags = np.empty((
-            self._numBlocks,
-            self._numBlocks,
-            tenT.shape[2] * tenT.shape[3]
-        ), dtype='complex')
-
-        # calculate the large subselection index array for the whole matrix
-        rgn = np.arange(self._numBlocks) *F.numN
-        arrIndicesN = (rgn + np.repeat(
-                        indK, self._numBlocks, 1
-                    )).reshape(-1, order='F')
-
-
-        # extract the diagonalizing stuff from the nested toeplitz matrices
-
+        # we simply take 2DFFTs over the last two axes of the defining
+        # tensor broadcasting over the first two axes and then we reshape
+        # all of the 2D fouriertransformed arrays to a vector, since these
+        # are the diagonals in fourier domain of each diagonal block
         diags = np.fft.fftn(
-                    tenT,
-                    axes=(2,3)
-                ).reshape((self._numBlocks, self._numBlocks, -1)) / (
-                        tenT.shape[2] * tenT.shape[3]
-                    )
+            tenT,
+            axes=(2,3)
+        ).reshape((self._numBlocks, self._numBlocks, -1)) / (
+            tenT.shape[2] * tenT.shape[3]
+        )
 
         # construct the composing matrices
         B = DiagBlocks(diags)
@@ -180,33 +186,6 @@ cdef class BlkTwoLvlToep(Partial):
             N=arrIndicesN,
             M=arrIndicesN
         )
-
-        # Currently Fourier matrices bloat everything up to complex double
-        # precision, therefore make sure tenT matches the precision of the
-        # matrix itself
-        # if self.dtype != tenT.dtype:
-        #     self._tenT = self._tenT.astype(self.dtype)
-
-    cpdef np.ndarray _preProcSlice(
-        self,
-        np.ndarray theSlice,
-        int numSliceInd,
-        np.ndarray arrNopt,
-        np.ndarray arrN
-    ):
-
-        # preprocess one axis of the defining tensor. here we check for one
-        # dimension, whether we have to zero pad
-
-        if arrNopt[numSliceInd] > 2 * arrN[numSliceInd] -1:
-            z = np.zeros(arrNopt[numSliceInd] - 2 *arrN[numSliceInd] +1)
-            return np.concatenate((
-                np.copy(theSlice[:arrN[numSliceInd]]),
-                z,
-                np.copy(theSlice[arrN[numSliceInd]:])
-            ))
-        else:
-            return np.copy(theSlice)
 
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''
