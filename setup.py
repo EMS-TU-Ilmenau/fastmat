@@ -32,6 +32,7 @@ import sys
 import os
 import re
 import subprocess
+from Cython.Distutils import build_ext
 
 packageName     = 'fastmat'
 packageVersion  = '0.1.1'           # provide a version tag as fallback
@@ -75,7 +76,7 @@ def getCurrentVersion():
     if os.path.isfile(".version"):
         with open(".version", "r") as f:
             stdout = f.read().split('\n')[0]
-        print("Override of version string to '%s' (from .version file )" %(
+        print("Override of version string to '%s' (from .version file )" % (
             stdout))
 
         packageVersion = stdout
@@ -84,7 +85,7 @@ def getCurrentVersion():
         # check if source directory is a git repository
         if not os.path.exists(".git"):
             print(("Installing from something other than a Git repository; " +
-                   "Version file '%s' untouched.") %(strVersionFile))
+                   "Version file '%s' untouched.") % (strVersionFile))
             return
 
         # fetch current tag and commit description from git
@@ -94,7 +95,7 @@ def getCurrentVersion():
                 stdout=subprocess.PIPE
             )
         except EnvironmentError:
-            print("Not a git repository; Version file '%s' not touched." %(
+            print("Not a git repository; Version file '%s' not touched." % (
                 strVersionFile))
             return
 
@@ -104,7 +105,7 @@ def getCurrentVersion():
 
         if p.returncode != 0:
             print(("Unable to fetch version from git repository; " +
-                   "leaving version file '%s' untouched.") %(strVersionFile))
+                   "leaving version file '%s' untouched.") % (strVersionFile))
             return
 
         # output results to version string, extract package version number
@@ -125,6 +126,159 @@ with open(strVersionFile, "w") as f:
     f.write(VERSION_PY % (fullVersion))
 print("Set %s to '%s'" %(strVersionFile, fullVersion))
 
+
+###############################################################################
+###  CUDA specific routines
+###############################################################################
+
+def locate_cuda():
+    """Locate the CUDA environment on the system
+
+    Returns a dict with keys 'home', 'nvcc', 'include', and 'lib'
+    and values giving the absolute path to each directory/file.
+
+    Everything has to be provided in the env variables CUDAHOME, CUDALIB and
+    CUDAINCLUDE. The path to nvcc is derived from CUDAHOME.
+    """
+
+    # home directory for the cuda binaries
+    if 'CUDAHOME' in os.environ:
+        strHomePath = os.environ['CUDAHOME']
+    else:
+        raise EnvironmentError("CUDAHOME environment variable not set!")
+
+    # absolute path to nvcc
+    strNvccPath = os.path.join(strHomePath, 'bin', 'nvcc')
+
+    # absolute path to all the header files
+    if 'CUDAINCLUDE' in os.environ:
+        strIncludePath = os.environ['CUDAINCLUDE']
+    else:
+        raise EnvironmentError("CUDAINCLUDE environment variable not set!")
+
+    # absolute path to all the shared libraries
+    if 'CUDALIB' in os.environ:
+        strLibraryPath = os.environ['CUDALIB']
+    else:
+        raise EnvironmentError("CUDALIB environment variable not set!")
+
+    # collect the paths in a nice dictionary
+    cudaConfig = {
+        'home': strHomePath,
+        'nvcc': strNvccPath,
+        'include': strIncludePath,
+        'lib': strLibraryPath
+    }
+
+    # check if all provided paths are valid
+    for k, v in iteritems(cudaConfig):
+        if not os.path.exists(v):
+            raise EnvironmentError(
+                'The path to %s could not be located in %s!' % (k, v)
+            )
+
+    return cudaConfig
+
+def customize_compiler_for_nvcc(self, cudaConfig):
+    """inject deep into distutils to customize how the dispatch
+    to gcc/nvcc works.
+
+    If you subclass UnixCCompiler, it's not trivial to get your subclass
+    injected in, and still have the right customizations (i.e.
+    distutils.sysconfig.customize_compiler) run on it. So instead of going
+    the OO route, I have this. Note, it's kindof like a wierd functional
+    subclassing going on."""
+
+    # tell the compiler it can processes .cu
+    self.src_extensions.append('.cu')
+
+    # save references to the default compiler_so and _compile methods
+    default_compiler_so = self.compiler_so
+    super = self._compile
+
+    # now redefine the _compile method. This gets executed for each
+    # object but distutils doesn't have the ability to change compilers
+    # based on source extension: we add it.
+    def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+        if os.path.splitext(src)[1] == '.cu':
+            # use the cuda for .cu files
+            self.set_executable('compiler_so', cudaConfig['nvcc'])
+            # use only a subset of the extra_postargs, which are 1-1 translated
+            # from the extra_compile_args in the Extension class
+            postargs = extra_postargs['nvcc']
+        else:
+            postargs = extra_postargs['gcc']
+
+        super(obj, src, ext, cc_args, postargs, pp_opts)
+        # reset the default compiler_so, which we might have changed for cuda
+        self.compiler_so = default_compiler_so
+
+    # inject our redefined _compile method into the class
+    self._compile = _compile
+
+def getExtensionList(lstExtDef):
+    lstExtensions = []
+    for ee in lstExtDef:
+        lstExtensions.append(
+            Extension(
+                ee['name'],
+                sources=ee['sources'],
+                **dctExtensionKwargs
+            )
+        )
+    return lstExtensions
+
+
+# supplemental compilation arguments for the two compilers we
+# are using
+gccExtraCompileArgs = []
+nvccExtraCompileArgs = [
+    '-arch=sm_30',
+    '--ptxas-options=-v',
+    '-c',
+    '--compiler-options',
+    "'-fPIC'"
+]
+
+# initialize the paths related to cuda
+if "--cuda" in sys.argv:
+    cudaConfig = locate_cuda()
+
+    cudaConfig.update({
+        'linkedLibs': ['cudart', 'cufft'],
+    })
+
+    # define the customized compiler
+    class custom_build_ext(build_ext):
+        def build_extensions(self):
+            customize_compiler_for_nvcc(self.compiler, cudaConfig)
+            build_ext.build_extensions(self)
+
+    extraCompileArgs = {
+        'gcc': gccExtraCompileArgs,
+        'nvcc': nvccExtraCompileArgs
+    }
+
+    sys.argv.remove("--cuda")
+else:
+    cudaConfig = {
+        'home': "",
+        'nvcc': "",
+        'include': ".",
+        'lib': "."
+    }
+
+    extraCompileArgs = gccExtraCompileArgs
+
+    cudaConfig.update({
+        'linkedLibs': []
+    })
+
+    class custom_build_ext(build_ext):
+        def build_extensions(self):
+            build_ext.build_extensions(self)
+
+
 ###############################################################################
 ###  Prepare other files and construct compile arguments
 ###############################################################################
@@ -139,17 +293,17 @@ f.close()
 
 # define different compiler arguments for each platform
 strPlatform = platform.system()
-compilerArguments = []
+
 linkerArguments = []
 if strPlatform == 'Windows':
     # Microsoft Visual C++ Compiler 9.0
-    compilerArguments += ['/O2', '/fp:precise']
+    gccExtraCompileArgs += ['/O2', '/fp:precise']
 elif strPlatform == 'Linux':
     # assuming Linux and gcc
-    compilerArguments += ['-O3', '-march=native', '-ffast-math']
+    gccExtraCompileArgs += ['-O3', '-march=native', '-ffast-math']
 elif strPlatform == 'Darwin':
     # assuming Linux and gcc
-    compilerArguments += ['-O3', '-march=native', '-ffast-math']
+    gccExtraCompileArgs += ['-O3', '-march=native', '-ffast-math']
 else:
     WARNING("Your platform is currently not supported by %s: %s" % (
         packageName, strPlatform))
@@ -212,8 +366,11 @@ def extensions():
 
     extensionArguments = {
         'include_dirs':
-        lstIncludes + ['fastmat/core', 'fastmat/inspect', 'util'],
-        'extra_compile_args': compilerArguments,
+            lstIncludes + ['fastmat', 'fastmat/core', 'fastmat/inspect', 'util', cudaConfig['include']],
+        'language': 'c',
+        'library_dirs': [cudaConfig['lib']],
+        'runtime_library_dirs': [cudaConfig['lib']],
+        'extra_compile_args': extraCompileArgs,
         'extra_link_args': linkerArguments,
         'define_macros': defineMacros
     }
@@ -319,9 +476,14 @@ setup(
         'fastmat/core',
         'fastmat/inspect'
     ],
-    cmdclass={'build_doc': doc_opts()},
+    cmdclass={
+        'build_doc': doc_opts(),
+
+        # inject our custom compile patching magic
+        'build_ext': custom_build_ext
+        },
     command_options={
-        'build_doc' : {
+        'build_doc': {
             'project': ('setup.py', packageName),
             'version': ('setup.py', packageVersion),
             'release': ('setup.py', fullVersion),
