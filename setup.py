@@ -33,6 +33,7 @@ import os
 import re
 import subprocess
 from Cython.Distutils import build_ext
+from future.utils import iteritems
 
 packageName     = 'fastmat'
 packageVersion  = '0.1.1'           # provide a version tag as fallback
@@ -200,6 +201,7 @@ def customize_compiler_for_nvcc(self, cudaConfig):
     # object but distutils doesn't have the ability to change compilers
     # based on source extension: we add it.
     def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+        print(cc_args)
         if os.path.splitext(src)[1] == '.cu':
             # use the cuda for .cu files
             self.set_executable('compiler_so', cudaConfig['nvcc'])
@@ -207,6 +209,7 @@ def customize_compiler_for_nvcc(self, cudaConfig):
             # from the extra_compile_args in the Extension class
             postargs = extra_postargs['nvcc']
         else:
+            # self.set_executable('compiler_so', '/usr/bin/clan)
             postargs = extra_postargs['gcc']
 
         super(obj, src, ext, cc_args, postargs, pp_opts)
@@ -367,18 +370,33 @@ def extensions():
     extensionArguments = {
         'include_dirs':
             lstIncludes + ['fastmat', 'fastmat/core', 'fastmat/inspect', 'util', cudaConfig['include']],
-        'language': 'c',
         'library_dirs': [cudaConfig['lib']],
+        'language': 'c++',
+        'libraries': ['cudart', 'cufft'],
         'runtime_library_dirs': [cudaConfig['lib']],
         'extra_compile_args': extraCompileArgs,
         'extra_link_args': linkerArguments,
         'define_macros': defineMacros
     }
 
+    # extensionCudaArguments = extensionArguments.copy()
+    # extensionCudaArguments.update({'language': 'c++'})
+
     return cythonize(
-        [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
-         Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
-         Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)],
+        [
+            Extension(
+                "*",
+                ["fastmat/*.pyx"],
+                **extensionArguments
+            ),
+            Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
+            Extension("*", ["fastmat/core/*.pyx"], **extensionArguments),
+            Extension(
+                "fastmat.BlkTwoLvlToepWrp",
+                ["fastmat/BlkTwoLvlToepWrp.pyx", "fastmat/BlkTwoLvlToepCu.cu"],
+                **extensionArguments
+            )
+        ],
         compiler_directives=cythonDirectives,
         nthreads=4
     )

@@ -119,73 +119,133 @@ cdef class BlkTwoLvlToep(Partial):
         def __get__(self):
             return self._tenT
 
-    def __init__(self, tenT, **options):
+    def __init__(self, **options):
         '''
         Initialize BlkTwoLvlToep Matrix instance.
         '''
 
-        # store the defining elements and extract the needed dimensions
-        self._tenT = tenT
-        self._numBlocks = tenT.shape[0]
-        if tenT.shape[0] != tenT.shape[1]:
-            raise ValueError("First two dimensions must be of same size!")
+        try:
+            from BlkTwoLvlToepWrp import BlkTwoLvlToepGPU
+            self._cudaAvailable = True
+        except:
+            self._cudaAvailable = False
 
-        self._numSizeLvl1 = int((tenT.shape[2] + 1) /2)
-        self._numSizeLvl2 = int((tenT.shape[3] + 1) /2)
-        self._arrSizeLvls = np.array([self._numSizeLvl1, self._numSizeLvl2])
+        if self._cudaAvailable == False:
+            # store the defining elements and extract the needed dimensions
+            self._tenT = options['tenT']
+            self._numBlocks = self._tenT.shape[0]
+            if self._tenT.shape[0] != self._tenT.shape[1]:
+                raise ValueError("First two dimensions must be of same size!")
 
-        # construct one sample MLToeplitz instance to get optimal fourier
-        # sizes
-        # we do not use optimization, since we have not implemented that
-        # for the NDFourier matrix yet
-        _T = MLToeplitz(np.copy(tenT[0, 0, :, :]), optimize=False)
+            self._numSizeLvl1 = int((self._tenT.shape[2] + 1) /2)
+            self._numSizeLvl2 = int((self._tenT.shape[3] + 1) /2)
+            self._arrSizeLvls = np.array([self._numSizeLvl1, self._numSizeLvl2])
 
-        # subselection index of the embedded partials
-        # they come from the embedding of a multilevel toeplitz
-        # matrix into a multilevel circulant matrix
-        # from this array, we only need to produce shifted versions
-        # since every block is two level toeplitz
-        indK = _T.indicesN.reshape((-1, 1))
+            # construct one sample MLToeplitz instance to get optimal fourier
+            # sizes
+            # we do not use optimization, since we have not implemented that
+            # for the NDFourier matrix yet
+            _T = MLToeplitz(np.copy(self._tenT[0, 0, :, :]), optimize=False)
 
-        # the diagonalizing matrices of each embedded block
-        F = _T._content[0]._content[-1]
+            # subselection index of the embedded partials
+            # they come from the embedding of a multilevel toeplitz
+            # matrix into a multilevel circulant matrix
+            # from this array, we only need to produce shifted versions
+            # since every block is two level toeplitz
+            indK = _T.indicesN.reshape((-1, 1))
 
-        # calculate the large subselection index array for the whole matrix
-        rgn = np.arange(self._numBlocks) *F.numN
-        arrIndicesN = (rgn + np.repeat(
-                indK, self._numBlocks, 1
-            )).reshape(-1, order='F')
+            # the diagonalizing matrices of each embedded block
+            F = _T._content[0]._content[-1]
 
-        # build up the whole diagonalizing matrix
-        # because each block itself is 2level toeplitz we need the identity
-        # matrix to account for the non existing structure in the first
-        # dimension
-        K = Kron(
-            Eye(self._numBlocks),
-            NDFourier(tenT.shape[2], tenT.shape[3])
-        )
+            # calculate the large subselection index array for the whole matrix
+            rgn = np.arange(self._numBlocks) *F.numN
+            arrIndicesN = (rgn + np.repeat(
+                    indK, self._numBlocks, 1
+                )).reshape(-1, order='F')
 
-        # we simply take 2DFFTs over the last two axes of the defining
-        # tensor broadcasting over the first two axes and then we reshape
-        # all of the 2D fouriertransformed arrays to a vector, since these
-        # are the diagonals in fourier domain of each diagonal block
-        diags = np.fft.fftn(
-            tenT,
-            axes=(2,3)
-        ).reshape((self._numBlocks, self._numBlocks, -1)) / (
-            tenT.shape[2] * tenT.shape[3]
-        )
+            # build up the whole diagonalizing matrix
+            # because each block itself is 2level toeplitz we need the identity
+            # matrix to account for the non existing structure in the first
+            # dimension
+            K = Kron(
+                Eye(self._numBlocks),
+                NDFourier(self._tenT.shape[2], self._tenT.shape[3])
+            )
 
-        # construct the composing matrices
-        B = DiagBlocks(diags)
-        P = Product(K.H, B, K)
+            # we simply take 2DFFTs over the last two axes of the defining
+            # tensor broadcasting over the first two axes and then we reshape
+            # all of the 2D fouriertransformed arrays to a vector, since these
+            # are the diagonals in fourier domain of each diagonal block
+            diags = np.fft.fftn(
+                self._tenT,
+                axes=(2,3)
+            ).reshape((self._numBlocks, self._numBlocks, -1)) / (
+                self._tenT.shape[2] * self._tenT.shape[3]
+            )
 
-        # call the parent constructor
-        super(BlkTwoLvlToep, self).__init__(
-            P,
-            N=arrIndicesN,
-            M=arrIndicesN
-        )
+            # construct the composing matrices
+            B = DiagBlocks(diags)
+            P = Product(K.H, B, K)
+
+            numN = np.prod(self._arrSizeLvls)
+
+            # call the parent constructor
+            super(BlkTwoLvlToep, self).__init__(
+                P,
+                N=arrIndicesN,
+                M=arrIndicesN
+            )
+
+        else:
+            print("doing Cuda!")
+            self._numBlocks = options['numZ']
+            self._numSizeLvl1 = options['numX']
+            self._numSizeLvl2 = options['numY']
+
+            numN = options['numZ'] * options['numZ'] * options['numZ']
+
+            # set properties of matrix
+            self._initProperties(
+                numN, numN, np.complex128,
+                cythonCall=True,
+                forceInputAlignment=True,
+                fortranStyle=True
+            )
+
+
+    cpdef _forwardC(
+        self,
+        np.ndarray arrX,
+        np.ndarray arrRes,
+        ftype typeX,
+        ftype typeRes
+    ):
+        ''' Calculate the forward transform of this matrix.'''
+        from BlkTwoLvlToepWrp import BlkTwoLvlToepGPU
+        if self._cudaAvailable == True:
+            F = BlkTwoLvlToepGPU(
+                self._numBlocks,
+                self._numSizeLvl1,
+                self._numSizeLvl2
+            )
+            F.forward(arrX[0], arrRes[0])
+        else:
+            super(BlkTwoLvlToep, self)._forwardC(
+                arrX,
+                arrRes,
+                typeX,
+                typeRes
+            )
+
+    cpdef _backwardC(
+        self,
+        np.ndarray arrX,
+        np.ndarray arrRes,
+        ftype typeX,
+        ftype typeRes
+    ):
+        ''' Calculate the backward transform of this matrix.'''
+        self._forwardCu(arrX, arrRes)
 
     cpdef np.ndarray _getArray(self):
         '''Return an explicit representation of the matrix as numpy-array.'''

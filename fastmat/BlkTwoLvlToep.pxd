@@ -32,6 +32,12 @@ cdef class BlkTwoLvlToep(Partial):
     cdef intsize _numSizeLvl1
     cdef intsize _numSizeLvl2
     cdef np.ndarray _arrSizeLvls
+    cdef bint _cudaAvailable
+
+    ############################################## class implementation methods
+    cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
+
+    cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)
 
     ############################################## class methods
     cpdef np.ndarray _reference(self)
