@@ -131,8 +131,11 @@ cdef class Circulant(Partial):
         # during its intitalization (invoked by 'super' below)
         self._vecC = vecC = np.atleast_1d(np.squeeze(np.copy(vecC)))
 
-        assert self._vecC.ndim == 1, "Column-definition vector must be 1D."
-        assert len(self._vecC) >= 1, "Vector must have at least one entry"
+        if self._vecC.ndim != 1:
+            raise ValueError("Column-definition vector must be 1D.")
+
+        if len(self._vecC) < 1:
+            raise ValueError("Vector must have at least one entry.")
 
         cdef bint optimize = options.get('optimize', True)
         cdef int maxStage = options.get('maxStage', 4)

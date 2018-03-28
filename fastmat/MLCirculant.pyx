@@ -135,7 +135,8 @@ cdef class MLCirculant(Partial):
         # copy tensor in class itself
         self._tenC = np.atleast_1d(np.squeeze(np.copy(tenC)))
 
-        assert self._tenC.ndim >= 1, "Column-definition vector must be >= 1D."
+        if self._tenC.ndim < 1:
+            raise ValueError("Column-definition tensor must be at least 1D.")
 
         # extract the level dimensions from the defining tensor
         self._arrN = np.array(np.array(self._tenC).shape)

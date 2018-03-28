@@ -193,7 +193,8 @@ cdef class LFSRCirculant(Matrix):
         if self._resetState == 0:
             raise ValueError("Register reset state must be non-zero.")
 
-        assert length < mask, "Sequence length exceeded register capacity."
+        if length >= mask:
+            raise ValueError("Sequence length exceeded register capacity.")
 
         # generate embedded Hadamard matrix
         self._content = (Hadamard(self._regSize), )

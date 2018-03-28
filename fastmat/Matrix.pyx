@@ -842,9 +842,9 @@ cdef class Matrix(object):
 
         """
         cdef tuple complexity = self._getComplexity()
-        assert complexity is not None
-        self._profileForward.complexity = complexity[0]
-        self._profileBackward.complexity = complexity[1]
+        if complexity is not None:
+            self._profileForward.complexity = complexity[0]
+            self._profileBackward.complexity = complexity[1]
 
     cpdef tuple _getComplexity(self):
         cdef float complexity = self._info.numN * self._info.numM

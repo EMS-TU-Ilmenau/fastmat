@@ -69,7 +69,8 @@ cdef class Fourier(Matrix):
         cdef bint optimize = options.get('optimize', True)
         cdef int maxStage = options.get('maxStage', 4)
 
-        assert order >= 1, "Fourier order cannot be smaller than 1."
+        if order < 1:
+            raise ValueError("Fourier order cannot be smaller than 1.")
 
         # store order of Fourier
         self._order = order

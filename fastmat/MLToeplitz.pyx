@@ -118,7 +118,8 @@ cdef class MLToeplitz(Partial):
 
         self._tenT = np.atleast_1d(np.squeeze(np.copy(tenT)))
 
-        assert self._tenT.ndim >= 1, "Column-definition vector must be >= 1D."
+        if self._tenT.ndim < 1:
+            raise ValueError("Column-definition tensor must be at least 1D")
 
         # extract the level dimensions from the defining tensor
         self._arrN = (
