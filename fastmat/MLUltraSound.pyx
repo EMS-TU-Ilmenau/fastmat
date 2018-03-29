@@ -287,7 +287,7 @@ cdef class MLUltraSound(Partial):
                 TEST.INITARGS   : (lambda param : [param['vecC']()]),
                 TEST.OBJECT     : MLUltraSound,
                 TEST.TOL_POWER  : 2.,
-                TEST.TOL_MINEPS : _getTypeEps(np.float64)
+                TEST.TOL_MINEPS : getTypeEps(np.float64)
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}

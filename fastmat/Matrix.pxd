@@ -51,36 +51,34 @@ cdef class Matrix:
     ############################################## class variables
     cdef public np.ndarray  _array               # ndarray dense representation
     cdef public np.ndarray  _arrayH              # backward dense representation
-    cdef public tuple   _content                 # nested fastmat matrices
+    cdef public tuple       _content             # nested fastmat matrices
 
-    cdef public Matrix  _gram                    # cache for gram matrix
-    cdef public Matrix  _normalized              # cache for normalized matrix
-    cdef public object  _largestEV               # cache for largestEV
-    cdef public object  _largestSV               # cache for largestSV
-    cdef public Matrix  _T                       # cache for transpose matrix
-    cdef public Matrix  _H                       # cache for adjunct matrix
-    cdef public Matrix  _conj                    # cache for conjugate matrix
+    cdef public Matrix      _gram                # cache for gram matrix
+    cdef public Matrix      _normalized          # cache for normalized matrix
+    cdef public object      _largestEV           # cache for largestEV
+    cdef public object      _largestSV           # cache for largestSV
+    cdef public Matrix      _T                   # cache for transpose matrix
+    cdef public Matrix      _H                   # cache for adjunct matrix
+    cdef public Matrix      _conj                # cache for conjugate matrix
 
-    cdef intsize     _numN                       # row-count of matrix
-    cdef intsize     _numM                       # column-count of matrix
-    cdef INFO_ARR_s  _info                       # fields representing matrix
-    #                                            #  dtype - data type descriptor
-    #                                            #  numN  - row count
-    #                                            #  numM  - column count
-    #                                            #  nDim  - dimension count
-    cdef bint   _cythonCall                      # use _C() transforms in class
-    cdef bint   _forceInputAlignment             # force alignment of input data
+    cdef readonly intsize   numN                 # row-count of matrix
+    cdef readonly intsize   numM                 # column-count of matrix
+    cdef readonly ntype     numpyType            # numpy typenum
+    cdef readonly ftype     fusedType            # fastmat fused typenum
+
+    cdef bint       _cythonCall                  # use _C() transforms in class
+    cdef bint       _forceInputAlignment         # force alignment of input data
     #                                            # to be F-contiguous
-    cdef bint   _useFortranStyle                 # if true, select Fortran style
-    cdef bint   _widenInputDatatype              # widen input data type upfront
-    cdef str    _tag                             # Description of matrix
-    cdef bint   _bypassAllow                     # if true, transform may be
+    cdef bint       _useFortranStyle             # if true, select Fortran style
+    cdef bint       _widenInputDatatype          # widen input data type upfront
+    cdef bint       _bypassAllow                 # if true, transform may be
     #                                            # bypassed based on runtime
     #                                            # estimation decision
-    cdef bint   _bypassAutoArray                 # if true, a dense array repre-
+    cdef bint       _bypassAutoArray             # if true, a dense array repre-
     #                                            # sentation for bypassing a
     #                                            # transform will automatically
     #                                            # be generated when required
+    cdef str        _tag                         # Description of matrix
 
     cdef public object  _forwardReferenceMatrix  # ndarray representing Matrix
     #                                            # reference

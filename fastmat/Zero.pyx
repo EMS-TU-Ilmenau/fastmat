@@ -50,13 +50,13 @@ cdef class Zero(Matrix):
 
     ############################################## class property override
     cpdef np.ndarray _getArray(self):
-        return _arrZero(2, self.numN, self.numM, self._info.dtype[0].typeNum)
+        return _arrZero(2, self.numN, self.numM, self.numpyType)
 
     cpdef np.ndarray _getCol(self, intsize idx):
-        return _arrZero(1, self.numN, 1, self._info.dtype[0].typeNum)
+        return _arrZero(1, self.numN, 1, self.numpyType)
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        return _arrZero(1, self.numM, 1, self._info.dtype[0].typeNum)
+        return _arrZero(1, self.numM, 1, self.numpyType)
 
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return 0
@@ -93,13 +93,13 @@ cdef class Zero(Matrix):
         '''Calculate the forward transform of this matrix'''
         return _arrZero(
             arrX.ndim, self.numN, arrX.shape[1] if arrX.ndim > 1 else 1,
-            _getNpType(arrX))
+            getNumpyType(arrX))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         '''Calculate the backward transform of this matrix'''
         return _arrZero(
             arrX.ndim, self.numM, arrX.shape[1] if arrX.ndim > 1 else 1,
-            _getNpType(arrX))
+            getNumpyType(arrX))
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):

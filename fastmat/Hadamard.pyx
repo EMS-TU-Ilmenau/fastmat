@@ -22,7 +22,7 @@
 import numpy as np
 cimport numpy as np
 
-from .core.types cimport nptype, _getNpType
+from .core.types cimport ntype
 from .core.strides cimport *
 from .core.cmath cimport _arrEmpty
 from .Matrix cimport Matrix
@@ -104,7 +104,7 @@ cdef class Hadamard(Matrix):
         if order < 1:
             raise ValueError("Hadamard: Order must be larger than 0.")
 
-        cdef int maxOrder = sizeof(self._numN) * 8 - 2
+        cdef int maxOrder = sizeof(self.numN) * 8 - 2
         if order > maxOrder:
             raise ValueError(
                 "Hadamard: Order exceeds maximum for this platform: %d" %(
@@ -154,7 +154,7 @@ cdef class Hadamard(Matrix):
         '''
         Calculate the forward transform of this matrix.
         '''
-        cdef nptype dtype = typeInfo[typeRes].typeNum
+        cdef ntype dtype = typeInfo[typeRes].numpyType
         cdef intsize N = arrX.shape[0], M = arrX.shape[1], order = self._order
         cdef intsize mm, oo
         cdef STRIDE_s strInput, strOutput, strA, strB

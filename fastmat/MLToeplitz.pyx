@@ -435,7 +435,7 @@ cdef class MLToeplitz(Partial):
                 TEST.NAMINGARGS : dynFormat("%s,optimize=%s",
                                             'vecC', str('optimize')),
                 TEST.TOL_POWER  : 2.,
-                TEST.TOL_MINEPS : _getTypeEps(np.float64)
+                TEST.TOL_MINEPS : getTypeEps(np.float64)
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}

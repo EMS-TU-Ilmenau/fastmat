@@ -156,7 +156,7 @@ class ISTAinspect(Algorithm):
     @staticmethod
     def _getTest():
         from ..inspect import TEST, dynFormat, arrSparseTestDist
-        from ..core.types import _getTypeEps
+        from ..core.types import getTypeEps
         from ..Product import Product
         from ..Hadamard import Hadamard
         from ..Matrix import Matrix
@@ -203,7 +203,7 @@ class ISTAinspect(Algorithm):
 
                 # matrix inversion always expands data type to floating-point
                 TEST.TYPE_PROMOTION     : np.float32,
-                TEST.TOL_MINEPS         : _getTypeEps(np.float32),
+                TEST.TOL_MINEPS         : getTypeEps(np.float32),
                 TEST.TOL_POWER          : 5.
                 #TEST.CHECK_PROXIMITY    : False
             },

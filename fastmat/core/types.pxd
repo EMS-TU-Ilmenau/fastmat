@@ -22,7 +22,7 @@ cimport numpy as np
 ################################################## define unique type-id types
 
 ctypedef np.uint8_t ftype
-ctypedef np.uint8_t nptype
+ctypedef np.uint8_t ntype
 ctypedef np.npy_intp intsize
 
 ################################################## define global fused types
@@ -133,7 +133,7 @@ ctypedef fused TYPE_OP_I:
 ################################ type information structures
 
 ctypedef struct INFO_TYPE_s:
-    nptype          typeNum
+    ntype           numpyType
     ftype           fusedType
     ftype           *promote
     np.float64_t    eps
@@ -146,33 +146,23 @@ ctypedef struct INFO_TYPE_s:
     bint            isComplex
 
 
-ctypedef struct INFO_ARR_s:
-    INFO_TYPE_s     *dtype
-    int             nDim
-    intsize         numN
-    intsize         numM
-
-
 ################################################## type handling
 
 cdef INFO_TYPE_s typeInfo[NUM_TYPES]
 cdef ftype typeSelection[<int> np.NPY_NTYPES]
 
-cdef INFO_TYPE_s *_getTypeInfo(object)
-cdef nptype _getNpType(np.ndarray arr)
-cdef ftype _getFType(np.ndarray arr)
+cdef INFO_TYPE_s *getTypeInfo(object)
 
-cpdef np.float64_t _getTypeEps(object dtype)
-cpdef np.float64_t _getTypeMin(object dtype)
-cpdef np.float64_t _getTypeMax(object dtype)
-
-################################################## type class checks
-
+cdef ntype getNumpyType(object obj)
+cdef ftype getFusedType(object obj)
+cpdef np.float64_t getTypeEps(object obj)
+cpdef np.float64_t getTypeMin(object obj)
+cpdef np.float64_t getTypeMax(object obj)
 cpdef isInteger(object obj)
 cpdef isFloat(object obj)
 cpdef isComplex(object obj)
 
 ################################################## type Promotion stuff
 
-cdef ftype _promoteTypeNums(ftype, ftype)
+cdef ftype promoteFusedTypes(ftype, ftype)
 cpdef object safeTypeExpansion(object)

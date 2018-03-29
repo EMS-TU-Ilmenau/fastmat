@@ -216,7 +216,7 @@ cdef class Toeplitz(Partial):
             # double slicing needed, otherwise fail when M = N + 1
             return self._vecR[idx - N:idx][::-1]
         else:
-            arrRes = _arrEmpty(1, N, 0, self._info.dtype[0].typeNum)
+            arrRes = _arrEmpty(1, N, 0, self.numpyType)
             arrRes[:idx] = self._vecR[idx - 1::-1]
             arrRes[idx:] = self._vecC[:N - idx]
             return arrRes
@@ -229,7 +229,7 @@ cdef class Toeplitz(Partial):
             # double slicing needed, otherwise fail when N = M + 1
             return self._vecC[idx - M + 1:idx + 1][::-1]
         else:
-            arrRes = _arrEmpty(1, M, 0, self._info.dtype[0].typeNum)
+            arrRes = _arrEmpty(1, M, 0, self.numpyType)
             arrRes[:idx + 1] = self._vecC[idx::-1]
             arrRes[idx + 1:] = self._vecR[:M - 1 - idx]
             return arrRes

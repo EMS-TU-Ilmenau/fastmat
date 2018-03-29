@@ -160,7 +160,7 @@ cdef class Parametric(Matrix):
         if self._rangeAccess:
             arrRes = self._fun(self._vecX[idx], self._vecY)
         else:
-            arrRes = _arrEmpty(1, N, 1, self._info.dtype[0].typeNum)
+            arrRes = _arrEmpty(1, N, 1, self.numpyType)
             for nn in range(N):
                 arrRes[nn] = self._fun(self._vecX[idx], self._vecY[nn])
 
@@ -173,7 +173,7 @@ cdef class Parametric(Matrix):
         if self._rangeAccess:
             arrRes = self._fun(self._vecX, self._vecY[idx])
         else:
-            arrRes = _arrEmpty(1, M, 1, self._info.dtype[0].typeNum)
+            arrRes = _arrEmpty(1, M, 1, self.numpyType)
             for mm in range(M):
                 arrRes[mm] = self._fun(self._vecX[mm], self._vecY[idx])
 
@@ -207,7 +207,7 @@ cdef class Parametric(Matrix):
 
         cdef object val, numSuppN
         cdef np.ndarray vecVal = _arrEmpty(
-            1, vecSuppM.shape[0], 1, self._info.dtype[0].typeNum)
+            1, vecSuppM.shape[0], 1, self.numpyType)
 
         for nn in range(numN):
             # when rangeAccess is allowed, _fun may be called for multiple
@@ -255,8 +255,7 @@ cdef class Parametric(Matrix):
         ftype typeRes
     ):
         '''Calculate the forward transform of this matrix.'''
-        self._core(
-            arrX, arrRes, typeX, self._info.dtype[0].fusedType, typeRes, False)
+        self._core(arrX, arrRes, typeX, self.fusedType, typeRes, False)
 
     cpdef _backwardC(
         self,
@@ -266,8 +265,7 @@ cdef class Parametric(Matrix):
         ftype typeRes
     ):
         '''Calculate the backward transform of this matrix.'''
-        self._core(
-            arrX, arrRes, typeX, self._info.dtype[0].fusedType, typeRes, True)
+        self._core(arrX, arrRes, typeX, self.fusedType, typeRes, True)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):

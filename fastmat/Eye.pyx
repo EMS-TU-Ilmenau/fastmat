@@ -65,7 +65,7 @@ cdef class Eye(Matrix):
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef np.ndarray arrRes
 
-        arrRes = _arrZero(1, self.numN, 1, self._info.dtype[0].typeNum)
+        arrRes = _arrZero(1, self.numN, 1, self.numpyType)
         arrRes[idx] = 1
 
         return arrRes

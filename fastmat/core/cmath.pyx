@@ -195,7 +195,7 @@ cpdef np.ndarray _arrZero(
     int dims,
     intsize numN,
     intsize numM,
-    nptype dtype,
+    ntype dtype,
     bint fortranStyle=True
 ):
     '''
@@ -219,7 +219,7 @@ cpdef np.ndarray _arrEmpty(
     int dims,
     intsize numN,
     intsize numM,
-    nptype dtype,
+    ntype dtype,
     bint fortranStyle=True
 ):
     '''
@@ -274,7 +274,7 @@ cpdef bint _arrResize(
 
 cpdef np.ndarray _arrCopyExt(
     np.ndarray arr,
-    nptype dtype,
+    ntype dtype,
     int flags
 ):
     return np.PyArray_FROM_OTF(arr, dtype, flags)
@@ -282,7 +282,7 @@ cpdef np.ndarray _arrCopyExt(
 
 cpdef np.ndarray _arrForceType(
     np.ndarray arr,
-    nptype typeArr
+    ntype typeArr
 ):
     return arr if (np.PyArray_TYPE(arr) == typeArr) \
         else np.PyArray_FROM_OT(arr, typeArr)
@@ -308,7 +308,7 @@ cpdef np.ndarray _arrForceAlignment(
 
 cpdef np.ndarray _arrForceTypeAlignment(
     np.ndarray arr,
-    nptype typeArr,
+    ntype typeArr,
     int flags,
     bint fortranStyle=True
 ):
@@ -385,7 +385,7 @@ cpdef np.ndarray _conjugate(np.ndarray arr):
         numDims,
         arr.shape[0],
         arr.shape[1] if numDims > 1 else 1,
-        typeInfo[typeArr].typeNum
+        typeInfo[typeArr].numpyType
     )
 
     # perform conjugation
@@ -414,7 +414,7 @@ cdef void _conjInplaceCore(
     assuming to be consecutive in memory
     '''
     cdef intsize ii, cnt = np.PyArray_SIZE(arr)
-    cdef TYPE_COMPLEX * pData = <TYPE_COMPLEX * > arr.data
+    cdef TYPE_COMPLEX *pData = <TYPE_COMPLEX *> arr.data
 
     # conjugate elements from input, write to output
     for ii in range(cnt):
@@ -427,7 +427,7 @@ cpdef bint _conjugateInplace(np.ndarray arr):
     Performs as a wrapper for ndarrays
     '''
     # determine type of array
-    cdef nptype typeArr = _getFType(arr)
+    cdef ftype typeArr = getFusedType(arr)
 
     # check if complex. If so, conjugate.
     if typeArr == TYPE_COMPLEX64:

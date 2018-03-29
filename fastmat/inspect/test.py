@@ -20,7 +20,7 @@ import numpy as np
 from pprint import pprint
 
 from .common import *
-from ..core.types import _getTypeEps, safeTypeExpansion
+from ..core.types import getTypeEps, safeTypeExpansion
 from ..Matrix import Matrix
 from ..Diag import Diag
 from ..Eye import Eye
@@ -123,15 +123,15 @@ def compareResults(test, query):
             raise ValueError("All-zero input vector detected in test")
 
         expectedType=np.promote_types(expectedType, arrInput.dtype)
-        maxEps=max(maxEps, _getTypeEps(arrInput.dtype))
+        maxEps=max(maxEps, getTypeEps(arrInput.dtype))
 
     # compare returned output data type to expected (qType) to verify
     # functionality of fastmat built-in type promotion mechanism
     resultType=np.can_cast(arrOutput.dtype, expectedType, casting='no')
 
     maxEps=max(maxEps,
-               _getTypeEps(np.promote_types(minimalType, instance.dtype)),
-               _getTypeEps(np.promote_types(minimalType, arrReference.dtype)))
+               getTypeEps(np.promote_types(minimalType, instance.dtype)),
+               getTypeEps(np.promote_types(minimalType, arrReference.dtype)))
 
     # determine allowed tolerance maxima (allow accuracy degradation of chained
     # operations by representing multiple stages by a power on operation count
@@ -338,12 +338,12 @@ def testNormalized(test):
            else {TEST.TYPE_PROMOTION: np.float32})
 
     # ignore actual type of generated gram:
-    query[TEST.CHECK_DATATYPE]=False
-    query[TEST.TOL_MINEPS]=_getTypeEps(safeTypeExpansion(instance.dtype))
+    query[TEST.CHECK_DATATYPE] = False
+    query[TEST.TOL_MINEPS] = getTypeEps(safeTypeExpansion(instance.dtype))
 
     try:
-        query[TEST.RESULT_OUTPUT]=instance.normalized.array
-        query[TEST.RESULT_REF]=np.einsum(
+        query[TEST.RESULT_OUTPUT] = instance.normalized.array
+        query[TEST.RESULT_REF] = np.einsum(
             'ij,j->ij', reference,
             1. / np.apply_along_axis(np.linalg.norm, 0, reference))
         return compareResults(test, query)
@@ -357,8 +357,8 @@ def testNormalized(test):
         else:
             result, ignored=False, False
 
-        query[TEST.RESULT], query[TEST.RESULT_IGNORED]=result, ignored
-        query[TEST.RESULT_INFO]='!RNK'
+        query[TEST.RESULT], query[TEST.RESULT_IGNORED] = result, ignored
+        query[TEST.RESULT_INFO] = '!RNK'
         return query
 
 
@@ -368,8 +368,8 @@ def testLargestSV(test):
     instance=test[TEST.INSTANCE]
 
     # account for "extra computation stage" (gram) in largestSV
-    query[TEST.TOL_POWER]=test.get(TEST.TOL_POWER, 1.) * 2
-    query[TEST.TOL_MINEPS]=_getTypeEps(safeTypeExpansion(instance.dtype))
+    query[TEST.TOL_POWER] = test.get(TEST.TOL_POWER, 1.) * 2
+    query[TEST.TOL_MINEPS] = getTypeEps(safeTypeExpansion(instance.dtype))
 
     # determine reference result
     largestSV=np.linalg.svd(test[TEST.REFERENCE], compute_uv=False)[0]
@@ -565,7 +565,7 @@ class Test(Worker):
 
         # call parent initialization with Test-specific options
         super(Test, self).__init__(
-            targetClass, targetOptionMethod='_getTest',
+            targetClass, targetOptionMethod = '_getTest',
             runnerDefaults=defaults, extraOptions=extraOptions)
 
     def _runTest(self, name, options):

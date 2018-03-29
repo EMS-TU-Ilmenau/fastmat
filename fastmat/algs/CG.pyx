@@ -96,10 +96,10 @@ cpdef np.ndarray CG(
 
     cdef np.dtype typeOut = np.promote_types(
         np.float32, np.promote_types(fmatA.dtype, arrB.dtype))
-    cdef nptype npTypeOut = typeOut.type_num
+    cdef ntype npTypeOut = typeOut.type_num
     arrIn = _arrForceTypeAlignment(arrB, npTypeOut, np.NPY_FORCECAST)
     if eps == 0:
-        eps = _getTypeEps(typeOut)
+        eps = getTypeEps(typeOut)
 
     # dispatch specialization of core routine according tOptor
     if typeOut == np.float32:
@@ -118,7 +118,7 @@ cpdef np.ndarray CG(
 cdef np.ndarray _CGcore(
     Matrix fmatA,
     np.ndarray arrB,
-    nptype npTypeOut,
+    ntype npTypeOut,
     TYPE_FLOAT typeTag,
     float eps
 ):

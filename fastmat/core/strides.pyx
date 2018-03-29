@@ -31,7 +31,7 @@ cdef void strideInit(STRIDE_s *stride, np.ndarray arr, np.uint8_t axis):
     if axis > 1:
         raise ValueError("Striding operations support 2D-arrays only.")
 
-    stride[0].dtype         = _getFType(arr)
+    stride[0].dtype         = getFusedType(arr)
     if stride[0].dtype >= TYPE_INVALID:
         raise ValueError("Striding does not support given array data type.")
 

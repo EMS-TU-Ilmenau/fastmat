@@ -27,10 +27,10 @@ np.import_array()
 
 ################################################## type handling
 
-cdef inline void _getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
+cdef inline void getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
     '''Fill in type descriptor (INTO_TYPE_s) for given a numpy.dtype.'''
-    info[0].typeNum     = dtype.type_num
-    info[0].fusedType   = typeSelection[info[0].typeNum]
+    info[0].numpyType   = dtype.type_num
+    info[0].fusedType   = typeSelection[info[0].numpyType]
     info[0].dsize       = dtype.itemsize
     info[0].isNumber    = np.PyDataType_ISNUMBER(dtype)
     info[0].isInt       = np.PyDataType_ISINTEGER(dtype)
@@ -59,39 +59,7 @@ cdef inline void _getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
     info[0].promote     = NULL
 
 
-cdef INFO_TYPE_s *_getTypeInfo(object dtype):
-    '''
-    Return a pointer to a type descriptor (INFO_TYPE_s) for a given type
-    object. Takes any valid type descriptor as input (np.dtype, int, type).
-    This function fetches actual data from the pre-generated 'type_info' array.
-
-    If dtype is an ndarray, the type of the ndarray will be determined.
-    '''
-    cdef np.dtype nptype
-
-    if type(dtype) == type:
-        # if dtype is a python type object, convert it to a numpy type container
-        nptype = np.dtype(dtype)
-    elif type(dtype) == int:
-        # then check for common types: np.dtype and int (numpy typenum)
-        nptype = np.PyArray_DescrFromType(dtype)
-    elif isinstance(dtype, np.ndarray):
-        # if dtype is an ndarray, take the array type
-        nptype = dtype.dtype
-    elif not isinstance(dtype, np.dtype):
-        # throw an error if itself not a dtype
-        raise TypeError("Invalid type information %s" % (str(dtype)))
-    else:
-        nptype = dtype
-
-    cdef ftype fusedTypeNum = typeSelection[nptype.type_num]
-    if fusedTypeNum == TYPE_INVALID:
-        raise TypeError("Not a fastmat fused type: %s" %(str(dtype)))
-
-    return &(typeInfo[fusedTypeNum])
-
-
-cdef ftype _getFusedType(INFO_TYPE_s * dtype):
+cdef ftype approximateType(INFO_TYPE_s *dtype):
     '''Return most suited fastmat datatype id for given type descriptor.'''
     if dtype[0].isNumber:
         if dtype[0].isInt:
@@ -115,50 +83,85 @@ cdef ftype _getFusedType(INFO_TYPE_s * dtype):
     return TYPE_INVALID
 
 
-cdef nptype _getNpType(np.ndarray arr):
-    '''Return numpy type number of array'''
-    return np.PyArray_TYPE(arr)
+cdef INFO_TYPE_s *getTypeInfo(object dtype):
+    '''
+    Return a pointer to a type descriptor (INFO_TYPE_s) for a given type
+    object. Takes any valid type descriptor as input (np.dtype, int, type).
+    This function fetches actual data from the pre-generated `typeInfo` array.
+
+    If dtype is an ndarray, the type of the ndarray will be determined.
+    '''
+    cdef np.dtype ntype
+
+    if type(dtype) == type:
+        # if dtype is a python type object, convert it to a numpy type container
+        ntype = np.dtype(dtype)
+    elif type(dtype) == int:
+        # then check for common types: np.dtype and int (numpy typenum)
+        ntype = np.PyArray_DescrFromType(dtype)
+    elif isinstance(dtype, np.ndarray):
+        # if dtype is an ndarray, take the array type
+        ntype = dtype.dtype
+    elif not isinstance(dtype, np.dtype):
+        # throw an error if itself not a dtype
+        raise TypeError("Invalid type information %s" % (str(dtype)))
+    else:
+        ntype = dtype
+
+    cdef ftype fusedType = typeSelection[ntype.type_num]
+    if fusedType == TYPE_INVALID:
+        raise TypeError("Not a fastmat fused type: %s" %(str(dtype)))
+
+    return &(typeInfo[fusedType])
 
 
-cdef ftype _getFType(np.ndarray arr):
-    '''Return fused type number of ndarray arr.'''
-    return typeSelection[np.PyArray_TYPE(arr)]
+cdef ntype getNumpyType(object obj):
+    '''Return numpy type number for a given or a given array's data type.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
+    return info[0].numpyType
 
 
-cpdef np.float64_t _getTypeEps(object dtype):
-    '''Return eps for a given (and known) type.'''
-    cdef INFO_TYPE_s *info = _getTypeInfo(dtype)
+cdef ftype getFusedType(object obj):
+    '''Return fastmat type number for a given or a given array's data type.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
+    return info[0].fusedType
+
+
+cpdef np.float64_t getTypeEps(object obj):
+    '''Return eps for a given or a given array's data type.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].eps
 
 
-cpdef np.float64_t _getTypeMin(object dtype):
-    '''Return the minimum representable value for a given (and known) type.'''
-    cdef INFO_TYPE_s *info = _getTypeInfo(dtype)
+cpdef np.float64_t getTypeMin(object obj):
+    '''Return the minimum representable value for a given or a given array's data type.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].min
 
 
-cpdef np.float64_t _getTypeMax(object dtype):
-    '''Return the maximum representable value for a given (and known) type.'''
-    cdef INFO_TYPE_s *info = _getTypeInfo(dtype)
+cpdef np.float64_t getTypeMax(object obj):
+    '''Return the maximum representable value for a given or a given array's data type.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].max
 
-################################################## type class checks
-
 cpdef isInteger(object obj):
-    cdef INFO_TYPE_s *info = _getTypeInfo(obj)
+    '''Return whether a given data type or an array's data type is integer.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isInt
 
 cpdef isFloat(object obj):
-    cdef INFO_TYPE_s *info = _getTypeInfo(obj)
+    '''Return whether a given data type or an array's data type is floating point.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isFloat
 
 cpdef isComplex(object obj):
-    cdef INFO_TYPE_s *info = _getTypeInfo(obj)
+    '''Return whether a given data type or an array's data type is complex.'''
+    cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isComplex
 
 ################################################## type Promotion stuff
 
-cdef ftype _promoteTypeNums(ftype type1, ftype type2):
+cdef ftype promoteFusedTypes(ftype type1, ftype type2):
     if (type1 < 0) or (type2 >= NUM_TYPES) or \
        (type2 < 0) or (type2 >= NUM_TYPES):
         raise ValueError("Invalid type numbers for promotion")
@@ -199,8 +202,8 @@ cdef int tt, ii
 # determine suitable type number for numpy types
 for tt in range(<int> np.NPY_NTYPES):
     # fusedType field will not be correct as typeSelection is not yet filled.
-    _getDtypeInfo(np.PyArray_DescrFromType(tt), &ttDescr)
-    typeSelection[tt] = _getFusedType(&ttDescr)
+    getDtypeInfo(np.PyArray_DescrFromType(tt), &ttDescr)
+    typeSelection[tt] = approximateType(&ttDescr)
 
 # set fused type definitions for specific numpy data types
 for tt, dtype in {
@@ -213,14 +216,14 @@ for tt, dtype in {
     TYPE_COMPLEX128: np.complex128,
     TYPE_INVALID: np.void
 }.items():
-    _getDtypeInfo(np.PyArray_DescrFromTypeObject(dtype), &(typeInfo[tt]))
+    getDtypeInfo(np.PyArray_DescrFromTypeObject(dtype), &(typeInfo[tt]))
 
 # initialize type promotion stuff:
 for tt in range(NUM_TYPES):
     typeInfo[tt].promote = <ftype *> malloc(sizeof(int) * NUM_TYPES)
     for ii in range(NUM_TYPES):
-        t1 = np.PyArray_TypeObjectFromType(typeInfo[tt].typeNum)
-        t2 = np.PyArray_TypeObjectFromType(typeInfo[ii].typeNum)
+        t1 = np.PyArray_TypeObjectFromType(typeInfo[tt].numpyType)
+        t2 = np.PyArray_TypeObjectFromType(typeInfo[ii].numpyType)
         if tt < <int> TYPE_INVALID and ii < <int> TYPE_INVALID:
             numpyDtype = np.promote_types(t1, t2)
             typeInfo[tt].promote[ii] = typeSelection[numpyDtype.type_num]
@@ -247,9 +250,9 @@ def _typeInfo():
     print("typeInfo =")
     for tt in range(NUM_TYPES):
         lst = [typeInfo[tt].promote[ii] for ii in range(NUM_TYPES)]
-        ii = typeInfo[tt].typeNum
+        ii = typeInfo[tt].numpyType
         print("\t%d:%s" % (tt, {
-            'typeNum'   : "%d:%s" % (ii, str(np.PyArray_DescrFromType(ii))),
+            'numpyType' : "%d:%s" % (ii, str(np.PyArray_DescrFromType(ii))),
             'fusedType' : typeInfo[tt].fusedType,
             'dsize'     : typeInfo[tt].dsize,
             'isNumber'  : typeInfo[tt].isNumber,

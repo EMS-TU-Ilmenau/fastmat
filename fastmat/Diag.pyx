@@ -94,7 +94,7 @@ cdef class Diag(Matrix):
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef np.ndarray arrRes
 
-        arrRes = _arrZero(1, self.numN, 1, self._info.dtype[0].typeNum)
+        arrRes = _arrZero(1, self.numN, 1, self.numpyType)
         arrRes[idx] = self._vecD[idx]
 
         return arrRes
@@ -117,7 +117,7 @@ cdef class Diag(Matrix):
         return Diag(np.abs(self._vecD) ** 2)
 
     cpdef Matrix _getNormalized(self):
-        if self._info.dtype.isComplex:
+        if typeInfo[self.fusedType].isComplex:
             return Diag((self._vecD / abs(self._vecD)).astype(self.dtype))
         else:
             return Diag(np.sign(self._vecD).astype(self.dtype))
@@ -138,9 +138,8 @@ cdef class Diag(Matrix):
         ftype typeRes
     ):
         ''' Calculate the forward transform of this matrix.'''
-        _multiply(
-            arrX, self._vecD, arrRes,
-            typeX, self._info.dtype[0].fusedType, typeRes)
+        _multiply(arrX, self._vecD, arrRes,
+                  typeX, self.fusedType, typeRes)
 
     cpdef _backwardC(
         self,
@@ -150,9 +149,8 @@ cdef class Diag(Matrix):
         ftype typeRes
     ):
         ''' Calculate the backward transform of this matrix.'''
-        _multiply(
-            arrX, _conjugate(self._vecD), arrRes,
-            typeX, self._info.dtype[0].fusedType, typeRes)
+        _multiply(arrX, _conjugate(self._vecD), arrRes,
+                  typeX, self.fusedType, typeRes)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):

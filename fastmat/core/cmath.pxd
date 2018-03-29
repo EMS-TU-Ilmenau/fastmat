@@ -40,17 +40,17 @@ cpdef intsize _findOptimalFFTSize(intsize, int)
 cpdef float _getFFTComplexity(intsize)
 
 ################################################## Array generation routines
-cpdef np.ndarray _arrZero(int, intsize, intsize, nptype, bint fortranStyle=?)
-cpdef np.ndarray _arrEmpty(int, intsize, intsize, nptype, bint fortranStyle=?)
+cpdef np.ndarray _arrZero(int, intsize, intsize, ntype, bint fortranStyle=?)
+cpdef np.ndarray _arrEmpty(int, intsize, intsize, ntype, bint fortranStyle=?)
 
 cpdef np.ndarray _arrReshape(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
 cpdef bint _arrResize(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
 
 ################################################## Array formatting
-cpdef np.ndarray _arrCopyExt(np.ndarray, nptype, int)
-cpdef np.ndarray _arrForceType(np.ndarray, nptype)
+cpdef np.ndarray _arrCopyExt(np.ndarray, ntype, int)
+cpdef np.ndarray _arrForceType(np.ndarray, ntype)
 cpdef np.ndarray _arrForceAlignment(np.ndarray, int, bint fortranStyle=?)
-cpdef np.ndarray _arrForceTypeAlignment(np.ndarray, nptype, int,
+cpdef np.ndarray _arrForceTypeAlignment(np.ndarray, ntype, int,
                                         bint fortranStyle=?)
 
 cpdef bint _conjugateInplace(np.ndarray)

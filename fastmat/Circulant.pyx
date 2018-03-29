@@ -192,15 +192,13 @@ cdef class Circulant(Partial):
 
     cpdef np.ndarray _getCol(self, intsize idx):
         '''Return selected columns of self.array'''
-        cdef np.ndarray arrRes = _arrEmpty(
-            1, self.numN, 0, self._info.dtype[0].typeNum)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes, idx)
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
         '''Return selected rows of self.array'''
-        cdef np.ndarray arrRes = _arrEmpty(
-            1, self.numN, 0, self._info.dtype[0].typeNum)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes[::-1], self.numN - idx - 1)
         return arrRes
 
@@ -263,7 +261,7 @@ cdef class Circulant(Partial):
                 TEST.NAMINGARGS : dynFormat("%s,optimize=%s",
                                             'vecC', str('optimize')),
                 TEST.TOL_POWER  : 2.,
-                TEST.TOL_MINEPS : _getTypeEps(np.float64)
+                TEST.TOL_MINEPS : getTypeEps(np.float64)
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}

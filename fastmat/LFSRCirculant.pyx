@@ -228,15 +228,13 @@ cdef class LFSRCirculant(Matrix):
 
     cpdef np.ndarray _getCol(self, intsize idx):
         '''Return selected columns of self.array'''
-        cdef np.ndarray arrRes = _arrEmpty(
-            1, self.numN, 0, self._info.dtype[0].typeNum)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes, idx)
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
         '''Return selected rows of self.array'''
-        cdef np.ndarray arrRes = _arrEmpty(
-            1, self.numN, 0, self._info.dtype[0].typeNum)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes[::-1], self.numN - idx - 1)
         return arrRes
 
@@ -262,7 +260,7 @@ cdef class LFSRCirculant(Matrix):
         cdef np.ndarray arrStates
         cdef lfsrReg_t[:] mvStates
 
-        cdef nptype typeStates = np.dtype(np.uint32).type_num
+        cdef ntype typeStates = np.dtype(np.uint32).type_num
         cdef lfsrReg_t mask = 1 << self._regSize
         cdef lfsrReg_t taps = self._regTaps
         cdef lfsrReg_t state = self._resetState
@@ -284,7 +282,7 @@ cdef class LFSRCirculant(Matrix):
 
         cdef np.ndarray arrRes
         cdef np.int8_t[:] mvRes
-        cdef nptype typeElement = np.dtype(np.int8).type_num
+        cdef ntype typeElement = np.dtype(np.int8).type_num
 
         arrRes = _arrEmpty(1, self.numN, 1, typeElement)
         mvRes = arrRes
@@ -306,9 +304,9 @@ cdef class LFSRCirculant(Matrix):
 
         # initialize data Array, no zero init required for maximum length seqs
         if N == mask - 1:
-            arrData = _arrEmpty(2, mask, M, _getNpType(arrIn), False)
+            arrData = _arrEmpty(2, mask, M, getNumpyType(arrIn), False)
         else:
-            arrData = _arrZero(2, mask, M, _getNpType(arrIn), False)
+            arrData = _arrZero(2, mask, M, getNumpyType(arrIn), False)
 
         strideInit(&strIn, arrIn, 1)
         strideInit(&strOut, arrOut, 1)

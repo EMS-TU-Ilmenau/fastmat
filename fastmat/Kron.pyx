@@ -162,11 +162,12 @@ cdef class Kron(Matrix):
         cdef Matrix term
         cdef intsize tt
 
-        if (self.dtypeNum == TYPE_COMPLEX128 or self.dtypeNum == TYPE_FLOAT64):
+        if (self.fusedType == TYPE_COMPLEX128 or
+            self.fusedType == TYPE_FLOAT64):
             for tt in range(len(terms)):
                 term = terms[tt]
-                if not (term.dtypeNum == TYPE_COMPLEX128 or
-                        term.dtypeNum == TYPE_FLOAT64):
+                if not (term.fusedType == TYPE_COMPLEX128 or
+                        term.fusedType == TYPE_FLOAT64):
                     terms[tt] = Product(term, typeExpansion=np.float64)
 
         for tt in range(len(terms)):

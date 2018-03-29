@@ -165,7 +165,9 @@ cdef class Fourier(Matrix):
         else:
             arrRes = _arrEmpty(
                 2, self._numL, M,
-                typeInfo[self._info.dtype.promote[_getFType(arrX)]].typeNum)
+                typeInfo[promoteFusedTypes(
+                    self.fusedType, getFusedType(arrX))].numpyType)
+
             strideInit(&strResPadding, arrRes, 0)
             strideSliceElements(&strResPadding, self.order, -1, 1)
             opZeroVectors(&strResPadding)
@@ -190,7 +192,8 @@ cdef class Fourier(Matrix):
         else:
             arrRes = _arrEmpty(
                 2, self._numL, M,
-                typeInfo[self._info.dtype.promote[_getFType(arrX)]].typeNum)
+                typeInfo[promoteFusedTypes(
+                    self.fusedType, getFusedType(arrX))].numpyType)
 
             strideInit(&strResPadding, arrRes, 0)
             strideSliceElements(&strResPadding, self.order, -1, 1)

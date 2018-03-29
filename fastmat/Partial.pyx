@@ -194,7 +194,7 @@ cdef class Partial(Matrix):
 
         if self._pruneM:
             arrInput = _arrZero(
-                2, self.content[0].numM, arrX.shape[1], _getNpType(arrX))
+                2, self.content[0].numM, arrX.shape[1], getNumpyType(arrX))
             arrInput[self._indicesM, :] = arrX
         else:
             arrInput = arrX
@@ -209,7 +209,7 @@ cdef class Partial(Matrix):
 
         if self._pruneN:
             arrInput = _arrZero(
-                2, self.content[0].numN, arrX.shape[1], _getNpType(arrX))
+                2, self.content[0].numN, arrX.shape[1], getNumpyType(arrX))
             arrInput[self._indicesN, :] = arrX
         else:
             arrInput = arrX

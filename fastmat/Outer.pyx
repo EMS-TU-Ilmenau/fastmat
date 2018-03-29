@@ -169,8 +169,8 @@ cdef class Outer(Matrix):
                 TEST.OBJECT     : Outer,
                 TEST.NAMINGARGS : dynFormat("%so%s", 'vecH', 'vecV'),
                 TEST.TOL_MINEPS : (lambda param:
-                                   max(_getTypeEps(param['mTypeH']),
-                                       _getTypeEps(param['mTypeV']))),
+                                   max(getTypeEps(param['mTypeH']),
+                                       getTypeEps(param['mTypeV']))),
                 TEST.TOL_POWER  : 4.
             },
             TEST.CLASS: {},
