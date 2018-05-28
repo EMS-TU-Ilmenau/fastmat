@@ -101,6 +101,9 @@ cdef class BlockDiag(Matrix):
 
         self._content = matrices
 
+        if len(matrices) < 1:
+            raise ValueError("You must specify at least one matrix.")
+
         # determine total size and data type of matrix
         dataType = np.int8
         for term in self._content:
