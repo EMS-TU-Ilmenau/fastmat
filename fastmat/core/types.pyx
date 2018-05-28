@@ -134,13 +134,19 @@ cpdef np.float64_t getTypeEps(object obj):
 
 
 cpdef np.float64_t getTypeMin(object obj):
-    '''Return the minimum representable value for a given or a given array's data type.'''
+    '''
+    Return the minimum representable value for a given or a given array's data
+    type.
+    '''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].min
 
 
 cpdef np.float64_t getTypeMax(object obj):
-    '''Return the maximum representable value for a given or a given array's data type.'''
+    '''
+    Return the maximum representable value for a given or a given array's data
+    type.
+    '''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].max
 
@@ -150,7 +156,9 @@ cpdef isInteger(object obj):
     return info[0].isInt
 
 cpdef isFloat(object obj):
-    '''Return whether a given data type or an array's data type is floating point.'''
+    '''
+    Return whether a given data type or an array's data type is floating point.
+    '''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isFloat
 

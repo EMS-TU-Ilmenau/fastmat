@@ -161,9 +161,9 @@ cdef class Kron(Matrix):
         cdef list terms = list(self._content)
         cdef Matrix term
         cdef intsize tt
+        cdef ftype fusedType = self.fusedType
 
-        if (self.fusedType == TYPE_COMPLEX128 or
-            self.fusedType == TYPE_FLOAT64):
+        if (fusedType == TYPE_COMPLEX128 or fusedType == TYPE_FLOAT64):
             for tt in range(len(terms)):
                 term = terms[tt]
                 if not (term.fusedType == TYPE_COMPLEX128 or

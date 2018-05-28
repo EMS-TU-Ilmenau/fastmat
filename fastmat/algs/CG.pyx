@@ -267,9 +267,9 @@ class CGinspect(Algorithm):
                 }),
 
                 TEST.OBJECT     : TEST.Permutation([Matrix, Eye]),
-                TEST.INITARGS   : (lambda param:
+                TEST.INITARGS   : (lambda param: (
                     [param.arrA()] if param[TEST.OBJECT] is Matrix
-                    else [param[TEST.NUM_N]]
+                    else [param[TEST.NUM_N]])
                 ),
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT : TEST.IgnoreFunc(testCG),
