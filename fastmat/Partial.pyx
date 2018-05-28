@@ -163,13 +163,15 @@ cdef class Partial(Matrix):
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef intsize idxM = self._indicesM[idx] if self._pruneM else idx
-        return (self._content[0].getCol(idxM)[self._indicesN] if self._pruneN
-                else self._content[0].getCol(idxM))
+        return np.atleast_1d(
+            self._content[0].getCol(idxM)[self._indicesN]
+            if self._pruneN else self._content[0].getCol(idxM))
 
     cpdef np.ndarray _getRow(self, intsize idx):
         cdef intsize idxN = self._indicesN[idx] if self._pruneN else idx
-        return (self._content[0].getRow(idxN)[self._indicesM] if self._pruneM
-                else self._content[0].getRow(idxN))
+        return np.atleast_1d(
+            self._content[0].getRow(idxN)[self._indicesM]
+            if self._pruneM else self._content[0].getRow(idxN))
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -277,7 +279,7 @@ cdef class Partial(Matrix):
                 TEST.OBJECT     : Partial,
                 TEST.NAMINGARGS : dynFormat("Hadamard(%d)->%dx%d,%s%s",
                                             'order', TEST.NUM_N, TEST.NUM_M,
-                                            'strIndexTypeM', 'strIndexTypeN')
+                                            'strIndexTypeN', 'strIndexTypeM')
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}

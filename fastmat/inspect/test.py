@@ -284,13 +284,22 @@ def testGetItem(test):
 
 ################################################## testGetColsSingle()
 def testGetColsSingle(test):
-    query={}
-    instance=test[TEST.INSTANCE]
-    arrOutput=np.zeros(instance.shape, instance.dtype)
+    query = {}
+    instance = test[TEST.INSTANCE]
+    arrOutput = np.empty(instance.shape, instance.dtype)
     for mm in range(instance.numM):
-        arrOutput[:, mm]=instance.getCols(mm)
-    query[TEST.RESULT_OUTPUT]=arrOutput
-    query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
+        vecCol = instance.getCols(mm)
+        if vecCol.ndim != 1:
+            print('testGetColsSingle', vecCol.shape, vecCol)
+            result, ignored = False, False
+            query[TEST.RESULT], query[TEST.RESULT_IGNORED] = False, False
+            query[TEST.RESULT_INFO] = fmtRed('!=(N,)')
+            return query
+
+        arrOutput[:, mm] = vecCol
+
+    query[TEST.RESULT_OUTPUT] = arrOutput
+    query[TEST.RESULT_REF] = test[TEST.REFERENCE].astype(instance.dtype)
     return compareResults(test, query)
 
 
@@ -306,13 +315,22 @@ def testGetColsMultiple(test):
 
 ################################################## test: getRowsSingle
 def testGetRowsSingle(test):
-    query={}
-    instance=test[TEST.INSTANCE]
-    arrOutput=np.zeros((instance.numN, instance.numM), instance.dtype)
+    query = {}
+    instance = test[TEST.INSTANCE]
+    arrOutput = np.empty((instance.numN, instance.numM), instance.dtype)
     for nn in range(instance.numN):
-        arrOutput[nn, :]=instance.getRows(nn)
-    query[TEST.RESULT_OUTPUT]=arrOutput
-    query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
+        vecRow = instance.getRows(nn)
+        if vecRow.ndim != 1:
+            print('testGetRowsSingle', vecRow.shape, vecRow)
+            result, ignored = False, False
+            query[TEST.RESULT], query[TEST.RESULT_IGNORED] = False, False
+            query[TEST.RESULT_INFO] = fmtRed('!=(N,)')
+            return query
+
+        arrOutput[nn, :] = vecRow
+
+    query[TEST.RESULT_OUTPUT] = arrOutput
+    query[TEST.RESULT_REF] = test[TEST.REFERENCE].astype(instance.dtype)
     return compareResults(test, query)
 
 
@@ -565,7 +583,7 @@ class Test(Worker):
 
         # call parent initialization with Test-specific options
         super(Test, self).__init__(
-            targetClass, targetOptionMethod = '_getTest',
+            targetClass, targetOptionMethod='_getTest',
             runnerDefaults=defaults, extraOptions=extraOptions)
 
     def _runTest(self, name, options):

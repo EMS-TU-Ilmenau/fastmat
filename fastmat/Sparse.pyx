@@ -127,14 +127,14 @@ cdef class Sparse(Matrix):
         '''
         Return an explicit representation of the matrix as numpy-array.
         '''
-        return self._spArray.todense()
+        return self._spArray.toarray()
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
-        return np.squeeze(self._spArray.getcol(idx).todense())
+        return np.squeeze(self._spArray.getcol(idx).toarray())
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        return np.squeeze(_conjugate(self.spArrayH.getcol(idx).todense()))
+        return np.squeeze(_conjugate(self.spArrayH.getcol(idx).toarray()))
 
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return self._spArray[idxN, idxM]
@@ -159,7 +159,7 @@ cdef class Sparse(Matrix):
         Return an explicit representation of the matrix without using
         any fastmat code.
         '''
-        return self._spArray.todense()
+        return self._spArray.toarray()
 
     ############################################## class inspection, QM
     def _getTest(self):
