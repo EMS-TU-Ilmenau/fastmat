@@ -116,14 +116,14 @@ cdef class MLToeplitz(Partial):
         Initialize MLToeplitz Matrix instance.
         '''
 
-        self._tenT = np.atleast_1d(np.squeeze(np.copy(tenT)))
+        self._tenT = _arrSqueezedCopy(tenT)
 
         if self._tenT.ndim < 1:
             raise ValueError("Column-definition tensor must be at least 1D")
 
         # extract the level dimensions from the defining tensor
         self._arrN = (
-            (np.array(np.array(self._tenT).shape) + 1) /2).astype('int')
+            (np.array((<object> self._tenT).shape) + 1) / 2).astype('int')
 
         # get the size of the matrix
         numN = np.prod(self._arrN)

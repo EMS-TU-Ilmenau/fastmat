@@ -997,7 +997,7 @@ specifications
             # arrTime holds the measured durations of forward and backward
             # arrNested states the amount of time spent in nested classes
             # for the forward (col 0) and backward (col 1) transform
-            arrN = bench.getResult('overhead', 'numN').squeeze()
+            arrN = _arrSqueeze(bench.getResult('overhead', 'numN'))
 
             arrTime = bench.getResult('overhead',
                                       'forwardMin',

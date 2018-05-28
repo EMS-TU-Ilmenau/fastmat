@@ -20,7 +20,7 @@ cimport numpy as np
 
 from .Matrix cimport Matrix
 from .core.types cimport *
-from .core.cmath cimport _arrZero
+from .core.cmath cimport _arrZero, _arrSqueeze
 
 cdef class Partial(Matrix):
     r"""
@@ -163,15 +163,13 @@ cdef class Partial(Matrix):
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef intsize idxM = self._indicesM[idx] if self._pruneM else idx
-        return np.atleast_1d(
-            self._content[0].getCol(idxM)[self._indicesN]
-            if self._pruneN else self._content[0].getCol(idxM))
+        return _arrSqueeze(self._content[0].getCol(idxM)[self._indicesN]
+                           if self._pruneN else self._content[0].getCol(idxM))
 
     cpdef np.ndarray _getRow(self, intsize idx):
         cdef intsize idxN = self._indicesN[idx] if self._pruneN else idx
-        return np.atleast_1d(
-            self._content[0].getRow(idxN)[self._indicesM]
-            if self._pruneM else self._content[0].getRow(idxN))
+        return _arrSqueeze(self._content[0].getRow(idxN)[self._indicesM]
+                           if self._pruneM else self._content[0].getRow(idxN))
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

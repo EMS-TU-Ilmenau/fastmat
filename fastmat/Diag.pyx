@@ -20,7 +20,7 @@ cimport numpy as np
 
 from .Matrix cimport Matrix
 from .Eye cimport Eye
-from .core.cmath cimport _conjugate, _multiply, _arrZero
+from .core.cmath cimport _conjugate, _multiply, _arrZero, _arrSqueezedCopy
 from .core.types cimport *
 
 
@@ -77,7 +77,7 @@ cdef class Diag(Matrix):
 
         # store diagonal entry vector as copy of vecD and complain if
         # dimension does not match
-        self._vecD = np.atleast_1d(np.squeeze(np.copy(vecD)))
+        self._vecD = _arrSqueezedCopy(vecD)
         if self._vecD.ndim != 1:
             raise ValueError(
                 "Diag: Definition vector must have exactly one dimension.")

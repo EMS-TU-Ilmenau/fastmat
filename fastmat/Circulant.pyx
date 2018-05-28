@@ -129,7 +129,7 @@ cdef class Circulant(Partial):
 
         # save generating vector. Matrix sizes will be set by Product
         # during its intitalization (invoked by 'super' below)
-        self._vecC = vecC = np.atleast_1d(np.squeeze(np.copy(vecC)))
+        self._vecC = vecC = _arrSqueezedCopy(vecC)
 
         if self._vecC.ndim != 1:
             raise ValueError("Column-definition vector must be 1D.")

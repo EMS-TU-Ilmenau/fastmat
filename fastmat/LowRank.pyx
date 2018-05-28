@@ -25,6 +25,7 @@ from .Matrix cimport Matrix
 from .Diag cimport Diag
 
 from .core.types cimport *
+from .core.cmath cimport _arrSqueeze
 
 cdef class LowRank(Product):
     r"""
@@ -119,7 +120,7 @@ cdef class LowRank(Product):
         # store copies of left and right orthogonal matrices
         self._arrU = arrU.astype(dtype, copy=True, subok=False)
         self._arrV = arrV.astype(dtype, copy=True, subok=False)
-        self._vecS = np.atleast_1d(vecS).astype(dtype, copy=True, subok=False)
+        self._vecS = _arrSqueeze(vecS.astype(dtype, copy=True, subok=False))
 
         super(LowRank, self).__init__(
             Matrix(self._arrU), Diag(vecS), Matrix(self._arrV.conj().T))

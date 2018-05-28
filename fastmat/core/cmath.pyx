@@ -237,7 +237,44 @@ cpdef np.ndarray _arrEmpty(
         fortranStyle                # FORTRAN-style result
     )
 
+################################################## _arrSqueeze1DF()
+cdef np.ndarray _arrSqueeze1D(
+    object data,
+    int flags
+):
+    '''
+    Return a squeezed, at least 1D version of the given data structure and
+    consider special flags for the initial object conversion.
+    '''
+    cdef np.ndarray arrResult = np.PyArray_FROM_O(
+        np.PyArray_Squeeze(np.PyArray_FROM_OF(data, flags))
+    )
 
+    return (arrResult if arrResult.ndim >= 1 else
+            _arrReshape(arrResult, 1, arrResult.size, 0, np.NPY_ANYORDER))
+
+
+################################################## _arrSqueeze1D()
+cpdef np.ndarray _arrSqueeze(
+    object data
+):
+    '''
+    Return a squeezed, at least 1D version of the given data structure.
+    '''
+    return _arrSqueeze1D(data, 0)
+
+
+################################################## _arrCopy1D()
+cpdef np.ndarray _arrSqueezedCopy(
+    object data
+):
+    '''
+    Return a squeezed, at least 1D copy of the given data structure.
+    '''
+    return _arrSqueeze1D(data, np.NPY_ENSURECOPY)
+
+
+################################################## _arrReshape()
 cpdef np.ndarray _arrReshape(
     np.ndarray arr,
     int dims,
@@ -255,6 +292,7 @@ cpdef np.ndarray _arrReshape(
     return np.PyArray_Newshape(arr, &shape2D, order)
 
 
+################################################## _arrResize()
 cpdef bint _arrResize(
     np.ndarray arr,
     int dims,
@@ -272,6 +310,7 @@ cpdef bint _arrResize(
     return np.PyArray_Resize(arr, &shape2D, False, order) is None
 
 
+################################################## _arrCopyExt()
 cpdef np.ndarray _arrCopyExt(
     np.ndarray arr,
     ntype dtype,
@@ -280,6 +319,7 @@ cpdef np.ndarray _arrCopyExt(
     return np.PyArray_FROM_OTF(arr, dtype, flags)
 
 
+################################################## _arrForceType()
 cpdef np.ndarray _arrForceType(
     np.ndarray arr,
     ntype typeArr
@@ -288,6 +328,7 @@ cpdef np.ndarray _arrForceType(
         else np.PyArray_FROM_OT(arr, typeArr)
 
 
+################################################## _arrForceAlignment()
 cpdef np.ndarray _arrForceAlignment(
     np.ndarray arr,
     int flags,
@@ -306,6 +347,7 @@ cpdef np.ndarray _arrForceAlignment(
     return np.PyArray_FROM_OF(arr, np.NPY_OWNDATA + np.NPY_ENSUREARRAY + flags)
 
 
+################################################## _arrForceTypeAlignment()
 cpdef np.ndarray _arrForceTypeAlignment(
     np.ndarray arr,
     ntype typeArr,

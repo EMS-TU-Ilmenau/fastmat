@@ -298,7 +298,7 @@ cdef class Matrix(object):
 
         # if a dense representation already exists, use it!
         if self._array is not None:
-            return np.atleast_1d(self._array[:, idx].squeeze())
+            return _arrSqueeze(self._array[:, idx])
 
         return self._getCol(idx)
 
@@ -345,7 +345,7 @@ cdef class Matrix(object):
 
         # if a dense representation already exists, use it!
         if self._array is not None:
-            return np.atleast_1d(self._array[idx, :].squeeze())
+            return _arrSqueeze(self._array[idx, :])
 
         return self._getRow(idx)
 

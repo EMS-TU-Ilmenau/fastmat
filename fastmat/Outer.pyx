@@ -19,7 +19,7 @@ import numpy as np
 cimport numpy as np
 
 from .Matrix cimport Matrix
-from .core.cmath cimport _conjugate, _multiply
+from .core.cmath cimport _conjugate, _multiply, _arrSqueezedCopy
 
 cdef class Outer(Matrix):
     r"""
@@ -84,8 +84,8 @@ cdef class Outer(Matrix):
     def __init__(self, vecV, vecH):
 
         # check dimensions
-        vecV = np.atleast_1d(np.squeeze(vecV))
-        vecH = np.atleast_1d(np.squeeze(vecH))
+        vecV = _arrSqueezedCopy(vecV)
+        vecH = _arrSqueezedCopy(vecH)
 
         if vecV.ndim != 1 or vecH.ndim != 1:
             raise ValueError("Outer parameters must be one-dimensional.")

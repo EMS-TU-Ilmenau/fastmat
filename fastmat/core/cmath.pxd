@@ -43,6 +43,8 @@ cpdef float _getFFTComplexity(intsize)
 cpdef np.ndarray _arrZero(int, intsize, intsize, ntype, bint fortranStyle=?)
 cpdef np.ndarray _arrEmpty(int, intsize, intsize, ntype, bint fortranStyle=?)
 
+cpdef np.ndarray _arrSqueeze(object)
+cpdef np.ndarray _arrSqueezedCopy(object)
 cpdef np.ndarray _arrReshape(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
 cpdef bint _arrResize(np.ndarray, int, intsize, intsize, np.NPY_ORDER)
 

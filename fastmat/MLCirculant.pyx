@@ -133,13 +133,13 @@ cdef class MLCirculant(Partial):
         # Partial.
 
         # copy tensor in class itself
-        self._tenC = np.atleast_1d(np.squeeze(np.copy(tenC)))
+        self._tenC = _arrSqueezedCopy(tenC)
 
         if self._tenC.ndim < 1:
             raise ValueError("Column-definition tensor must be at least 1D.")
 
         # extract the level dimensions from the defining tensor
-        self._arrN = np.array(np.array(self._tenC).shape)
+        self._arrN = np.array((<object> self._tenC).shape)
 
         # get the size of the matrix, which must be the product of the
         # defining tensor

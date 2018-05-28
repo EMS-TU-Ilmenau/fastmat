@@ -21,7 +21,7 @@ from scipy.sparse import spmatrix
 
 from .Matrix cimport Matrix
 from .core.types cimport *
-from .core.cmath cimport _conjugate
+from .core.cmath cimport _conjugate, _arrSqueeze
 
 cdef class Sparse(Matrix):
     r"""
@@ -131,10 +131,10 @@ cdef class Sparse(Matrix):
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
-        return np.squeeze(self._spArray.getcol(idx).toarray())
+        return _arrSqueeze(self._spArray.getcol(idx).toarray())
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        return np.squeeze(_conjugate(self.spArrayH.getcol(idx).toarray()))
+        return _arrSqueeze(_conjugate(self.spArrayH.getcol(idx).toarray()))
 
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return self._spArray[idxN, idxM]
