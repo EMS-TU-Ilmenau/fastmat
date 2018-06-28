@@ -32,13 +32,14 @@ import sys
 import os
 import re
 import subprocess
+from distutils import sysconfig
 
-packageName     = 'fastmat'
-packageVersion  = '0.1.1'           # provide a version tag as fallback
-fullVersion     = packageVersion
-strVersionFile  = "%s/version.py" %(packageName)
+packageName = 'fastmat'
+packageVersion = '0.1.1'           # provide a version tag as fallback
+fullVersion = packageVersion
+strVersionFile = "%s/version.py" % (packageName)
 
-VERSION_PY      = """
+VERSION_PY = """
 # -*- coding: utf-8 -*-
 # This file carries the module's version information which will be updated
 # during execution of the installation script, setup.py. Distribution tarballs
@@ -52,10 +53,6 @@ def WARNING(string):
     print("\033[91m WARNING:\033[0m %s" % (string))
 
 
-###############################################################################
-###  Import setuptools
-###############################################################################
-
 # load setup and extensions from setuptools. If that fails, try distutils
 try:
     from setuptools import setup, Extension
@@ -64,9 +61,7 @@ except ImportError:
     raise
 
 
-###############################################################################
-###  Determine package version
-###############################################################################
+# Determine package version
 def getCurrentVersion():
     global packageVersion
     global fullVersion
@@ -75,7 +70,7 @@ def getCurrentVersion():
     if os.path.isfile(".version"):
         with open(".version", "r") as f:
             stdout = f.read().split('\n')[0]
-        print("Override of version string to '%s' (from .version file )" %(
+        print("Override of version string to '%s' (from .version file )" % (
             stdout))
 
         packageVersion = stdout
@@ -84,7 +79,7 @@ def getCurrentVersion():
         # check if source directory is a git repository
         if not os.path.exists(".git"):
             print(("Installing from something other than a Git repository; " +
-                   "Version file '%s' untouched.") %(strVersionFile))
+                   "Version file '%s' untouched.") % (strVersionFile))
             return
 
         # fetch current tag and commit description from git
@@ -94,7 +89,7 @@ def getCurrentVersion():
                 stdout=subprocess.PIPE
             )
         except EnvironmentError:
-            print("Not a git repository; Version file '%s' not touched." %(
+            print("Not a git repository; Version file '%s' not touched." % (
                 strVersionFile))
             return
 
@@ -104,7 +99,7 @@ def getCurrentVersion():
 
         if p.returncode != 0:
             print(("Unable to fetch version from git repository; " +
-                   "leaving version file '%s' untouched.") %(strVersionFile))
+                   "leaving version file '%s' untouched.") % (strVersionFile))
             return
 
         # output results to version string, extract package version number
@@ -113,7 +108,7 @@ def getCurrentVersion():
         versionMatch = re.match("[.+\d+]+\d*[abr]\d*", fullVersion)
         if versionMatch:
             packageVersion = versionMatch.group(0)
-            print("Fetched package version number from git tag (%s)." %(
+            print("Fetched package version number from git tag (%s)." % (
                 packageVersion))
 
 
@@ -123,19 +118,23 @@ getCurrentVersion()
 # make sure there exists a version.py file in the project
 with open(strVersionFile, "w") as f:
     f.write(VERSION_PY % (fullVersion))
-print("Set %s to '%s'" %(strVersionFile, fullVersion))
+print("Set %s to '%s'" % (strVersionFile, fullVersion))
 
-###############################################################################
-###  Prepare other files and construct compile arguments
-###############################################################################
+
+# Prepare other files and construct compile arguments
 
 # get the long description from the README file.
 # CAUTION: Python2/3 utf encoding shit calls needs some adjustments
-fileName = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md')
+fileName = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)),
+    'README.md'
+)
+
 f = (open(fileName, 'r') if sys.version_info < (3, 0)
      else open(fileName, 'r', encoding='utf-8'))
 longDescription = f.read()
 f.close()
+
 
 # define different compiler arguments for each platform
 strPlatform = platform.system()
@@ -143,13 +142,13 @@ compilerArguments = []
 linkerArguments = []
 if strPlatform == 'Windows':
     # Microsoft Visual C++ Compiler 9.0
-    compilerArguments += ['/O2', '/fp:precise']
+    compilerArguments += ['/fp:precise']
 elif strPlatform == 'Linux':
     # assuming Linux and gcc
-    compilerArguments += ['-O3', '-march=native', '-ffast-math']
+    compilerArguments += []
 elif strPlatform == 'Darwin':
     # assuming Linux and gcc
-    compilerArguments += ['-O3', '-march=native', '-ffast-math']
+    compilerArguments += []
 else:
     WARNING("Your platform is currently not supported by %s: %s" % (
         packageName, strPlatform))
@@ -169,9 +168,8 @@ if CMD_COVERAGE in sys.argv:
 print("Building %s v%s for %s." % (packageName, packageVersion, strPlatform))
 
 
-###############################################################################
-###  Enable flexible dependency handling by installing missing base components
-###############################################################################
+# Enable flexible dependency handling by installing missing base components
+
 # override list type to allow lazy cythonization: cythonize and compile only
 # after install_requires installed cython
 class lazyCythonize(list):
@@ -218,6 +216,28 @@ def extensions():
         'define_macros': defineMacros
     }
 
+    # me make damn sure, that disutils does not mess with our
+    # build process
+    sysconfig.get_config_vars()['CFLAGS'] = ''
+    sysconfig.get_config_vars()['OPT'] = ''
+    sysconfig.get_config_vars()['PY_CFLAGS'] = ''
+    sysconfig.get_config_vars()['PY_CORE_CFLAGS'] = ''
+    sysconfig.get_config_vars()['CC'] = 'gcc'
+    sysconfig.get_config_vars()['CXX'] = 'g++'
+    sysconfig.get_config_vars()['BASECFLAGS'] = ''
+    sysconfig.get_config_vars()['LDFLAGS'] = ''
+    sysconfig.get_config_vars()['CCSHARED'] = '-fPIC'
+    sysconfig.get_config_vars()['LDSHARED gcc -shared'] = ''
+    sysconfig.get_config_vars()['SO'] = ''
+    sysconfig.get_config_vars()['CPP'] = ''
+    sysconfig.get_config_vars()['CPPFLAGS'] = ''
+    sysconfig.get_config_vars()['BLDSHARED'] = ''
+    sysconfig.get_config_vars()['CONFIGURE_LDFLAGS'] = ''
+    sysconfig.get_config_vars()['CONFIG_ARGS'] = ''
+    sysconfig.get_config_vars()['LDFLAGS'] = ''
+    sysconfig.get_config_vars()['LDSHARED'] = 'gcc -shared'
+    sysconfig.get_config_vars()['PY_LDFLAGS'] = ''
+
     return cythonize(
         [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
@@ -233,7 +253,8 @@ def checkRequirement(lstRequirements, importName, requirementName):
     Don't add packages unconditionally as this involves the risk of updating an
     already installed package. Sometimes this may break during install or mix
     up dependencies after install. Consider an update only if the requested
-    package is not installed at all or if we are building an installation wheel.
+    package is not installed at all or if we are building an installation
+    wheel.
     '''
     try:
         __import__(importName)
@@ -252,12 +273,8 @@ checkRequirement(setupRequires, 'numpy', 'numpy')
 checkRequirement(installRequires, 'six', 'six')
 checkRequirement(installRequires, 'scipy', 'scipy')
 
-print("Requirements for setup: %s" %(setupRequires))
-print("Requirements for install: %s" %(installRequires))
-
-###############################################################################
-### The documentation
-###############################################################################
+print("Requirements for setup: %s" % (setupRequires))
+print("Requirements for install: %s" % (installRequires))
 
 
 def doc_opts():
@@ -269,17 +286,11 @@ def doc_opts():
     class OwnDoc(BuildDoc):
 
         def __init__(self, *args, **kwargs):
-            # os.system(
-            #     sys.executable + " util/bee.py benchmark -p doc/_static/bench"
-            # )
             super(OwnDoc, self).__init__(*args, **kwargs)
 
     return OwnDoc
 
 
-###############################################################################
-### The actual setup
-###############################################################################
 setup(
     name=packageName,
     version=packageVersion,
@@ -321,7 +332,7 @@ setup(
     ],
     cmdclass={'build_doc': doc_opts()},
     command_options={
-        'build_doc' : {
+        'build_doc': {
             'project': ('setup.py', packageName),
             'version': ('setup.py', packageVersion),
             'release': ('setup.py', fullVersion),
