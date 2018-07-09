@@ -135,8 +135,6 @@ f = (open(fileName, 'r') if sys.version_info < (3, 0)
 longDescription = f.read()
 f.close()
 
-<<<<<<< HEAD
-=======
 if '--generic' in sys.argv:
     marchFlag = '-march=x86-64'
     mtuneFlag = '-mtune=core2'
@@ -144,7 +142,6 @@ if '--generic' in sys.argv:
 else:
     marchFlag = '-march=native'
     mtuneFlag = '-mtune=native'
->>>>>>> Clean up build process
 
 # define different compiler arguments for each platform
 strPlatform = platform.system()
@@ -152,15 +149,6 @@ compilerArguments = []
 linkerArguments = []
 if strPlatform == 'Windows':
     # Microsoft Visual C++ Compiler 9.0
-<<<<<<< HEAD
-    compilerArguments += ['/fp:precise']
-elif strPlatform == 'Linux':
-    # assuming Linux and gcc
-    compilerArguments += []
-elif strPlatform == 'Darwin':
-    # assuming Linux and gcc
-    compilerArguments += []
-=======
     compilerArguments += ['/O2', '/fp:precise', marchFlag]
 elif strPlatform == 'Linux':
     # assuming Linux and gcc
@@ -168,7 +156,6 @@ elif strPlatform == 'Linux':
 elif strPlatform == 'Darwin':
     # assuming Darwin and gcc
     compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
->>>>>>> Clean up build process
 else:
     WARNING("Your platform is currently not supported by %s: %s" % (
         packageName, strPlatform))
@@ -245,26 +232,13 @@ def extensions():
     sysconfig.get_config_vars()['CC'] = 'gcc'
     sysconfig.get_config_vars()['CXX'] = 'g++'
     sysconfig.get_config_vars()['BASECFLAGS'] = ''
-<<<<<<< HEAD
-    sysconfig.get_config_vars()['LDFLAGS'] = ''
-    sysconfig.get_config_vars()['CCSHARED'] = '-fPIC'
-    sysconfig.get_config_vars()['LDSHARED gcc -shared'] = ''
-    sysconfig.get_config_vars()['SO'] = ''
-=======
     sysconfig.get_config_vars()['CCSHARED'] = '-fPIC'
     sysconfig.get_config_vars()['LDSHARED'] = 'gcc -shared'
->>>>>>> Clean up build process
     sysconfig.get_config_vars()['CPP'] = ''
     sysconfig.get_config_vars()['CPPFLAGS'] = ''
     sysconfig.get_config_vars()['BLDSHARED'] = ''
     sysconfig.get_config_vars()['CONFIGURE_LDFLAGS'] = ''
-<<<<<<< HEAD
-    sysconfig.get_config_vars()['CONFIG_ARGS'] = ''
     sysconfig.get_config_vars()['LDFLAGS'] = ''
-    sysconfig.get_config_vars()['LDSHARED'] = 'gcc -shared'
-=======
-    sysconfig.get_config_vars()['LDFLAGS'] = ''
->>>>>>> Clean up build process
     sysconfig.get_config_vars()['PY_LDFLAGS'] = ''
 
     return cythonize(
