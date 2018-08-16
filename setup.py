@@ -139,6 +139,7 @@ if '--generic' in sys.argv:
     marchFlag = '-march=x86-64'
     mtuneFlag = '-mtune=core2'
     sys.argv.remove("--generic")
+    WARNING("Building package for generic architectures")
 else:
     marchFlag = '-march=native'
     mtuneFlag = '-mtune=native'
