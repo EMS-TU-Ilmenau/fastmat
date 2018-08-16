@@ -32,7 +32,7 @@ np.import_array()
 
 from .core.types cimport *
 from .core.cmath cimport *
-from .core.calibration import getMatrixCalibration
+from .core.calibration import getMatrixCalibration, CALL_FORWARD, CALL_BACKWARD
 #_conjugate, _arrEmpty, _arrReshape, _arrForceContType
 from .Product cimport Product
 from .Sum cimport Sum
@@ -50,54 +50,173 @@ cdef class FastmatFlags(object):
 
 flags = FastmatFlags()
 
-################################################################################
-################################################## class MatrixCalibration
-cdef class MatrixCalibration(object):
-    def __init__(self, offsetForward, offsetBackward,
-                 gainForward, gainBackward):
-        self.gainForward = gainForward
-        self.gainBackward = gainBackward
-        self.offsetForward = offsetForward
-        self.offsetBackward = offsetBackward
 
-    def export(self):
-        return (self.offsetForward, self.offsetBackward,
-                self.gainForward, self.gainBackward)
+################################################################################
+################################################## class MatrixCallProfile
+cdef class MatrixCallProfile(object):
+    r"""MatrixCallProfile Class
+
+    **Description:**
+
+    Manage performance estimates and offer a clean and quick interface for
+    make the decision whether to bypass a transform. To interface itself is
+    call-oriented and keeps track of two estimates: how much time does a call
+    take when using the locally implemented method (the "overridee") in
+    comparision to when using the abstract base classes' ("overridden") method.
+
+    The estimates will be represented by a linear runtime estimation model
+    based on which the runtime of a call is composed by two factors: A fixed
+    duration, named *CallOverhead* represents portions of the computation time
+    irrelevant of the actual problem size whereas *PerUnit* represents portions
+    that are.
+
+    In order to compensate for runtime models scaling nonlinearly with problem
+    size the *PerUnit* estimates are based on a complexity factor which can be
+    implemented by overriding *Matrix._getComplexity()*, effectively allowing
+    estimation of known-to-be jumpy or irregular proportions of runtime vs.
+    problem size.
+
+    The class keeps two models for one call: one for the local-class methods
+    and one for the more general baseclass types. The local-class model also
+    features tracking of nested calls (i.e. when the algorithm makes use of
+    transforms of other fastmat Matrix instances)
+
+    For the successful and complete initialization of the call profile the
+    Matrix baseclass, the instanciated fastmat class and all the nested fastmat
+    classes it requires must be calibrated prior to the instantiation of the
+    class. If any prerequisite cannot be found all derived parameters contain
+    *NaN* to signal incomplete calibration. *MatrixCallProfile.isValid()*
+    allows checking if all necessary model parameters are available and
+    properly set.
+
+    The actual decision can be invoked by calling
+    *MatrixCallProfile.isBypassfaster()* returning True if using the general
+    methods implemented in the Matrix baseclass are estimated to be more
+    efficient than the specific transforms implemented in the instances' class.
+    Note that if *MatrixCallProfile.isValid()* returns _False_ the decision is
+    always _False_ and the decision is never in favour of the base classes'
+    implementation.
+    """
+
+    def __init__(self, targetInstance, targetCall, cplxAlg=0., cplxBypass=0.):
+
+        # store given complexity estimates in profile
+        self.complexityAlg, self.complexityBypass = cplxAlg, cplxBypass
+
+        # fetch calibration data and complexity estimate of base class
+        cdef MatrixCalibration calClass = None, calBase = None;
+
+        if targetInstance is not None:
+            calClass = getMatrixCalibration(targetInstance.__class__)
+            calBase = getMatrixCalibration(Matrix)
+
+        # Call the unbound method of MatrixCalibration to get calibration
+        # parameters. This way we can pass a None instance of MatrixCalibration
+        # and get proper return values (i.e. a tuple containing (nan, nan))
+        cdef tuple calParams;
+        cdef np.float32_t nan = np.nan
+        if calClass is None:
+            self.timeAlgCallOverhead, self.timeAlgPerUnit = nan, nan
+        else:
+            calParams = MatrixCalibration.getCall(calClass, targetCall)
+            self.timeAlgCallOverhead = calParams[0]
+            self.timeAlgPerUnit = calParams[1] * self.complexityAlg
+
+        if calBase is None:
+            self.timeBypassCallOverhead, self.timeBypassPerUnit = nan, nan
+        else:
+            calParams = MatrixCalibration.getCall(calBase, targetCall)
+            self.timeBypassCallOverhead = calParams[0]
+            self.timeBypassPerUnit = calParams[1] * self.complexityBypass
+
+        # reset tracking of nested classes' estimates
+        (self.timeNestedCallOverhead, self.timeNestedPerUnit) = 0., 0.
+
+    def __str__(self):
+        return "%.3g + %.3g * M [Nested: %.3g + %.3g * M, cplx %.3g]" %(
+            self.timeAlgCallOverhead, self.timeAlgPerUnit,
+            self.timeNestedCallOverhead, self.timeNestedPerUnit,
+            self.complexityAlg
+        )
 
     def __repr__(self):
-        return str(self.export())
+        return self.__str__()
+
+    cpdef void addNestedProfile(
+            self, intsize numM, bint allowBypass, MatrixCallProfile nested):
+        '''
+        Add the runtime estimate of a nested (child) class instance to the
+        total estimate for this class instances' profile.
+
+        This is needed if a meta class contains multiple fastmat class
+        instances which are equipped with valid runtime estimation models
+        themselves. By passing the local class instances' allowBypass flag it
+        is possible to factor in runtime shortcuts arising from the use of
+        bypassing transforms in nested classes.
+
+        'numN' may be used to introduce additional scaling to account for the
+        situation when the implemented transform requires multiple invokations
+        of the profiled nested classes' call to produce one output element.
+        (i.e. set this to three if three vectors must be processed by the
+        nested classes' call in order to process one vector in this instances'
+        call)
+        '''
+        cdef bint bypass = allowBypass and nested.isBypassFaster(numM)
+        if bypass:
+            self.timeNestedCallOverhead += nested.timeBypassCallOverhead
+            self.timeNestedPerUnit += nested.timeBypassPerUnit * numM
+        else:
+            self.timeNestedCallOverhead += nested.timeAlgCallOverhead
+            self.timeNestedPerUnit += nested.timeAlgPerUnit * numM
+
+    cpdef bint isValid(self):
+        '''
+        Return True if valid calibration data and all model parameters is
+        available.
+        '''
+        return (
+            np.isfinite(self.timeAlgCallOverhead) and
+            np.isfinite(self.timeAlgPerUnit) and
+            np.isfinite(self.timeBypassCallOverhead) and
+            np.isfinite(self.timeBypassPerUnit) and
+            self.timeAlgCallOverhead > 0 and
+            self.timeAlgPerUnit > 0 and
+            self.timeBypassCallOverhead > 0 and
+            self.timeBypassPerUnit > 0
+        )
+
+    cpdef bint isBypassFaster(self, intsize numVectors):
+        '''
+        Return true if the general base class method is estiamted to be faster.
+        '''
+        return (
+            self.timeAlgCallOverhead + self.timeNestedCallOverhead -
+            self.timeBypassCallOverhead +
+            numVectors * (self.timeAlgPerUnit + self.timeNestedPerUnit -
+                          self.timeBypassPerUnit
+            ) > 0
+        )
+
+    cpdef tuple estimateRuntime(self, intsize M):
+        '''
+        Return a runtime estimate for the algorithm and its bypass runtime.
+        '''
+        return (
+            (self.timeAlgCallOverhead + self.timeNestedCallOverhead +
+             (self.timeAlgPerUnit + self.timeNestedPerUnit) * M),
+            self.timeBypassCallOverhead + self.timeBypassPerUnit * M
+        )
 
 
-cdef tuple profileToTuple(PROFILE_s profile):
-    return (profile.overhead,
-            profile.effort,
-            profile.overheadNested,
-            profile.effortNested,
-            profile.complexity)
 
-cdef void finishProfile(PROFILE_s *profile, float offset, float gain):
-    profile[0].overhead = profile[0].overheadNested + offset
-    profile[0].effort   = profile[0].effortNested + gain * profile[0].complexity
+################################################################################
+################################################## class MatrixCalibration
+cdef class MatrixCalibration(dict):
 
-cdef bint profileIsValid(PROFILE_s *profile):
-    return (np.isfinite(profile[0].overhead) and profile[0].overhead > 0 and
-            np.isfinite(profile[0].effort) and profile[0].effort > 0)
+    cpdef tuple getCall(self, targetCall):
+        if self is not None:
+            return self.get(targetCall, (np.nan, np.nan))
 
-cdef bint profileUpdate(PROFILE_s *profile, intsize numM, bint allowBypass,
-                        PROFILE_s *profClass, PROFILE_s *profBypass):
-    cdef float estimateClass, estimateBypass
-    cdef PROFILE_s *profSelected
-
-    estimateClass  = profClass[0].overhead + profClass[0].effort * numM
-    estimateBypass = profBypass[0].overhead + profBypass[0].effort * numM
-
-    profSelected = (profBypass if (allowBypass and
-                                   estimateBypass < estimateClass)
-                    else profClass)
-    profile[0].overheadNested += profSelected[0].overhead
-    profile[0].effortNested   += profSelected[0].effort * numM
-
-    return profSelected == profClass
 
 ################################################################################
 ################################################## class Matrix
@@ -148,41 +267,6 @@ cdef class Matrix(object):
         # """
         def __get__(self):
             return (self.numN, self.numM)
-
-    property tag:
-        # r"""Description tag of Matrix
-        #
-        # *(read-write)*
-        # """
-        def __get__(self):
-            return (self._tag)
-
-        def __set__(self, tag):
-            self._tag = tag
-
-    property bypassAllow:
-        # r"""Enable or disable transform bypassing based on performance
-        # estimates
-        #
-        # *(read-write)*
-        # """
-        def __get__(self):
-            return self._bypassAllow
-
-        def __set__(self, value):
-            self._bypassAllow = value
-
-    property bypassAutoArray:
-        # r"""Enable or disable automatic dense array generation for
-        # transform bypass
-        #
-        # *(read-write)*
-        # """
-        def __get__(self):
-            return self._bypassAutoArray
-
-        def __set__(self, value):
-            self._bypassAutoArray = value
 
     ############################################## class resource handling
     # nbytes - Property(read)
@@ -802,90 +886,18 @@ cdef class Matrix(object):
         """
 
         def __get__(self):
-            return (self._profileForward.complexity,
-                    self._profileBackward.complexity)
+            return (self.profileForward.complexityAlg,
+                    self.profileBackward.complexityAlg)
 
     def getComplexity(self):
         r"""
 
         """
-        cdef tuple complexity = self._getComplexity()
-        if complexity is not None:
-            self._profileForward.complexity = complexity[0]
-            self._profileBackward.complexity = complexity[1]
+        return self._getComplexity()
 
     cpdef tuple _getComplexity(self):
         cdef float complexity = self.numN * self.numM
         return (complexity, complexity)
-
-    property profile:
-        r"""
-
-        *(read-only)*
-
-        Return the timing profiles of this specific class. These are also used
-        to determine which computation strategy to use for a perticular input.
-        (distinct amount of vectors)
-        """
-
-        def __get__(self):
-            return (profileToTuple(self._profileForward),
-                    profileToTuple(self._profileBackward))
-
-    property profileForward:
-        r"""
-
-        """
-
-        def __get__(self):
-            return self._profileForward
-
-    property profileBackward:
-        r"""
-
-        """
-
-        def __get__(self):
-            return self._profileBackward
-
-    property profileBypassFwd:
-        r"""
-
-        """
-
-        def __get__(self):
-            return self._profileBypassFwd
-
-    property profileBypassBwd:
-        r"""
-
-        """
-
-        def __get__(self):
-            return self._profileBypassBwd
-
-    def estimateRuntime(self, intsize M=1):
-        r"""Estimate Runtime
-
-        """
-        cdef float estimateForward  = (self._profileForward.overhead +
-                                       self._profileForward.effort * M)
-        cdef float estimateBypassFwd = (self._profileBypassFwd.overhead +
-                                        self._profileBypassFwd.effort * M)
-        cdef float estimateBackward = (self._profileBackward.overhead +
-                                       self._profileBackward.effort * M)
-        cdef float estimateBypassBwd = (self._profileBypassBwd.overhead +
-                                        self._profileBypassBwd.effort * M)
-        return (estimateBypassFwd if (self._bypassAllow and
-                                      (self._array is not None or
-                                       self._bypassAutoArray) and
-                                      (estimateBypassFwd < estimateForward))
-                else estimateForward,
-                estimateBypassBwd if (self._bypassAllow and
-                                      (self._arrayH is not None or
-                                       self._bypassAutoArray) and
-                                      (estimateBypassBwd < estimateBackward))
-                else estimateBackward)
 
     cdef void _initProfiles(self):
         """Initialize Profiles
@@ -910,56 +922,29 @@ cdef class Matrix(object):
           - forward and backward transforms of this particular class instance
           - a bypass transform based on dot-product complexity
         """
-        # initialize profiles
-        memset(&(self._profileForward), 0, sizeof(PROFILE_s))
-        memset(&(self._profileBackward), 0, sizeof(PROFILE_s))
-        memset(&(self._profileBypassFwd), 0, sizeof(PROFILE_s))
-        memset(&(self._profileBypassBwd), 0, sizeof(PROFILE_s))
-
         # determine complexity of class instance transforms and Bypass transform
-        self.getComplexity()
-        cdef tuple complexity = Matrix._getComplexity(self)
-        self._profileBypassFwd.complexity = complexity[0]
-        self._profileBypassBwd.complexity = complexity[1]
+        cdef tuple cplxA = self.getComplexity()
+        cdef tuple cplxB = Matrix._getComplexity(self)
+
+        # initialize profiles
+        self.profileForward = MatrixCallProfile(
+            self, 'forward', cplxAlg=cplxA[0], cplxBypass=cplxB[0])
+        self.profileBackward = MatrixCallProfile(
+            self, 'backward', cplxAlg=cplxA[1], cplxBypass=cplxB[0])
 
         # Explore the performance profiles of nested fastmat classes
         # Fills in the profile fields overheadNested and effortNested
         self._exploreNestedProfiles()
 
-        # compile profile of this class to determine transform performance
-        cdef float nan = np.nan
-        cdef MatrixCalibration calClass = getMatrixCalibration(self.__class__)
-        if calClass is None:
-            finishProfile(&(self._profileForward), nan, nan)
-            finishProfile(&(self._profileBackward), nan, nan)
-        else:
-            finishProfile(&(self._profileForward),
-                          calClass.offsetForward, calClass.gainForward)
-            finishProfile(&(self._profileBackward),
-                          calClass.offsetBackward, calClass.gainBackward)
-
-        # compile profile of base class to determine bypass performance
-        cdef MatrixCalibration calBase  = getMatrixCalibration(Matrix)
-        if calBase is None:
-            finishProfile(&(self._profileBypassFwd), nan, nan)
-            finishProfile(&(self._profileBypassBwd), nan, nan)
-        else:
-            finishProfile(&(self._profileBypassFwd),
-                          calBase.offsetForward, calBase.gainForward)
-            finishProfile(&(self._profileBypassBwd),
-                          calBase.offsetBackward, calBase.gainBackward)
-
         # disable transform bypass if profile is either missing or incomplete
-        if not (profileIsValid(&self._profileForward) and
-                profileIsValid(&self._profileBackward) and
-                profileIsValid(&self._profileBypassFwd) and
-                profileIsValid(&self._profileBypassBwd)):
-            self._bypassAllow = False
+        if not (self.profileForward.isValid() and
+                self.profileBackward.isValid()):
+            self.bypassAllow = False
 
     cpdef _exploreNestedProfiles(self):
         r"""Explore Nested Profiles
 
-        Explore the runtime properties of all nested fastmat matrices. Use ane
+        Explore the runtime properties of all nested fastmat matrices. Use an
         iterator on self._content by default to sum the profile properties of
         all nested classes of meta-classes by default. basic-classes either
         have an empty tuple for _content or need to overwrite this method.
@@ -968,12 +953,31 @@ cdef class Matrix(object):
         cdef bint bypass
 
         for item in self:
-            bypass = (item._bypassAllow and
-                      (item._array is not None or item._bypassAutoArray))
-            profileUpdate(&(self._profileForward), 1, bypass,
-                          &(item._profileForward), &(item._profileBypassFwd))
-            profileUpdate(&(self._profileBackward), 1, bypass,
-                          &(item._profileBackward), &(item._profileBypassBwd))
+            bypass = (item.bypassAllow and
+                      (item._array is not None or item.bypassAutoArray))
+            self.profileForward.addNestedProfile(
+                1, bypass, item.profileForward)
+            self.profileBackward.addNestedProfile(
+                1, bypass, item.profileBackward)
+
+    cpdef tuple estimateRuntime(self, intsize M=1):
+        r"""Estimate Runtime
+
+        """
+        cdef np.float32_t estAlgFwd, estBypassFwd, estAlgBwd, estBypassBwd
+
+        estAlgFwd, estBypassFwd = self.profileForward.estimateRuntime(M)
+        estAlgBwd, estBypassBwd = self.profileBackward.estimateRuntime(M)
+        return (
+            estBypassFwd
+            if ((self._array is not None or self.bypassAutoArray) and
+                self.bypassAllow and (estBypassFwd < estAlgFwd))
+            else estAlgFwd,
+            estBypassBwd
+            if ((self._arrayH is not None or self.bypassAutoArray) and
+                self.bypassAllow and (estBypassBwd < estAlgBwd))
+            else estAlgBwd
+        )
 
     ############################################## class methods
     def __init__(self, arrMatrix):
@@ -1022,22 +1026,22 @@ cdef class Matrix(object):
         self._forceInputAlignment = properties.pop('forceInputAlignment', False)
         self._widenInputDatatype  = properties.pop('widenInputDatatype', False)
         self._useFortranStyle     = properties.pop('fortranStyle', True)
-        self._bypassAllow         = properties.pop('bypassAllow',
-                                                   flags.bypassAllow)
+        self.bypassAllow          = properties.pop('bypassAllow',
+                                                   flags.bypassAutoArray)
 
-        # determine new value of _bypassAutoArray: take the value in `flags`
+        # determine new value of bypassAutoArray: take the value in `flags`
         # as default but check that no nested child instance has set
         # bypassAutoArray to False. If the parent class would disregard this,
         # A nested instances' AutoArray function would be called implicitly
         # although it shouldn't be.
         cdef bint autoArray = (flags.bypassAutoArray and
                                all(not item.bypassAutoArray for item in self))
-        self._bypassAutoArray     = properties.pop('bypassAutoArray', autoArray)
+        self.bypassAutoArray = properties.pop('bypassAutoArray', autoArray)
 
         # initialize performance profile
         # NOTE: If a valid profile is not available (either no calibration data
         # is found or the complexity model could not be evaluated properly),
-        # self._bypassAllow will be disabled explicitly in self._initProfiles()
+        # self.bypassAllow will be disabled explicitly in self._initProfiles()
         # This way bypassing decisions are no longer dependent on (potentially)
         # volatile floating-point comparisions against NaN values, as was the
         # case previously)
@@ -1236,14 +1240,10 @@ cdef class Matrix(object):
             if self._widenInputDatatype:
                 arrInput = _arrForceType(arrInput, typeForce)
 
-        # estimate runtimes according profileForward and profileBypass
+        # estimate runtimes according profile for Forward
         # if the dot-product bypass strategy leads to smaller runtimes, do it!
-        cdef float estimateForward  = (self._profileForward.overhead +
-                                       self._profileForward.effort * M)
-        cdef float estimateBypass   = (self._profileBypassFwd.overhead +
-                                       self._profileBypassFwd.effort * M)
-        if (self._bypassAllow and estimateBypass < estimateForward and
-                (self._array is not None or self._bypassAutoArray)):
+        if (self.bypassAllow and self.profileForward.isBypassFaster(M) and
+                (self._array is not None or self.bypassAutoArray)):
             arrOutput = self.array.dot(arrInput)
         else:
             # call fast transform with either cython or python style
@@ -1341,14 +1341,10 @@ cdef class Matrix(object):
             if self._widenInputDatatype:
                 arrInput = _arrForceType(arrInput, typeForce)
 
-        # estimate runtimes according profileForward and profileBypass
-        # if the dot-product bypass strategy leads to smaller runtimes, do it!
-        cdef float estimateBackward = (self._profileBackward.overhead +
-                                       self._profileBackward.effort * M)
-        cdef float estimateBypass   = (self._profileBypassBwd.overhead +
-                                       self._profileBypassBwd.effort * M)
-        if (self._bypassAllow and estimateBypass < estimateBackward and
-                (self._arrayH is not None or self._bypassAutoArray)):
+        # estimate runtimes according profile for Backward if the dot-product
+        # bypass strategy leads to smaller runtimes, do it!
+        if (self.bypassAllow and self.profileBackward.isBypassFaster(M) and
+                (self._arrayH is not None or self.bypassAutoArray)):
             if self._arrayH is None:
                 self._arrayH = self.array.T.conj()
 
@@ -1627,7 +1623,6 @@ cdef class Hermitian(Matrix):
 
 
 ################################################################################
-
 cdef inline Matrix getConjugate(Matrix matrix):
     """ Conjugate factory
 

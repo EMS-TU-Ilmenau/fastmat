@@ -247,7 +247,7 @@ def checkRequirement(lstRequirements, importName, requirementName):
 setupRequires = []
 installRequires = []
 checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
-checkRequirement(setupRequires, 'Cython', 'cython>=0.19')
+checkRequirement(setupRequires, 'Cython', 'cython>=0.26')
 checkRequirement(setupRequires, 'numpy', 'numpy')
 checkRequirement(installRequires, 'six', 'six')
 checkRequirement(installRequires, 'scipy', 'scipy')

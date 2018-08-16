@@ -19,7 +19,7 @@
 import numpy as np
 cimport numpy as np
 
-from .Matrix cimport Matrix, profileUpdate
+from .Matrix cimport Matrix, MatrixCallProfile
 from .Product cimport Product
 from .core.types cimport *
 from .core.cmath cimport _arrReshape, _arrEmpty
@@ -204,12 +204,12 @@ cdef class Kron(Matrix):
         cdef bint bypass
         for item in self:
             scale = self.numN / item.numN
-            bypass = (item._bypassAllow and
-                      (item._array is not None or item._bypassAutoArray))
-            profileUpdate(&(self._profileForward), scale, bypass,
-                          &(item._profileForward), &(item._profileBypassFwd))
-            profileUpdate(&(self._profileBackward), scale, bypass,
-                          &(item._profileBackward), &(item._profileBypassBwd))
+            bypass = (item.bypassAllow and
+                      (item._array is not None or item.bypassAutoArray))
+            self.profileForward.addNestedProfile(
+                scale, bypass, item.profileForward)
+            self.profileBackward.addNestedProfile(
+                scale, bypass, item.profileBackward)
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):

@@ -320,17 +320,17 @@ def testInitOverhead(funcConstr, numSize, numN):
             'func': funcF,
             'args': args,
             'Mem': mem,
-            BENCH.RESULT_OVH_NESTED_F   : profFwd['overheadNested'],
-            BENCH.RESULT_EFF_NESTED_F   : profFwd['effortNested'],
-            BENCH.RESULT_COMPLEXITY_F   : profFwd['complexity'],
+            BENCH.RESULT_OVH_NESTED_F   : profFwd.timeNestedCallOverhead,
+            BENCH.RESULT_EFF_NESTED_F   : profFwd.timeNestedPerUnit,
+            BENCH.RESULT_COMPLEXITY_F   : profFwd.complexityAlg,
             BENCH.RESULT_ESTIMATE_FWD   : estFwd
         }, 'backward': {
             'func': funcB,
             'args': args,
             'Mem': mem,
-            BENCH.RESULT_OVH_NESTED_B   : profBwd['overheadNested'],
-            BENCH.RESULT_EFF_NESTED_B   : profBwd['effortNested'],
-            BENCH.RESULT_COMPLEXITY_B   : profBwd['complexity'],
+            BENCH.RESULT_OVH_NESTED_B   : profBwd.timeNestedCallOverhead,
+            BENCH.RESULT_EFF_NESTED_B   : profBwd.timeNestedPerUnit,
+            BENCH.RESULT_COMPLEXITY_B   : profBwd.complexityAlg,
             BENCH.RESULT_ESTIMATE_BWD   : estBwd
         }
     }

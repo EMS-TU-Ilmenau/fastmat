@@ -189,24 +189,26 @@ cdef class LowRank(Product):
             BENCH.COMMON: {
                 BENCH.FUNC_SIZE : (lambda c: 10 * c + 1),
                 BENCH.FUNC_GEN  : (lambda c: LowRank(
-                    arrTestDist((c + 1, ), dtype=np.float, center=2),
-                    arrTestDist((10 * c + 1, c + 1), dtype=np.float, center=2),
-                    arrTestDist((10 * c + 1, c + 1), dtype=np.float, center=2)))
+                    arrTestDist((c + 1, ), dtype=np.float32, center=2),
+                    arrTestDist((10 * c + 1, c + 1),
+                                dtype=np.float32, center=2),
+                    arrTestDist((10 * c + 1, c + 1),
+                                dtype=np.float32, center=2)))
             },
             BENCH.FORWARD: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c),
                 BENCH.FUNC_GEN  : (lambda c: LowRank(
-                    arrTestDist((c, ), dtype=np.float),
-                    arrTestDist((2 ** c, c), dtype=np.float),
-                    arrTestDist((2 ** c, c), dtype=np.float)))
+                    arrTestDist((c, ), dtype=np.float32),
+                    arrTestDist((2 ** c, c), dtype=np.float32),
+                    arrTestDist((2 ** c, c), dtype=np.float32)))
             },
             BENCH.DTYPES: {
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c),
                 BENCH.FUNC_GEN  : (lambda c, datatype: LowRank(
-                    arrTestDist((c, ), dtype=np.float),
-                    arrTestDist((2 ** c, c), dtype=np.float),
-                    arrTestDist((2 ** c, c), dtype=np.float)))
+                    arrTestDist((c, ), dtype=np.float32),
+                    arrTestDist((2 ** c, c), dtype=np.float32),
+                    arrTestDist((2 ** c, c), dtype=np.float32)))
             }
         }
 

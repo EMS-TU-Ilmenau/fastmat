@@ -21,32 +21,44 @@ cimport numpy as np
 
 from .core.types cimport *
 
-################################################## class MatrixProfile
+################################################## class FastmatFlags
 cdef class FastmatFlags:
     cpdef public bint bypassAllow
     cpdef public bint bypassAutoArray
 
-################################################## class MatrixProfile
-cdef class MatrixCalibration:
-    cdef public float offsetForward
-    cdef public float offsetBackward
-    cdef public float gainForward
-    cdef public float gainBackward
+
+################################################## class MatrixCalibration
+cdef class MatrixCalibration(dict):
+    cpdef tuple getCall(self, targetCall)
 
 
-################################################## class MatrixProfile
-ctypedef struct PROFILE_s:
-    float complexity
-    float overhead
-    float overheadNested
-    float effort
-    float effortNested
+################################################## class MatrixCallProfile
+cdef class MatrixCallProfile(object):
+    cdef readonly np.float32_t  complexityAlg
+    cdef readonly np.float32_t  timeAlgCallOverhead
+    cdef readonly np.float32_t  timeAlgPerUnit
 
-cdef bint profileUpdate(PROFILE_s *, intsize M, bint, PROFILE_s *, PROFILE_s *)
-cdef bint profileIsValid(PROFILE_s *)
+    cdef readonly np.float32_t  timeNestedCallOverhead
+    cdef readonly np.float32_t  timeNestedPerUnit
+
+    cdef readonly np.float32_t  complexityBypass
+    cdef readonly np.float32_t  timeBypassCallOverhead
+    cdef readonly np.float32_t  timeBypassPerUnit
+
+    cpdef void addNestedProfile(self, intsize, bint, MatrixCallProfile)
+    cpdef bint isValid(self)
+    cpdef bint isBypassFaster(self, intsize numVectors)
+    cpdef tuple estimateRuntime(self, intsize M)
+
 
 ################################################## class Matrix
 cdef class Matrix:
+
+    cdef bint       _cythonCall                  # use _C() transforms in class
+    cdef bint       _forceInputAlignment         # force alignment of input data
+    #                                            # to be F-contiguous
+    cdef bint       _useFortranStyle             # if true, select Fortran style
+    cdef bint       _widenInputDatatype          # widen input data type upfront
 
     ############################################## class variables
     cdef public np.ndarray  _array               # ndarray dense representation
@@ -66,28 +78,21 @@ cdef class Matrix:
     cdef readonly ntype     numpyType            # numpy typenum
     cdef readonly ftype     fusedType            # fastmat fused typenum
 
-    cdef bint       _cythonCall                  # use _C() transforms in class
-    cdef bint       _forceInputAlignment         # force alignment of input data
-    #                                            # to be F-contiguous
-    cdef bint       _useFortranStyle             # if true, select Fortran style
-    cdef bint       _widenInputDatatype          # widen input data type upfront
-    cdef bint       _bypassAllow                 # if true, transform may be
+    cdef public bint        bypassAllow          # if true, transform may be
     #                                            # bypassed based on runtime
     #                                            # estimation decision
-    cdef bint       _bypassAutoArray             # if true, a dense array repre-
+    cdef public bint        bypassAutoArray      # if true, a dense array repre-
     #                                            # sentation for bypassing a
     #                                            # transform will automatically
     #                                            # be generated when required
-    cdef str        _tag                         # Description of matrix
+    cdef public str         tag                  # Description of matrix
 
     cdef public object  _forwardReferenceMatrix  # ndarray representing Matrix
     #                                            # reference
 
     ############################################## class profiling
-    cdef PROFILE_s _profileBypassFwd
-    cdef PROFILE_s _profileBypassBwd
-    cdef PROFILE_s _profileForward
-    cdef PROFILE_s _profileBackward
+    cdef public MatrixCallProfile profileForward
+    cdef public MatrixCallProfile profileBackward
 
     ############################################## class implementation methods
     cpdef np.ndarray _getArray(self)
@@ -106,6 +111,7 @@ cdef class Matrix:
     cpdef tuple _getComplexity(self)
     cdef void _initProfiles(self)
     cpdef _exploreNestedProfiles(self)
+    cpdef tuple estimateRuntime(self, intsize M=?)
 
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)

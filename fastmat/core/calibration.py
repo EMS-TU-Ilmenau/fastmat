@@ -18,11 +18,17 @@
 import numpy as np
 from ..Matrix import MatrixCalibration
 
+################################################################################
+################################################## MatrixCalibration call names
+CALL_FORWARD = 'forward'
+CALL_BACKWARD = 'backward'
 
+################################################################################
+################################################## calibration storage
 def saveCalibration(filename):
     import json
     import os
-    outData = {target.__name__: cal.export() for target, cal in calData.items()}
+    outData = {target.__name__: cal for target, cal in calData.items()}
 
     # force existance of output file
     dirname=os.path.dirname(filename)
@@ -44,9 +50,18 @@ def loadCalibration(filename):
 
     calData.clear()
     for name, data in inData.items():
+
+        # check the format of the data
+        data = {
+            key:tuple(value)
+            for key, value in data.items()
+        }
+
+        # if all is sound, put the calibration data in the database
         item = classNames.get(name, None)
         if item is not None:
-            calData[item] = MatrixCalibration(*data)
+            calData[item] = MatrixCalibration(data)
+
 
 ################################################################################
 ################################################## calibration data access
@@ -134,19 +149,23 @@ def calibrateClass(target, **options):
                 if dOffset < offset * 1e-2:
                     break
 
-        return offset, gain
+        return (offset, gain)
 
-    ovhForward, effForward = estimate('forwardMin',
-                                      BENCH.RESULT_COMPLEXITY_F,
-                                      BENCH.RESULT_OVH_NESTED_F,
-                                      BENCH.RESULT_EFF_NESTED_F)
+    cal = MatrixCalibration({
+        CALL_FORWARD: estimate(
+            'forwardMin',
+            BENCH.RESULT_COMPLEXITY_F,
+            BENCH.RESULT_OVH_NESTED_F,
+            BENCH.RESULT_EFF_NESTED_F
+        ),
+        CALL_BACKWARD: estimate(
+            'backwardMin',
+            BENCH.RESULT_COMPLEXITY_B,
+            BENCH.RESULT_OVH_NESTED_B,
+            BENCH.RESULT_EFF_NESTED_B
+        )
+    })
 
-    ovhBackward, effBackward = estimate('backwardMin',
-                                        BENCH.RESULT_COMPLEXITY_B,
-                                        BENCH.RESULT_OVH_NESTED_B,
-                                        BENCH.RESULT_EFF_NESTED_B)
-
-    cal = MatrixCalibration(ovhForward, ovhBackward, effForward, effBackward)
     calData[target] = cal
 
     return cal, B
