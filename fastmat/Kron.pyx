@@ -351,7 +351,7 @@ cdef class Kron(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Kron(
                     Fourier(2 * c),
                     Diag(np.random.uniform(2, 3, (2 * c))),
-                    Matrix(arrTestDist((2 * c, 2 * c), dtype=np.complex)))),
+                    Matrix(arrTestDist((2 * c, 2 * c), dtype=np.complex64)))),
                 BENCH.FUNC_SIZE : (lambda c: 8 * c ** 3)
             },
             BENCH.FORWARD: {},

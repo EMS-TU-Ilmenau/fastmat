@@ -103,7 +103,7 @@ cpdef np.ndarray CG(
     cdef ntype npTypeOut = typeOut.type_num
     arrIn = _arrForceTypeAlignment(arrB, npTypeOut, np.NPY_FORCECAST)
     if errorTol == 0:
-        errorTol = _getTypeEps(typeOut)
+        errorTol = getTypeEps(typeOut)
 
     # dispatch specialization of core routine according tOptor
     if typeOut == np.float32:
@@ -135,13 +135,13 @@ cpdef np.ndarray CG(
         )
     elif typeOut == np.complex128:
         return _CGcore[np.complex128_t](
-                fmatA,
-                arrIn,
-                npTypeOut,
-                0.,
-                hermitian,
-                errorTol
-            )
+            fmatA,
+            arrIn,
+            npTypeOut,
+            0.,
+            hermitian,
+            errorTol
+        )
     else:
         raise NotImplementedError("Output type %d not supported." % (typeOut))
 
@@ -192,7 +192,7 @@ cdef np.ndarray _CGcore(
     # change right hand side of equation system according to symmetrization
     # force to be F-contiguous and of consistent data type (no ints here)
     cdef np.ndarray arrR
-    if hermitian == False:
+    if hermitian is False:
         arrR = _arrForceTypeAlignment(
             fmatA.backward(arrB),
             npTypeOut,
@@ -235,7 +235,7 @@ cdef np.ndarray _CGcore(
 
         # iterate until stopping criterion is met
         while numRNormOld > errorTol:
-            if hermitian == False:
+            if hermitian is False:
                 arrQ = fmatA.gram.forward(arrP)
             else:
                 arrQ = fmatA.forward(arrP)

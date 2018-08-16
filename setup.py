@@ -105,7 +105,7 @@ def getCurrentVersion():
         # output results to version string, extract package version number
         # from git tag
         fullVersion = stdout
-        versionMatch = re.match("[.+\d+]+\d*[abr]\d*", fullVersion)
+        versionMatch = re.match(r"[.+\d+]+\d*[abr]\d*", fullVersion)
         if versionMatch:
             packageVersion = versionMatch.group(0)
             print("Fetched package version number from git tag (%s)." % (

@@ -104,7 +104,7 @@ cdef class MatrixCallProfile(object):
         self.complexityAlg, self.complexityBypass = cplxAlg, cplxBypass
 
         # fetch calibration data and complexity estimate of base class
-        cdef MatrixCalibration calClass = None, calBase = None;
+        cdef MatrixCalibration calClass = None, calBase = None
 
         if targetInstance is not None:
             calClass = getMatrixCalibration(targetInstance.__class__)
@@ -113,7 +113,7 @@ cdef class MatrixCallProfile(object):
         # Call the unbound method of MatrixCalibration to get calibration
         # parameters. This way we can pass a None instance of MatrixCalibration
         # and get proper return values (i.e. a tuple containing (nan, nan))
-        cdef tuple calParams;
+        cdef tuple calParams
         cdef np.float32_t nan = np.nan
         if calClass is None:
             self.timeAlgCallOverhead, self.timeAlgPerUnit = nan, nan
@@ -193,8 +193,7 @@ cdef class MatrixCallProfile(object):
             self.timeAlgCallOverhead + self.timeNestedCallOverhead -
             self.timeBypassCallOverhead +
             numVectors * (self.timeAlgPerUnit + self.timeNestedPerUnit -
-                          self.timeBypassPerUnit
-            ) > 0
+                          self.timeBypassPerUnit) > 0
         )
 
     cpdef tuple estimateRuntime(self, intsize M):
@@ -206,7 +205,6 @@ cdef class MatrixCallProfile(object):
              (self.timeAlgPerUnit + self.timeNestedPerUnit) * M),
             self.timeBypassCallOverhead + self.timeBypassPerUnit * M
         )
-
 
 
 ################################################################################
@@ -222,6 +220,7 @@ cdef class MatrixCalibration(dict):
 ################################################## class Matrix
 cdef class Matrix(object):
     r"""Matrix Base Class
+
 
     **Description:**
     The baseclass of all matrix classes in fastmat. It also serves as wrapper

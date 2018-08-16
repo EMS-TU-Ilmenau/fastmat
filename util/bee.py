@@ -210,20 +210,20 @@ class Bee(CommandArgParser):
             '-s', '--select',
             nargs='+',
             default=[],
-            help=("Allows customizing the set of %(name)s to be run by " +
-                  "combining filtering with picking. Append an arbitrary " +
-                  "number of selectors in the format 'unit.%(name)s'. " +
-                  "Selectors specifying only one category ('unit.' or " +
-                  "'.%(name)s') introduce mask filter capabilities, entries. " +
-                  "If any mask filters are specified, all targets matching " +
-                  "both the combined unit and the combined %(name)s masks " +
-                  "will be added to the job. Any explicitly picked targets " +
-                  "('unit.%(name)s') will be added to the job regardless of " +
-                  "also specified mask filters. If no mask filters are " +
-                  "specified, but some targets are picked explicitly, only " +
-                  "the picked targets will be %(name)sed. If neither mask " +
-                  "filters are specified nor targets are pciked, all " +
-                  "available targets will be %(name)sed. Arguments with no " +
+            help=("Allows customizing the set of %(name)s to be run by "
+                  "combining filtering with picking. Append an arbitrary "
+                  "number of selectors in the format 'unit.%(name)s'. "
+                  "Selectors specifying only one category ('unit.' or "
+                  "'.%(name)s') introduce mask filter capabilities, entries. "
+                  "If any mask filters are specified, all targets matching "
+                  "both the combined unit and the combined %(name)s masks "
+                  "will be added to the job. Any explicitly picked targets "
+                  "('unit.%(name)s') will be added to the job regardless of "
+                  "also specified mask filters. If no mask filters are "
+                  "specified, but some targets are picked explicitly, only "
+                  "the picked targets will be %(name)sed. If neither mask "
+                  "filters are specified nor targets are pciked, all "
+                  "available targets will be %(name)sed. Arguments with no "
                   "separators ('.') will be ignored completely.") % {
                 'name': nameType}
         )
@@ -231,11 +231,11 @@ class Bee(CommandArgParser):
             '-o', '--options',
             nargs='+',
             default=[],
-            help=("You may specify additional parameters for the %(name)ss " +
-                  "by putting extra <NAME>=<VALUE> either with this option " +
-                  "or where they do not interfere with other options. You " +
-                  "may separate multiple parameters either with whitespaces " +
-                  "or commas.") % {'name': nameType}
+            help=("You may specify additional parameters for the %(name)ss "
+                  "by putting extra <NAME>=<VALUE> either with this option "
+                  "or where they do not interfere with other options. You may "
+                  "separate multiple parameters either with whitespaces or "
+                  "commas.") % {'name': nameType}
         )
 
         # parse arguments, all extra stuff goes to 'extraParam'
@@ -315,15 +315,15 @@ class Bee(CommandArgParser):
         self.argParser.add_argument(
             '-w', '--write-failed',
             action='store_true',
-            help="If specified, stores failed test results to a .mat file " +
-            "for each failed test instance, including parameters, input and " +
-            "evaluation output"
+            help=("If specified, stores failed test results to a .mat file "
+                  "for each failed test instance, including parameters, input "
+                  "and evaluation output")
         )
         self.argParser.add_argument(
             '-i', '--interact',
             action='store_true',
-            help="Start interactive session for investigating the identified " +
-            "problems"
+            help=("Start interactive session for investigating the identified "
+                  "problems")
         )
         self.argParser.add_argument(
             '-v', '--verbose',
@@ -339,8 +339,8 @@ class Bee(CommandArgParser):
             '-c', '--calibration',
             type=str,
             default='',
-            help="Filename to read calibration data from. Loads calibration " +
-            "data for fastmat classes which is then used by the package."
+            help=("Filename to read calibration data from. Loads calibration "
+                  "data for fastmat classes which is then used by the package.")
         )
 
         # stop time
@@ -903,12 +903,20 @@ specifications
                 # now load the calibration data and generate the estimate based
                 # on the calibration and the transforms' complexity estimates
                 cal = fastmat.core.getMatrixCalibration(item)
-                matCal = np.diag(np.array([cal.gainForward, cal.gainBackward]))
+                matCal = np.diag(
+                    np.array([
+                        cal[fastmat.core.CALL_FORWARD][1],
+                        cal[fastmat.core.CALL_BACKWARD][1]
+                    ])
+                )
                 arrComplexity = bench.getResult('overhead',
                                                 BENCH.RESULT_COMPLEXITY_F,
                                                 BENCH.RESULT_COMPLEXITY_B)
                 arrEstimate = (
-                    np.array([[cal.offsetForward, cal.offsetBackward]]) +
+                    np.array([[
+                        cal[fastmat.core.CALL_FORWARD][0],
+                        cal[fastmat.core.CALL_BACKWARD][1]
+                    ]]) +
                     arrNested + arrComplexity.dot(matCal))
 
                 # final step: plotting into a new subplot each

@@ -23,6 +23,7 @@ from ..Matrix import MatrixCalibration
 CALL_FORWARD = 'forward'
 CALL_BACKWARD = 'backward'
 
+
 ################################################################################
 ################################################## calibration storage
 def saveCalibration(filename):
@@ -53,7 +54,7 @@ def loadCalibration(filename):
 
         # check the format of the data
         data = {
-            key:tuple(value)
+            key: tuple(value)
             for key, value in data.items()
         }
 
@@ -67,6 +68,7 @@ def loadCalibration(filename):
 ################################################## calibration data access
 # stores calibration data as MatrixCalibration over class
 calData = {}
+
 
 def getMatrixCalibration(target):
     return calData.get(target, None)
@@ -169,6 +171,7 @@ def calibrateClass(target, **options):
     calData[target] = cal
 
     return cal, B
+
 
 def calibrateAll(**options):
     from .. import classes

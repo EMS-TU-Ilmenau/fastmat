@@ -90,7 +90,7 @@ STYLE_FILES=util/*.py *.py fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
 	fastmat/*/*.py fastmat/*/*.pyx fastmat/*/*.pxd
 
 # STYLE_IGNORES lists the errors to be skipped during style check
-STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402
+STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,W504
 
 # CODEBASE_FILES lists all source code files in codebase
 CODEBASE_FILES:=$(shell find .\

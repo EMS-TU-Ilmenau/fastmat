@@ -262,7 +262,7 @@ def testInitSolve(funcConstr, numSize, numN):
             'Mem': mem2
         }, 'np10': {
             'func': func2,
-            'args': [args1[0], np.resize(args1[1], (numN, 10))]
+            'args': [args1[0].array, np.resize(args1[1], (numN, 10))]
         }
     }
 
