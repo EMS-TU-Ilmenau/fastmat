@@ -187,14 +187,14 @@ cdef class Outer(Matrix):
         return {
             BENCH.COMMON: {
                 BENCH.FUNC_GEN  : (lambda c: Outer(
-                    arrTestDist((c, ), dtype=np.float),
-                    arrTestDist((c, ), dtype=np.float)))
+                    arrTestDist((c, ), dtype=np.float32),
+                    arrTestDist((c, ), dtype=np.float32)))
             },
             BENCH.FORWARD: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Outer(
-                    arrTestDist((2 ** c, ), dtype=np.float),
-                    arrTestDist((2 ** c, ), dtype=np.float)))
+                    arrTestDist((2 ** c, ), dtype=np.float32),
+                    arrTestDist((2 ** c, ), dtype=np.float32)))
             },
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (lambda c, datatype: Outer(

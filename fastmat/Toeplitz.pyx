@@ -346,15 +346,15 @@ cdef class Toeplitz(Partial):
         return {
             BENCH.COMMON: {
                 BENCH.FUNC_GEN  : (lambda c: Toeplitz(
-                    arrTestDist((c, ), dtype=np.float),
-                    arrTestDist((c - 1, ), dtype=np.float)))
+                    arrTestDist((c, ), dtype=np.float32),
+                    arrTestDist((c - 1, ), dtype=np.float32)))
             },
             BENCH.FORWARD: {},
             BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Toeplitz(
-                    arrTestDist((2 ** c, ), dtype=np.float),
-                    arrTestDist((2 ** c - 1, ), dtype=np.float)))
+                    arrTestDist((2 ** c, ), dtype=np.float32),
+                    arrTestDist((2 ** c - 1, ), dtype=np.float32)))
             },
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (lambda c, datatype: Toeplitz(
