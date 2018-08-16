@@ -18,9 +18,6 @@
 import numpy as np
 from ..Matrix import MatrixCalibration
 
-# stores calibration data as tuple (offsetFwd/Bwd, gainFwd/Bwd) over class
-calData = {}
-
 
 def saveCalibration(filename):
     import json
@@ -51,11 +48,17 @@ def loadCalibration(filename):
         if item is not None:
             calData[item] = MatrixCalibration(*data)
 
+################################################################################
+################################################## calibration data access
+# stores calibration data as MatrixCalibration over class
+calData = {}
 
 def getMatrixCalibration(target):
     return calData.get(target, None)
 
 
+################################################################################
+################################################## calibration routines
 def calibrateClass(target, **options):
     from fastmat.inspect import Benchmark, BENCH
     from .. import flags
@@ -147,3 +150,11 @@ def calibrateClass(target, **options):
     calData[target] = cal
 
     return cal, B
+
+def calibrateAll(**options):
+    from .. import classes
+    verbose = options.pop('verbose', False)
+    for cc in classes:
+        output = calibrateClass(cc, **options)
+        if verbose:
+            print("%s: %s" %(cc.__name__, str(output[0])))
