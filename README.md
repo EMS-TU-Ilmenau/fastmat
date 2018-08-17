@@ -25,7 +25,7 @@ dense matrix representations.
 - Python >= 2.7 or >=3.4
 - Numpy >= 1.7
 - Scipy >= 1.0
-- Cython >= 1.19
+- Cython >= 0.26
 - soft dependencies:
     - matplotlib: for demos and tools that make use of plotting functions
 

@@ -34,6 +34,23 @@ import re
 import subprocess
 from distutils import sysconfig
 
+
+def WARNING(string):
+    print("\033[91mWARNING:\033[0m %s" % (string))
+
+
+def INFO(string):
+    print("\033[96mINFO:\033[0m %s" % (string))
+
+
+# load setup and extensions from setuptools. If that fails, try distutils
+try:
+    from setuptools import setup, Extension
+except ImportError:
+    WARNING("Could not import setuptools.")
+    raise
+
+# global package constants
 packageName     = 'fastmat'
 packageVersion  = '0.1.2'           # provide a version tag as fallback
 fullVersion     = packageVersion
@@ -48,21 +65,15 @@ VERSION_PY = """
 __version__ = '%s'
 """
 
-
-def WARNING(string):
-    print("\033[91m WARNING:\033[0m %s" % (string))
-
-
-# load setup and extensions from setuptools. If that fails, try distutils
-try:
-    from setuptools import setup, Extension
-except ImportError:
-    WARNING("Could not import setuptools.")
-    raise
+##############################################################################
+### function and class declaration section. DO NOT PUT SCRIPT CODE IN BETWEEN
+##############################################################################
 
 
-# Determine package version
 def getCurrentVersion():
+    '''
+    Determine package version and put it in the signatures.
+    '''
     global packageVersion
     global fullVersion
 
@@ -112,75 +123,12 @@ def getCurrentVersion():
                 packageVersion))
 
 
-# get version from git and update fastmat/__init__.py accordingly
-getCurrentVersion()
-
-# make sure there exists a version.py file in the project
-with open(strVersionFile, "w") as f:
-    f.write(VERSION_PY % (fullVersion))
-print("Set %s to '%s'" % (strVersionFile, fullVersion))
-
-
-# Prepare other files and construct compile arguments
-
-# get the long description from the README file.
-# CAUTION: Python2/3 utf encoding shit calls needs some adjustments
-fileName = os.path.join(
-    os.path.abspath(os.path.dirname(__file__)),
-    'README.md'
-)
-
-f = (open(fileName, 'r') if sys.version_info < (3, 0)
-     else open(fileName, 'r', encoding='utf-8'))
-longDescription = f.read()
-f.close()
-
-if '--generic' in sys.argv:
-    marchFlag = '-march=x86-64'
-    mtuneFlag = '-mtune=core2'
-    sys.argv.remove("--generic")
-    WARNING("Building package for generic architectures")
-else:
-    marchFlag = '-march=native'
-    mtuneFlag = '-mtune=native'
-
-# define different compiler arguments for each platform
-strPlatform = platform.system()
-compilerArguments = []
-linkerArguments = []
-if strPlatform == 'Windows':
-    # Microsoft Visual C++ Compiler 9.0
-    compilerArguments += ['/O2', '/fp:precise', marchFlag]
-elif strPlatform == 'Linux':
-    # assuming Linux and gcc
-    compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
-elif strPlatform == 'Darwin':
-    # assuming Darwin and gcc
-    compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
-else:
-    WARNING("Your platform is currently not supported by %s: %s" % (
-        packageName, strPlatform))
-
-# define default cython directives, these may get extended along the script
-cythonDirectives = {}
-defineMacros = []
-CMD_COVERAGE = '--enable-cython-tracing'
-if CMD_COVERAGE in sys.argv:
-    sys.argv.remove(CMD_COVERAGE)
-    cythonDirectives['linetrace'] = True
-    cythonDirectives['binding'] = True
-    defineMacros += [('CYTHON_TRACE_NOGIL', '1'),
-                     ('CYTHON_TRACE', '1')]
-    print("Enabling cython line tracing allowing code coverage analysis")
-
-print("Building %s v%s for %s." % (packageName, packageVersion, strPlatform))
-
-
 # Enable flexible dependency handling by installing missing base components
-
-# override list type to allow lazy cythonization: cythonize and compile only
-# after install_requires installed cython
 class lazyCythonize(list):
+    '''
+    Override list type to allow lazy cythonization.
+    Cythonize and compile only after install_requires are actually installed.
+    '''
     def __init__(self, callback):
         self._list, self.callback = None, callback
 
@@ -202,6 +150,9 @@ class lazyCythonize(list):
 
 
 def extensions():
+    '''
+    Handle generation of extensions (a.k.a "managing cython compilery").
+    '''
     try:
         from Cython.Build import cythonize
     except ImportError:
@@ -226,29 +177,30 @@ def extensions():
 
     # me make damn sure, that disutils does not mess with our
     # build process
-    sysconfig.get_config_vars()['CFLAGS'] = ''
-    sysconfig.get_config_vars()['OPT'] = ''
-    sysconfig.get_config_vars()['PY_CFLAGS'] = ''
-    sysconfig.get_config_vars()['PY_CORE_CFLAGS'] = ''
-    sysconfig.get_config_vars()['CC'] = 'gcc'
-    sysconfig.get_config_vars()['CXX'] = 'g++'
-    sysconfig.get_config_vars()['BASECFLAGS'] = ''
-    sysconfig.get_config_vars()['CCSHARED'] = '-fPIC'
-    sysconfig.get_config_vars()['LDSHARED'] = 'gcc -shared'
-    sysconfig.get_config_vars()['CPP'] = ''
-    sysconfig.get_config_vars()['CPPFLAGS'] = ''
-    sysconfig.get_config_vars()['BLDSHARED'] = ''
-    sysconfig.get_config_vars()['CONFIGURE_LDFLAGS'] = ''
-    sysconfig.get_config_vars()['LDFLAGS'] = ''
-    sysconfig.get_config_vars()['PY_LDFLAGS'] = ''
+    global useGccOverride
+    if useGccOverride:
+        INFO('Overriding compiler setup for `gcc -shared`')
+        sysconfig.get_config_vars()['CFLAGS'] = ''
+        sysconfig.get_config_vars()['OPT'] = ''
+        sysconfig.get_config_vars()['PY_CFLAGS'] = ''
+        sysconfig.get_config_vars()['PY_CORE_CFLAGS'] = ''
+        sysconfig.get_config_vars()['CC'] = 'gcc'
+        sysconfig.get_config_vars()['CXX'] = 'g++'
+        sysconfig.get_config_vars()['BASECFLAGS'] = ''
+        sysconfig.get_config_vars()['CCSHARED'] = '-fPIC'
+        sysconfig.get_config_vars()['LDSHARED'] = 'gcc -shared'
+        sysconfig.get_config_vars()['CPP'] = ''
+        sysconfig.get_config_vars()['CPPFLAGS'] = ''
+        sysconfig.get_config_vars()['BLDSHARED'] = ''
+        sysconfig.get_config_vars()['CONFIGURE_LDFLAGS'] = ''
+        sysconfig.get_config_vars()['LDFLAGS'] = ''
+        sysconfig.get_config_vars()['PY_LDFLAGS'] = ''
 
     return cythonize(
         [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)],
-        compiler_directives=cythonDirectives,
-        nthreads=4
-    )
+        compiler_directives=cythonDirectives)
 
 
 # determine requirements for install and setup
@@ -269,19 +221,10 @@ def checkRequirement(lstRequirements, importName, requirementName):
             lstRequirements.append(requirementName)
 
 
-setupRequires = []
-installRequires = []
-checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
-checkRequirement(setupRequires, 'Cython', 'cython>=0.26')
-checkRequirement(setupRequires, 'numpy', 'numpy')
-checkRequirement(installRequires, 'six', 'six')
-checkRequirement(installRequires, 'scipy', 'scipy')
-
-print("Requirements for setup: %s" % (setupRequires))
-print("Requirements for install: %s" % (installRequires))
-
-
 def doc_opts():
+    '''
+    Introduce a command-line setup target to generate the sphinx doc.
+    '''
     try:
         from sphinx.setup_command import BuildDoc
     except ImportError:
@@ -295,52 +238,137 @@ def doc_opts():
     return OwnDoc
 
 
-setup(
-    name=packageName,
-    version=packageVersion,
-    description='fast linear transforms in Python',
-    long_description=longDescription,
-    author='Christoph Wagner, Sebastian Semper, EMS group TU Ilmenau',
-    author_email='christoph.wagner@tu-ilmenau.de',
-    url='https://ems-tu-ilmenau.github.io/fastmat/',
-    license='Apache Software License',
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Framework :: IPython',
-        'Framework :: Jupyter',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache Software License',
-        'Natural Language :: English',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: MacOS :: MacOS X',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Scientific/Engineering :: Mathematics',
-        'Topic :: Software Development :: Libraries'
-    ],
-    keywords='linear transforms efficient algorithms mathematics',
-    setup_requires=setupRequires,
-    install_requires=installRequires,
-    packages=[
-        'fastmat',
-        'fastmat/algs',
-        'fastmat/core',
-        'fastmat/inspect'
-    ],
-    cmdclass={'build_doc': doc_opts()},
-    command_options={
-        'build_doc': {
-            'project': ('setup.py', packageName),
-            'version': ('setup.py', packageVersion),
-            'release': ('setup.py', fullVersion),
-            'copyright': ('setup.py', '2017, ' + packageName)
-        }},
-    ext_modules=lazyCythonize(extensions)
-)
+##############################################################################
+### The actual script. KEEP THE `import filter` ALIVE AT ALL TIMES
+##############################################################################
+
+if __name__ == '__main__':
+    # get version from git and update fastmat/__init__.py accordingly
+    getCurrentVersion()
+
+    # make sure there exists a version.py file in the project
+    with open(strVersionFile, "w") as f:
+        f.write(VERSION_PY % (fullVersion))
+    print("Set %s to '%s'" % (strVersionFile, fullVersion))
+
+    # get the long description from the README file.
+    # CAUTION: Python2/3 utf encoding shit calls needs some adjustments
+    fileName = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        'README.md'
+    )
+
+    f = (open(fileName, 'r') if sys.version_info < (3, 0)
+         else open(fileName, 'r', encoding='utf-8'))
+    longDescription = f.read()
+    f.close()
+
+    # Build for generic (legacy) architectures when enviroment variable
+    # (FASTMAT_GENERIC) is defined
+    if 'FASTMAT_GENERIC' in os.environ:
+        marchFlag = '-march=x86-64'
+        mtuneFlag = '-mtune=core2'
+        WARNING("Building package for generic architectures")
+    else:
+        marchFlag = '-march=native'
+        mtuneFlag = '-mtune=native'
+
+    # define different compiler arguments for each platform
+    strPlatform = platform.system()
+    compilerArguments = []
+    linkerArguments = []
+    useGccOverride = True
+    if strPlatform == 'Windows':
+        # Microsoft Visual C++ Compiler 9.0
+        compilerArguments += ['/O2', '/fp:precise', marchFlag]
+    elif strPlatform == 'Linux':
+        # assuming Linux and gcc
+        compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+    elif strPlatform == 'Darwin':
+        # assuming Darwin
+        compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+        useGccOverride = False
+    else:
+        WARNING("Your platform is currently not supported by %s: %s" % (
+            packageName, strPlatform))
+
+    # define default cython directives, these may get extended along the script
+    cythonDirectives = {}
+    defineMacros = []
+    CMD_COVERAGE = '--enable-cython-tracing'
+    if CMD_COVERAGE in sys.argv:
+        sys.argv.remove(CMD_COVERAGE)
+        cythonDirectives['linetrace'] = True
+        cythonDirectives['binding'] = True
+        defineMacros += [('CYTHON_TRACE_NOGIL', '1'),
+                         ('CYTHON_TRACE', '1')]
+        print("Enabling cython line tracing allowing code coverage analysis")
+
+    print("Building %s v%s for %s." % (
+        packageName,
+        packageVersion,
+        strPlatform)
+    )
+
+    # check if all requirements are met prior to actually calling setup()
+    setupRequires = []
+    installRequires = []
+    checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
+    checkRequirement(setupRequires, 'Cython', 'cython>=0.26')
+    checkRequirement(setupRequires, 'numpy', 'numpy')
+    checkRequirement(installRequires, 'six', 'six')
+    checkRequirement(installRequires, 'scipy', 'scipy')
+
+    print("Requirements for setup: %s" % (setupRequires))
+    print("Requirements for install: %s" % (installRequires))
+
+    # everything's set. Fire in the hole.
+    setup(
+        name=packageName,
+        version=packageVersion,
+        description='fast linear transforms in Python',
+        long_description=longDescription,
+        author='Christoph Wagner, Sebastian Semper, EMS group TU Ilmenau',
+        author_email='christoph.wagner@tu-ilmenau.de',
+        url='https://ems-tu-ilmenau.github.io/fastmat/',
+        license='Apache Software License',
+        classifiers=[
+            'Development Status :: 5 - Production/Stable',
+            'Framework :: IPython',
+            'Framework :: Jupyter',
+            'Intended Audience :: Science/Research',
+            'License :: OSI Approved :: Apache Software License',
+            'Natural Language :: English',
+            'Operating System :: Microsoft :: Windows',
+            'Operating System :: POSIX :: Linux',
+            'Operating System :: MacOS :: MacOS X',
+            'Programming Language :: Python',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Mathematics',
+            'Topic :: Software Development :: Libraries'
+        ],
+        keywords='linear transforms efficient algorithms mathematics',
+        setup_requires=setupRequires,
+        install_requires=installRequires,
+        packages=[
+            'fastmat',
+            'fastmat/algs',
+            'fastmat/core',
+            'fastmat/inspect'
+        ],
+        cmdclass={'build_doc': doc_opts()},
+        command_options={
+            'build_doc': {
+                'project': ('setup.py', packageName),
+                'version': ('setup.py', packageVersion),
+                'release': ('setup.py', fullVersion),
+                'copyright': ('setup.py', '2017, ' + packageName)
+            }},
+        ext_modules=lazyCythonize(extensions)
+    )
