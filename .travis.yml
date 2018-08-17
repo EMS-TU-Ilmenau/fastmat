@@ -20,6 +20,8 @@ env:
 
 matrix:
   include:
+    - python: '3.7'
+      env: CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
     - python: '3.6'
       env: CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
     - python: '3.5'
@@ -33,7 +35,14 @@ matrix:
     - os: osx
       language: generic
       env:
-        - PYTHON=3.6.3
+        - PYTHON=3.7
+        - CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
+        - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
+    - os: osx
+      language: generic
+      env:
+        - PYTHON=3.6
         - CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
         - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
@@ -41,7 +50,7 @@ matrix:
       if: branch = stable
       language: generic
       env:
-        - PYTHON=3.5.4
+        - PYTHON=3.5
         - CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
         - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
@@ -49,7 +58,7 @@ matrix:
       if: branch = stable
       language: generic
       env:
-        - PYTHON=3.4.7
+        - PYTHON=3.4
         - CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
         - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
@@ -94,7 +103,7 @@ install:
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
         pip install cibuildwheel==0.5.1 twine
     else
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
             pip install coverage coveralls
         fi
     fi
@@ -112,7 +121,7 @@ script:
         ls -l wheelhouse/*
     elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
         # master branch: regular tests and code coverage analysis
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
             make compile-coverage
             echo "Running coverage analysis..."
             coverage run --source=fastmat util/bee.py list makedump
