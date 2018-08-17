@@ -14,6 +14,8 @@ env:
   global:
     - CIBW_BEFORE_BUILD="{pip} install cython numpy scipy six --only-binary all"
     - CIBW_TEST_COMMAND="python {project}/util/bee.py test -v"
+    - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
+    - FASTMAT_GENERIC=1
     - secure: a7Ef8MN7YRctNIe/o+xeJuV6ak5gKM5V9vBPQDcO7MI5ieyNSf0TE6nLGtt8A4gfAqTM1QtZAbAGKIVB4fs2pJXjABwuDwmPR1feB6xVJGqKXhraNWLsP/CV/JIfdJcfjNxGGUn+GYEAGZQ1q6zA3JSTHuFdAVERFUKJjvcE4Wp/DPS0o75nShgpurrwn2cYzzqxB43XaOmjYVyV7mm5DbQ2D2eXtkNJ1vfIscgFEG7B+ClymEjv5XkGWeJ7xKvQCvcyBYYpi/yGAKXAEd99s/r/2T1CDSW/CsgUrWql1MF/1/93MN4bFOriG+QhbOP/zrDXdpOVnmNggtVUw7nxXzuPAZ7GSYa+OzA7zjhpWRQsHvTza86sAHm4FNyPrk3u52EDulrHCbtjc1n4ESOzYqxozi4Nyx+Ga1vVvN5OmpliHr6JoHReF7YnFAYjEGhdEW99Z7dTohqva5lmrEUvU5I3qQ+9sxCv+qXRz/TabIbFSI570KqPMHb8hTT24rpjkL2enSsg2YgMsryavOdY1jnT79lhAH9RVSPJ17Pxl4jNqkLGOJ4HQuX4c8bEsmz6sRa8eMvo3ZEfP9garKjZkraWetulC2HrbTGprtJ1BcO/cfQwxxpjUepA4a2E73b/EBSSuk6xrOsL/FVQZOZN4KtmyQN4W8gexxwgCNhRtok=
 
 matrix:
@@ -34,6 +36,7 @@ matrix:
         - PYTHON=3.6.3
         - CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
         - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - os: osx
       if: branch = stable
       language: generic
@@ -41,6 +44,7 @@ matrix:
         - PYTHON=3.5.4
         - CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
         - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - os: osx
       if: branch = stable
       language: generic
@@ -48,6 +52,7 @@ matrix:
         - PYTHON=3.4.7
         - CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
         - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - os: osx
       if: branch = stable
       language: generic

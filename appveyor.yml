@@ -5,6 +5,8 @@ branches:
 environment:
   global:
     CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
+    CIBW_ENVIRONMENT: "FASTMAT_GENERIC=1"
+    FASTMAT_GENERIC: "1"
 
   TWINE_REPOSITORY:
     secure: uxrVt8G0aReV23OXS5lWKg==
@@ -52,6 +54,7 @@ environment:
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO %CIBW_SKIP%"
+  - "ECHO %CIBW_ENVIRONMENT%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
 install:

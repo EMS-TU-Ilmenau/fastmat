@@ -200,7 +200,9 @@ def extensions():
         [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)],
-        compiler_directives=cythonDirectives)
+        compiler_directives=cythonDirectives,
+        nthreads=4
+    )
 
 
 # determine requirements for install and setup
@@ -277,17 +279,17 @@ if __name__ == '__main__':
     strPlatform = platform.system()
     compilerArguments = []
     linkerArguments = []
-    useGccOverride = True
+    useGccOverride = False
     if strPlatform == 'Windows':
         # Microsoft Visual C++ Compiler 9.0
         compilerArguments += ['/O2', '/fp:precise', marchFlag]
     elif strPlatform == 'Linux':
         # assuming Linux and gcc
         compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+        useGccOverride = True
     elif strPlatform == 'Darwin':
         # assuming Darwin
         compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
-        useGccOverride = False
     else:
         WARNING("Your platform is currently not supported by %s: %s" % (
             packageName, strPlatform))

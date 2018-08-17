@@ -30,9 +30,9 @@ dense matrix representations.
     - matplotlib: for demos and tools that make use of plotting functions
 
 ### Authors & Contact Information
-- Sebastian Semper | sebastian.semper@tu-ilmenau.de  
+- Sebastian Semper | sebastian.semper@tu-ilmenau.de
   Technische Universität Ilmenau, Institute for Mathematics, EMS Group
-- Christoph Wagner | christoph.wagner@tu-ilmenau.de  
+- Christoph Wagner | christoph.wagner@tu-ilmenau.de
   Technische Universität Ilmenau, Institute for Information Technology, EMS Group
 - **<https://www.tu-ilmenau.de/it-ems/>**
 
@@ -44,7 +44,7 @@ reference to the project and the EMS Group at TU Ilmenau.
 If you use fastmat for your scientific work you are required to mention the
 EMS Group at TU Ilmenau and cite the following publication affiliated with the
 project:
- > C. Wagner and S. Semper, _Fast Linear Transforms in Python_,  
+ > C. Wagner and S. Semper, _Fast Linear Transforms in Python_,
  > arXiV:1710.09578, 2017
  >
  > -- <cite>https://arxiv.org/abs/1710.09578</cite>
@@ -52,8 +52,11 @@ project:
 - **<https://www.tu-ilmenau.de/it-ems/>**
 
 ## Installation
-fastmat currently supports Linux, Windows and Mac OS. You may choose one of
-these installation methods:
+fastmat currently supports Linux, Windows and Mac OS. Lately it also has been
+seen on ARM cores coming in a Xilinx ZYNQ FPGA SoC shell. We encourage you to
+go ahead trying other platforms as the aforementioned as well and are very
+happy if you share your experience with us, allowing us to keep the list
+updated.
 
 ### Installing with pip:
 
