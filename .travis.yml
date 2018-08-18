@@ -104,7 +104,7 @@ install:
         sudo pip install cibuildwheel==0.9.4 twine
     else
         if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-            sudo pip install coverage coveralls
+            pip install coverage coveralls
         fi
     fi
 
