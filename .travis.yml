@@ -92,7 +92,7 @@ install:
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION"
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
-        pip install cibuildwheel==0.5.1 twine
+        pip install cibuildwheel==0.9.4 twine
     else
         if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
             pip install coverage coveralls
