@@ -4,7 +4,6 @@ branches:
 
 environment:
   global:
-    CIBW_TEST_COMMAND: "python {project}/util/bee.py test -v"
     CIBW_ENVIRONMENT: "FASTMAT_GENERIC=1"
     FASTMAT_GENERIC: "1"
 
