@@ -24,35 +24,30 @@ environment:
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "64"
       CONDA_PY: "27"
-      CONDA_NPY: "18"
       CIBW_SKIP: 'cp[!2]?-* cp2[!7]-*'
 
     - PYTHON: "C:\\Python34_64"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "64"
       CONDA_PY: "34"
-      CONDA_NPY: "18"
       CIBW_SKIP: 'cp[!3]?-* cp3[!4]-*'
 
     - PYTHON: "C:\\Python35_64"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "64"
       CONDA_PY: "35"
-      CONDA_NPY: "18"
       CIBW_SKIP: 'cp[!3]?-* cp3[!5]-*'
 
     - PYTHON: "C:\\Python36_64"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
       CONDA_PY: "36"
-      CONDA_NPY: "18"
       CIBW_SKIP: 'cp[!3]?-* cp3[!6]-*'
 
     - PYTHON: "C:\\Python37_64"
       PYTHON_VERSION: "3.7"
       PYTHON_ARCH: "64"
       CONDA_PY: "37"
-      CONDA_NPY: "18"
       CIBW_SKIP: 'cp[!3]?-* cp3[!7]-*'
     # For Python versions available on Appveyor, see
     # http://www.appveyor.com/docs/installed-software#python

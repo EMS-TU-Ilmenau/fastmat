@@ -19,7 +19,10 @@ env:
 
 matrix:
   include:
+    - python: '3.7'
+      env: CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
     - python: '3.6'
+      if: branch = stable
       env: CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
     - python: '3.5'
       if: branch = stable
@@ -32,9 +35,15 @@ matrix:
     - os: osx
       language: generic
       env:
+        - PYTHON=3.7
+        - CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
+    - os: osx
+      if: branch = stable
+      language: generic
+      env:
         - PYTHON=3.6
         - CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
-        - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - os: osx
       if: branch = stable
@@ -42,7 +51,6 @@ matrix:
       env:
         - PYTHON=3.5
         - CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
-        - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - os: osx
       if: branch = stable
@@ -50,14 +58,14 @@ matrix:
       env:
         - PYTHON=3.4
         - CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
-        - CIBW_TEST_COMMAND="python3 {project}/util/bee.py test -v"
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - os: osx
       if: branch = stable
       language: generic
       env:
-        - PYTHON=2.7.14
+        - PYTHON=2.7
         - CIBW_SKIP='cp[!2]?-* cp2[!7]-*'
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
 
 before_install: |
   # macOSX CI environment configuration: https://pythonhosted.org/CodeChat/.travis.yml.html
@@ -91,10 +99,10 @@ install:
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION"
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
-        pip install cibuildwheel==0.9.4 twine
+        sudo pip install cibuildwheel==0.9.4 twine
     else
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
-            pip install coverage coveralls
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
+            sudo pip install coverage coveralls
         fi
     fi
 
@@ -107,11 +115,11 @@ script:
         # all version targets: build a wheel!
         make compile
         echo "Generating wheel... (skipping $(CIBW_SKIP))"
-        cibuildwheel --output-dir wheelhouse
+        sudo cibuildwheel --output-dir wheelhouse
         ls -l wheelhouse/*
     elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
         # master branch: regular tests and code coverage analysis
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
             make compile-coverage
             echo "Running coverage analysis..."
             coverage run --source=fastmat util/bee.py list makedump
