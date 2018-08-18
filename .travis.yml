@@ -20,6 +20,8 @@ env:
 matrix:
   include:
     - python: '3.7'
+      dist: xenial
+      sudo: true
       env: CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
     - python: '3.6'
       if: branch = stable
