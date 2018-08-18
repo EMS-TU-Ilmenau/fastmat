@@ -101,7 +101,7 @@ install:
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION $PYTHON"
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
-        sudo pip install cibuildwheel==0.9.4 twine
+        pip install cibuildwheel==0.9.4 twine
     else
         if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
             pip install coverage coveralls
@@ -117,7 +117,7 @@ script:
         # all version targets: build a wheel!
         make compile
         echo "Generating wheel... (skipping $(CIBW_SKIP))"
-        sudo cibuildwheel --output-dir wheelhouse
+        cibuildwheel --output-dir wheelhouse
         ls -l wheelhouse/*
     elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
         # master branch: regular tests and code coverage analysis
