@@ -90,7 +90,7 @@ x0 = s - 1j * s
 # option to choose a complex one or a non-complex one
 matG = fastmat.Matrix(
         numpy.random.normal(0.0, numpy.sqrt(N), (N, M)) + \
-        1j * fastmat.Matrix(numpy.random.normal(0.0, numpy.sqrt(N), (N, M)))
+        1j * numpy.random.normal(0.0, numpy.sqrt(N), (N, M))
     )
 
 # option 1
