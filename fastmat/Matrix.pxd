@@ -69,6 +69,7 @@ cdef class Matrix:
     cdef public Matrix      _normalized          # cache for normalized matrix
     cdef public object      _largestEV           # cache for largestEV
     cdef public object      _largestSV           # cache for largestSV
+    cdef public object      _scipyLinearOperator # interface to scipy
     cdef public Matrix      _T                   # cache for transpose matrix
     cdef public Matrix      _H                   # cache for adjunct matrix
     cdef public Matrix      _conj                # cache for conjugate matrix
@@ -101,6 +102,7 @@ cdef class Matrix:
     cpdef object _getItem(self, intsize, intsize)
     cpdef object _getLargestEV(self, intsize, float, float, bint)
     cpdef object _getLargestSV(self, intsize, float, float, bint)
+    cpdef object _getScipyLinearOperator(self)
     cpdef Matrix _getGram(self)
     cpdef Matrix _getNormalized(self)
     cpdef Matrix _getT(self)
