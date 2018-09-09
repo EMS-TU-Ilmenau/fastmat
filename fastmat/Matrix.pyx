@@ -756,22 +756,22 @@ cdef class Matrix(object):
         """
         def __get__(self):
             if self._scipyLinearOperator is None:
-                return self._getScipyLinearOperator()
+                return self.getScipyLinearOperator()
             else:
-                self._scipyLinearOperator
+                return self._scipyLinearOperator
+
+    def getScipyLinearOperator(self):
+        self._scipyLinearOperator = self._getScipyLinearOperator()
+        return self._scipyLinearOperator
 
     cpdef object _getScipyLinearOperator(self):
         from scipy.sparse.linalg import LinearOperator
-        result = LinearOperator(
+        return LinearOperator(
             shape=(self.numN, self.numM),
             matvec=self.forward,
             rmatvec=self.backward,
             matmat=self.forward
         )
-
-        self._scipyLinearOperator = result
-
-        return result
 
 
 
