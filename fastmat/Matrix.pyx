@@ -743,6 +743,38 @@ cdef class Matrix(object):
         # did not converge - return NaN
         return (np.sqrt(normNew) if alwaysReturn else np.float64(np.NaN))
 
+
+    property scipyLinearOperator:
+        """Return a Representation as scipy's linear Operator
+
+        This property allows to make use of all the powerfull algorithms
+        provided by scipy, that allow passing a linear operator to
+        them, like optimization routines, system solvers or decomposition
+        algorithms.
+
+        *(read-only)*
+        """
+        def __get__(self):
+            if self._scipyLinearOperator is None:
+                return self._getScipyLinearOperator()
+            else:
+                self._scipyLinearOperator
+
+    cpdef object _getScipyLinearOperator(self):
+        from scipy.sparse.linalg import LinearOperator
+        result = LinearOperator(
+            shape=(self.numN, self.numM),
+            matvec=self.forward,
+            rmatvec=self.backward,
+            matmat=self.forward
+        )
+
+        self._scipyLinearOperator = result
+
+        return result
+
+
+
     ############################################## generic algebraic properties
     property gram:
         r"""Return the gram matrix for this fastmat class
