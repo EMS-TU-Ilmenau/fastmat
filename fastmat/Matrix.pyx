@@ -225,29 +225,6 @@ cdef class Matrix(object):
     **Description:**
     The baseclass of all matrix classes in fastmat. It also serves as wrapper
     around the standard Numpy Array [1]_.
-
-    **Performance Benchmarks**
-
-    .. figure:: _static/bench/Matrix.overhead.png
-        :width: 50%
-
-        Overhead Benchmarking of this class
-
-    .. figure:: _static/bench/Matrix.dtypes.png
-        :width: 50%
-
-        Dtypes Benchmarking of this class
-
-    .. figure:: _static/bench/Matrix.forward.png
-        :width: 50%
-
-        Forward Multiplication numbers
-
-    .. todo::
-        - extend docu
-        - add caches for cols / rows
-        - implement generation of normalized matrix of general matrices
-
     """
 
     ############################################## basic class properties
@@ -770,7 +747,8 @@ cdef class Matrix(object):
             shape=(self.numN, self.numM),
             matvec=self.forward,
             rmatvec=self.backward,
-            matmat=self.forward
+            matmat=self.forward,
+            dtype=np.promote_types(np.int8, self.dtype)
         )
 
 

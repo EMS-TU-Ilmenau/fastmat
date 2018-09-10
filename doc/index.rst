@@ -22,6 +22,7 @@
    submod
    bee
    tutorials
+   scipy
 
 Welcome to fastmat's documentation!
 ===================================
@@ -36,10 +37,11 @@ Table of Contents
 * :ref:`modindex`
 * :ref:`search`
 * :ref:`submod`
+* :ref:`scipy`
 * :ref:`tutorials`
-
  * :ref:`Tutorial for Scientific Users`
  * :ref:`Tutorial for Scientific Programmers`
+
 
 .. automodule:: fastmat
 
@@ -48,7 +50,7 @@ Public Appearances
 
 Sometimes we also get out in the wild and present the package. The talks we held can be found below.
 
-    - EurcScipy 2017 Erlangen: `PDF <https://github.com/EMS-TU-Ilmenau/fastmat/releases/download/0.1/082017euroscipy.pdf>`_, `Youtube <https://www.youtube.com/watch?v=dq5bLgLGae8>`_
+    - EuroScipy 2017 Erlangen: `PDF <https://github.com/EMS-TU-Ilmenau/fastmat/releases/download/0.1/082017euroscipy.pdf>`_, `Youtube <https://www.youtube.com/watch?v=dq5bLgLGae8>`_
 
 
 Contributions

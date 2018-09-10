@@ -718,11 +718,11 @@ class NAME(object):
 class Worker(object):
     '''
     options - dictionary structure containing options for multiple targets.
-        {   'nameOfTarget': {'parameter': 123,
-                                'anotherParameter': 456
-         }, NAME.DEFAULTS:  {'parameter': default parameter unless overwritten
-                                          within the selected target
-         }}
+    {   'nameOfTarget': {'parameter': 123,
+    'anotherParameter': 456
+    }, NAME.DEFAULTS:  {'parameter': default parameter unless overwritten
+    within the selected target
+    }}
 
     results - output of each target's as specified in options
     '''
