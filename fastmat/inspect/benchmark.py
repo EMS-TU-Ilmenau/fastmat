@@ -76,29 +76,29 @@ class BENCH(NAME):
 
 ################################################## weightedPercentile()
 def weightedPercentile(data, **options):
-    """
-    O(nlgn) implementation for weighted_percentile, with linear interpolation
-    #between weights.
-
-    date:       Aug 25 '16 @ 13:37
-    user:       nayyrv [Aug 16 '15 @ 10:52]
-    source:     www.stackoverflow.com/questions/
-                    21844024/weighted-percentile-using-numpy
-    ``  This is my function, it give identical behaviour to `np.percentile(
-        np.repeat(data, weights), percentile)` With less memory overhead,
-        np.percentile is an O(n) implementation so it's potentially faster for
-        small weights. It has all the edge cases sorted out - it's an exace
-        solution. The interpolation answers above assume linear, when it's a
-        step for most of he case, except when the weight is 1.
-
-        Say we have data [1,2,3] with weights [3, 11, 7] and I want the
-        25% percentile. My ecdf is going to be [3, 10, 21] and I'm looking for
-        the 5th value. The interpolation will see [3, 1] and [10, 2] as the
-        matches and interpolate gving 1.28 despite being entirely in the
-        2nd bin with a value of 2.
-    ``
-
-    """
+    # """
+    # O(nlgn) implementation for weighted_percentile, with linear interpolation
+    # #between weights.
+    #
+    # date:       Aug 25 '16 @ 13:37
+    # user:       nayyrv [Aug 16 '15 @ 10:52]
+    # source:     www.stackoverflow.com/questions/
+    #                 21844024/weighted-percentile-using-numpy
+    # ``  This is my function, it give identical behaviour to `np.percentile(
+    #     np.repeat(data, weights), percentile)` With less memory overhead,
+    #     np.percentile is an O(n) implementation so it's potentially faster for
+    #     small weights. It has all the edge cases sorted out - it's an exace
+    #     solution. The interpolation answers above assume linear, when it's a
+    #     step for most of he case, except when the weight is 1.
+    #
+    #     Say we have data [1,2,3] with weights [3, 11, 7] and I want the
+    #     25% percentile. My ecdf is going to be [3, 10, 21] and I'm looking for
+    #     the 5th value. The interpolation will see [3, 1] and [10, 2] as the
+    #     matches and interpolate gving 1.28 despite being entirely in the
+    #     2nd bin with a value of 2.
+    # ``
+    #
+    # """
     # extract options
     percentile = np.array(options.get('percentile', [75, 25])) / 100.
     weights = options.get('weights', None)
@@ -181,10 +181,10 @@ def timeCall(call, *args, **options):
     specified by call(*args).
 
     Behaviour of the measurements can be adjusted with these options:
-      minMeasTime       - minimum total time the evaluation shall take
-      minRepetitions    - minimum number of calls needed for evaluation
-      minRuns           - minimum number of single measurements (of one or more
-                          repetitions each) required
+    minMeasTime       - minimum total time the evaluation shall take
+    minRepetitions    - minimum number of calls needed for evaluation
+    minRuns           - minimum number of single measurements (of one or more
+                      repetitions each) required
     '''
     stats=[]
 
