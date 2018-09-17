@@ -225,29 +225,6 @@ cdef class Matrix(object):
     **Description:**
     The baseclass of all matrix classes in fastmat. It also serves as wrapper
     around the standard Numpy Array [1]_.
-
-    **Performance Benchmarks**
-
-    .. figure:: _static/bench/Matrix.overhead.png
-        :width: 50%
-
-        Overhead Benchmarking of this class
-
-    .. figure:: _static/bench/Matrix.dtypes.png
-        :width: 50%
-
-        Dtypes Benchmarking of this class
-
-    .. figure:: _static/bench/Matrix.forward.png
-        :width: 50%
-
-        Forward Multiplication numbers
-
-    .. todo::
-        - extend docu
-        - add caches for cols / rows
-        - implement generation of normalized matrix of general matrices
-
     """
 
     ############################################## basic class properties
@@ -742,6 +719,37 @@ cdef class Matrix(object):
 
         # did not converge - return NaN
         return (np.sqrt(normNew) if alwaysReturn else np.float64(np.NaN))
+
+    property scipyLinearOperator:
+        """Return a Representation as scipy's linear Operator
+
+        This property allows to make use of all the powerfull algorithms
+        provided by scipy, that allow passing a linear operator to
+        them, like optimization routines, system solvers or decomposition
+        algorithms.
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._scipyLinearOperator is None:
+                return self.getScipyLinearOperator()
+            else:
+                return self._scipyLinearOperator
+
+    def getScipyLinearOperator(self):
+        self._scipyLinearOperator = self._getScipyLinearOperator()
+        return self._scipyLinearOperator
+
+    cpdef object _getScipyLinearOperator(self):
+        from scipy.sparse.linalg import LinearOperator
+        return LinearOperator(
+            shape=(self.numN, self.numM),
+            matvec=self.forward,
+            rmatvec=self.backward,
+            matmat=self.forward,
+            dtype=np.promote_types(np.int8, self.dtype)
+        )
 
     ############################################## generic algebraic properties
     property gram:
