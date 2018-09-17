@@ -129,6 +129,7 @@ class lazyCythonize(list):
     Override list type to allow lazy cythonization.
     Cythonize and compile only after install_requires are actually installed.
     '''
+
     def __init__(self, callback):
         self._list, self.callback = None, callback
 

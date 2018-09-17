@@ -720,7 +720,6 @@ cdef class Matrix(object):
         # did not converge - return NaN
         return (np.sqrt(normNew) if alwaysReturn else np.float64(np.NaN))
 
-
     property scipyLinearOperator:
         """Return a Representation as scipy's linear Operator
 
@@ -731,6 +730,7 @@ cdef class Matrix(object):
 
         *(read-only)*
         """
+
         def __get__(self):
             if self._scipyLinearOperator is None:
                 return self.getScipyLinearOperator()
@@ -750,8 +750,6 @@ cdef class Matrix(object):
             matmat=self.forward,
             dtype=np.promote_types(np.int8, self.dtype)
         )
-
-
 
     ############################################## generic algebraic properties
     property gram:
