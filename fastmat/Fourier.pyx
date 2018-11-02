@@ -150,8 +150,14 @@ cdef class Fourier(Matrix):
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef float complexity = _getFFTComplexity(self._order)
-        return (complexity, complexity + self._order)
+        # handle the Bluestein case differently to reflect the implementation
+        cdef float complexity = _getFFTComplexity(
+            self._order if self._numL == 0 else self._numL
+        )
+        if self._numL > 0:
+            complexity = 2 * complexity + 2 * self._order + 2 * self._numL
+        
+        return (complexity, complexity + 2 * self._order)
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
@@ -183,29 +189,7 @@ cdef class Fourier(Matrix):
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         '''Calculate the backward transform of this matrix'''
-        cdef np.ndarray arrRes
-        cdef STRIDE_s strResPadding
-        cdef intsize mm, M = arrX.shape[1]
-
-        if self._numL == 0:
-            arrRes = np.fft.fft(_conjugate(arrX), axis=0)
-        else:
-            arrRes = _arrEmpty(
-                2, self._numL, M,
-                typeInfo[promoteFusedTypes(
-                    self.fusedType, getFusedType(arrX))].numpyType)
-
-            strideInit(&strResPadding, arrRes, 0)
-            strideSliceElements(&strResPadding, self.order, -1, 1)
-            opZeroVectors(&strResPadding)
-
-            arrRes[:self.order, :] = (self._preMult.T * _conjugate(arrX).T).T
-
-            arrRes = (self._vecConvHat.T * np.fft.fft(arrRes, axis=0).T).T
-
-            arrRes = (self._preMult.T *
-                      np.fft.ifft(arrRes, axis=0)[:self.order, :].T).T
-
+        cdef np.ndarray arrRes = self._forward(_conjugate(arrX))
         _conjugateInplace(arrRes)
         return arrRes
 
