@@ -118,8 +118,10 @@ class ISTA(Algorithm):
         # arrX         - vector to be thresholded
         # numAlpha     - thresholding threshold
 
-        arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
-        return np.multiply((arrM / (arrM + numAlpha)), arrX)
+        self.arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
+        return np.multiply((self.arrM / (self.arrM + numAlpha)), arrX)
+
+    cbStep = None
 
     def _process(self, arrB):
         # fmatA         - input system matrix
@@ -154,9 +156,13 @@ class ISTA(Algorithm):
             self.arrX = self.softThreshold(
                 self.arrStep, self.numL * self.numLambda * 0.5
             )
+            self.handleCallback(self.cbStep)
+            self.handleCallback(self.cbTrace)
 
         # return the unthresholded values for all non-zero support elements
-        return np.where(self.arrX != 0, self.arrStep, self.arrX)
+        self.arrResult = np.where(self.arrX != 0, self.arrStep, self.arrX)
+
+        return self.arrResult
 
     @staticmethod
     def _getTest():
