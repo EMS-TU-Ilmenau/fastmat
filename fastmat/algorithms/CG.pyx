@@ -21,7 +21,7 @@ cimport numpy as np
 
 from ..core.cmath cimport _arrEmpty, _arrZero, _arrForceTypeAlignment, _norm
 from ..core.types cimport *
-from ..base import Algorithm
+from ..Algorithm import Algorithm
 
 from ..Matrix cimport Matrix
 

@@ -16,5 +16,10 @@
 # limitations under the License.
 
 
-class Algorithm(object):
-    pass
+import cython
+import numpy as np
+cimport numpy as np
+
+################################################## class Algorithm
+cdef class Algorithm(object):
+    cpdef _process(self, np.ndarray)

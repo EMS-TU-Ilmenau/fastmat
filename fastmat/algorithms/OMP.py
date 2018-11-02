@@ -18,10 +18,10 @@
 import numpy as np
 import numpy.linalg as npl
 
-from ..base import Algorithm
+from .Algorithm import Algorithm
 
 
-def OMP(fmatA, arrY, numK):
+class OMP(Algorithm):
     r"""Orthogonal Matching Pursuit
 
     **Definition and Interface**:
@@ -93,110 +93,140 @@ def OMP(fmatA, arrY, numK):
     np.ndarray
         solution array
     """
-    # Wrapper around the ISTA algrithm to allow processing of arrays of signals
-    #     fmatA           - input system matrix
-    #     arrY            - input data vector (measurements)
-    #     numK            - specified sparsity order, i.e. number of iterations
-    #                       to run
-    #     numN,numM       - number of rows / columns of the system matrix
-    #     numL            - number of problems to solve
-    #     arrDiag         - array that contains column norms of fmatA
-    #     numStrideSize   - size of strides during norm calculation
-    #     numStrides      - number of whole strides to go through
-    #     numPreSteps     - number of entries that do not fit in whoel strides
-    #
-    if len(arrY.shape) > 2:
-        raise ValueError("Only n x m arrays are supported for OMP")
 
-    # get the number of vectors to operate on
-    numN, numM, numL = fmatA.numN, fmatA.numM, arrY.shape[1]
+    def __init__(self, fmatA, **kwargs):
 
-    fmatC = fmatA.normalized
+        # check the must-have parameters
+        if not isinstance(fmatA, Matrix):
+            raise TypeError("fmatA must be a fastmat matrix")
+        self.fmatA = fmatA
 
-    # determine return value data type
-    returnType = np.promote_types(
-        np.promote_types(fmatC.dtype, arrY.dtype), np.float32)
+        # set default parameters (and create attributes)
+        self.k = None
 
-    # temporary array to store only support entries in
-    arrXtmp     = np.zeros((numK, numL), dtype=returnType)
+        # Update with extra arguments
+        self.updateParameters(**kwargs)
 
-    # initital residual is the measurement
-    arrResidual = arrY.astype(returnType, copy=True)
 
-    # list containing the support
-    arrSupport  = np.empty((numK, numL),       dtype='int')
+    def _process(arrB):
+        #     fmatA           - input system matrix
+        #     arrB            - input data vector (measurements)
+        #     numK            - specified sparsity order, i.e. number of
+        #                       iterations to run
+        #     numN,numM       - number of rows / columns of the system matrix
+        #     numL            - number of problems to solve
+        #     arrDiag         - array that contains column norms of fmatA
+        #     numStrideSize   - size of strides during norm calculation
+        #     numStrides      - number of whole strides to go through
+        #     numPreSteps     - number of entries that do not fit in whole
+        #                       strides
+        #
 
-    # matrix B that contains the pseudo inverse of A restricted to the support
-    arrB        = np.zeros((numK, numN, numL), dtype=returnType)
+        if arrB.ndim > 2:
+            raise ValueError("Only n x m arrays are supported for OMP")
 
-    # A restricted to the support
-    arrA        = np.zeros((numN, numK, numL), dtype=returnType)
-
-    # different helper variables
-    v2       = np.empty((numN, numL), dtype=returnType)
-    v2n      = np.empty((numN, numL), dtype=returnType)
-    v2y      = np.empty((numL),       dtype=returnType)
-    newCols  = np.empty((numN, numL), dtype=returnType)
-    arrC     = np.empty((numM, numL), dtype=returnType)
-    newIndex = np.empty(numL,         dtype='int')
-
-    # iterativly build up the solution
-    for ii in range(numK):
-
-        # do the normalized correlation step
-        arrC = np.abs(fmatC.backward(arrResidual))
-
-        # pick the maximum index in each correlation array
-        newIndex = np.apply_along_axis(np.argmax, 0, arrC)
-
-        # add these to the support
-        arrSupport[ii, :] = newIndex
-
-        # get the newly picked columns of A
-        newCols = fmatA.getCols(newIndex)
-
-        # store them into the submatrix
-        arrA[:, ii, :] = newCols
-
-        # in the first step everything is simple
-        if ii == 0:
-            v2  = newCols
-            v2n = (v2 / npl.norm(v2, axis=0) ** 2).conj()
-
-            v2y = np.einsum('ji,ji->i', v2n, arrY)
-
-            arrXtmp[0, :] = v2y
-            arrB[0, :, :] = v2n
+        if arrB.ndim == 1:
+            self.arrB = arrB.reshape((-1, 1))
         else:
-            v1 = np.einsum('ijk,jk->ik', arrB[:ii, :, :], newCols)
+            self.arrB = arrB
 
-            v2 = newCols - np.einsum('ijk,jk->ik', arrA[: , :ii, :], v1)
-            v2n = (v2 / npl.norm(v2, axis=0) ** 2).conj()
+        # get the number of vectors to operate on
+        self.numN, self.numM, self.numL = \
+            self.fmatA.numN, self.fmatA.numM, self.arrB.shape[1]
 
-            v2y = np.einsum('ji,ji->i', v2n, arrY)
+        self.fmatC = self.fmatA.normalized
 
-            arrXtmp[:ii, :] -= v2y * v1
-            arrXtmp[ii , :] += v2y
+        # determine return value data type
+        self.returnType = np.promote_types(
+            np.promote_types(self.fmatC.dtype, self.arrB.dtype),
+            np.float32
+        )
 
-            arrB[:ii, :, :] -= np.einsum('ik,jk->jik', v2n, v1)
-            arrB[ii, :, :] = v2n
+        # temporary array to store only support entries in
+        self.arrXtmp = np.zeros((self.numK, self.numL), dtype=self.returnType)
 
-        # update the residual
-        arrResidual -= v2y * v2
+        # initital residual is the measurement
+        self.arrResidual = self.arrB.astype(self.returnType, copy=True)
 
-    # return the computed vector
-    arrX = np.zeros((numM, numL), dtype=returnType)
-    arrX[arrSupport, np.arange(numL)] = arrXtmp
+        # list containing the support
+        self.arrSupport = np.empty((self.numK, self.numL), dtype=np.intp)
 
-    return arrX
+        # matrix B that contains the pseudo inverse of A restricted to the
+        # support
+        self.arrB = np.zeros(
+            (self.numK, self.numN, self.numL), dtype=self.returnType
+        )
 
+        # A restricted to the support
+        self.arrA = np.zeros(
+            (self.numN, self.numK, self.numL), dtype=self.returnType
+        )
 
-################################################################################
-###  Maintenance and Documentation
-################################################################################
+        # different helper variables
+        self.v2       = np.empty((self.numN, self.numL), dtype=self.returnType)
+        self.v2n      = np.empty((self.numN, self.numL), dtype=self.returnType)
+        self.v2y      = np.empty((self.numL, ), dtype=self.returnType)
+        self.newCols  = np.empty((self.numN, self.numL), dtype=self.returnType)
+        self.arrC     = np.empty((self.numM, self.numL), dtype=self.returnType)
+        self.newIndex = np.empty((self.numL, ), dtype=np.intp)
 
-################################################## inspection interface
-class OMPinspect(Algorithm):
+        # iterativly build up the solution
+        for self.numStep in range(numK):
+            # shorten access to index variable
+            ii = self.numStep
+
+            # do the normalized correlation step
+            self.arrC = np.abs(self.fmatC.backward(self.arrResidual))
+
+            # pick the maximum index in each correlation array
+            self.newIndex = np.apply_along_axis(np.argmax, 0, self.arrC)
+
+            # add these to the support
+            self.arrSupport[ii, :] = self.newIndex
+
+            # get the newly picked columns of A
+            self.newCols = self.fmatA.getCols(self.newIndex)
+
+            # store them into the submatrix
+            self.arrA[:, ii, :] = self.newCols
+
+            # in the first step everything is simple
+            if ii == 0:
+                self.v2 = self.newCols
+                self.v2n = (self.v2 / npl.norm(self.v2, axis=0) ** 2).conj()
+
+                self.v2y = np.einsum('ji,ji->i', self.v2n, self.arrB)
+
+                self.arrXtmp[0, :] = self.v2y
+                self.arrB[0, :, :] = self.v2n
+            else:
+                self.v1 = np.einsum(
+                    'ijk,jk->ik', self.arrB[:ii, :, :], self.newCols
+                )
+
+                self.v2 = self.newCols - np.einsum(
+                    'ijk,jk->ik', self.arrA[: , :ii, :], self.v1
+                )
+                self.v2n = (self.v2 / npl.norm(self.v2, axis=0) ** 2).conj()
+
+                self.v2y = np.einsum('ji,ji->i', self.v2n, self.arrB)
+
+                self.arrXtmp[:ii, :] -= self.v2y * self.v1
+                self.arrXtmp[ii , :] += self.v2y
+
+                self.arrB[:ii, :, :] -= np.einsum(
+                    'ik,jk->jik', self.v2n, self.v1
+                )
+                self.arrB[ii, :, :] = self.v2n
+
+            # update the residual
+            self.arrResidual -= self.v2y * self.v2
+
+        # return the computed vector
+        self.arrX = np.zeros((self.numM, self.numL), dtype=self.returnType)
+        self.arrX[self.arrSupport, np.arange(self.numL)] = self.arrXtmp
+
+        return self.arrX
 
     @staticmethod
     def _getTest():

@@ -135,11 +135,6 @@ from .MLCirculant import MLCirculant
 from .MLToeplitz import MLToeplitz
 from .MLUltraSound import MLUltraSound
 
-# import algorithms subpackage
-from .base import Algorithm
-from . import algs
-
-
 # define package version (gets overwritten by setup script)
 from .version import __version__
 

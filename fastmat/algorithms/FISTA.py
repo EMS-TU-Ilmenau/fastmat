@@ -17,26 +17,10 @@
 
 import numpy as np
 
-from ..base import Algorithm
+from .Algorithm import Algorithm
 
 
-def _softThreshold(arrX, numAlpha):
-    '''
-    Do a soft Thresholding step.
-      arrM         - positive part of arrX - numAlpha
-      arrX         - vector to be thresholded
-      numAlpha     - thresholding threshold
-    '''
-    arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
-    return np.multiply((arrM / (arrM + numAlpha)), arrX)
-
-
-def FISTA(
-        fmatA,
-        arrB,
-        numLambda=0.1,
-        numMaxSteps=100
-):
+class FISTA(Algorithm):
     r"""Fast Iterative Shrinking-Thresholding Algorithm (FISTA)
 
     **Definition and Interface**:
@@ -105,49 +89,57 @@ def FISTA(
         solution array
     """
 
-    # Wrapper around the FISTA algrithm to allow processing of arrays of signals
-    #     fmatA         - input system matrix
-    #     arrB          - input data vector (measurements)
-    #     numLambda     - balancing parameter in optimization problem
-    #                     between data fidelity and sparsity
-    #     numMaxSteps   - maximum number of steps to run
-    #     numL          - step size during the conjugate gradient step
+    def _process(self, arrB):
+        # Wrapper around the FISTA algrithm to allow processing of arrays of
+        # signals
+        #     fmatA         - input system matrix
+        #     arrB          - input data vector (measurements)
+        #     numLambda     - balancing parameter in optimization problem
+        #                     between data fidelity and sparsity
+        #     numMaxSteps   - maximum number of steps to run
+        #     numL          - step size during the conjugate gradient step
+        if arrB.ndim > 2:
+            raise ValueError("Only n x m arrays are supported for ISTA")
 
-    if len(arrB.shape) > 2:
-        raise ValueError("Only n x m arrays are supported for FISTA")
+        if arrB.ndim == 1:
+            self.arrB = arrB.reshape((-1, 1))
+        else:
+            self.arrB = arrB
 
-    # calculate the largest singular value to get the right step size
-    numL = 1.0 / (fmatA.largestSV ** 2)
-    t = 1
-    arrX = np.zeros(
-        (fmatA.numM, arrB.shape[1]),
-        dtype=np.promote_types(np.float32, arrB.dtype)
-    )
-    # initial arrY
-    arrY = np.copy(arrX)
-    # start iterating
-    for numStep in range(numMaxSteps):
-        arrXold = np.copy(arrX)
-        # do the gradient step and threshold
-        arrStep = arrY - numL * fmatA.backward(fmatA.forward(arrY) - arrB)
+        # calculate the largest singular value to get the right step size
+        self.numL = 1.0 / (self.fmatA.largestSV ** 2)
+        self.t = 1
 
-        arrX = _softThreshold(arrStep, numL * numLambda * 0.5)
+        self.arrX = np.zeros(
+            (self.fmatA.numM, self.arrB.shape[1]),
+            dtype=np.promote_types(np.float32, self.arrB.dtype)
+        )
+        # initial arrY
+        self.arrY = np.copy(self.arrX)
+        # start iterating
+        for self.numStep in range(self.numMaxSteps):
+            self.arrXold = np.copy(self.arrX)
 
-        # update t
-        tOld =t
-        t = (1 + np.sqrt(1 + 4 * t ** 2)) / 2
-        # update arrY
-        arrY = arrX + ((tOld - 1) / t) * (arrX - arrXold)
-    # return the unthresholded values for all non-zero support elements
-    return np.where(arrX != 0, arrStep, arrX)
+            # do the gradient step and threshold
+            self.arrStep = self.arrY - self.numL * self.fmatA.backward(
+                self.fmatA.forward(self.arrY) - self.arrB
+            )
+            self.arrX = self.softThreshold(
+                self.arrStep, self.numL * self.numLambda * 0.5
+            )
 
+            # update t
+            tOld = t
+            self.t = (1 + np.sqrt(1 + 4 * self.t ** 2)) / 2
 
-################################################################################
-###  Maintenance and Documentation
-################################################################################
+            # update arrY
+            self.arrY = self.arrX + ((tOld - 1) / self.t) * (
+                self.arrX - self.arrXold
+            )
 
-################################################## inspection interface
-class FISTAinspect(Algorithm):
+        # return the unthresholded values for all non-zero support elements
+        return np.where(self.arrX != 0, self.arrStep, self.arrX)
+
     @staticmethod
     def _getTest():
         from ..inspect import TEST, dynFormat, arrSparseTestDist

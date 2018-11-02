@@ -17,28 +17,10 @@
 
 import numpy as np
 
-from ..base import Algorithm
+from .Algorithm import Algorithm
+from ..Matrix import Matrix
 
-
-def _softThreshold(arrX, numAlpha):
-    r"""
-    Do a soft thresholding step.
-    """
-
-    # arrM         - positive part of arrX - numAlpha
-    # arrX         - vector to be thresholded
-    # numAlpha     - thresholding threshold
-
-    arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
-    return np.multiply((arrM / (arrM + numAlpha)), arrX)
-
-
-def ISTA(
-    fmatA,
-    arrB,
-    numLambda=0.1,
-    numMaxSteps=100
-):
+class ISTA(Algorithm):
     r"""
     Iterative Soft Thresholding Algorithm
 
@@ -113,45 +95,68 @@ def ISTA(
 
     """
 
-    # fmatA         - input system matrix
-    # arrB          - input data vector (measurements)
-    # numLambda     - balancing parameter in optimization problem
-    #                 between data fidelity and sparsity
-    # numMaxSteps   - maximum number of steps to run
-    # numL          - step size during the conjugate gradient step
+    def __init__(self, fmatA, **kwargs):
 
-    if len(arrB.shape) > 2:
-        raise ValueError("Only n x m arrays are supported for ISTA")
+        # check the must-have parameters
+        if not isinstance(fmatA, Matrix):
+            raise TypeError("fmatA must be a fastmat matrix")
+        self.fmatA = fmatA
 
-    # calculate the largest singular value to get the right step size
-    numL = 1.0 / (fmatA.largestSV ** 2)
+        # set default parameters (and create attributes)
+        self.numLambda = 0.1
+        self.numMaxSteps = 100
 
-    arrX = np.zeros(
-        (fmatA.numM, arrB.shape[1]),
-        dtype=np.promote_types(np.float32, arrB.dtype)
-    )
+        # Update with extra arguments
+        self.updateParameters(**kwargs)
 
-    # start iterating
-    for numStep in range(numMaxSteps):
-        # do the gradient step and threshold
+    def softThreshold(self, arrX, numAlpha):
+        r"""
+        Do a soft thresholding step.
+        """
 
-        arrStep = arrX -  numL * fmatA.backward(fmatA.forward(arrX) - arrB)
-        arrX = _softThreshold(arrStep, numL * numLambda * 0.5)
+        # arrM         - positive part of arrX - numAlpha
+        # arrX         - vector to be thresholded
+        # numAlpha     - thresholding threshold
 
-    # return the unthresholded values for all non-zero support elements
-    return np.where(arrX != 0, arrStep, arrX)
+        arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
+        return np.multiply((arrM / (arrM + numAlpha)), arrX)
 
+    def _process(self, arrB):
+        # fmatA         - input system matrix
+        # arrB          - input data vector (measurements)
+        # numLambda     - balancing parameter in optimization problem
+        #                 between data fidelity and sparsity
+        # numMaxSteps   - maximum number of steps to run
+        # numL          - step size during the conjugate gradient step
+        if arrB.ndim > 2:
+            raise ValueError("Only n x m arrays are supported for ISTA")
 
-################################################################################
-###  Maintenance and Documentation
-################################################################################
+        if arrB.ndim == 1:
+            self.arrB = arrB.reshape((-1, 1))
+        else:
+            self.arrB = arrB
 
-##################################################
-class ISTAinspect(Algorithm):
-    r"""
-    Inspection Interface
+        # calculate the largest singular value to get the right step size
+        self.numL = 1.0 / (self.fmatA.largestSV ** 2)
 
-    """
+        self.arrX = np.zeros(
+            (self.fmatA.numM, self.arrB.shape[1]),
+            dtype=np.promote_types(np.float32, self.arrB.dtype)
+        )
+
+        # start iterating
+        for self.numStep in range(self.numMaxSteps):
+            # do the gradient step and threshold
+
+            self.arrStep = self.arrX -  self.numL * self.fmatA.backward(
+                self.fmatA.forward(self.arrX) - self.arrB
+            )
+            self.arrX = self.softThreshold(
+                self.arrStep, self.numL * self.numLambda * 0.5
+            )
+
+        # return the unthresholded values for all non-zero support elements
+        return np.where(self.arrX != 0, self.arrStep, self.arrX)
 
     @staticmethod
     def _getTest():
@@ -164,15 +169,17 @@ class ISTAinspect(Algorithm):
         def testISTA(test):
             # prepare vectors
             numM = test[TEST.NUM_M]
+            test[TEST.REFERENCE] = test[TEST.ALG_MATRIX].reference()
             test[TEST.RESULT_REF] = np.hstack(
                 [arrSparseTestDist((numM, 1), dtype=test[TEST.DATATYPE],
                                    density=1. * test['numK'] / numM).todense()
                  for nn in range(test[TEST.DATACOLS])])
-            test[TEST.RESULT_INPUT] = (test[TEST.INSTANCE] *
-                                       test[TEST.RESULT_REF])
-            test[TEST.RESULT_OUTPUT] = ISTA(
-                test[TEST.INSTANCE], test[TEST.RESULT_INPUT],
-                numLambda=test['lambda'], numMaxSteps=test['maxSteps'])
+            test[TEST.RESULT_INPUT] = test[TEST.ALG_MATRIX].array.dot(
+                test[TEST.RESULT_REF]
+            )
+            test[TEST.RESULT_OUTPUT] = test[TEST.INSTANCE].process(
+                test[TEST.RESULT_INPUT]
+            )
 
         return {
             TEST.ALGORITHM: {
@@ -182,16 +189,19 @@ class ISTAinspect(Algorithm):
                 'numK'          : 'order',
                 'lambda'        : 10.,
                 'maxSteps'      : 1000,
-                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
-
-                TEST.OBJECT     : Matrix,
-                TEST.INITARGS   : (lambda param: [
+                TEST.ALG_MATRIX : lambda param:
                     Product(Matrix(np.random.uniform(
                         -100, 100, (getattr(param, TEST.NUM_M),
                                     getattr(param, TEST.NUM_M))).astype(
                                         param['typeA'])),
                             Hadamard(param.order),
-                            typeExpansion=param['typeA']).array]),
+                            typeExpansion=param['typeA']),
+                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
+
+                TEST.OBJECT     : ISTA,
+                TEST.INITARGS   : [TEST.ALG_MATRIX],
+                TEST.INITKWARGS : {'numLambda': 'lambda',
+                                   'numMaxSteps': 'maxSteps'},
 
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT: TEST.IgnoreFunc(testISTA),

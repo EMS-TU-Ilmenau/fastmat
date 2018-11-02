@@ -22,6 +22,7 @@ from pprint import pprint
 from .common import *
 from ..core.types import getTypeEps, safeTypeExpansion
 from ..Matrix import Matrix
+from ..algorithms import Algorithm
 from ..Diag import Diag
 from ..Eye import Eye
 from ..Parametric import Parametric
@@ -69,6 +70,7 @@ class TEST(NAME):
     RESULT_TYPE     = 'testResultType'
     RESULT_PROX     = 'testResultProximity'
     ALG             = 'algorithm'
+    ALG_MATRIX      = 'algorithmMatrix'
     ALG_ARGS        = 'algorithmArgs'
     ALG_KWARGS      = 'algorithmKwargs'
     REFALG          = 'refAlgorithm'
@@ -93,7 +95,17 @@ def compareResults(test, query):
     arrOutput=query[TEST.RESULT_OUTPUT]
     arrReference=query[TEST.RESULT_REF]
     arrMatrix=test[TEST.REFERENCE]
-    instance=query[TEST.INSTANCE]=test[TEST.INSTANCE]
+
+    # to extract the operation data type and shape when checking an algorithm
+    # we cannot get this information from TEST.INSTANCE as this then refers to
+    # the algorithm instance object itself and not to the matrix it operates
+    # on. We need to use the TEST.ALG_MATRIX as this holds the required matrix
+    # instance object used within the actual algorithm
+    instance = query[TEST.INSTANCE] = getOption(
+        TEST.ALG_MATRIX,
+        test[TEST.INSTANCE]
+    )
+
 
     # get comparision options from test and query dicts. Priority has query
     minimalType=np.dtype(getOption(TEST.TYPE_PROMOTION, np.int8))
@@ -107,9 +119,9 @@ def compareResults(test, query):
 
     # check if shapes match. If they do, check all elements
     if arrOutput.shape != arrReference.shape:
-        query[TEST.RESULT]=False
-        query[TEST.RESULT_IGNORED]=False
-        query[TEST.RESULT_INFO]=fmtRed(
+        query[TEST.RESULT] = False
+        query[TEST.RESULT_IGNORED] = False
+        query[TEST.RESULT_INFO] = fmtRed(
             "%s!=%s" %(str(arrOutput.shape), str(arrReference.shape)))
         return query
 
@@ -122,26 +134,26 @@ def compareResults(test, query):
             pprint(query)
             raise ValueError("All-zero input vector detected in test")
 
-        expectedType=np.promote_types(expectedType, arrInput.dtype)
-        maxEps=max(maxEps, getTypeEps(arrInput.dtype))
+        expectedType = np.promote_types(expectedType, arrInput.dtype)
+        maxEps = max(maxEps, getTypeEps(arrInput.dtype))
 
     # compare returned output data type to expected (qType) to verify
     # functionality of fastmat built-in type promotion mechanism
-    resultType=np.can_cast(arrOutput.dtype, expectedType, casting='no')
+    resultType = np.can_cast(arrOutput.dtype, expectedType, casting='no')
 
-    maxEps=max(maxEps,
-               getTypeEps(np.promote_types(minimalType, instance.dtype)),
-               getTypeEps(np.promote_types(minimalType, arrReference.dtype)))
+    maxEps = max(maxEps,
+                 getTypeEps(np.promote_types(minimalType, instance.dtype)),
+                 getTypeEps(np.promote_types(minimalType, arrReference.dtype)))
 
     # determine allowed tolerance maxima (allow accuracy degradation of chained
     # operations by representing multiple stages by a power on operation count
     # the test distribution function generates random arrays with their absolute
     # element values in the range [0.4 .. 0.8]. This can be described by a
     # `dynamics`-factor of 2 per computation stage (parameter TEST.TOL_POWER)
-    dynamics=2.
-    maxDim=max(arrMatrix.shape + instance.shape)
-    tolError=5 * dynamics * maxEps * (dynamics * np.sqrt(maxDim)) ** tolPower
-    query[TEST.RESULT_TOLERR]=tolError
+    dynamics = 2.
+    maxDim = max(arrMatrix.shape + instance.shape)
+    tolError = 5 * dynamics * maxEps * (dynamics * np.sqrt(maxDim)) ** tolPower
+    query[TEST.RESULT_TOLERR] = tolError
 
     maxRef = float(np.amax(np.abs(arrReference)))
     maxDiff = float(np.amax(np.abs(arrOutput - arrReference)))
@@ -149,20 +161,20 @@ def compareResults(test, query):
     resultProximity=(error <= tolError) or (maxRef <= tolError)
 
     # determine final result
-    query[TEST.RESULT]=(resultType and resultProximity)
+    query[TEST.RESULT] = (resultType and resultProximity)
     # result ignored: whenever the main result is not true but an ignore in one
     # of the tests would cause it to become true
-    query[TEST.RESULT_IGNORED]=((resultType or ignoreType) and
-                                (resultProximity or ignoreProximity) and
-                                not query[TEST.RESULT])
-    query[TEST.RESULT_TYPE]=(resultType, ignoreType,
-                             arrOutput.dtype, expectedType)
-    query[TEST.RESULT_PROX]=(resultProximity, ignoreProximity, error, maxRef)
+    query[TEST.RESULT_IGNORED] = ((resultType or ignoreType) and
+                                  (resultProximity or ignoreProximity) and
+                                  not query[TEST.RESULT])
+    query[TEST.RESULT_TYPE] = (resultType, ignoreType,
+                               arrOutput.dtype, expectedType)
+    query[TEST.RESULT_PROX] = (resultProximity, ignoreProximity, error, maxRef)
 
     return query
 
 
-################################################## initTest()
+################################################## formatResult()
 def formatResult(result):
     # if a result info was already generated, return this. Otherwise generate it
     if TEST.RESULT_INFO in result:
@@ -199,12 +211,13 @@ def formatResult(result):
 ################################################## initTest()
 def initTest(test):
     # generate test object instance for given parameter set
-    test[TEST.INSTANCE]=test[TEST.OBJECT](
+    test[TEST.INSTANCE] = test[TEST.OBJECT](
         *test.get(TEST.INITARGS, ()),
         **test.get(TEST.INITKWARGS, {}))
 
-    # generate plain reference array
-    test[TEST.REFERENCE]=test[TEST.INSTANCE].reference()
+    if isinstance(test[TEST.INSTANCE], Matrix):
+        # generate plain reference array
+        test[TEST.REFERENCE] = test[TEST.INSTANCE].reference()
 
 
 ################################################## testFailDump()
@@ -604,8 +617,7 @@ class Test(Worker):
             # sanity-check proper definition of test target
             obj=test.get(TEST.OBJECT, None)
             if (obj is None or
-                    not (isinstance(obj, IgnoreFunc) or
-                         issubclass(obj, Matrix))):
+                    not issubclass(obj, (Matrix, Algorithm))):
                 raise ValueError("%s['%s'] not a fastmat class or test case." %(
                     test.name, TEST.OBJECT))
 

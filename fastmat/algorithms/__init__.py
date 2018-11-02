@@ -37,15 +37,9 @@ Algorithms
     :members:
     :undoc-members:
 
-.. automodule:: fastmat.algs.CG
-    :members:
-    :undoc-members:
-
-
 """
 # algorithms for sparse recovery
-from .ISTA import ISTA, ISTAinspect
-from .OMP import OMP, OMPinspect
-from .FISTA import FISTA, FISTAinspect
-# numeric algorithms
-from .CG import CG, CGinspect
+from .Algorithm import Algorithm
+from .ISTA import ISTA
+from .OMP import OMP
+from .FISTA import FISTA
