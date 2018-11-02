@@ -19,6 +19,8 @@
 import numpy as np
 cimport numpy as np
 
+from copy import copy
+
 ################################################################################
 ################################################## class Algorithm
 cdef class Algorithm(object):
@@ -30,6 +32,12 @@ cdef class Algorithm(object):
     baseclass introduces general framework concepts such as interfaces for
     parameter specification, algorithm execution, logging and callbacks.
     """
+
+    trace = []
+
+    cbTrace = None
+    cbResult = None
+
 
     def __init__(self):
         raise NotImplementedError("Algorithm baseclass cannot be instantiated.")
@@ -64,7 +72,12 @@ cdef class Algorithm(object):
         may also be called directly for slightly higher call performance.
         """
         self.updateParameters(**kwargs);
-        return self._process(arrB)
+
+        # perform the actual computation and service the result callback
+        arrResult = self._process(arrB)
+        self.handleCallback(self.cbResult)
+
+        return arrResult
 
 
     cpdef _process(self, np.ndarray arrB):
@@ -76,3 +89,21 @@ cdef class Algorithm(object):
         # Raise an not implemented Error as this is an (abstract) baseclass.
         raise NotImplementedError("Algorithm is not implemented yet.")
 
+    cpdef snapshot(self):
+        r"""
+        Add the current instances' state (without the trace) to the trace.
+        """
+        # temporarily remove the trace from the object to allow copying
+        # without circular references. Then put the trace back in
+        trace, self.trace = self.trace, []
+        trace.append(copy(self))
+        self.trace = trace
+
+    cpdef handleCallback(self, callback):
+        r"""
+        Call the callback if it is not None.
+        """
+        if callback is not None:
+            return callback(self)
+
+        return None

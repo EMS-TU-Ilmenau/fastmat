@@ -23,3 +23,5 @@ cimport numpy as np
 ################################################## class Algorithm
 cdef class Algorithm(object):
     cpdef _process(self, np.ndarray)
+    cpdef handleCallback(self, object)
+    cpdef snapshot(self)
