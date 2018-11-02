@@ -177,14 +177,14 @@ cdef class LFSRCirculant(Matrix):
         cdef lfsrReg_t mask = 1 << regSize
 
         # determine register size (determines order of embedded Hadamard)
-        self._regTaps = taps
+        self._regTaps = taps & (mask - 1)
         self._regSize = regSize
         self._resetState = resetState & (mask - 1)
 
         if self._regSize > 31 or self._regSize < 1:
             raise ValueError("Register sizes only supported from 1 to 31.")
 
-        if self._regTaps >= mask:
+        if self.taps > mask:
             raise ValueError("Tap positions exceeding register size.")
 
         if self._regTaps == 0:
