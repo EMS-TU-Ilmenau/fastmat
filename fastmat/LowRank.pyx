@@ -211,6 +211,3 @@ cdef class LowRank(Product):
                     arrTestDist((2 ** c, c), dtype=np.float32)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

@@ -334,6 +334,3 @@ cdef class Blocks(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c * 4)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

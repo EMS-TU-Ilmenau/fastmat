@@ -460,6 +460,3 @@ cdef class MLToeplitz(Partial):
                     np.random.randn(*(2 * [(2 * c - 1) + 2])).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

@@ -148,6 +148,3 @@ cdef class Eye(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Eye(2 ** c)),
             }
         }
-
-    def _getDocumentation(self):
-        return ""

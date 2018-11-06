@@ -320,6 +320,3 @@ cdef class Product(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Product(*([Eye(2 ** c)] * 2 ** c)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

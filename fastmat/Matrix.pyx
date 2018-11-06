@@ -1540,9 +1540,6 @@ cdef class Matrix(object):
             # Any other class should go and define its own benchmarks!
             return {}
 
-    def _getDocumentation(self):
-        from .inspect import DOC
-        return ""
 
 ################################################################################
 cdef class Hermitian(Matrix):

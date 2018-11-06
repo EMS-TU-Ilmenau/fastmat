@@ -245,6 +245,3 @@ cdef class Fourier(Matrix):
                 BENCH.FUNC_GEN  : (lambda c, datatype: Fourier(2 ** c))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

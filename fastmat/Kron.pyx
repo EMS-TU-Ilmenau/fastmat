@@ -368,6 +368,3 @@ cdef class Kron(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 8 * c ** 3)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

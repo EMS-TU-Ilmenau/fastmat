@@ -478,6 +478,3 @@ cdef class LFSRCirculant(Matrix):
                 BENCH.FUNC_GEN  : (lambda c, dt: LFSRCirculant(c, *db[c]))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

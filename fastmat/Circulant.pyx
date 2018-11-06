@@ -289,6 +289,3 @@ cdef class Circulant(Partial):
                     np.random.randn(2 ** c).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

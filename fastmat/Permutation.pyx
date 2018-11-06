@@ -140,6 +140,3 @@ cdef class Permutation(Matrix):
                                    Permutation(np.random.permutation(2 ** c)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

@@ -202,6 +202,3 @@ cdef class Sparse(Matrix):
                     if isFloat(dt) else None))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

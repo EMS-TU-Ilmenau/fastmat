@@ -202,6 +202,3 @@ cdef class Diag(Matrix):
                     np.random.uniform(2, 3, 2 ** c).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

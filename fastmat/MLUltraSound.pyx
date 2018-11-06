@@ -312,6 +312,3 @@ cdef class MLUltraSound(Partial):
                     np.random.randn(c, c, 2 * c - 1, 2 * c - 1).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

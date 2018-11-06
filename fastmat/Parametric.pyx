@@ -369,6 +369,3 @@ cdef class Parametric(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

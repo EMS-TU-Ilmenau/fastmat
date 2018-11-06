@@ -246,8 +246,3 @@ class FISTAinspect(Algorithm):
                 BENCH.FUNC_STEP: (lambda c: c * 10 ** (1. / 12)),
             }
         }
-
-    @staticmethod
-    def _getDocumentation():
-        from ..inspect import DOC
-        return ""

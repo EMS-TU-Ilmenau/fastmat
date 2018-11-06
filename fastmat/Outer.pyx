@@ -202,6 +202,3 @@ cdef class Outer(Matrix):
                     arrTestDist((2 ** c, ), dtype=datatype)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

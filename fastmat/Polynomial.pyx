@@ -190,6 +190,3 @@ cdef class Polynomial(Matrix):
                     Eye(2 ** c), np.random.uniform(1, 2, 10)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

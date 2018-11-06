@@ -296,6 +296,3 @@ cdef class Partial(Matrix):
                     Eye(2 ** c), np.arange(2 ** c)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

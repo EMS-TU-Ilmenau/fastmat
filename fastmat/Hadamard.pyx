@@ -269,6 +269,3 @@ cdef class Hadamard(Matrix):
                 BENCH.FUNC_GEN  : (lambda c, datatype: Hadamard(c))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

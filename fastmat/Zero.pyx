@@ -135,6 +135,3 @@ cdef class Zero(Matrix):
                 BENCH.FUNC_GEN      : (lambda c: Zero(2 ** c, 2 ** c)),
             }
         }
-
-    def _getDocumentation(self):
-        return ""

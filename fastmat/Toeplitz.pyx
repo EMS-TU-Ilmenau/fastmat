@@ -362,6 +362,3 @@ cdef class Toeplitz(Partial):
                     arrTestDist((2 ** c - 1, ), dtype=datatype)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

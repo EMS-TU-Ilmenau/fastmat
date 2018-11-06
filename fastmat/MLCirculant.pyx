@@ -466,6 +466,3 @@ cdef class MLCirculant(Partial):
                     np.random.randn(*(2 * [c + 1])).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""
