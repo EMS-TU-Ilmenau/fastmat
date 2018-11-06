@@ -124,12 +124,10 @@ cdef class Hadamard(Matrix):
         return self._reference()
 
     ############################################## class property override
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEV(self):
         return np.sqrt(self.numN)
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSV(self):
         return np.sqrt(self.numN)
 
     cpdef Matrix _getNormalized(self):
@@ -263,7 +261,6 @@ cdef class Hadamard(Matrix):
                 BENCH.FUNC_STEP : (lambda c: c + 1),
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (lambda c, datatype: Hadamard(c))

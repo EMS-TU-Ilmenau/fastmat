@@ -139,18 +139,14 @@ cdef class Kron(Matrix):
 
         return arrRes
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEV(self):
         return np.prod(np.array(
-            [term._getLargestEV(
-                maxSteps, relEps, eps, alwaysReturn).astype(np.float64)
+            [term._getLargestEV().astype(np.float64)
              for term in self._content]))
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSV(self):
         return np.prod(np.array(
-            [term._getLargestSV(
-                maxSteps, relEps, eps, alwaysReturn).astype(np.float64)
+            [term._getLargestSV().astype(np.float64)
              for term in self._content]))
 
     cpdef Matrix _getNormalized(self):
@@ -355,7 +351,6 @@ cdef class Kron(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 8 * c ** 3)
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Kron(*([Eye(2)] * c))),
                 BENCH.FUNC_SIZE : (lambda c: (2) ** c)

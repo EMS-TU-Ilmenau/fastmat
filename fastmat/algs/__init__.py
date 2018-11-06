@@ -37,9 +37,6 @@ Algorithms
     :members:
     :undoc-members:
 
-.. automodule:: fastmat.algs.CG
-    :members:
-    :undoc-members:
 
 
 """
@@ -47,5 +44,3 @@ Algorithms
 from .ISTA import ISTA, ISTAinspect
 from .OMP import OMP, OMPinspect
 from .FISTA import FISTA, FISTAinspect
-# numeric algorithms
-from .CG import CG, CGinspect

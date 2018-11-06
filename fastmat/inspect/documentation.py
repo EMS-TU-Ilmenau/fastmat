@@ -232,11 +232,6 @@ class DOC(NAME):
             super(DOC.PLOTFORWARD, self).__init__(BENCH.FORWARD, **mergeDicts(
                 {DOC.TITLE      : 'Forward Projection'}, options))
 
-    class PLOTSOLVE(PLOTSPEED):
-        def __init__(self, **options):
-            super(DOC.PLOTSOLVE, self).__init__(BENCH.SOLVE, **mergeDicts(
-                {DOC.TITLE      : 'Solving a LSE'}, options))
-
     class PLOTFORWARDMEMORY(PLOTMEMORY):
         def __init__(self, **options):
             super(DOC.PLOTFORWARDMEMORY, self).__init__(

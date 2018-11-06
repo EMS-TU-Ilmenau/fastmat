@@ -453,7 +453,6 @@ cdef class MLToeplitz(Partial):
                 BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (lambda c, dt: MLToeplitz(

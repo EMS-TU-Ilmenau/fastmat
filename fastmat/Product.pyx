@@ -315,7 +315,6 @@ cdef class Product(Matrix):
                 BENCH.FUNC_STEP : (lambda c: c + 1)
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Product(*([Eye(2 ** c)] * 2 ** c)))
             }

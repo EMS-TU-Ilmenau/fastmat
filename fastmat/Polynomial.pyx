@@ -184,7 +184,6 @@ cdef class Polynomial(Matrix):
                 BENCH.FUNC_STEP : (lambda c: c + 1)
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Polynomial(
                     Eye(2 ** c), np.random.uniform(1, 2, 10)))

@@ -508,129 +508,94 @@ cdef class Matrix(object):
             return (self.getLargestEV() if self._largestEV is None
                     else self._largestEV)
 
-    def getLargestEV(self, maxSteps=10000,
-                     relEps=1., eps=0., alwaysReturn=False):
-        # r"""
-        # Largest Singular Value
-        #
-        # For a given matrix :math:`A \in \mathbb{C}^{n \times n}`, so :math:`A`
-        # square, we calculate the absolute value of the largest eigenvalue
-        # :math:`\lambda \in \mathbb{C}`. The eigenvalues obey the equation
-        #
-        # .. math::
-        #      A \cdot  v= \lambda \cdot  v,
-        #
-        # where :math:`v` is a non-zero vector.
-        #
-        # Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as a
-        # stopping criterion
-        # Output largest eigenvalue :math:`\sigma_{\rm max}( A)`
-        #
-        # .. note::
-        #     This algorithm performs well if the two largest eigenvalues are
-        #     not very close to each other on a relative scale with respect to
-        #     their absolute value. Otherwise it might get trouble converging
-        #     properly.
-        #
-        # >>> # import the packages
-        # >>> import numpy.linalg as npl
-        # >>> import numpy as np
-        # >>> import fastmat as fm
-        # >>>
-        # >>> # define the matrices
-        # >>> n = 5
-        # >>> H = fm.Hadamard(n)
-        # >>> D = fm.Diag(np.linspace
-        # >>>         1, 2 ** n, 2 ** n))
-        # >>>
-        # >>> K1 = fm.Product(H, D)
-        # >>> K2 = K1.array
-        # >>>
-        # >>> # calculate the eigenvalue
-        # >>> x1 = K1.largestEV
-        # >>> x2 = npl.eigvals(K2)
-        # >>> x2 = np.sort(np.abs(x2))[-1]
-        # >>>
-        # >>> # check if the solutions match
-        # >>> print(x1 - x2)
-        #
-        # We define a matrix-matrix product of a Hadamard matrix and a diagonal
-        # matrix. Then we also cast it into a numpy-array and use the integrated
-        # EVD. For demonstration, try to increase :math:`n`to :math:`>10`and see
-        # what happens.
-        # """
+    def getLargestEV(self):
+        r"""
+        Largest Singular Value
+
+        For a given matrix :math:`A \in \mathbb{C}^{n \times n}`, so :math:`A`
+        square, we calculate the absolute value of the largest eigenvalue
+        :math:`\lambda \in \mathbb{C}`. The eigenvalues obey the equation
+
+        .. math::
+             A \cdot  v= \lambda \cdot  v,
+
+        where :math:`v` is a non-zero vector.
+
+        Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as a
+        stopping criterion
+        Output largest eigenvalue :math:`\sigma_{\rm max}( A)`
+
+        .. note::
+            This algorithm performs well if the two largest eigenvalues are
+            not very close to each other on a relative scale with respect to
+            their absolute value. Otherwise it might get trouble converging
+            properly.
+
+        >>> # import the packages
+        >>> import numpy.linalg as npl
+        >>> import numpy as np
+        >>> import fastmat as fm
+        >>>
+        >>> # define the matrices
+        >>> n = 5
+        >>> H = fm.Hadamard(n)
+        >>> D = fm.Diag(np.linspace
+        >>>         1, 2 ** n, 2 ** n))
+        >>>
+        >>> K1 = fm.Product(H, D)
+        >>> K2 = K1.array
+        >>>
+        >>> # calculate the eigenvalue
+        >>> x1 = K1.largestEV
+        >>> x2 = npl.eigvals(K2)
+        >>> x2 = np.sort(np.abs(x2))[-1]
+        >>>
+        >>> # check if the solutions match
+        >>> print(x1 - x2)
+
+        We define a matrix-matrix product of a Hadamard matrix and a diagonal
+        matrix. Then we also cast it into a numpy-array and use the integrated
+        EVD. For demonstration, try to increase :math:`n`to :math:`>10`and see
+        what happens.
+        """
 
         if self.numN != self.numM:
             raise ValueError("largestEV: Matrix must be square.")
 
-        result = self._getLargestEV(maxSteps, relEps, eps, alwaysReturn)
+        result = self._getLargestEV()
         self._largestEV = self._largestEV if np.isnan(result) else result
         return result
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        # r"""Determine largest eigen-value of a fastmat matrix.
-        # """
+    cpdef object _getLargestEV(self):
+        # the scipy eigenvalue operations do not work on 1x1 transforms
 
-        # The following variables are used:
-        # eps            - relative stopping threshold
-        # numNormOld     - norm of vector from last iteration
-        # numNormNew     - norm of vector in current iteration
-        # vecBNew        - normalized current iterate
-        # vecBOld        - normalized last iterate
+        from scipy.sparse import linalg
 
-        cdef np.ndarray vecBOld, vecBNew, vecBNewHat
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
 
-        # determine an convergance threshold if eps is deliberately set to zero
-        if eps == 0:
-            eps = relEps * getTypeEps(safeTypeExpansion(self.dtype)) * (
-                self.numN if self.numN >= self.numM else self.numM)
+        result = linalg.eigs(
+            self.scipyLinearOperator,
+            1,
+            return_eigenvectors=False
+        )[0]
 
-        if self.numN != self.numM:
-            raise ValueError("largestEV: Matrix must be square.")
-
-        # sample one point uniformly in space, have a zero-vector reference
-        vecBNew = np.random.randn(self.numM, 1).astype(
-            np.promote_types(np.float32, self.dtype))
-        vecBNew /= np.linalg.norm(vecBNew)
-        vecBOld = np.zeros((<object> vecBNew).shape, vecBNew.dtype)
-
-        # now continiously apply the matrix and renormalize until convergence
-        for numSteps in range(maxSteps):
-            vecBOld = vecBNew
-            vecBNew = self.forward(vecBOld)
-
-            normNew = np.linalg.norm(vecBNew)
-            if normNew == 0:
-                # presumably a zero-matrix
-                return vecBNew.dtype.type(0.)
-
-            vecBNew /= normNew
-
-            if np.linalg.norm(vecBNew - vecBOld) < eps:
-                vecBNewHat = vecBNew.conj()
-                return (np.inner(vecBNewHat, self.forward(vecBNew)) /
-                        np.inner(vecBNewHat, vecBNew))
-
-        # did not converge - return NaN
-        if alwaysReturn:
-            vecBNewHat = vecBNew.conj()
-            return (np.inner(vecBNewHat, self.forward(vecBNew)) /
-                    np.inner(vecBNewHat, vecBNew))
-        else:
-            return vecBNew.dtype.type(np.NaN)
+        self.scipyLinearOperator.dtype = self.dtype
+        return result
 
     property largestSV:
-        # r"""Return the largestSV for this matrix instance
-        #
-        # *(read-only)*
-        # """
+        r"""Return the largestSV for this matrix instance
+
+        *(read-only)*
+        """
+
         def __get__(self):
             return (self.getLargestSV() if self._largestSV is None
                     else self._largestSV)
 
-    def getLargestSV(self, maxSteps=10000,
-                     relEps=1., eps=0., alwaysReturn=False):
+    def getLargestSV(self):
         r"""Largest Singular Value
 
         For a given matrix :math:`A \in \mathbb{C}^{n \times m}`, we calculate
@@ -679,46 +644,29 @@ cdef class Matrix(object):
         happens.
         """
 
-        result = self._getLargestSV(maxSteps, relEps, eps, alwaysReturn)
+        result = self._getLargestSV()
         self._largestSV = self._largestSV if np.isnan(result) else result
         return result
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        # r"""
-        #
-        # """
-        cdef np.ndarray vecBOld, vecBNew
-        cdef Matrix matGram = self.gram
-        cdef intsize ii
+    cpdef object _getLargestSV(self):
 
-        # determine an convergance threshold if eps is deliberately set to zero
-        if eps == 0:
-            eps = relEps * getTypeEps(safeTypeExpansion(self.dtype)) * (
-                self.numN if self.numN >= self.numM else self.numM)
 
-        # sample one initial sample, have a zero-vector reference
-        vecB = np.random.randn(self.numM, 1).astype(
-            np.promote_types(np.float64, self.dtype))
-        normNew = np.linalg.norm(vecB)
+        from scipy.sparse.linalg import svds
 
-        # iterate until changes cool down
-        for ii in range(maxSteps):
-            vecB = matGram.forward(vecB / normNew)
+        # we temporally promote the operators type to satisfy scipy
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
 
-            normOld = normNew
-            normNew = np.linalg.norm(vecB)
-            if normNew == 0:
-                # presumably a zero-matrix
-                return vecB.dtype.type(0.)
+        result = svds(
+            self.scipyLinearOperator,
+            1,
+            return_singular_vectors=False
+        )[0]
 
-            if np.abs(normNew - normOld) < eps:
-                # return square root of the current norm after applying the gram
-                # matrix
-                return np.sqrt(normNew)
-
-        # did not converge - return NaN
-        return (np.sqrt(normNew) if alwaysReturn else np.float64(np.NaN))
+        self.scipyLinearOperator.dtype = self.dtype
+        return result
 
     property scipyLinearOperator:
         """Return a Representation as scipy's linear Operator
@@ -744,11 +692,11 @@ cdef class Matrix(object):
     cpdef object _getScipyLinearOperator(self):
         from scipy.sparse.linalg import LinearOperator
         return LinearOperator(
-            shape=(self.numN, self.numM),
+            shape=self.shape,
             matvec=self.forward,
             rmatvec=self.backward,
             matmat=self.forward,
-            dtype=np.promote_types(np.int8, self.dtype)
+            dtype=self.dtype
         )
 
     ############################################## generic algebraic properties
@@ -1581,12 +1529,10 @@ cdef class Hermitian(Matrix):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return np.conjugate(self._nested._getItem(idxM, idxN))
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEV(self):
         return self._nested.largestEV
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSV(self):
         return self._nested.largestSV
 
     cpdef Matrix _getT(self):
@@ -1678,12 +1624,10 @@ cdef class Conjugate(Matrix):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return np.conjugate(self._nested._getItem(idxN, idxM))
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEV(self):
         return self._nested.largestEV
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSV(self):
         return self._nested.largestSV
 
     cpdef Matrix _getT(self):
@@ -1787,12 +1731,10 @@ cdef class Transpose(Hermitian):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return self._nestedConj._getItem(idxM, idxN)
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEV(self):
         return self._nestedConj.largestEV
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSV(self):
         return self._nestedConj.largestSV
 
     cpdef Matrix _getT(self):

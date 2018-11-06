@@ -24,14 +24,12 @@ from .common import *
 from ..core.cmath import profileCall
 from ..core.resource import getMemoryFootprint
 from ..Matrix import Matrix
-from ..algs.CG import CG
 from ..version import __version__
 
 
 ################################################## BENCH CONSTANT-def class
 class BENCH(NAME):
     FORWARD         = 'forward'
-    SOLVE           = 'solve'
     OVERHEAD        = 'overhead'
     DTYPES          = 'dtypes'
     PERFORMANCE     = 'performance'
@@ -229,54 +227,17 @@ def timeCalls(calls, **options):
                 timeCall(call['func'], *(call['args']), **options)).items()}
 
 
-################################################################################
-##################################################  TESTS: specification
+#  TESTS: specification
 
-################################################## testInitSolve()
-def testInitSolve(funcConstr, numSize, numN):
-    instance=funcConstr(numSize)
-    mem1=instance.nbytes
-
-    func1=CG
-    func2=np.linalg.solve
-
-    args1=[instance, arrTestDist((numN, 1), instance.dtype)]
-    args2=[instance._forwardReference(np.eye(numN)), args1[1]]
-
-    if instance._forwardReferenceMatrix is None:
-        instance._forwardReferenceInit()
-
-    mem2=instance.nbytesReference
-
-    return {
-        'fastmat': {
-            'func': func1,
-            'args': args1,
-            'Mem': mem1
-        }, 'fm10': {
-            'func': func1,
-            'args': [args1[0], np.resize(args1[1], (numN, 10))]
-        },  'numpy': {
-            'func': func2,
-            'args': args2,
-            'Mem': mem2
-        }, 'np10': {
-            'func': func2,
-            'args': [args1[0].array, np.resize(args1[1], (numN, 10))]
-        }
-    }
-
-
-################################################## testInitForward()
 def testInitForward(funcConstr, numSize, numN):
-    instance=funcConstr(numSize)
-    mem1=instance.nbytes
+    instance = funcConstr(numSize)
+    mem1 = instance.nbytes
 
-    func1=instance.forward
-    func2=instance._forwardReference
+    func1 = instance.forward
+    func2 = instance._forwardReference
 
-    args=[arrTestDist((numN, 1), instance.dtype)]
-    mem2=instance.nbytesReference
+    args = [arrTestDist((numN, 1), instance.dtype)]
+    mem2 = instance.nbytesReference
 
     return {
         'fastmat': {
@@ -302,15 +263,15 @@ def testInitForward(funcConstr, numSize, numN):
 
 ################################################## testInitOverhead()
 def testInitOverhead(funcConstr, numSize, numN):
-    instance=funcConstr(numSize)
-    mem=instance.nbytes
+    instance = funcConstr(numSize)
+    mem = instance.nbytes
 
-    funcF=instance.forward
-    funcB=instance.backward
+    funcF = instance.forward
+    funcB = instance.backward
 
     M = 1
 
-    args=[arrTestDist((numN, M), instance.dtype)]
+    args = [arrTestDist((numN, M), instance.dtype)]
 
     profFwd, profBwd = instance.profileForward, instance.profileBackward
     estFwd, estBwd = instance.estimateRuntime(M)
@@ -432,11 +393,6 @@ class Benchmark(Worker):
                 BENCH.CAPTION       : dynFormat("%s (Multiplication)",
                                                 BENCH.NAME),
                 BENCH.FUNC_INIT     : testInitForward
-            },
-            BENCH.SOLVE: {
-                BENCH.CAPTION       : dynFormat("%s (Solving a LSE)",
-                                                BENCH.NAME),
-                BENCH.FUNC_INIT     : testInitSolve
             },
             BENCH.OVERHEAD: {
                 BENCH.CAPTION       : dynFormat("%s (call overhead)",

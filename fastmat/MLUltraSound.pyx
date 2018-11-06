@@ -305,7 +305,6 @@ cdef class MLUltraSound(Partial):
                 BENCH.FUNC_STEP : (lambda c: c + 2)
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (lambda c, dt: MLUltraSound(

@@ -199,7 +199,6 @@ def extensions():
 
     return cythonize(
         [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
-         Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)],
         compiler_directives=cythonDirectives,
         nthreads=4
@@ -362,7 +361,6 @@ if __name__ == '__main__':
         install_requires=installRequires,
         packages=[
             'fastmat',
-            'fastmat/algs',
             'fastmat/core',
             'fastmat/inspect'
         ],

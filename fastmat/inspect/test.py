@@ -382,8 +382,8 @@ def testNormalized(test):
 
 ################################################## test: largestSV (property)
 def testLargestSV(test):
-    query={TEST.TYPE_EXPECTED: np.float64}
-    instance=test[TEST.INSTANCE]
+    instance = test[TEST.INSTANCE]
+    query = {TEST.TYPE_EXPECTED: np.float64}
 
     # account for "extra computation stage" (gram) in largestSV
     query[TEST.TOL_POWER] = test.get(TEST.TOL_POWER, 1.) * 2
@@ -392,14 +392,14 @@ def testLargestSV(test):
     # determine reference result
     largestSV=np.linalg.svd(test[TEST.REFERENCE], compute_uv=False)[0]
     query[TEST.RESULT_REF]=np.array(
-        largestSV, dtype=np.promote_types(largestSV.dtype, np.float64))
+        largestSV, dtype=np.promote_types(largestSV.dtype, np.float32))
 
     # largestSV may not converge fast enough for a bad random starting point
     # so retry some times before throwing up
     for tries in range(9):
         maxSteps=100. * 10. ** (tries / 2.)
         query[TEST.RESULT_OUTPUT]=np.array(
-            instance.getLargestSV(maxSteps=maxSteps, alwaysReturn=True))
+            instance.getLargestSV())
         result=compareResults(test, query)
         if result[TEST.RESULT]:
             break
