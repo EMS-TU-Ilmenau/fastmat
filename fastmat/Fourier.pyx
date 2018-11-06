@@ -89,7 +89,8 @@ cdef class Fourier(Matrix):
             # transform in the latter case self._numL specifies the internal
             # dimension
             self._numL = (0 if (_getFFTComplexity(self.order) <
-                                _getFFTComplexity(paddedSize) * 2 + paddedSize)
+                                (2 * _getFFTComplexity(paddedSize) +
+                                 2 * paddedSize + 2 * self.order))
                           else paddedSize)
 
         # if we convolve, then we should prepare some stuff
@@ -156,7 +157,7 @@ cdef class Fourier(Matrix):
         )
         if self._numL > 0:
             complexity = 2 * complexity + 2 * self._order + 2 * self._numL
-        
+
         return (complexity, complexity + 2 * self._order)
 
     ############################################## class forward / backward
