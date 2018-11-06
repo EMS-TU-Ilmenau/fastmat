@@ -43,10 +43,10 @@ cdef class Zero(Matrix):
     >>> O = fm.Zero(n)
     """
 
-    def __init__(self, numN, numM):
+    def __init__(self, numN, numM, **options):
         '''Initialize Matrix instance with its dimensions'''
         # set properties of matrix
-        self._initProperties(numN, numM, np.int8)
+        self._initProperties(numN, numM, np.int8, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getArray(self):

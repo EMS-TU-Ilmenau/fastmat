@@ -64,7 +64,7 @@ cdef class DiagBlocks(Matrix):
     """
 
     ############################################## class methods
-    def __init__(self, tenDiags):
+    def __init__(self, tenDiags, **options):
         '''Initialize Matrix instance with a list of child matrices'''
 
         self._numDiagsN = tenDiags.shape[0]
@@ -79,11 +79,9 @@ cdef class DiagBlocks(Matrix):
         dataType = tenDiags.dtype
 
         # set properties of matrix
-        self._initProperties(
-            numN, numM, dataType,
-            cythonCall=True,
-            widenInputDatatype=True
-        )
+        self._cythonCall = True
+        options['widenInputDatatype'] = True
+        self._initProperties(numN, numM, dataType, **options)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

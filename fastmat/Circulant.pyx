@@ -164,17 +164,18 @@ cdef class Circulant(Partial):
         # size, which will be compensated in Diag().
 
         # Create inner product
-        cdef Fourier FN = Fourier(size)
-        cdef Product P = Product(FN.H, Diag(np.fft.fft(vecC, axis=0) / size),
-                                 FN, **options)
+        cdef Fourier FN = Fourier(size, **options)
+        cdef Product P = Product(
+            FN.H, Diag(np.fft.fft(vecC, axis=0) / size), FN, **options
+        )
 
         # initialize Partial of Product. Only use Partial when padding size
-        if size == len(self._vecC):
-            super(Circulant, self).__init__(P)
-        else:
-            # generate index array once to save memory by one shared reference
+        if size != len(self._vecC):
             arrIndices = np.arange(len(self._vecC))
-            super(Circulant, self).__init__(P, N=arrIndices, M=arrIndices)
+            options['M'] = arrIndices
+            options['N'] = arrIndices
+
+        super(Circulant, self).__init__(P, **options)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure vecC matches the precision of the

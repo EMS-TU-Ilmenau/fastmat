@@ -142,10 +142,7 @@ cdef class MLUltraSound(Partial):
 
         # build up the whole diagonalizing matrix
         # TODO checkout if this can be speeded up by doing FFTs
-        K = Kron(
-            Eye(self._numBlocksN),
-            *F._content
-        )
+        K = Kron(Eye(self._numBlocksN), *F._content)
 
         # allocate memory for the diagonal matrix
         diags = np.empty((
@@ -171,7 +168,9 @@ cdef class MLUltraSound(Partial):
         P = Product(K.H, B, K)
 
         # call the parent constructor
-        super(MLUltraSound, self).__init__(P, N=arrIndicesN, M=arrIndicesN)
+        options['M'] = arrIndicesN
+        options['N'] = arrIndicesN
+        super(MLUltraSound, self).__init__(P, **options)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the

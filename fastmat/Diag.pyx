@@ -70,7 +70,7 @@ cdef class Diag(Matrix):
             return self._vecD
 
     ############################################## class methods
-    def __init__(self, vecD):
+    def __init__(self, vecD, **options):
         '''Initialize Matrix instance with a list of child matrices'''
         # numN is size of matrix (and of diagonal vector)
         numN = len(vecD)
@@ -83,12 +83,10 @@ cdef class Diag(Matrix):
                 "Diag: Definition vector must have exactly one dimension.")
 
         # set properties of matrix
-        self._initProperties(
-            numN, numN, self._vecD.dtype,
-            cythonCall=True,
-            forceInputAlignment=True,
-            fortranStyle=True
-        )
+        self._cythonCall = True
+        options['forceInputAlignment'] = True
+        options['fortranStyle'] = True
+        self._initProperties(numN, numN, self._vecD.dtype, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):

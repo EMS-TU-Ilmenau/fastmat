@@ -113,7 +113,8 @@ cdef class Kron(Matrix):
                  else np.promote_types(dtype, typeExpansion))
 
         # set properties of matrix
-        self._initProperties(numN, numN, dtype, widenInputDatatype=True)
+        options['widenInputDatatype'] = True
+        self._initProperties(numN, numN, dtype, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):

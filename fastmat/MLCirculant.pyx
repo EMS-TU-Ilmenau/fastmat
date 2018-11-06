@@ -224,10 +224,11 @@ cdef class MLCirculant(Partial):
 
         # initialize Partial of Product. Only use Partial when
         # inflating the size of the matrix
-        if np.allclose(self._arrN, arrNopt):
-            super(MLCirculant, self).__init__(P)
-        else:
-            super(MLCirculant, self).__init__(P, N=arrIndices, M=arrIndices)
+        if not np.allclose(self._arrN, arrNopt):
+            options['M'] = arrIndices
+            options['N'] = arrIndices
+
+        super(MLCirculant, self).__init__(P, **options)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenC matches the precision of the

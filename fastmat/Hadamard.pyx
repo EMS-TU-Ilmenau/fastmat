@@ -99,7 +99,7 @@ cdef class Hadamard(Matrix):
         def __get__(self):
             return self._order
 
-    def __init__(self, order):
+    def __init__(self, order, **options):
         '''Initialize Matrix instance'''
         if order < 1:
             raise ValueError("Hadamard: Order must be larger than 0.")
@@ -114,8 +114,9 @@ cdef class Hadamard(Matrix):
 
         # set properties of matrix
         numN = 2 ** self._order
-        self._initProperties(numN, numN, np.int8, cythonCall=True,
-                             forceInputAlignment=True)
+        self._cythonCall = True
+        options['forceInputAlignment'] = True
+        self._initProperties(numN, numN, np.int8, **options)
 
     cpdef np.ndarray _getArray(self):
         '''

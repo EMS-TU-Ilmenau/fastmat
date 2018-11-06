@@ -125,7 +125,7 @@ cdef class Product(Matrix):
         self._content = tuple(lstFactors)
 
         # set properties of matrix
-        self._initProperties(numN, numM, dtype)
+        self._initProperties(numN, numM, dtype, **options)
 
         if debug:
             print("fastmat.Product instance %12x containing:" %(id(self)))

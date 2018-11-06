@@ -110,7 +110,7 @@ cdef class Sparse(Matrix):
                 self._spArrayH = self._spArray.T.conj().tocsr()
             return self._spArrayH
 
-    def __init__(self, value):
+    def __init__(self, value, **options):
         '''Initialize Matrix instance'''
         if not isinstance(value, spmatrix):
             raise TypeError("Sparse: Use Matrix() for numpy ndarrays."
@@ -120,8 +120,12 @@ cdef class Sparse(Matrix):
         self._spArray = value.tocsr()
 
         # set properties of matrix
-        self._initProperties(self._spArray.shape[0], self._spArray.shape[1],
-                             self._spArray.dtype)
+        self._initProperties(
+            self._spArray.shape[0],
+            self._spArray.shape[1],
+            self._spArray.dtype,
+            **options
+        )
 
     cpdef np.ndarray _getArray(self):
         '''

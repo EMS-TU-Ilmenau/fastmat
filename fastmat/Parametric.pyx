@@ -112,15 +112,12 @@ cdef class Parametric(Matrix):
         def __get__(self):
             return self._fun
 
-    def __init__(
-        self,
-        vecX,
-        vecY,
-        funF,
-        funDtype=None,
-        rangeAccess=True
-    ):
+    def __init__(self, vecX, vecY, funF, **options):
         '''Initialize Matrix instance'''
+
+        # retrieve options
+        funDtype = options('funDtype', None)
+        rangeAccess = options('rangeAccess', True)
 
         # store flags
         self._rangeAccess = rangeAccess
@@ -138,18 +135,17 @@ cdef class Parametric(Matrix):
             if funDtype is None else funDtype
 
         # set properties of matrix
+        # deactivate automatic generation of array for transformation bypass.
+        # As Parametric is always slower than dot product with the dense array
+        # this would otherwise happen always for all sizes
+        self._cythonCall = True
+        options['forceInputAlignment'] = True
+        options['bypassAutoArray'] = False
         self._initProperties(
             len(self._vecY),            # numN
             len(self._vecX),            # numM
             self._funDtype,             # data type of matrix
-            cythonCall=True,
-            forceInputAlignment=True,
-            bypassAutoArray=False       # deactivate automatic generation of
-                                        # array for transformation bypass. As
-                                        # Parametric is always slower than dot
-                                        # product with the dense array this
-                                        # would otherwise happen always for all
-                                        # sizes
+            **options
         )
 
     ############################################## class property override

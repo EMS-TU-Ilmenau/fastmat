@@ -81,7 +81,7 @@ cdef class Outer(Matrix):
         def __get__(self):
             return self._vecH
 
-    def __init__(self, vecV, vecH):
+    def __init__(self, vecV, vecH, **options):
 
         # check dimensions
         vecV = _arrSqueezedCopy(vecV)
@@ -110,7 +110,7 @@ cdef class Outer(Matrix):
         self._vecVHerm = _conjugate(self._vecV).reshape((1, numN))
 
         # set properties of matrix
-        self._initProperties(numN, numM, datatype)
+        self._initProperties(numN, numM, datatype, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):

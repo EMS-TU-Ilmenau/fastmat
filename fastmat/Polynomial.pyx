@@ -83,8 +83,9 @@ cdef class Polynomial(Matrix):
         self._coeffConj = self._coeff.conj()
 
         # set properties of matrix
-        self._initProperties(self._content[0].numN, self._content[0].numM,
-                             dtype)
+        self._initProperties(
+            self._content[0].numN, self._content[0].numM, dtype
+        )
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

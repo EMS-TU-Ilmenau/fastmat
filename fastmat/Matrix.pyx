@@ -987,7 +987,7 @@ cdef class Matrix(object):
         )
 
     ############################################## class methods
-    def __init__(self, arrMatrix):
+    def __init__(self, arrMatrix, **options):
         r"""Initialize Matrix instance
 
         """
@@ -1008,7 +1008,8 @@ cdef class Matrix(object):
         self._initProperties(
             self._array.shape[0],        # numN
             self._array.shape[1],        # numM
-            self._array.dtype            # data type of matrix
+            self._array.dtype,           # data type of matrix
+            **options
         )
 
     def _initProperties(
@@ -1016,25 +1017,24 @@ cdef class Matrix(object):
         intsize numN,
         intsize numM,
         object dataType,
-        **properties
+        **options
     ):
         r"""Initial Properties
 
         """
 
-        # assign basic class properties (at c-level)
+        # assign basic class options (at c-level)
         self.numN = numN
         self.numM = numM
         self.fusedType = getFusedType(dataType)
         self.numpyType = typeInfo[self.fusedType].numpyType
 
-        # get and assign c-level properties
-        self._cythonCall          = properties.pop('cythonCall', False)
-        self._forceInputAlignment = properties.pop('forceInputAlignment', False)
-        self._widenInputDatatype  = properties.pop('widenInputDatatype', False)
-        self._useFortranStyle     = properties.pop('fortranStyle', True)
-        self.bypassAllow          = properties.pop('bypassAllow',
-                                                   flags.bypassAutoArray)
+        # get and assign c-level options
+        self._forceInputAlignment = options.get('forceInputAlignment', False)
+        self._widenInputDatatype  = options.get('widenInputDatatype', False)
+        self._useFortranStyle     = options.get('fortranStyle', True)
+        self.bypassAllow          = options.get('bypassAllow',
+                                                flags.bypassAutoArray)
 
         # determine new value of bypassAutoArray: take the value in `flags`
         # as default but check that no nested child instance has set
@@ -1043,7 +1043,7 @@ cdef class Matrix(object):
         # although it shouldn't be.
         cdef bint autoArray = (flags.bypassAutoArray and
                                all(not item.bypassAutoArray for item in self))
-        self.bypassAutoArray = properties.pop('bypassAutoArray', autoArray)
+        self.bypassAutoArray = options.get('bypassAutoArray', autoArray)
 
         # initialize performance profile
         # NOTE: If a valid profile is not available (either no calibration data

@@ -98,7 +98,7 @@ cdef class LowRank(Product):
         def __get__(self):
             return self._arrV
 
-    def __init__(self, vecS, arrU, arrV):
+    def __init__(self, vecS, arrU, arrV, **options):
 
         # complain if dimension does not match
         if vecS.ndim != 1:
@@ -123,7 +123,11 @@ cdef class LowRank(Product):
         self._vecS = _arrSqueeze(vecS.astype(dtype, copy=True, subok=False))
 
         super(LowRank, self).__init__(
-            Matrix(self._arrU), Diag(vecS), Matrix(self._arrV.conj().T))
+            Matrix(self._arrU),
+            Diag(vecS),
+            Matrix(self._arrV.conj().T),
+            **options
+        )
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

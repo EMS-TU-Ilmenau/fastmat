@@ -62,7 +62,7 @@ cdef class Blocks(Matrix):
     """
 
     ############################################## class methods
-    def __init__(self, arrMatrices):
+    def __init__(self, arrMatrices, **options):
         '''Initialize Matrix instance with a list of child matrices'''
         if not isinstance(arrMatrices, list):
             raise ValueError("Blocks: Not a nested list of fastmat matrices.")
@@ -142,11 +142,9 @@ cdef class Blocks(Matrix):
         self._content = tuple([item for row in self._rows for item in row])
 
         # set properties of matrix
-        self._initProperties(
-            numN, numM, dataType,
-            cythonCall=True,
-            widenInputDatatype=True
-        )
+        self._cythonCall = True
+        options['widenInputDatatype'] = True
+        self._initProperties(numN, numM, dataType, **options)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

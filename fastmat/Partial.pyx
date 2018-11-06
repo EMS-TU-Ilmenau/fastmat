@@ -78,13 +78,12 @@ cdef class Partial(Matrix):
         def __get__(self):
             return self._indicesM if self._pruneM else np.arange(self.numM)
 
-    def __init__(
-        self,
-        mat,
-        N=None,
-        M=None
-    ):
+    def __init__(self, mat, **options):
         '''Initialize Matrix instance'''
+
+        # extract options
+        N = options.get('M', None)
+        M = options.get('N', None)
 
         # initialize matrix for full support (used anyway for checking)
         if not isinstance(mat, Matrix):
@@ -140,7 +139,9 @@ cdef class Partial(Matrix):
         self._initProperties(
             len(self._indicesN) if self._pruneN else mat.numN,
             len(self._indicesM) if self._pruneM else mat.numM,
-            mat.dtype)
+            mat.dtype,
+            **options
+        )
 
     def __repr__(self):
         '''

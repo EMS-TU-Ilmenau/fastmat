@@ -58,7 +58,7 @@ cdef class Permutation(Matrix):
         def __get__(self):
             return self._sigma
 
-    def __init__(self, sigma):
+    def __init__(self, sigma, **options):
         '''
         Initialize Matrix instance with its dimensions.
         '''
@@ -70,7 +70,7 @@ cdef class Permutation(Matrix):
         self._sigma = sigma
         self._tau = np.argsort(sigma)
 
-        self._initProperties(numN, numN, np.int8)
+        self._initProperties(numN, numN, np.int8, **options)
 
     ############################################## class property override
     cpdef object _getItem(self, intsize idxN, intsize idxM):

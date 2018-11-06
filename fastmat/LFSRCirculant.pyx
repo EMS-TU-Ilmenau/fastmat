@@ -170,9 +170,11 @@ cdef class LFSRCirculant(Matrix):
         def __get__(self):
             return (self._resetState)
 
-    def __init__(self, int regSize, lfsrReg_t taps,
-                 lfsrReg_t resetState=0xFFFFFFFF, lfsrReg_t length=0):
+    def __init__(self, int regSize, taps, **options):
         '''Initialize Matrix instance'''
+
+        cdef lfsrReg_t resetState = options.get('resetState', 0xFFFFFFFF)
+        cdef lfsrReg_t length = options.get('length', 0)
 
         cdef lfsrReg_t mask = 1 << regSize
 
@@ -219,8 +221,8 @@ cdef class LFSRCirculant(Matrix):
             raise ValueError("Register produces static output.")
 
         # set properties of matrix
-        self._initProperties(length, length, np.int8,
-                             cythonCall=True)
+        self._cythonCall = True
+        self._initProperties(length, length, np.int8, **options)
 
     ############################################## class property override
     cpdef object _getItem(self, intsize idxN, intsize idxM):

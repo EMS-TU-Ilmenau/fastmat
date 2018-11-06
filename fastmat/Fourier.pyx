@@ -120,7 +120,9 @@ cdef class Fourier(Matrix):
             self._vecConvHat = np.fft.fft(vecConv)
 
         # set properties of matrix
-        self._initProperties(self._order, self._order, np.complex128)
+        self._initProperties(
+            self._order, self._order, np.complex128, **options
+        )
 
     ############################################## class property override
     cpdef np.ndarray _getArray(self):

@@ -94,7 +94,7 @@ cdef class BlockDiag(Matrix):
     """
 
     ############################################## class methods
-    def __init__(self, *matrices):
+    def __init__(self, *matrices, **options):
         '''Initialize Matrix instance with a list of child matrices'''
         cdef intsize numN = 0, numM = 0
         cdef Matrix term
@@ -116,11 +116,9 @@ cdef class BlockDiag(Matrix):
             dataType = np.promote_types(dataType, term.dtype)
 
         # set properties of matrix
-        self._initProperties(
-            numN, numM, dataType,
-            cythonCall=True,
-            widenInputDatatype=True
-        )
+        self._cythonCall = True
+        options['widenInputDatatype'] = True
+        self._initProperties(numN, numM, dataType, **options)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

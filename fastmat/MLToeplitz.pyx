@@ -184,14 +184,14 @@ cdef class MLToeplitz(Partial):
         )))
 
         # now decompose the ML matrix as a product
-        cdef Product P = Product(KN.H, Diag(tenThat),
-                                 KN, **options)
+        cdef Product P = Product(KN.H, Diag(tenThat), KN, **options)
 
         # initialize Partial of Product. Only use Partial when padding size
-        if np.allclose(self._arrN, arrNopt):
-            super(MLToeplitz, self).__init__(P)
-        else:
-            super(MLToeplitz, self).__init__(P, N=arrIndices, M=arrIndices)
+        if not np.allclose(self._arrN, arrNopt):
+            options['M'] = arrIndices
+            options['N'] = arrIndices
+
+        super(MLToeplitz, self).__init__(P)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the

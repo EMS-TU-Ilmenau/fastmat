@@ -47,13 +47,13 @@ cdef class Eye(Matrix):
     This yields the identity matrix :math:`I_{10}` with dimension :math:`10`.
     """
 
-    def __init__(self, numN):
+    def __init__(self, numN, **options):
         '''
         Initialize Matrix instance with its dimensions.
 
         Generated a [numN x numM] matrix of small integers
         '''
-        self._initProperties(numN, numN, np.int8)
+        self._initProperties(numN, numN, np.int8, **options)
 
     cpdef np.ndarray _getArray(Eye self):
         '''

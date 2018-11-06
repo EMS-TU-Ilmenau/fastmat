@@ -52,7 +52,7 @@ cdef class Sum(Matrix):
         M =  A +  B +  C +  D.
     """
 
-    def __init__(self, *matrices):
+    def __init__(self, *matrices, **options):
         '''
         Initialize Matrix instance with a list of other matrices to be summed.
         If another Sum is seen, add its content instead of adding the Sum.
@@ -95,11 +95,9 @@ cdef class Sum(Matrix):
             dataType = np.promote_types(dataType, self._content[ii].dtype)
 
         # set properties of matrix
-        self._initProperties(
-            numN, numM, dataType,
-            cythonCall=True,
-            widenInputDatatype=True
-        )
+        self._cythonCall = True
+        options['widenInputDatatype'] = True
+        self._initProperties(numN, numM, dataType, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
