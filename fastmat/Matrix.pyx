@@ -1033,8 +1033,8 @@ cdef class Matrix(object):
         self._forceInputAlignment = options.get('forceInputAlignment', False)
         self._widenInputDatatype  = options.get('widenInputDatatype', False)
         self._useFortranStyle     = options.get('fortranStyle', True)
-        self.bypassAllow          = options.get('bypassAllow',
-                                                flags.bypassAutoArray)
+        self._minFusedType  = getFusedType(options.get('minType', np.int8))
+        self.bypassAllow    = options.get('bypassAllow', flags.bypassAutoArray)
 
         # determine new value of bypassAutoArray: take the value in `flags`
         # as default but check that no nested child instance has set
@@ -1156,6 +1156,64 @@ cdef class Matrix(object):
         raise NotImplementedError("Matrix Floor division not allowed.")
 
     ############################################## class forward / backward
+    cdef np.ndarray _prepareInputArray(self, np.ndarray arrInput,
+                                       intsize requiredSize,
+                                       TRANSFORM * xform):
+        '''
+        Prepare an input array to a transform
+        '''
+
+        # check input dimenstions and reshape to 2-dimensions if required
+        # allow to bypass this check as in some call cases we can be certain
+        # that this is fulfilled already
+        if requiredSize > 0:
+            # check dimension count and sizes
+            if arrInput.ndim > 2:
+                raise ValueError("Input data array must be at most 2D")
+
+            # arrInput.N must match self.M in forward() and .N in backward()
+            if arrInput.shape[0] != requiredSize:
+                raise ValueError(
+                    "Mismatch of vector size %d to relevant matrix axis %d" %(
+                        arrInput.shape[0], requiredSize
+                    )
+                )
+
+            # force array of data to be 2D and determine vector count
+            if arrInput.ndim == 1:
+                arrInput = _arrReshape(
+                    arrInput, 2, requiredSize, 1, np.NPY_ANYORDER)
+
+        # assume 2D input now
+        xform.numVectors = arrInput.shape[1]
+
+        # Determine internal and output array data types
+        #  * promote internal dtype to be at least self._minType
+        #  * promote internal dtype to output dtype if self._widenInputDatatype
+        #  * force internal array alignment if self._forceInputAlignment
+        # force input data type to fulfill some requirements if needed
+        #  * check for data type match
+        #  * check for data alignment (contiguousy and segmentation)
+        xform[0].fInput = typeSelection[np.PyArray_TYPE(arrInput)]
+        xform[0].fInternal = \
+            typeInfo[xform[0].fInput].promote[self._minFusedType]
+        xform[0].fOutput = \
+            typeInfo[xform[0].fInternal].promote[self.fusedType]
+        if self._widenInputDatatype:
+            xform[0].fInternal = xform[0].fOutput
+
+        xform[0].nInternal = typeInfo[xform[0].fInternal].numpyType
+        xform[0].nOutput = typeInfo[xform[0].fOutput].numpyType
+
+        if self._forceInputAlignment:
+            return _arrForceTypeAlignment(
+                arrInput, xform[0].nInternal, 0, self._useFortranStyle
+            )
+        elif xform[0].fInternal != xform[0].fInput:
+            return _arrForceType(arrInput, xform[0].nInternal)
+        else:
+            return arrInput
+
     cpdef _forwardC(
         self,
         np.ndarray arrX,
@@ -1178,15 +1236,13 @@ cdef class Matrix(object):
         infinite loop. Then, _forward() will be called directly, leading to this
         issue with cythonCall classes that only define a _forwardC()
         """
-        cdef ntype typeInput, typeOutput
+        cdef TRANSFORM xform
         if self._cythonCall:
-            # Create output array
-            typeInput = typeSelection[np.PyArray_TYPE(arrX)]
-            typeOutput = promoteFusedTypes(self.fusedType, typeInput)
-
-            arrOutput = _arrEmpty(2, self.numN, arrX.shape[1],
-                                  typeInfo[typeOutput].numpyType)
-            self._forwardC(arrX, arrOutput, typeInput, typeOutput)
+            # Determine types, prepare input array and create output array
+            # bypass dimension check in _prepareInputArray() call (already OK)
+            arrX = self._prepareInputArray(arrX, 0, &xform)
+            arrOutput = _arrEmpty(2, self.numN, arrX.shape[1], xform.nOutput)
+            self._forwardC(arrX, arrOutput, xform.fInput, xform.fOutput)
             return arrOutput
         else:
             return self._array.dot(arrX)
@@ -1214,42 +1270,15 @@ cdef class Matrix(object):
         # local variable holding return array
         cdef np.ndarray arrInput = arrX, arrOutput
         cdef int ndimInput = arrInput.ndim
-        cdef ftype typeInput, typeOutput
 
-        # check dimension count and sizes
-        if ndimInput > 2:
-            raise ValueError("Input data array must be at most 2D")
-
-        # arrInput.N must match self.M in forward() and .N in backward()
-        if arrInput.shape[0] != self.numM:
-            raise ValueError("Dimension mismatch %s <-!-> %s" %(
-                str(self.shape), str((<object> arrInput).shape)))
-
-        # force array of data to be two-dimensional and determine vector count
-        if ndimInput == 1:
-            arrInput = _arrReshape(
-                arrInput, 2, self.numM, 1, np.NPY_ANYORDER)
-        cdef intsize M = arrInput.shape[1]
-
-        # Determine output data type
-        typeInput = typeSelection[np.PyArray_TYPE(arrInput)]
-        typeOutput = promoteFusedTypes(self.fusedType, typeInput)
-
-        # force input data type to fulfill some requirements if needed
-        #  * check for data type match
-        #  * check for data alignment (contiguousy and segmentation)
-        typeForce = (typeInfo[typeOutput].numpyType if self._widenInputDatatype
-                     else typeInfo[typeInput].numpyType)
-        if self._forceInputAlignment:
-            arrInput = _arrForceTypeAlignment(arrInput, typeForce, 0,
-                                              self._useFortranStyle)
-        else:
-            if self._widenInputDatatype:
-                arrInput = _arrForceType(arrInput, typeForce)
+        # Determine types, prepare input array and create output array
+        cdef TRANSFORM xform
+        arrInput = self._prepareInputArray(arrInput, self.numM, &xform)
 
         # estimate runtimes according profile for Forward
         # if the dot-product bypass strategy leads to smaller runtimes, do it!
-        if (self.bypassAllow and self.profileForward.isBypassFaster(M) and
+        if (self.bypassAllow and
+                self.profileForward.isBypassFaster(xform.numVectors) and
                 (self._array is not None or self.bypassAutoArray)):
             arrOutput = self.array.dot(arrInput)
         else:
@@ -1257,12 +1286,15 @@ cdef class Matrix(object):
             if self._cythonCall:
                 # Create output array
                 arrOutput = _arrEmpty(
-                    2, self.numN, M if ndimInput > 1 else 1,
-                    typeInfo[typeOutput].numpyType)
+                    2, self.numN, xform.numVectors if ndimInput > 1 else 1,
+                    xform.nOutput
+                )
 
                 # Call calculation routine (fused type dispatch must be
                 # be done locally in each class, typeInfo gets passed)
-                self._forwardC(arrInput, arrOutput, typeInput, typeOutput)
+                self._forwardC(
+                    arrInput, arrOutput, xform.fInternal, xform.fOutput
+                )
             else:
                 arrOutput = self._forward(arrInput)
 
@@ -1285,10 +1317,26 @@ cdef class Matrix(object):
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         """Backward
 
-        Perform a backward transform for general matrices. This method
-        may get overwritten in child classes of Matrix
+        Perform a backward transform for general matrices. This method will get
+        overwritten in child classes of Matrix to implement specific transforms.
+        This base function will also be called when a cython-call object does
+        not define a _forward() method. One circumstance leading to this is
+        when the runtime estimation within the backward()-entry point decides to
+        bootstrap a dense array representation from within backward(). Then
+        _getArray() cannot simply call backward() as this would leed to an
+        infinite loop. Then, _forward() will be called directly, leading to this
+        issue with cythonCall classes that only define a _forwardC()
         """
-        return _conjugate(self._array.T).dot(arrX)
+        cdef TRANSFORM xform
+        if self._cythonCall:
+            # Determine types, prepare input array and create output array
+            # bypass dimension check in _prepareInputArray() call (already OK)
+            arrX = self._prepareInputArray(arrX, 0, &xform)
+            arrOutput = _arrEmpty(2, self.numM, arrX.shape[1], xform.nOutput)
+            self._backwardC(arrX, arrOutput, xform.fInput, xform.fOutput)
+            return arrOutput
+        else:
+            return _conjugate(self._array.T).dot(arrX)
 
     cpdef np.ndarray backward(self, np.ndarray arrX):
         r"""Backward Transform
@@ -1314,43 +1362,15 @@ cdef class Matrix(object):
         # local variable holding return array
         cdef np.ndarray arrInput = arrX, arrOutput
         cdef int ndimInput = arrInput.ndim
-        cdef ftype typeInput, typeOutput
-        cdef ntype typeForce
 
-        # check dimension count and sizes
-        if ndimInput > 2:
-            raise ValueError("Input data array must be at most 2D")
-
-        # arrInput.N must match self.M in forward() and .N in backward()
-        if arrInput.shape[0] != self.numN:
-            raise ValueError("Dimension mismatch %s.H <-!-> %s" %(
-                str(self.shape), str((<object> arrInput).shape)))
-
-        # force array of data to be two-dimensional and determine vector count
-        if ndimInput == 1:
-            arrInput = _arrReshape(
-                arrInput, 2, self.numN, 1, np.NPY_ANYORDER)
-        cdef intsize M = arrInput.shape[1]
-
-        # Determine output data type
-        typeInput = typeSelection[np.PyArray_TYPE(arrInput)]
-        typeOutput = promoteFusedTypes(self.fusedType, typeInput)
-
-        # force input data type to fulfill some requirements if needed
-        #  * check for data type match
-        #  * check for data alignment (contiguousy and segmentation)
-        typeForce = (typeInfo[typeOutput].numpyType if self._widenInputDatatype
-                     else typeInfo[typeInput].numpyType)
-        if self._forceInputAlignment:
-            arrInput = _arrForceTypeAlignment(arrInput, typeForce, 0,
-                                              self._useFortranStyle)
-        else:
-            if self._widenInputDatatype:
-                arrInput = _arrForceType(arrInput, typeForce)
+        # Determine types, prepare input array and create output array
+        cdef TRANSFORM xform
+        arrInput = self._prepareInputArray(arrInput, self.numN, &xform)
 
         # estimate runtimes according profile for Backward if the dot-product
         # bypass strategy leads to smaller runtimes, do it!
-        if (self.bypassAllow and self.profileBackward.isBypassFaster(M) and
+        if (self.bypassAllow and
+                self.profileBackward.isBypassFaster(xform.numVectors) and
                 (self._arrayH is not None or self.bypassAutoArray)):
             if self._arrayH is None:
                 self._arrayH = self.array.T.conj()
@@ -1361,13 +1381,15 @@ cdef class Matrix(object):
             if self._cythonCall:
                 # Create output array
                 arrOutput = _arrEmpty(
-                    2, self.numM,
-                    arrInput.shape[1] if ndimInput > 1 else 1,
-                    typeInfo[typeOutput].numpyType)
+                    2, self.numM, xform.numVectors if ndimInput > 1 else 1,
+                    xform.nOutput
+                )
 
                 # Call calculation routine (fused type dispatch must be
                 # be done locally in each class, typeInfo gets passed)
-                self._backwardC(arrInput, arrOutput, typeInput, typeOutput)
+                self._backwardC(
+                    arrInput, arrOutput, xform.fInternal, xform.fOutput
+                )
             else:
                 arrOutput = self._backward(arrInput)
 

@@ -52,6 +52,14 @@ cdef class MatrixCallProfile(object):
 
 
 ################################################## class Matrix
+cdef struct TRANSFORM:
+    intsize numVectors
+    ftype fInput
+    ftype fInternal
+    ftype fOutput
+    ntype nInternal
+    ntype nOutput
+
 cdef class Matrix:
 
     cdef bint       _cythonCall                  # use _C() transforms in class
@@ -78,6 +86,8 @@ cdef class Matrix:
     cdef readonly intsize   numM                 # column-count of matrix
     cdef readonly ntype     numpyType            # numpy typenum
     cdef readonly ftype     fusedType            # fastmat fused typenum
+    cdef readonly ftype     _minFusedType        # minimal fused type used
+    #                                            # internally for transform
 
     cdef public bint        bypassAllow          # if true, transform may be
     #                                            # bypassed based on runtime
@@ -115,6 +125,7 @@ cdef class Matrix:
     cpdef _exploreNestedProfiles(self)
     cpdef tuple estimateRuntime(self, intsize M=?)
 
+    cdef np.ndarray _prepareInputArray(self, np.ndarray, intsize, TRANSFORM *)
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef np.ndarray _forward(self, np.ndarray)
