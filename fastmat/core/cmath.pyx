@@ -721,15 +721,34 @@ cdef void _opI(
         if tOp == TYPE_INT8:
             _opCoreI[np.int8_t, np.int8_t, TYPE_INT](
                 arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+        elif tOp == TYPE_INT16:
+            _opCoreI[np.int8_t, np.int16_t, TYPE_INT](
+                arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
         elif tOp == TYPE_INT32:
             _opCoreI[np.int8_t, np.int32_t, TYPE_INT](
                 arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
         elif tOp == TYPE_INT64:
             _opCoreI[np.int8_t, np.int64_t, TYPE_INT](
                 arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tIn == TYPE_INT16:
+        if tOp == TYPE_INT8:
+            _opCoreI[np.int16_t, np.int8_t, TYPE_INT](
+                arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+        elif tOp == TYPE_INT16:
+            _opCoreI[np.int16_t, np.int16_t, TYPE_INT](
+                arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+        elif tOp == TYPE_INT32:
+            _opCoreI[np.int16_t, np.int32_t, TYPE_INT](
+                arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+        elif tOp == TYPE_INT64:
+            _opCoreI[np.int16_t, np.int64_t, TYPE_INT](
+                arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tIn == TYPE_INT32:
         if tOp == TYPE_INT8:
             _opCoreI[np.int32_t, np.int8_t, TYPE_INT](
+                arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+        elif tOp == TYPE_INT16:
+            _opCoreI[np.int32_t, np.int16_t, TYPE_INT](
                 arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
         elif tOp == TYPE_INT32:
             _opCoreI[np.int32_t, np.int32_t, TYPE_INT](
@@ -740,6 +759,9 @@ cdef void _opI(
     elif tIn == TYPE_INT64:
         if tOp == TYPE_INT8:
             _opCoreI[np.int64_t, np.int8_t, TYPE_INT](
+                arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+        elif tOp == TYPE_INT16:
+            _opCoreI[np.int64_t, np.int16_t, TYPE_INT](
                 arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
         elif tOp == TYPE_INT32:
             _opCoreI[np.int64_t, np.int32_t, TYPE_INT](
@@ -764,6 +786,9 @@ cdef void _opRIn(
     # dispatch specialization of core routine according tOptor
     if tIn == TYPE_INT8:
         _opCoreF[np.int8_t, TYPE_OP_R, TYPE_REAL](
+            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tIn == TYPE_INT16:
+        _opCoreF[np.int16_t, TYPE_OP_R, TYPE_REAL](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tIn == TYPE_INT32:
         _opCoreF[np.int32_t, TYPE_OP_R, TYPE_REAL](
@@ -793,6 +818,9 @@ cdef void _opR(
     # dispatch specialization of core routine according tOptor
     if tOp == TYPE_INT8:
         _opRIn[np.int8_t, TYPE_REAL](
+            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tOp == TYPE_INT16:
+        _opRIn[np.int16_t, TYPE_REAL](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOp == TYPE_INT32:
         _opRIn[np.int32_t, TYPE_REAL](
@@ -825,6 +853,9 @@ cdef void _opCIn(
         _opCoreC[np.int8_t, TYPE_OP, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tIn == TYPE_INT32:
+        _opCoreC[np.int32_t, TYPE_OP, TYPE_COMPLEX](
+            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tIn == TYPE_INT16:
         _opCoreC[np.int32_t, TYPE_OP, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tIn == TYPE_INT64:
@@ -862,6 +893,9 @@ cdef void _opC(
     elif tOp == TYPE_INT32:
         _opCIn[np.int32_t, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tOp == TYPE_INT16:
+        _opCIn[np.int16_t, TYPE_COMPLEX](
+            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOp == TYPE_INT64:
         _opCIn[np.int64_t, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
@@ -894,6 +928,8 @@ cdef void _op(
         _opI[np.int8_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOut == TYPE_INT32:
         _opI[np.int32_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tOut == TYPE_INT16:
+        _opI[np.int16_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOut == TYPE_INT64:
         _opI[np.int64_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOut == TYPE_FLOAT32:

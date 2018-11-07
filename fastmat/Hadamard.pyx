@@ -202,6 +202,8 @@ cdef class Hadamard(Matrix):
                     _hadamardCore[np.int64_t](&strA, &strB, 0)
                 elif typeX == TYPE_INT32:
                     _hadamardCore[np.int32_t](&strA, &strB, 0)
+                elif typeX == TYPE_INT16:
+                    _hadamardCore[np.int16_t](&strA, &strB, 0)
                 elif typeX == TYPE_INT8:
                     _hadamardCore[np.int8_t](&strA, &strB, 0)
                 else:
