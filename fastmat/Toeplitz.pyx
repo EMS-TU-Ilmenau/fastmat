@@ -182,17 +182,21 @@ cdef class Toeplitz(Partial):
         # Create inner product
         cdef Fourier FN = Fourier(vecSize, **options)
         cdef Product P = Product(
-            FN.H, Diag(np.fft.fft(vec, axis=0) / vecSize), FN, **options
+            FN.H,
+            Diag(np.fft.fft(vec, axis=0) / vecSize, **options),
+            FN,
+            **options
         )
 
         # initialize Partial of Product
+        cdef dict kwargs = options.copy()
         if size != len(self._vecC):
-            options['N'] = np.arange(len(self._vecC))
+            kwargs['N'] = np.arange(len(self._vecC))
 
         if size != len(self._vecR) + 1:
-            options['M'] = np.arange(len(self._vecR) + 1)
+            kwargs['M'] = np.arange(len(self._vecR) + 1)
 
-        super(Toeplitz, self).__init__(P, **options)
+        super(Toeplitz, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure vecC and vecR matches the precision of

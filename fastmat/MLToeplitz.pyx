@@ -181,17 +181,18 @@ cdef class MLToeplitz(Partial):
         # create the decomposing kronecker product
         cdef Kron KN = Kron(*list(map(
             lambda ii : Fourier(ii, optimize=False), arrNopt
-        )))
+        )), **options)
 
         # now decompose the ML matrix as a product
-        cdef Product P = Product(KN.H, Diag(tenThat), KN, **options)
+        cdef Product P = Product(KN.H, Diag(tenThat, **options), KN, **options)
 
         # initialize Partial of Product. Only use Partial when padding size
+        cdef dict kwargs = options.copy()
         if not np.allclose(self._arrN, arrNopt):
-            options['M'] = arrIndices
-            options['N'] = arrIndices
+            kwargs['M'] = arrIndices
+            kwargs['N'] = arrIndices
 
-        super(MLToeplitz, self).__init__(P)
+        super(MLToeplitz, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the

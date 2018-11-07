@@ -116,8 +116,8 @@ cdef class Parametric(Matrix):
         '''Initialize Matrix instance'''
 
         # retrieve options
-        funDtype = options('funDtype', None)
-        rangeAccess = options('rangeAccess', True)
+        funDtype = options.get('funDtype', None)
+        rangeAccess = options.get('rangeAccess', True)
 
         # store flags
         self._rangeAccess = rangeAccess

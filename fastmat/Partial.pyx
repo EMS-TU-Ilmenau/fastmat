@@ -82,8 +82,8 @@ cdef class Partial(Matrix):
         '''Initialize Matrix instance'''
 
         # extract options
-        N = options.get('M', None)
-        M = options.get('N', None)
+        N = options.get('N', None)
+        M = options.get('M', None)
 
         # initialize matrix for full support (used anyway for checking)
         if not isinstance(mat, Matrix):
@@ -266,9 +266,11 @@ cdef class Partial(Matrix):
                 ]),
                 TEST.INITARGS   : (lambda param: [
                     Hadamard(param['order']),
-                    param['subRows'],
-                    param['subCols']
                 ]),
+                TEST.INITKWARGS : (lambda param: {
+                    'N': param['subRows'],
+                    'M': param['subCols']
+                }),
                 'strIndexTypeM' : (lambda param: (
                     'B' if param['subCols'].dtype == np.bool else 'I'
                 )),
