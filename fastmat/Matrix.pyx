@@ -967,14 +967,18 @@ cdef class Matrix(object):
             self.profileBackward.addNestedProfile(
                 1, bypass, item.profileBackward)
 
-    cpdef tuple estimateRuntime(self, intsize M=1):
         r"""Estimate Runtime
+    cpdef tuple estimateRuntime(self, intsize numVectors=1):
 
         """
         cdef np.float32_t estAlgFwd, estBypassFwd, estAlgBwd, estBypassBwd
 
-        estAlgFwd, estBypassFwd = self.profileForward.estimateRuntime(M)
-        estAlgBwd, estBypassBwd = self.profileBackward.estimateRuntime(M)
+        estAlgFwd, estBypassFwd = self.profileForward.estimateRuntime(
+            numVectors
+        )
+        estAlgBwd, estBypassBwd = self.profileBackward.estimateRuntime(
+            numVectors
+        )
         return (
             estBypassFwd
             if ((self._array is not None or self.bypassAutoArray) and
@@ -1030,9 +1034,9 @@ cdef class Matrix(object):
         self.numpyType = typeInfo[self.fusedType].numpyType
 
         # get and assign c-level options
-        self._forceInputAlignment = options.get('forceInputAlignment', False)
-        self._widenInputDatatype  = options.get('widenInputDatatype', False)
-        self._useFortranStyle     = options.get('fortranStyle', True)
+        self._forceContiguousInput = options.get('forceContiguousInput', False)
+        self._widenInputDatatype   = options.get('widenInputDatatype', False)
+        self._fortranStyle         = options.get('fortranStyle', True)
         self._minFusedType  = getFusedType(options.get('minType', np.int8))
         self.bypassAllow    = options.get('bypassAllow', flags.bypassAutoArray)
 
@@ -1061,6 +1065,20 @@ cdef class Matrix(object):
         identification module name, class name, instance id and shape will be
         returned formatted as string.
         """
+    def _getProperties(self):
+        '''
+        Return the matrix properties as processed by _initProperties() as dict.
+        '''
+        return {
+            'forceContiguousInput'  : self._forceContiguousInput,
+            'widenInputDatatype'    : self._widenInputDatatype,
+            'fortranStyle'          : self._fortranStyle,
+            'minType'               : np.PyArray_TypeObjectFromType(
+                typeInfo[self._minFusedType].numpyType
+            ),
+            'bypassAllow'           : self.bypassAllow,
+            'bypassAutoArray'       : self.bypassAutoArray
+        }
 
         return "<%s[%dx%d]:0x%12x>" %(
             self.__class__.__name__, self.numN, self.numM, id(self)
@@ -1188,9 +1206,9 @@ cdef class Matrix(object):
         xform.numVectors = arrInput.shape[1]
 
         # Determine internal and output array data types
-        #  * promote internal dtype to be at least self._minType
+        #  * promote internal dtype to be at least self._minFusedType
         #  * promote internal dtype to output dtype if self._widenInputDatatype
-        #  * force internal array alignment if self._forceInputAlignment
+        #  * force internal array alignment if self._forceContiguousInput
         # force input data type to fulfill some requirements if needed
         #  * check for data type match
         #  * check for data alignment (contiguousy and segmentation)
@@ -1205,9 +1223,9 @@ cdef class Matrix(object):
         xform[0].nInternal = typeInfo[xform[0].fInternal].numpyType
         xform[0].nOutput = typeInfo[xform[0].fOutput].numpyType
 
-        if self._forceInputAlignment:
+        if self._forceContiguousInput:
             return _arrForceTypeAlignment(
-                arrInput, xform[0].nInternal, 0, self._useFortranStyle
+                arrInput, xform[0].nInternal, 0, self._fortranStyle
             )
         elif xform[0].fInternal != xform[0].fInput:
             return _arrForceType(arrInput, xform[0].nInternal)
@@ -1450,11 +1468,7 @@ cdef class Matrix(object):
     def _forwardReferenceInit(self):
         self._forwardReferenceMatrix = self.reference()
 
-    def _forwardReference(self,
-                          arrX
-                          ):
-        # r"""Calculate the forward transform by non-fastmat means.
-        # """
+    def _forwardReference(self, arrX):
         if self._forwardReferenceMatrix is None:
             self._forwardReferenceInit()
 
@@ -1576,10 +1590,11 @@ cdef class Hermitian(Matrix):
 
         self._nested = matrix
         self._content = (matrix, )
-        self._initProperties(matrix.shape[1], matrix.shape[0], matrix.dtype,
-                             cythonCall=matrix._cythonCall,
-                             widenInputDatatype=matrix._widenInputDatatype,
-                             forceInputAlignment=matrix._forceInputAlignment)
+        self._cythonCall = matrix._cythonCall
+        self._initProperties(
+            matrix.shape[1], matrix.shape[0], matrix.dtype,
+            **matrix._getProperties()
+        )
 
     def __repr__(self):
         r"""
@@ -1673,10 +1688,11 @@ cdef class Conjugate(Matrix):
 
         self._nested = matrix
         self._content = (matrix, )
-        self._initProperties(matrix.shape[0], matrix.shape[1], matrix.dtype,
-                             cythonCall=matrix._cythonCall,
-                             widenInputDatatype=matrix._widenInputDatatype,
-                             forceInputAlignment=matrix._forceInputAlignment)
+        self._cythonCall = matrix._cythonCall
+        self._initProperties(
+            matrix.shape[0], matrix.shape[1], matrix.dtype,
+            **matrix._getProperties()
+        )
 
     def __repr__(self):
         r"""Representation
@@ -1782,10 +1798,10 @@ cdef class Transpose(Hermitian):
 
         self._nested = matrix
         self._content = (matrix, )
-        self._initProperties(matrix.shape[1], matrix.shape[0], matrix.dtype,
-                             cythonCall=matrix._cythonCall,
-                             widenInputDatatype=matrix._widenInputDatatype,
-                             forceInputAlignment=matrix._forceInputAlignment)
+        self._initProperties(
+            matrix.shape[1], matrix.shape[0], matrix.dtype,
+            **matrix._getProperties()
+        )
 
     def __repr__(self):
         r"""

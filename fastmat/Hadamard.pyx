@@ -115,8 +115,8 @@ cdef class Hadamard(Matrix):
         # set properties of matrix
         numN = 2 ** self._order
         self._cythonCall = True
-        options['forceInputAlignment'] = True
         self._initProperties(numN, numN, np.int8, **options)
+        self._forceContiguousInput = True
 
     cpdef np.ndarray _getArray(self):
         '''

@@ -139,14 +139,14 @@ cdef class Parametric(Matrix):
         # As Parametric is always slower than dot product with the dense array
         # this would otherwise happen always for all sizes
         self._cythonCall = True
-        options['forceInputAlignment'] = True
-        options['bypassAutoArray'] = False
         self._initProperties(
             len(self._vecY),            # numN
             len(self._vecX),            # numM
             self._funDtype,             # data type of matrix
             **options
         )
+        self._forceContiguousInput = True
+        self.bypassAutoArray = False
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):

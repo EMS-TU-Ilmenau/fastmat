@@ -117,8 +117,8 @@ cdef class BlockDiag(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        options['widenInputDatatype'] = True
         self._initProperties(numN, numM, dataType, **options)
+        self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
