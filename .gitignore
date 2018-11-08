@@ -43,3 +43,6 @@ setup.files
 
 # coverage results
 .coverage
+
+# kate swap
+*.kate-swp

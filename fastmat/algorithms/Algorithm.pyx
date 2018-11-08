@@ -31,6 +31,15 @@ cdef class Algorithm(object):
     The baseclass of all algorithms that operate on Matrices. This abstract
     baseclass introduces general framework concepts such as interfaces for
     parameter specification, algorithm execution, logging and callbacks.
+
+    DEMO:
+    >>> algI = fma.ISTA(Fourier(10))
+    >>> algI.cbResult = lambda i: print(i.arrResult)
+    >>> algI.cbStep = lambda i: print(i.numStep)
+    >>> algI.cbTrace = fma.Algorithm.snapshot
+    >>> algI.process(np.ones(10) + np.random.randn(10))
+    >>> plt.imshow(np.hstack((np.abs(tt.arrX) for tt in algI.trace)))
+    >>> plt.show()
     """
 
     trace = []

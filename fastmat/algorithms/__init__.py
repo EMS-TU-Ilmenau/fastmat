@@ -16,7 +16,7 @@
 # limitations under the License.
 
 r"""
-fastmat.algs
+fastmat.algorithms
 ============
 
 We provide some algorithms, which make use of the speedups provided by fastmat
@@ -25,15 +25,15 @@ to allow easy production use out of the box.
 Algorithms
 ----------
 
-.. automodule:: fastmat.algs.ISTA
+.. automodule:: fastmat.algorithms.ISTA
     :members:
     :undoc-members:
 
-.. automodule:: fastmat.algs.OMP
+.. automodule:: fastmat.algorithms.OMP
     :members:
     :undoc-members:
 
-.. automodule:: fastmat.algs.FISTA
+.. automodule:: fastmat.algorithms.FISTA
     :members:
     :undoc-members:
 
@@ -43,3 +43,4 @@ from .Algorithm import Algorithm
 from .ISTA import ISTA
 from .OMP import OMP
 from .FISTA import FISTA
+from .STELA import STELA

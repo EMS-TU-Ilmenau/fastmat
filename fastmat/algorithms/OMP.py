@@ -19,6 +19,7 @@ import numpy as np
 import numpy.linalg as npl
 
 from .Algorithm import Algorithm
+from ..Matrix import Matrix
 
 
 class OMP(Algorithm):
@@ -45,7 +46,7 @@ class OMP(Algorithm):
     >>> import numpy.linalg as npl
     >>> import numpy as np
     >>> import fastmat as fm
-    >>> import fastmat.algs as fma
+    >>> import fastmat.algorithms as fma
     >>> # define the dimensions
     >>> # and the sparsity
     >>> n, k = 512, 3
@@ -59,7 +60,8 @@ class OMP(Algorithm):
     >>> x[npr.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
-    >>> y = fma.OMP(C, b, k)
+    >>> omp = fma.OMP(C, numMaxSteps=100)
+    >>> y = omp.process(b)
     >>> # test if they are close in the
     >>> # domain of C
     >>> print(npl.norm(C * y - b))
@@ -85,7 +87,7 @@ class OMP(Algorithm):
         the system matrix
     arrB : np.ndarray
         the measurement vector
-    numK : int
+    numMaxSteps : int
         the desired sparsity order
 
     Returns
@@ -102,16 +104,15 @@ class OMP(Algorithm):
         self.fmatA = fmatA
 
         # set default parameters (and create attributes)
-        self.k = None
+        self.numMaxSteps = None
 
         # Update with extra arguments
         self.updateParameters(**kwargs)
 
-
-    def _process(arrB):
+    def _process(self, arrB):
         #     fmatA           - input system matrix
         #     arrB            - input data vector (measurements)
-        #     numK            - specified sparsity order, i.e. number of
+        #     numMaxSteps            - specified sparsity order, i.e. number of
         #                       iterations to run
         #     numN,numM       - number of rows / columns of the system matrix
         #     numL            - number of problems to solve
@@ -143,35 +144,41 @@ class OMP(Algorithm):
         )
 
         # temporary array to store only support entries in
-        self.arrXtmp = np.zeros((self.numK, self.numL), dtype=self.returnType)
+        self.arrXtmp = np.zeros(
+            (self.numMaxSteps, self.numL),
+            dtype=self.returnType
+        )
 
         # initital residual is the measurement
         self.arrResidual = self.arrB.astype(self.returnType, copy=True)
 
         # list containing the support
-        self.arrSupport = np.empty((self.numK, self.numL), dtype=np.intp)
+        self.arrSupport = np.empty(
+            (self.numMaxSteps, self.numL),
+            dtype=np.intp
+        )
 
         # matrix B that contains the pseudo inverse of A restricted to the
         # support
         self.arrB = np.zeros(
-            (self.numK, self.numN, self.numL), dtype=self.returnType
+            (self.numMaxSteps, self.numN, self.numL), dtype=self.returnType
         )
 
         # A restricted to the support
         self.arrA = np.zeros(
-            (self.numN, self.numK, self.numL), dtype=self.returnType
+            (self.numN, self.numMaxSteps, self.numL), dtype=self.returnType
         )
 
         # different helper variables
-        self.v2       = np.empty((self.numN, self.numL), dtype=self.returnType)
-        self.v2n      = np.empty((self.numN, self.numL), dtype=self.returnType)
-        self.v2y      = np.empty((self.numL, ), dtype=self.returnType)
-        self.newCols  = np.empty((self.numN, self.numL), dtype=self.returnType)
-        self.arrC     = np.empty((self.numM, self.numL), dtype=self.returnType)
+        self.v2 = np.empty((self.numN, self.numL), dtype=self.returnType)
+        self.v2n = np.empty((self.numN, self.numL), dtype=self.returnType)
+        self.v2y = np.empty((self.numL, ), dtype=self.returnType)
+        self.newCols = np.empty((self.numN, self.numL), dtype=self.returnType)
+        self.arrC = np.empty((self.numM, self.numL), dtype=self.returnType)
         self.newIndex = np.empty((self.numL, ), dtype=np.intp)
 
         # iterativly build up the solution
-        for self.numStep in range(numK):
+        for self.numStep in range(self.numMaxSteps):
             # shorten access to index variable
             ii = self.numStep
 
@@ -190,12 +197,15 @@ class OMP(Algorithm):
             # store them into the submatrix
             self.arrA[:, ii, :] = self.newCols
 
+            print(self.arrB.shape)
+            print(self.v2n.shape)
+
             # in the first step everything is simple
             if ii == 0:
                 self.v2 = self.newCols
                 self.v2n = (self.v2 / npl.norm(self.v2, axis=0) ** 2).conj()
 
-                self.v2y = np.einsum('ji,ji->i', self.v2n, self.arrB)
+                self.v2y = np.einsum('ji...,ji...->i...', self.v2n, self.arrB)
 
                 self.arrXtmp[0, :] = self.v2y
                 self.arrB[0, :, :] = self.v2n
@@ -205,14 +215,14 @@ class OMP(Algorithm):
                 )
 
                 self.v2 = self.newCols - np.einsum(
-                    'ijk,jk->ik', self.arrA[: , :ii, :], self.v1
+                    'ijk,jk->ik', self.arrA[:, :ii, :], self.v1
                 )
                 self.v2n = (self.v2 / npl.norm(self.v2, axis=0) ** 2).conj()
 
                 self.v2y = np.einsum('ji,ji->i', self.v2n, self.arrB)
 
                 self.arrXtmp[:ii, :] -= self.v2y * self.v1
-                self.arrXtmp[ii , :] += self.v2y
+                self.arrXtmp[ii, :] += self.v2y
 
                 self.arrB[:ii, :, :] -= np.einsum(
                     'ik,jk->jik', self.v2n, self.v1
@@ -231,90 +241,75 @@ class OMP(Algorithm):
     @staticmethod
     def _getTest():
         from ..inspect import TEST, dynFormat, arrSparseTestDist
+        from ..core.types import getTypeEps
+        from ..Product import Product
         from ..Hadamard import Hadamard
         from ..Matrix import Matrix
 
-        def testOmp(test):
+        def testOMP(test):
             # prepare vectors
             numM = test[TEST.NUM_M]
-            test[TEST.RESULT_REF]       = np.hstack(
-                [arrSparseTestDist((numM, 1), dtype=test[TEST.DATATYPE],
-                                   density=1. * test['numK'] / numM).todense()
-                 for nn in range(test[TEST.DATACOLS])])
-            test[TEST.RESULT_INPUT]     = (test[TEST.INSTANCE] *
-                                           test[TEST.RESULT_REF])
-            test[TEST.RESULT_OUTPUT]    = OMP(test[TEST.INSTANCE],
-                                              test[TEST.RESULT_INPUT],
-                                              test['numK'])
+            test[TEST.REFERENCE] = test[TEST.ALG_MATRIX].reference()
+            test[TEST.RESULT_REF] = np.hstack([
+                arrSparseTestDist(
+                    (numM, 1),
+                    dtype=test[TEST.DATATYPE],
+                    density=1. * test['numK'] / numM
+                ).toarray()
+                for nn in range(test[TEST.DATACOLS])
+            ])
+            test[TEST.RESULT_INPUT] = test[TEST.ALG_MATRIX].array.dot(
+                test[TEST.RESULT_REF]
+            )
+            test[TEST.RESULT_OUTPUT] = test[TEST.INSTANCE].process(
+                test[TEST.RESULT_INPUT]
+            )
 
         return {
             TEST.ALGORITHM: {
-                'order'         : 5,
-                TEST.NUM_N      : (lambda param: 2 ** param['order']),
-                TEST.NUM_M      : TEST.NUM_N,
-                'numK'          : 5,
-                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
+                'order': 6,
+                TEST.NUM_N: (lambda param: 3 * param['order']),
+                TEST.NUM_M: (lambda param: 2 ** param['order']),
+                'numK': 'order',
+                'maxSteps': 3,
+                TEST.ALG_MATRIX: lambda param:
+                    Product(Matrix(np.random.uniform(
+                        -100, 100, (getattr(param, TEST.NUM_M),
+                                    getattr(param, TEST.NUM_M))).astype(
+                                        param['typeA'])),
+                            Hadamard(param.order),
+                            typeExpansion=param['typeA']),
+                'typeA': TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.OBJECT     : Matrix,
-                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
-                TEST.INITARGS   : (lambda param: [
-                    Hadamard(param.order).array.astype(param['typeA'])]),
+                TEST.OBJECT: OMP,
+                TEST.INITARGS: [TEST.ALG_MATRIX],
+                TEST.INITKWARGS: {
+                    'numMaxSteps': 'maxSteps'
+                },
 
-                TEST.INIT_VARIANT : TEST.IgnoreFunc(testOmp),
+                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
+                TEST.INIT_VARIANT: TEST.IgnoreFunc(testOMP),
 
-                'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
-                TEST.NAMINGARGS : dynFormat("Hadamard(%s,%s)",
-                                            'order', 'strTypeA'),
+                'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
+                TEST.NAMINGARGS: dynFormat(
+                    "(%dx%d)*Hadamard(%s)[%s]",
+                    TEST.NUM_N,
+                    TEST.NUM_M,
+                    'order',
+                    'strTypeA'
+                ),
 
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION : np.float32
+                TEST.TYPE_PROMOTION: np.float32,
+                TEST.TOL_MINEPS: getTypeEps(np.float32),
+                TEST.TOL_POWER: 5.,
+                TEST.CHECK_PROXIMITY: False
             },
         }
 
     @staticmethod
     def _getBenchmark():
-        from ..inspect import BENCH, arrTestDist
-        from ..Matrix import Matrix
-        from ..Fourier import Fourier
-        from ..Product import Product
-        from scipy import sparse as sps
-
-        def createTarget(M, datatype):
-            '''Create test target for algorithm performance evaluation.'''
-
-            if M < 10:
-                raise ValueError("Problem size too small for OMP benchmark")
-
-            # assume a 1:5 ratio of measurements and problem size
-            # assume a sparsity of half the number of measurements
-            N = int(np.round(M / 5.0))
-            K = int(N / 2)
-
-            # generate matA = [random measurement matrix] * [Fourier dictionary]
-            matA = Product(Matrix(arrTestDist((N, M), datatype)), Fourier(M))
-
-            # generate attb from random baseline support (RHS)
-            arrB = matA.forward(
-                sps.rand(M, 1, 1.0 * K / M).todense().astype(datatype))
-
-            return (OMP, [matA, arrB, K])
-
-        return {
-            BENCH.COMMON: {
-                BENCH.NAME      : 'OMP Algorithm',
-                BENCH.DOCU      : r"""""",
-                BENCH.FUNC_GEN  : (lambda c: createTarget(10 * c, np.float64)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c)
-            },
-            BENCH.PERFORMANCE: {
-                BENCH.CAPTION   : 'OMP performance'
-            },
-            BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, dt: createTarget(10 * c, dt)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c),
-                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
-            }
-        }
+        return {}
 
     @staticmethod
     def _getDocumentation():

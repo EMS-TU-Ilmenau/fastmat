@@ -21,8 +21,8 @@ from .Algorithm import Algorithm
 from ..Matrix import Matrix
 
 
-class FISTA(Algorithm):
-    r"""Fast Iterative Shrinking-Thresholding Algorithm (FISTA)
+class STELA(Algorithm):
+    r"""Soft-Thresholding with simplified Exact Line search Algorithm (STELA)
 
     **Definition and Interface**:
     For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with
@@ -53,8 +53,8 @@ class FISTA(Algorithm):
     >>> x[npr.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
-    >>> fista = fma.FISTA(C, numLambda=0.005, numMaxSteps=100)
-    >>> y = fista.process(b)
+    >>> stela = fma.STELA(C, numLambda=0.005, numMaxSteps=100)
+    >>> y = stela.process(b)
     >>> # test if they are close in the
     >>> # domain of C
     >>> print(npl.norm(C * y - b))
@@ -71,7 +71,7 @@ class FISTA(Algorithm):
         further considerations of this matter.
 
     .. todo::
-        - Todos for ISTA
+        - Todos for STELA
         - Check if its working
 
     Parameters
@@ -84,6 +84,8 @@ class FISTA(Algorithm):
         the thresholding parameter; default is 0.1
     numMaxSteps : int, optional
         maximum number of steps; default is 100
+    numMaxError : float, optional
+        maximum error tolerance; default is 1e-6
 
     Returns
     -------
@@ -101,6 +103,7 @@ class FISTA(Algorithm):
         # set default parameters (and create attributes)
         self.numLambda = 0.1
         self.numMaxSteps = 100
+        self.numMaxError = 1e-6
 
         # Update with extra arguments
         self.updateParameters(**kwargs)
@@ -113,60 +116,136 @@ class FISTA(Algorithm):
         # arrM         - positive part of arrX - numAlpha
         # arrX         - vector to be thresholded
         # numAlpha     - thresholding threshold
-
-        self.arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
-        return np.multiply((self.arrM / (self.arrM + numAlpha)), arrX)
+        arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
+        return np.multiply((arrM / (arrM + numAlpha)), arrX)
 
     def _process(self, arrB):
-        # Wrapper around the FISTA algrithm to allow processing of arrays of
-        # signals
-        #     fmatA         - input system matrix
-        #     arrB          - input data vector (measurements)
-        #     numLambda     - balancing parameter in optimization problem
-        #                     between data fidelity and sparsity
-        #     numMaxSteps   - maximum number of steps to run
-        #     numL          - step size during the conjugate gradient step
         if arrB.ndim > 2:
-            raise ValueError("Only n x m arrays are supported for FISTA")
+            raise ValueError("Only n x m arrays are supported for STELA")
 
         if arrB.ndim == 1:
             self.arrB = arrB.reshape((-1, 1))
         else:
             self.arrB = arrB
 
-        # calculate the largest singular value to get the right step size
-        self.numL = 1.0 / (self.fmatA.largestSV ** 2)
-        self.t = 1
+        dtypeType = np.promote_types(np.float32, self.arrB.dtype)
 
+        # step size
+        self.arrGamma = np.zeros(self.arrB.shape[1])
+
+        # current state vector
         self.arrX = np.zeros(
             (self.fmatA.numM, self.arrB.shape[1]),
-            dtype=np.promote_types(np.float32, self.arrB.dtype)
+            dtype=dtypeType
         )
-        # initial arrY
-        self.arrY = np.copy(self.arrX)
+
+        # current gradient
+        self.arrGrad = np.zeros_like(self.arrX, dtype=dtypeType)
+
+        # residual vector
+        self.arrRes = (-self.arrB).astype(dtypeType)
+
+        # some intermediate vectors
+        self.arrBx = np.zeros_like(self.arrX, dtype=dtypeType)
+        self.arrABxx = np.zeros_like(self.arrB, dtype=dtypeType)
+
+        # backprojection of the residual vector
+        self.arrZ = self.fmatA.backward(self.arrRes)
+
+        # squared norms of the system matrix
+        self.arrD = (
+            1. / self.fmatA.normalized._content[-1]._vecD ** 2
+        ).reshape((-1, 1))
+
+        # vector for the stopping criterion
+        self.arrStop = np.ones(self.arrX.shape[1])
+
+        # this vector keeps track of the still active measurements, where
+        # we did not converge yet
+        self.arrActive = (np.ones(self.arrX.shape[1]) == 1)
+
         # start iterating
         for self.numStep in range(self.numMaxSteps):
-            self.arrXold = np.copy(self.arrX)
 
-            # do the gradient step and threshold
-            self.arrStep = self.arrY - self.numL * self.fmatA.backward(
-                self.fmatA.forward(self.arrY) - self.arrB
-            )
-            self.arrX = self.softThreshold(
-                self.arrStep, self.numL * self.numLambda * 0.5
+            # some utility vector (the scaled gradient) (17)
+            self.arrGrad = self.arrD * self.arrX - self.arrZ
+
+            # calculate the stopping criterion
+            self.arrStop = np.linalg.norm(
+                self.arrZ - np.maximum(
+                    np.minimum(
+                        self.arrZ - self.arrX,
+                        +self.numLambda
+                    ),
+                    -self.numLambda
+                ),
+                axis=0
             )
 
-            # update t
-            tOld = self.t
-            self.t = (1 + np.sqrt(1 + 4 * self.t ** 2)) / 2
+            # now check if we converged for any snapshot
+            self.arrActive = self.arrStop > self.numMaxError
 
-            # update arrY
-            self.arrY = self.arrX + ((tOld - 1) / self.t) * (
-                self.arrX - self.arrXold
+            # if no snapshot is active anymore, we can stop entirely
+            if (np.sum(self.arrActive) == 0):
+                return self.arrX
+
+            # update of the intermediate vector (16)
+            self.arrBx[:, self.arrActive] = self.softThreshold(
+                self.arrGrad[:, self.arrActive],
+                self.numLambda
+            ) / self.arrD
+
+            # cache some operations
+            self.arrABxx[:, self.arrActive] = self.fmatA.forward(
+                self.arrBx[:, self.arrActive] - self.arrX[:, self.arrActive]
             )
+
+            # we can do exact line search in this case (19)
+            # axis=0 accounts for the fact, that we might have multiple
+            # measurements at hand.
+            self.arrGamma[self.arrActive] = np.maximum(
+                np.minimum(
+                    -(np.sum(
+                        np.multiply(
+                            self.arrRes[:, self.arrActive],
+                            self.arrABxx[:, self.arrActive]
+                        ),
+                        axis=0
+                    ) + self.numLambda * (
+                        np.sum(
+                            np.abs(
+                                self.arrBx[:, self.arrActive]
+                            ) - np.abs(
+                                self.arrX[:, self.arrActive]
+                            ),
+                            axis=0
+                        )
+                    )) / np.sum(
+                        (self.arrABxx[:, self.arrActive] ** 2),
+                        axis=0
+                    ),
+                    1
+                ),
+                0
+            )
+
+            # update step (5)
+            self.arrX[:, self.arrActive] += (
+                self.arrBx[:, self.arrActive]
+                - self.arrX[:, self.arrActive]
+            ).dot(
+                np.diag(self.arrGamma[self.arrActive])
+            )
+
+            # residual update (20)
+            self.arrRes[:, self.arrActive] += \
+                self.arrGamma[self.arrActive] * self.arrABxx[:, self.arrActive]
+            self.arrZ[:, self.arrActive] = \
+                self.fmatA.backward(self.arrRes[:, self.arrActive])
 
         # return the unthresholded values for all non-zero support elements
-        return np.where(self.arrX != 0, self.arrStep, self.arrX)
+        # if we did not converge in the given number of steps
+        return self.arrX
 
     @staticmethod
     def _getTest():
@@ -176,7 +255,7 @@ class FISTA(Algorithm):
         from ..Hadamard import Hadamard
         from ..Matrix import Matrix
 
-        def testFISTA(test):
+        def testSTELA(test):
             # prepare vectors
             numM = test[TEST.NUM_M]
             test[TEST.REFERENCE] = test[TEST.ALG_MATRIX].reference()
@@ -212,7 +291,7 @@ class FISTA(Algorithm):
                             typeExpansion=param['typeA']),
                 'typeA': TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.OBJECT: FISTA,
+                TEST.OBJECT: STELA,
                 TEST.INITARGS: [TEST.ALG_MATRIX],
                 TEST.INITKWARGS: {
                     'numLambda': 'lambda',
@@ -220,7 +299,7 @@ class FISTA(Algorithm):
                 },
 
                 TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
-                TEST.INIT_VARIANT: TEST.IgnoreFunc(testFISTA),
+                TEST.INIT_VARIANT: TEST.IgnoreFunc(testSTELA),
 
                 'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
                 TEST.NAMINGARGS: dynFormat(

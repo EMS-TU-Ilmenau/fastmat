@@ -20,6 +20,7 @@ import numpy as np
 from .Algorithm import Algorithm
 from ..Matrix import Matrix
 
+
 class ISTA(Algorithm):
     r"""
     Iterative Soft Thresholding Algorithm
@@ -40,7 +41,7 @@ class ISTA(Algorithm):
     >>> import numpy.linalg as npl
     >>> import numpy as np
     >>> import fastmat as fm
-    >>> import fastmat.algs as fma
+    >>> import fastmat.algorithms as fma
     >>> # define the dimensions and the sparsity
     >>> n, k = 512, 3
     >>> # define the sampling positions
@@ -53,7 +54,8 @@ class ISTA(Algorithm):
     >>> x[npr.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
-    >>> y = fma.ISTA(C, b, 0.005, 1000)
+    >>> ista = fma.ISTA(C, numLambda=0.005, numMaxSteps=100)
+    >>> y = ista.process(b)
     >>> # test if they are close in the
     >>> # domain of C
     >>> print(npl.norm(C * y - b))
@@ -150,7 +152,7 @@ class ISTA(Algorithm):
         for self.numStep in range(self.numMaxSteps):
             # do the gradient step and threshold
 
-            self.arrStep = self.arrX -  self.numL * self.fmatA.backward(
+            self.arrStep = self.arrX - self.numL * self.fmatA.backward(
                 self.fmatA.forward(self.arrX) - self.arrB
             )
             self.arrX = self.softThreshold(
@@ -176,10 +178,14 @@ class ISTA(Algorithm):
             # prepare vectors
             numM = test[TEST.NUM_M]
             test[TEST.REFERENCE] = test[TEST.ALG_MATRIX].reference()
-            test[TEST.RESULT_REF] = np.hstack(
-                [arrSparseTestDist((numM, 1), dtype=test[TEST.DATATYPE],
-                                   density=1. * test['numK'] / numM).todense()
-                 for nn in range(test[TEST.DATACOLS])])
+            test[TEST.RESULT_REF] = np.hstack([
+                arrSparseTestDist(
+                    (numM, 1),
+                    dtype=test[TEST.DATATYPE],
+                    density=1. * test['numK'] / numM
+                ).toarray()
+                for nn in range(test[TEST.DATACOLS])
+            ])
             test[TEST.RESULT_INPUT] = test[TEST.ALG_MATRIX].array.dot(
                 test[TEST.RESULT_REF]
             )
@@ -189,84 +195,51 @@ class ISTA(Algorithm):
 
         return {
             TEST.ALGORITHM: {
-                'order'         : 6,
-                TEST.NUM_N      : (lambda param: 3 * param['order']),
-                TEST.NUM_M      : (lambda param: 2 ** param['order']),
-                'numK'          : 'order',
-                'lambda'        : 10.,
-                'maxSteps'      : 1000,
-                TEST.ALG_MATRIX : lambda param:
+                'order': 6,
+                TEST.NUM_N: (lambda param: 3 * param['order']),
+                TEST.NUM_M: (lambda param: 2 ** param['order']),
+                'numK': 'order',
+                'lambda': 0.1,
+                'maxSteps': 3,
+                TEST.ALG_MATRIX: lambda param:
                     Product(Matrix(np.random.uniform(
                         -100, 100, (getattr(param, TEST.NUM_M),
                                     getattr(param, TEST.NUM_M))).astype(
                                         param['typeA'])),
                             Hadamard(param.order),
                             typeExpansion=param['typeA']),
-                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
+                'typeA': TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.OBJECT     : ISTA,
-                TEST.INITARGS   : [TEST.ALG_MATRIX],
-                TEST.INITKWARGS : {'numLambda': 'lambda',
-                                   'numMaxSteps': 'maxSteps'},
+                TEST.OBJECT: ISTA,
+                TEST.INITARGS: [TEST.ALG_MATRIX],
+                TEST.INITKWARGS: {
+                    'numLambda': 'lambda',
+                    'numMaxSteps': 'maxSteps'
+                },
 
-                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT: TEST.IgnoreFunc(testISTA),
 
-                'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
-                TEST.NAMINGARGS : dynFormat("(%dx%d)*Hadamard(%s)[%s]",
-                                            TEST.NUM_N, TEST.NUM_M,
-                                            'order', 'strTypeA'),
+                'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
+                TEST.NAMINGARGS: dynFormat(
+                    "(%dx%d)*Hadamard(%s)[%s]",
+                    TEST.NUM_N,
+                    TEST.NUM_M,
+                    'order',
+                    'strTypeA'
+                ),
 
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION     : np.float32,
-                TEST.TOL_MINEPS         : getTypeEps(np.float32),
-                TEST.TOL_POWER          : 5.
-                #TEST.CHECK_PROXIMITY    : False
+                TEST.TYPE_PROMOTION: np.float32,
+                TEST.TOL_MINEPS: getTypeEps(np.float32),
+                TEST.TOL_POWER: 5.,
+                TEST.CHECK_PROXIMITY: False
             },
         }
 
     @staticmethod
     def _getBenchmark():
-        from ..inspect import BENCH, arrTestDist
-        from ..Matrix import Matrix
-        from ..Product import Product
-        from ..Fourier import Fourier
-        from scipy import sparse as sps
-
-        def createTarget(M, datatype):
-            '''Create test target for algorithm performance evaluation.'''
-
-            if M < 10:
-                raise ValueError("Problem size too small for ISTA benchmark")
-
-            # assume a 1:5 ratio of measurements and problem size
-            # assume a sparsity of half the number of measurements
-            N = int(np.round(M / 5.0))
-            K = int(N / 2)
-
-            # generate matA (random measurement matrix, Fourier dictionary)
-            matA = Product(Matrix(arrTestDist((N, M), datatype)), Fourier(M))
-
-            # generate arrB from random baseline support (RHS)
-            arrB = matA * sps.rand(M, 1, 1.0 * K / M).todense().astype(datatype)
-
-            return (ISTA, [matA, arrB])
-
-        return {
-            BENCH.COMMON: {
-                BENCH.NAME      : 'ISTA Algorithm',
-                BENCH.FUNC_GEN  : (lambda c: createTarget(10 * c, np.float64)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c)
-            },
-            BENCH.PERFORMANCE: {
-                BENCH.CAPTION   : 'ISTA performance'
-            },
-            BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, dt: createTarget(10 * c, dt)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c),
-                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
-            }
-        }
+        return {}
 
     @staticmethod
     def _getDocumentation():

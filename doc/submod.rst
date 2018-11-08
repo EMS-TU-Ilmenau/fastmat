@@ -18,7 +18,7 @@
 Submodules
 ==========
 
-.. automodule:: fastmat.algs
+.. automodule:: fastmat.algorithms
     :members:
     :undoc-members:
 

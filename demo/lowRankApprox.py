@@ -99,11 +99,11 @@ y2 = matApprox * vecX
 timeApproxFwd = time.time() - s
 
 s = time.time()
-x1 = fastmat.algs.CG(matFull,vecB)
+x1 = fastmat.algorithms.CG(matFull,vecB)
 timeDenseSolve = time.time() - s
 
 s = time.time()
-x2 = fastmat.algs.CG(matApprox,vecB)
+x2 = fastmat.algorithms.CG(matApprox,vecB)
 timeApproxSolve = time.time() - s
 
 numApproxErr1 = npl.norm(x1 - x2) / npl.norm(x1)

@@ -92,9 +92,9 @@ def compareResults(test, query):
     def getOption(option, default):
         return query.get(option, test.get(option, default))
 
-    arrOutput=query[TEST.RESULT_OUTPUT]
-    arrReference=query[TEST.RESULT_REF]
-    arrMatrix=test[TEST.REFERENCE]
+    arrOutput = query[TEST.RESULT_OUTPUT]
+    arrReference = query[TEST.RESULT_REF]
+    arrMatrix = test[TEST.REFERENCE]
 
     # to extract the operation data type and shape when checking an algorithm
     # we cannot get this information from TEST.INSTANCE as this then refers to
@@ -108,14 +108,14 @@ def compareResults(test, query):
 
 
     # get comparision options from test and query dicts. Priority has query
-    minimalType=np.dtype(getOption(TEST.TYPE_PROMOTION, np.int8))
-    expectedType=np.dtype(getOption(TEST.TYPE_EXPECTED,
+    minimalType = np.dtype(getOption(TEST.TYPE_PROMOTION, np.int8))
+    expectedType = np.dtype(getOption(TEST.TYPE_EXPECTED,
                                     np.promote_types(instance.dtype,
                                                      minimalType)))
-    maxEps=getOption(TEST.TOL_MINEPS, 0.)
-    tolPower=getOption(TEST.TOL_POWER, 1.)
-    ignoreType=not getOption(TEST.CHECK_DATATYPE, True)
-    ignoreProximity=not getOption(TEST.CHECK_PROXIMITY, True)
+    maxEps = getOption(TEST.TOL_MINEPS, 0.)
+    tolPower = getOption(TEST.TOL_POWER, 1.)
+    ignoreType = not getOption(TEST.CHECK_DATATYPE, True)
+    ignoreProximity = not getOption(TEST.CHECK_PROXIMITY, True)
 
     # check if shapes match. If they do, check all elements
     if arrOutput.shape != arrReference.shape:
@@ -127,7 +127,7 @@ def compareResults(test, query):
 
     # if the query was not generated from input data, assume an int8-Eye-Matrix
     if TEST.RESULT_INPUT in query:
-        arrInput=query[TEST.RESULT_INPUT]
+        arrInput = query[TEST.RESULT_INPUT]
         # check that input vector actually contains energy
         if np.linalg.norm(arrInput) == 0:
             print("Test query data causing exception:")
@@ -158,7 +158,7 @@ def compareResults(test, query):
     maxRef = float(np.amax(np.abs(arrReference)))
     maxDiff = float(np.amax(np.abs(arrOutput - arrReference)))
     error = (maxDiff / maxRef if maxRef != 0 else maxDiff)
-    resultProximity=(error <= tolError) or (maxRef <= tolError)
+    resultProximity = (error <= tolError) or (maxRef <= tolError)
 
     # determine final result
     query[TEST.RESULT] = (resultType and resultProximity)
@@ -181,17 +181,18 @@ def formatResult(result):
         return result[TEST.RESULT_INFO]
 
     # fetch detailed results from result
-    resultType, ignoreType, outputType, expectedType=result[TEST.RESULT_TYPE]
-    resultProx, ignoreProx, error, maxRef=result[TEST.RESULT_PROX]
+    resultType, ignoreType, outputType, expectedType = result[TEST.RESULT_TYPE]
+    resultProx, ignoreProx, error, maxRef = result[TEST.RESULT_PROX]
 
     # format string output
     if resultType:
-        strInfo=fmtGreen(NAME.TYPENAME[outputType])
+        strInfo = fmtGreen(NAME.TYPENAME[outputType])
     elif ignoreType:
-        strInfo=fmtYellow(NAME.TYPENAME[outputType])
+        strInfo = fmtYellow(NAME.TYPENAME[outputType])
     else:
-        strInfo=fmtRed("%s!=%s"% (NAME.TYPENAME[outputType],
-                                  NAME.TYPENAME[expectedType]))
+        strInfo = fmtRed("%s!=%s" % (
+            NAME.TYPENAME[outputType], NAME.TYPENAME[expectedType])
+        )
 
     if not resultProx:
         if error > 0 and maxRef > 0:
@@ -203,7 +204,7 @@ def formatResult(result):
         else:
             strDiff = '000'
 
-        strInfo=strInfo + (fmtYellow if ignoreProx else fmtRed)(strDiff)
+        strInfo = strInfo + (fmtYellow if ignoreProx else fmtRed)(strDiff)
 
     return strInfo
 
@@ -228,70 +229,70 @@ def testFailDump(test):
 
 ################################################## testArrays()
 def testArrays(test):
-    query={TEST.RESULT_INPUT      : test[TEST.RESULT_INPUT],
-           TEST.RESULT_OUTPUT     : test[TEST.RESULT_OUTPUT],
-           TEST.RESULT_REF        : test[TEST.RESULT_REF]}
+    query = {TEST.RESULT_INPUT      : test[TEST.RESULT_INPUT],
+             TEST.RESULT_OUTPUT     : test[TEST.RESULT_OUTPUT],
+             TEST.RESULT_REF        : test[TEST.RESULT_REF]}
     return compareResults(test, query)
 
 
 ################################################## testForward()
 def testForward(test):
-    query={}
-    arrInput=query[TEST.RESULT_INPUT]=test[TEST.DATAARRAY].forwardData
+    query = {}
+    arrInput = query[TEST.RESULT_INPUT] = test[TEST.DATAARRAY].forwardData
     arrInputCheck = arrInput.copy()
-    query[TEST.RESULT_OUTPUT]=test[TEST.INSTANCE].forward(arrInput)
+    query[TEST.RESULT_OUTPUT] = test[TEST.INSTANCE].forward(arrInput)
     if not np.array_equal(arrInput, arrInputCheck):
         testFailDump(test)
         raise ValueError(".forward() modified input array.")
 
-    query[TEST.RESULT_REF]=test[TEST.REFERENCE].dot(arrInput)
+    query[TEST.RESULT_REF] = test[TEST.REFERENCE].dot(arrInput)
     return compareResults(test, query)
 
 
 ################################################## testBackward()
 def testBackward(test):
-    query={}
-    arrInput=query[TEST.RESULT_INPUT]=test[TEST.DATAARRAY].backwardData
+    query = {}
+    arrInput = query[TEST.RESULT_INPUT] = test[TEST.DATAARRAY].backwardData
     arrInputCheck = arrInput.copy()
-    query[TEST.RESULT_OUTPUT]=test[TEST.INSTANCE].backward(arrInput)
+    query[TEST.RESULT_OUTPUT] = test[TEST.INSTANCE].backward(arrInput)
     if not np.array_equal(arrInput, arrInputCheck):
         testFailDump(test)
         raise ValueError(".backward() modified input array.")
 
-    query[TEST.RESULT_REF]=test[TEST.REFERENCE].T.conj().dot(arrInput)
+    query[TEST.RESULT_REF] = test[TEST.REFERENCE].T.conj().dot(arrInput)
     return compareResults(test, query)
 
 
 ################################################## testArray()
 def testArray(test):
-    query={}
-    instance=test[TEST.INSTANCE]
-    query[TEST.RESULT_OUTPUT]=instance.array
-    query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
+    query = {}
+    instance = test[TEST.INSTANCE]
+    query[TEST.RESULT_OUTPUT] = instance.array
+    query[TEST.RESULT_REF] = test[TEST.REFERENCE].astype(instance.dtype)
     return compareResults(test, query)
 
 
 ################################################## testInterface()
 def testInterface(test):
-    query={}
-    instance=test[TEST.INSTANCE]
+    query = {}
+    instance = test[TEST.INSTANCE]
     query[TEST.RESULT_OUTPUT] = (
         instance - instance + (np.int8(-1) * instance * np.int8(-1)) +
         instance - instance
     ).array
-    query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
+    query[TEST.RESULT_REF] = test[TEST.REFERENCE].astype(instance.dtype)
     return compareResults(test, query)
 
 
 ################################################## testGetItem()
 def testGetItem(test):
-    query={}
-    instance=test[TEST.INSTANCE]
-    arrOutput=np.zeros(instance.shape, instance.dtype)
+    query = {}
+    instance = test[TEST.INSTANCE]
+    arrOutput = np.zeros(instance.shape, instance.dtype)
     for nn, mm in itertools.product(range(instance.numN), range(instance.numM)):
-        arrOutput[nn, mm]=instance[nn, mm]
-    query[TEST.RESULT_OUTPUT]=arrOutput
-    query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
+        arrOutput[nn, mm] = instance[nn, mm]
+    query[TEST.RESULT_OUTPUT] = arrOutput
+    query[TEST.RESULT_REF] = test[TEST.REFERENCE].astype(instance.dtype)
     return compareResults(test, query)
 
 
@@ -472,7 +473,7 @@ def testConjugate(test):
 
 ################################################## test: Algorithm
 def testAlgorithm(test):
-    # generate input data vector. As this one is needed for some algs, do one
+    # generate input data vector. As this one is needed for some algorithms, do one
     # dereferentiation step on a complete dictionary, including test and result
     query=test.copy()
     arrInput, query[TEST.RESULT_INPUT]=query[TEST.DATAARRAY].forwardData
