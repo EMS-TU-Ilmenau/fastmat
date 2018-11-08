@@ -209,43 +209,4 @@ class ISTAinspect(Algorithm):
 
     @staticmethod
     def _getBenchmark():
-        from ..inspect import BENCH, arrTestDist
-        from ..Matrix import Matrix
-        from ..Product import Product
-        from ..Fourier import Fourier
-        from scipy import sparse as sps
-
-        def createTarget(M, datatype):
-            '''Create test target for algorithm performance evaluation.'''
-
-            if M < 10:
-                raise ValueError("Problem size too small for ISTA benchmark")
-
-            # assume a 1:5 ratio of measurements and problem size
-            # assume a sparsity of half the number of measurements
-            N = int(np.round(M / 5.0))
-            K = int(N / 2)
-
-            # generate matA (random measurement matrix, Fourier dictionary)
-            matA = Product(Matrix(arrTestDist((N, M), datatype)), Fourier(M))
-
-            # generate arrB from random baseline support (RHS)
-            arrB = matA * sps.rand(M, 1, 1.0 * K / M).todense().astype(datatype)
-
-            return (ISTA, [matA, arrB])
-
-        return {
-            BENCH.COMMON: {
-                BENCH.NAME      : 'ISTA Algorithm',
-                BENCH.FUNC_GEN  : (lambda c: createTarget(10 * c, np.float64)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c)
-            },
-            BENCH.PERFORMANCE: {
-                BENCH.CAPTION   : 'ISTA performance'
-            },
-            BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, dt: createTarget(10 * c, dt)),
-                BENCH.FUNC_SIZE : (lambda c: 10 * c),
-                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
-            }
-        }
+        return {}
