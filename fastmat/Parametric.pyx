@@ -113,7 +113,39 @@ cdef class Parametric(Matrix):
             return self._fun
 
     def __init__(self, vecX, vecY, funF, **options):
-        '''Initialize Matrix instance'''
+        '''
+        Initialize a Parametric matrix instance.
+
+        Parameters
+        ----------
+        vecX : :py:class:`numpy.ndarray`
+            A 1d vector mapping the matrix column index to the x-values of
+            funF.
+
+        vecY : :py:class:`numpy.ndarray`
+            A 1d vector mapping the matrix row index to the y-values of funF.
+
+        funF : callable with arguments (x, y)
+            A function returning the element at index (x, y).
+
+        **options:
+            See the list of special options below and
+            :py:meth:`fastmat.Matrix.__init__` for general options.
+
+        Options
+        -------
+        funDtype : :py:class:`numpy.dtype`
+            Data type of the values returned by funF
+
+            Not specified by default (determine the datatype from the element
+            at the first index funF(vecX[0], vecY[0]).
+
+        rangeAccess : bool
+            Allow passing row- and column vectors directly to funF. This can
+            lead to significant speed-ups compared to single-element access.
+
+            Defaults to True.
+        '''
 
         # retrieve options
         funDtype = options.get('funDtype', None)
@@ -265,10 +297,6 @@ cdef class Parametric(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         arrRes = np.zeros(
             (self.numN, self.numM), dtype=self.dtype)
 

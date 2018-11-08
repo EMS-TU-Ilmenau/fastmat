@@ -79,7 +79,39 @@ cdef class Partial(Matrix):
             return self._indicesM if self._pruneM else np.arange(self.numM)
 
     def __init__(self, mat, **options):
-        '''Initialize Matrix instance'''
+        '''
+        Initialize a Partial matrix instance.
+
+        Parameters
+        ----------
+        mat : :py:class:`fastmat.Matrix`
+            A fastmat matrix instance subject to partial access.
+
+        **options:
+            See the list of special options below and
+            :py:meth:`fastmat.Matrix.__init__` for general options.
+
+        Options
+        -------
+        N : :py:class:`numpy.ndarray`
+            A 1d vector selecting rows of mat.
+
+            If `N` is of type bool it's size must match the height of mat and
+            the values of `N` corresponds to taking/dumping the corresponding
+            row.
+
+            If `N` is of type int it's values correspond to the indices of the
+            rows of mat to select. The size of `N` then matches the height of
+            the partialed matrix.
+
+            Defaults to selecting all rows.
+
+        M : :py:class:`numpy.ndarray`
+            A 1d vector selecting columns of mat. The behaviour is identical to
+            `N`.
+
+            Defaults to selecting all columns.
+        '''
 
         # extract options
         N = options.get('N', None)
@@ -189,8 +221,6 @@ cdef class Partial(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
-
         cdef np.ndarray arrInput
 
         if self._pruneM:
@@ -204,8 +234,6 @@ cdef class Partial(Matrix):
                 if self._pruneN else self._content[0].forward(arrInput))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
-
         cdef np.ndarray arrInput
 
         if self._pruneN:
@@ -220,10 +248,6 @@ cdef class Partial(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrFull = self.content[0].reference()
         return arrFull[
             self._indicesN if self._pruneN else np.s_, :][

@@ -54,8 +54,15 @@ cdef class Sum(Matrix):
 
     def __init__(self, *matrices, **options):
         '''
-        Initialize Matrix instance with a list of other matrices to be summed.
-        If another Sum is seen, add its content instead of adding the Sum.
+        Initialize a Sum matrix instance.
+
+        Parameters
+        ----------
+        *matrices : :py:class:`fastmat.Matrix`
+            The matrix instances to be summed.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
         '''
         cpdef Matrix mat
 
@@ -145,7 +152,6 @@ cdef class Sum(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the forward transform of this matrix'''
         cdef int cc, cnt = len(self._content)
 
         arrRes[:] = self._content[0].forward(arrX)
@@ -159,7 +165,6 @@ cdef class Sum(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the backward transform of this matrix'''
         cdef int cc, cnt = len(self._content)
 
         arrRes[:] = self._content[0].backward(arrX)
@@ -168,10 +173,6 @@ cdef class Sum(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
         cdef int cc, cnt = len(self._content)
 

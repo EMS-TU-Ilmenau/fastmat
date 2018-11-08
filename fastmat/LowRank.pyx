@@ -99,6 +99,26 @@ cdef class LowRank(Product):
             return self._arrV
 
     def __init__(self, vecS, arrU, arrV, **options):
+        '''
+        Initialize a Low Rank matrix instance.
+
+        Parameters
+        ----------
+        vecS : :py:class:`numpy.ndarray`
+            The singular values as 1d vector corresponding to the singular
+            value decomposition of the matrix.
+
+        arrU : :py:class:`numpy.ndarray`
+            A 2d array corresponding to U of the singular value decomposition
+            of the matrix.
+
+        arrU : :py:class:`numpy.ndarray`
+            A 2d array corresponding to V of the singular value decomposition
+            of the matrix.
+
+        **options :
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
 
         # complain if dimension does not match
         if vecS.ndim != 1:
@@ -134,15 +154,7 @@ cdef class LowRank(Product):
         cdef float complexity = self.numN + self.numM + self._vecS.shape[0]
         return (complexity, complexity)
 
-    ########################################################################
-    ## forward and backward are taken from sum, product and outer
-    ########################################################################
-
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrU = self._arrU.astype(
             np.promote_types(self._arrU.dtype, np.float64))
         cdef np.ndarray arrV = self._arrV.astype(

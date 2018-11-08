@@ -65,7 +65,19 @@ cdef class DiagBlocks(Matrix):
 
     ############################################## class methods
     def __init__(self, tenDiags, **options):
-        '''Initialize Matrix instance with a list of child matrices'''
+        '''
+        Initialize DiagBlocks matrix instance.
+
+        Parameters
+        ----------
+        tenDiags : :py:class:`numpy.ndarray`
+            The generating 3d-array of the flattened diagonal tensor this
+            matrix describes. The matrix data type is determined by the data
+            type of this array.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
 
         self._numDiagsN = tenDiags.shape[0]
         self._numDiagsM = tenDiags.shape[1]
@@ -96,7 +108,6 @@ cdef class DiagBlocks(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the forward transform of this matrix'''
         arrRes[:] = np.einsum(
             'nmz,zmk -> znk',
             self._tenDiags,
@@ -110,7 +121,6 @@ cdef class DiagBlocks(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the backward transform of this matrix'''
         arrRes[:] = np.einsum(
             'mnz,zmk -> znk',
             self._tenDiags.conj(),
@@ -119,10 +129,6 @@ cdef class DiagBlocks(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
 
         arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)

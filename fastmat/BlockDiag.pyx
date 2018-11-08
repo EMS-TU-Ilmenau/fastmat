@@ -26,8 +26,6 @@ from .core.types cimport *
 ################################################## class BlockDiag
 cdef class BlockDiag(Matrix):
     r"""
-
-
     .. math::
         M = \mathrm{diag}\left\{\left(  A_{i}\right)_{i}\right\},
 
@@ -95,7 +93,18 @@ cdef class BlockDiag(Matrix):
 
     ############################################## class methods
     def __init__(self, *matrices, **options):
-        '''Initialize Matrix instance with a list of child matrices'''
+        '''
+        Initialize a BlockDiag matrix instance.
+
+        Parameters
+        ----------
+        *matrices : :py:class:`fastmat.Matrix`
+            The matrix instances to be put along the main diagonal of the block
+            diagonal matrix, beginning at index (0, 0) with the first matrix.
+
+        **options :
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         cdef intsize numN = 0, numM = 0
         cdef Matrix term
 
@@ -139,7 +148,6 @@ cdef class BlockDiag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the forward transform of this matrix'''
         cdef Matrix term
         cdef intsize idxN = 0, idxM = 0, ii, cnt = len(self._content)
 
@@ -158,7 +166,6 @@ cdef class BlockDiag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the backward transform of this matrix'''
         cdef Matrix term
         cdef intsize idxN = 0, idxM = 0, cnt = len(self._content)
 
@@ -173,10 +180,6 @@ cdef class BlockDiag(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
         cdef Matrix term
         cdef intsize idxN = 0, idxM = 0

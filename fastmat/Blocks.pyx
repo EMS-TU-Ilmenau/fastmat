@@ -63,7 +63,23 @@ cdef class Blocks(Matrix):
 
     ############################################## class methods
     def __init__(self, arrMatrices, **options):
-        '''Initialize Matrix instance with a list of child matrices'''
+        '''
+        Initialize a Blocks matrix instance.
+
+        Parameters
+        ----------
+        arrMatrices : iterable
+            A 2d iterable of py:class:`fastmat.Matrix` instances. All matrices
+            must form a consistent grid over all instances of the 2d iterable.
+            The inner iterable defines one row of the block matrix whereas the
+            outer iterable defines the stacking of these rows. All inner
+            iterables must be of same length. Further, all matrix instances in
+            a row must have equal height and all instances in a column must
+            have equal width.
+
+        **options :
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         if not isinstance(arrMatrices, list):
             raise ValueError("Blocks: Not a nested list of fastmat matrices.")
 
@@ -166,7 +182,6 @@ cdef class Blocks(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the forward transform of this matrix'''
         cdef np.ndarray viewOut, arrOut
         cdef Matrix term
         cdef tuple row, viewRows, viewCols
@@ -207,7 +222,6 @@ cdef class Blocks(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the backward transform of this matrix'''
         cdef np.ndarray viewOut
         cdef Matrix term
         cdef tuple col, viewRows, viewCols
@@ -243,10 +257,6 @@ cdef class Blocks(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
         cdef Matrix term
         cdef tuple row

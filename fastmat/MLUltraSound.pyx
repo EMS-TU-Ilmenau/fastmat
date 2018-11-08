@@ -180,7 +180,6 @@ cdef class MLUltraSound(Partial):
             self._tenT = self._tenT.astype(self.dtype)
 
     cpdef np.ndarray _getArray(self):
-        '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
 
     cpdef Matrix _getNormalized(self):
@@ -249,10 +248,6 @@ cdef class MLUltraSound(Partial):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
 
         # go through all blocks and construct the corresponding
