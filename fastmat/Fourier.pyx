@@ -156,7 +156,7 @@ cdef class Fourier(Matrix):
         )
         if self._numL > 0:
             complexity = 2 * complexity + 2 * self._order + 2 * self._numL
-        
+
         return (complexity, complexity + 2 * self._order)
 
     ############################################## class forward / backward

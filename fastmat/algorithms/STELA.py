@@ -231,8 +231,8 @@ class STELA(Algorithm):
 
             # update step (5)
             self.arrX[:, self.arrActive] += (
-                self.arrBx[:, self.arrActive]
-                - self.arrX[:, self.arrActive]
+                self.arrBx[:, self.arrActive] -
+                self.arrX[:, self.arrActive]
             ).dot(
                 np.diag(self.arrGamma[self.arrActive])
             )

@@ -238,7 +238,7 @@ def testInitSolve(funcConstr, numSize, numN):
     instance = funcConstr(numSize)
     mem1 = instance.nbytes
 
-    func1 = lambda A, b: bicg(A, b)[0]
+    def func1(A, b): return bicg(A, b)[0]
     args1 = [
         instance.scipyLinearOperator,
         arrTestDist((numN, 1), instance.dtype)

@@ -160,7 +160,7 @@ class OMP(Algorithm):
 
         # matrix B that contains the pseudo inverse of A restricted to the
         # support
-        self.arrB = np.zeros(
+        self.matPinv = np.zeros(
             (self.numMaxSteps, self.numN, self.numL), dtype=self.returnType
         )
 
@@ -197,21 +197,18 @@ class OMP(Algorithm):
             # store them into the submatrix
             self.arrA[:, ii, :] = self.newCols
 
-            print(self.arrB.shape)
-            print(self.v2n.shape)
-
             # in the first step everything is simple
             if ii == 0:
                 self.v2 = self.newCols
                 self.v2n = (self.v2 / npl.norm(self.v2, axis=0) ** 2).conj()
 
-                self.v2y = np.einsum('ji...,ji...->i...', self.v2n, self.arrB)
+                self.v2y = np.einsum('ji,ji->i', self.v2n, self.arrB)
 
                 self.arrXtmp[0, :] = self.v2y
-                self.arrB[0, :, :] = self.v2n
+                self.matPinv[0, :, :] = self.v2n
             else:
                 self.v1 = np.einsum(
-                    'ijk,jk->ik', self.arrB[:ii, :, :], self.newCols
+                    'ijk,jk->ik', self.matPinv[:ii, :, :], self.newCols
                 )
 
                 self.v2 = self.newCols - np.einsum(
@@ -224,10 +221,10 @@ class OMP(Algorithm):
                 self.arrXtmp[:ii, :] -= self.v2y * self.v1
                 self.arrXtmp[ii, :] += self.v2y
 
-                self.arrB[:ii, :, :] -= np.einsum(
+                self.matPinv[:ii, :, :] -= np.einsum(
                     'ik,jk->jik', self.v2n, self.v1
                 )
-                self.arrB[ii, :, :] = self.v2n
+                self.matPinv[ii, :, :] = self.v2n
 
             # update the residual
             self.arrResidual -= self.v2y * self.v2

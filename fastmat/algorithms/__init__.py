@@ -29,11 +29,15 @@ Algorithms
     :members:
     :undoc-members:
 
+.. automodule:: fastmat.algorithms.FISTA
+    :members:
+    :undoc-members:
+
 .. automodule:: fastmat.algorithms.OMP
     :members:
     :undoc-members:
 
-.. automodule:: fastmat.algorithms.FISTA
+.. automodule:: fastmat.algorithms.STELA
     :members:
     :undoc-members:
 

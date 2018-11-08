@@ -47,7 +47,6 @@ cdef class Algorithm(object):
     cbTrace = None
     cbResult = None
 
-
     def __init__(self):
         raise NotImplementedError("Algorithm baseclass cannot be instantiated.")
 
@@ -80,14 +79,13 @@ cdef class Algorithm(object):
         If no additional parameters are required the self._process() method
         may also be called directly for slightly higher call performance.
         """
-        self.updateParameters(**kwargs);
+        self.updateParameters(**kwargs)
 
         # perform the actual computation and service the result callback
         arrResult = self._process(arrB)
         self.handleCallback(self.cbResult)
 
         return arrResult
-
 
     cpdef _process(self, np.ndarray arrB):
         r"""
