@@ -131,6 +131,7 @@ cdef class MLCirculant(Partial):
         # circulant matrix, which is then more efficient in reducing the
         # bottleneck of the FFTs. this is why this matrix class is derived from
         # Partial.
+        cdef intsize iin, nn
 
         # copy tensor in class itself
         self._tenC = _arrSqueezedCopy(tenC)
@@ -143,21 +144,21 @@ cdef class MLCirculant(Partial):
 
         # get the size of the matrix, which must be the product of the
         # defining tensor
-        numN = np.prod(self._arrN)
+        cdef intsize numN = np.prod(self._arrN)
 
         # stages during optimization to get the best FFT size
         cdef int maxStage = options.get('maxStage', 4)
 
         # minimum numbers to pad to during FFT optimization
-        arrNpad = 2 * self._arrN - 1
+        cdef np.ndarray arrNpad = 2 * self._arrN - 1
 
         # array that will hold the calculated optimal FFT sizes
-        arrOptSize = np.zeros_like(self._arrN)
+        cdef np.ndarray arrOptSize = np.zeros_like(self._arrN)
 
         # array that will hold 0 if we don't do an expansion of the
         # FFT size into this dimension and 1 if we do.
         # the dimensions are sorted like in arrN
-        arrDoOpt = np.zeros_like(self._arrN)
+        cdef np.ndarray arrDoOpt = np.zeros_like(self._arrN)
 
         # check if the optimization flag was set
         cdef bint optimize = options.get('optimize', True)
@@ -174,18 +175,18 @@ cdef class MLCirculant(Partial):
 
         # convert the array to a boolean array
         arrDoOpt = arrDoOpt == 1
-        arrNopt = np.copy(self._arrN)
+        cdef np.ndarray arrNopt = np.copy(self._arrN)
 
         # set the optimization size to the calculated one by replacing
         # the original sizes by the calculated better FFT sizes
         arrNopt[arrDoOpt] = arrOptSize[arrDoOpt]
 
         # get the size of the inflated matrix
-        numNopt = np.prod(arrNopt)
+        cdef intsize numNopt = np.prod(arrNopt)
 
         # allocate memory for the tensor in d-dimensional fourier domain
         # and save the memory
-        tenChat = np.empty_like(self._tenC, dtype='complex')
+        cdef np.ndarray tenChat = np.empty_like(self._tenC, dtype='complex')
         tenChat[:] = self._tenC[:]
 
         # go through the array and apply the preprocessing in direction
@@ -209,7 +210,9 @@ cdef class MLCirculant(Partial):
 
         # subselection array to remember the parts of the inflated matrix,
         # where the original d-level circulant matrix has its entries
-        arrIndices = np.arange(numNopt)[self._genArrS(self._arrN, arrNopt)]
+        cdef np.ndarray arrIndices = np.arange(numNopt)[
+            self._genArrS(self._arrN, arrNopt)
+        ]
 
         # create the decomposing kronecker product, which realizes
         # the d-dimensional FFT with measures offered by fastmat
@@ -224,11 +227,12 @@ cdef class MLCirculant(Partial):
 
         # initialize Partial of Product. Only use Partial when
         # inflating the size of the matrix
-        if not np.allclose(self._arrN, arrNopt):
-            options['M'] = arrIndices
-            options['N'] = arrIndices
+        cdef bint truncate = not np.allclose(self._arrN, arrNopt)
+        cdef dict kwargs = options.copy()
+        kwargs['N'] = (arrIndices if truncate else None)
+        kwargs['M'] = (arrIndices if truncate else None)
 
-        super(MLCirculant, self).__init__(P, **options)
+        super(MLCirculant, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenC matches the precision of the
@@ -248,12 +252,12 @@ cdef class MLCirculant(Partial):
         """Return an explicit representation of the matrix as numpy-array."""
         return self._reference()
 
-    def _preProcSlice(
+    cpdef np.ndarray _preProcSlice(
         self,
-        theTensor,          # the tensor we do the
-        numTensorDim,
-        arrNopt,
-        arrN
+        np.ndarray theTensor,
+        int numTensorDim,
+        np.ndarray arrNopt,
+        np.ndarray arrN
     ):
         # Variables
         ########################################################################
@@ -267,7 +271,17 @@ cdef class MLCirculant(Partial):
         # arrNopt and arrN. If arrNopt is larger, it seems like it makes sense
         # to do zero padding into this dimension and then we do exactly that
 
-        arrRes = np.empty(1)
+        numTensorDim : int
+            The current dimension we are operating on.
+
+        arrNopt : :py:class:`numpy.ndarray`
+            The size we should optimize to.
+
+        arrN : :py:class:`numpy.ndarray`
+            The size the dimension originally had.
+        '''
+        cdef np.ndarray arrRes = np.empty(1)
+        cdef np.ndarray z
 
         if arrNopt[numTensorDim] > arrN[numTensorDim]:
             z = np.zeros(arrNopt[numTensorDim] - 2 * arrN[numTensorDim] + 1)
@@ -275,11 +289,11 @@ cdef class MLCirculant(Partial):
         else:
             return np.copy(theTensor)
 
-    def _genArrS(
+    cpdef np.ndarray _genArrS(
         self,
-        arrN,
-        arrNout,
-        verbose=False
+        np.ndarray arrN,
+        np.ndarray arrNout,
+        bint verbose=False
     ):
         # Variables
         ########################################################################
@@ -297,9 +311,13 @@ cdef class MLCirculant(Partial):
 
         n = arrN.shape[0]
         numNout = np.prod(arrNout)
+        cdef intsize ii, n = arrN.shape[0]
+
+        # output size of the matrix we embed into
+        cdef intsize numNout = np.prod(arrNout)
 
         # initialize the result as all ones
-        arrS = np.arange(numNout) >= 0
+        cdef np.ndarray arrS = np.arange(numNout) >= 0
 
         # now buckle up!
         # we go through all dimensions first
@@ -344,9 +362,9 @@ cdef class MLCirculant(Partial):
 
     def _refRecursion(
         self,
-        arrN,
-        tenC,
-        verbose=False
+        np.ndarray arrN,
+        np.ndarray tenC,
+        bint verbose=False
     ):
         # Variables
         ########################################################################
@@ -369,18 +387,29 @@ cdef class MLCirculant(Partial):
 
         if verbose:
             print(numD, arrN)
+        cdef intsize nn, ii, NN, MM
+
+        # the submatrix, which is (d-1)-level at the current iteration position
+        cdef np.ndarray subC
+
+        # number of dimensions (levels = d)
+        cdef intsize numD = arrN.shape[0]
 
         # get size of resulting block circulant matrix
-        numN = np.prod(arrN)
-        arrNprod = np.array(
+        cdef intsize numN = np.prod(arrN)
+
+        # product of all dimensions
+        cdef np.ndarray arrNprod = np.array(
             list(map(lambda ii : np.prod(arrN[ii:]), range(len(arrN) + 1)))
         )
         if verbose:
+            print(numD, arrN)
             print()
             print(tenC)
             print(arrNprod)
 
-        C = np.zeros((numN, numN), dtype=self.dtype)
+        # The resulting d-level matrix
+        cdef np.ndarray arrC = np.zeros((numN, numN), dtype=self.dtype)
 
         if numD > 1:
             # iterate over dimensions
@@ -403,14 +432,15 @@ cdef class MLCirculant(Partial):
                               % (nn, ii, NN, MM, NN + arrNprod[1],
                                  MM + arrNprod[1], subC.shape[0], subC.shape[1])
                               )
-                        print(C[NN:NN + arrNprod[1], MM:MM + arrNprod[1]].shape)
-                        print(C.shape)
+                        print(arrC[NN:NN + arrNprod[1],
+                                   MM:MM + arrNprod[1]].shape)
+                        print((<object> arrC).shape)
                         print(arrN[0])
 
                     # do the actual placement by copying in the right memor
                     # region
-                    C[NN:NN + arrNprod[1], MM:MM + arrNprod[1]] = subC
-            return C
+                    arrC[NN:NN + arrNprod[1], MM:MM + arrNprod[1]] = subC
+            return arrC
         else:
             # if we are in the lowest level, we just return the circulant
             # block by calling the normal circulant reference

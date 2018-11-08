@@ -168,9 +168,10 @@ cdef class MLUltraSound(Partial):
         P = Product(K.H, B, K)
 
         # call the parent constructor
-        options['M'] = arrIndicesN
-        options['N'] = arrIndicesN
-        super(MLUltraSound, self).__init__(P, **options)
+        cdef dict kwargs = options.copy()
+        kwargs['N'] = arrIndicesN
+        kwargs['M'] = arrIndicesN
+        super(MLUltraSound, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the
