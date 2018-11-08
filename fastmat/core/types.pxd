@@ -58,8 +58,8 @@ ctypedef enum TYPES:
 
 ctypedef fused TYPE_INT:
     np.int8_t
-    np.int32_t
     np.int16_t
+    np.int32_t
     np.int64_t
 
 ctypedef fused TYPE_REAL:

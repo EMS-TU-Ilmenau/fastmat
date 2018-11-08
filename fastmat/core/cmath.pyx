@@ -852,10 +852,10 @@ cdef void _opCIn(
     if tIn == TYPE_INT8:
         _opCoreC[np.int8_t, TYPE_OP, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
-    elif tIn == TYPE_INT32:
-        _opCoreC[np.int32_t, TYPE_OP, TYPE_COMPLEX](
-            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tIn == TYPE_INT16:
+        _opCoreC[np.int16_t, TYPE_OP, TYPE_COMPLEX](
+            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tIn == TYPE_INT32:
         _opCoreC[np.int32_t, TYPE_OP, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tIn == TYPE_INT64:
@@ -890,11 +890,11 @@ cdef void _opC(
     if tOp == TYPE_INT8:
         _opCIn[np.int8_t, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
-    elif tOp == TYPE_INT32:
-        _opCIn[np.int32_t, TYPE_COMPLEX](
-            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOp == TYPE_INT16:
         _opCIn[np.int16_t, TYPE_COMPLEX](
+            arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tOp == TYPE_INT32:
+        _opCIn[np.int32_t, TYPE_COMPLEX](
             arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOp == TYPE_INT64:
         _opCIn[np.int64_t, TYPE_COMPLEX](
@@ -926,10 +926,10 @@ cdef void _op(
     # dispatch specialization of core routines according typeData
     if tOut == TYPE_INT8:
         _opI[np.int8_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
-    elif tOut == TYPE_INT32:
-        _opI[np.int32_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOut == TYPE_INT16:
         _opI[np.int16_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
+    elif tOut == TYPE_INT32:
+        _opI[np.int32_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOut == TYPE_INT64:
         _opI[np.int64_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
     elif tOut == TYPE_FLOAT32:

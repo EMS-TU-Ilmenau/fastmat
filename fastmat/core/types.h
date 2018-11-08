@@ -19,4 +19,4 @@
 
 // define the number of different types (including TYPE_INVALID)
 // as a C-style definition to get around the nasty TYPE_NUM-bug
-#define NUM_TYPES	8
+#define NUM_TYPES	9
