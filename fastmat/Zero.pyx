@@ -44,7 +44,20 @@ cdef class Zero(Matrix):
     """
 
     def __init__(self, numN, numM, **options):
-        '''Initialize Matrix instance with its dimensions'''
+        '''
+        Initialize Zero matrix instance.
+
+        Parameters
+        ----------
+        numN : int
+            Height (row count) of the desired zero matrix.
+
+        numM : int
+            Width (column count) of the desired zero matrix.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         # set properties of matrix
         self._initProperties(numN, numM, np.int8, **options)
 
@@ -90,23 +103,17 @@ cdef class Zero(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
         return _arrZero(
             arrX.ndim, self.numN, arrX.shape[1] if arrX.ndim > 1 else 1,
             getNumpyType(arrX))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
         return _arrZero(
             arrX.ndim, self.numM, arrX.shape[1] if arrX.ndim > 1 else 1,
             getNumpyType(arrX))
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         return np.zeros((self.numN, self.numM), dtype=self.dtype)
 
     ############################################## class inspection, QM

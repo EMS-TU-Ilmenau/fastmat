@@ -71,7 +71,17 @@ cdef class Diag(Matrix):
 
     ############################################## class methods
     def __init__(self, vecD, **options):
-        '''Initialize Matrix instance with a list of child matrices'''
+        '''
+        Initialize a Diag matrix instance.
+
+        Parameters
+        ----------
+        vecD : :py:class:`numpy.ndarray`
+            The generating vector of the diagonal entries of this matrix.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         # numN is size of matrix (and of diagonal vector)
         numN = len(vecD)
 
@@ -135,7 +145,6 @@ cdef class Diag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        ''' Calculate the forward transform of this matrix.'''
         _multiply(arrX, self._vecD, arrRes,
                   typeX, self.fusedType, typeRes)
 
@@ -146,16 +155,11 @@ cdef class Diag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        ''' Calculate the backward transform of this matrix.'''
         _multiply(arrX, _conjugate(self._vecD), arrRes,
                   typeX, self.fusedType, typeRes)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef intsize ii, N = self.numN
         cdef np.ndarray d = self.vecD
 

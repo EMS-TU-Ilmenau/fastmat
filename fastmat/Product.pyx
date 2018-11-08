@@ -51,7 +51,28 @@ cdef class Product(Matrix):
     """
 
     def __init__(self, *matrices, **options):
-        '''Initialize Matrix instance'''
+        '''
+        Initialize a Product matrix instance.
+
+        Parameters
+        ----------
+        *matrices : :py:class:`fastmat.Matrix` or scalar value
+            The matrix instances to form a matrix-matrix product of. You may
+            also specify scalar values.
+
+        **options:
+            See the list of special options below and
+            :py:meth:`fastmat.Matrix.__init__` for general options.
+
+        Options
+        -------
+        typeExpansion : bool
+            Expand the data type of input data to the data type specified with
+            this paramter.
+
+            Defaults to a floating-point expansion of the promoted type of all
+            nested matrices' (and scalar values') data types.
+        '''
 
         # evaluate options passed to Product
         debug = options.get('debug', False)
@@ -182,8 +203,6 @@ cdef class Product(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
-
         cdef int cnt = len(self._content)
         cdef int ii                     # index (0 .. cnt - 1)
         cdef int iii = cnt - 1          # index (cnt - 1 .. 0)
@@ -202,8 +221,6 @@ cdef class Product(Matrix):
         return arrRes
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
-
         cdef int cnt = len(self._content)
         cdef int ii
         cdef np.ndarray arrRes = arrX
@@ -224,10 +241,6 @@ cdef class Product(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef ii, cnt = len(self._content)
         cdef Matrix term
         cdef np.ndarray arrRes

@@ -60,7 +60,16 @@ cdef class Permutation(Matrix):
 
     def __init__(self, sigma, **options):
         '''
-        Initialize Matrix instance with its dimensions.
+        Initialize a Permutation matrix instance.
+
+        Parameters
+        ----------
+        sigma : :py:class:`numpy.ndarray`
+            A 1d vector of type int mapping the row indices to column indices
+            uniquely.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
         '''
         numN = sigma.shape[0]
 
@@ -96,19 +105,13 @@ cdef class Permutation(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
         return arrX[self._sigma, :]
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
         return arrX[self._tau, :]
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         return np.eye(self.numN, dtype=self.dtype)[self._sigma, :]
 
     ############################################## class inspection, QM

@@ -100,7 +100,18 @@ cdef class Hadamard(Matrix):
             return self._order
 
     def __init__(self, order, **options):
-        '''Initialize Matrix instance'''
+        '''
+        Initialize Hadamard matrix instance.
+
+        Parameters
+        ----------
+        order : int
+            The order of the Hadamard matrix to generate. The matrix data type
+            is :py:class:`numpy.int8`
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         if order < 1:
             raise ValueError("Hadamard: Order must be larger than 0.")
 
@@ -119,9 +130,6 @@ cdef class Hadamard(Matrix):
         self._initProperties(numN, numN, np.int8, **options)
 
     cpdef np.ndarray _getArray(self):
-        '''
-        Return an explicit representation of the matrix as numpy-array.
-        '''
         return self._reference()
 
     ############################################## class property override
@@ -152,9 +160,6 @@ cdef class Hadamard(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''
-        Calculate the forward transform of this matrix.
-        '''
         cdef ntype dtype = typeInfo[typeRes].numpyType
         cdef intsize N = arrX.shape[0], M = arrX.shape[1], order = self._order
         cdef intsize mm, oo
@@ -218,17 +223,10 @@ cdef class Hadamard(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''
-        Calculate the backward transform of this matrix.
-        '''
         return self._forwardC(arrX, arrRes, typeX, typeRes)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         global spHadamard
         if spHadamard is None:
             spHadamard = __import__('scipy.linalg', globals(), locals(),

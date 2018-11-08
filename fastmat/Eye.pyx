@@ -49,9 +49,15 @@ cdef class Eye(Matrix):
 
     def __init__(self, numN, **options):
         '''
-        Initialize Matrix instance with its dimensions.
+        Initialize Identity (Eye) matrix instance.
 
-        Generated a [numN x numM] matrix of small integers
+        Parameters
+        ----------
+        numN : int
+            Size of the desired identity matrix [numN x numN].
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
         '''
         self._initProperties(numN, numN, np.int8, **options)
 
@@ -105,19 +111,13 @@ cdef class Eye(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(Eye, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
         return arrX
 
     cpdef np.ndarray _backward(Eye self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
         return arrX
 
     ############################################## class reference
     cpdef np.ndarray _reference(Eye self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         return np.eye(self.numN, dtype=self.dtype)
 
     ############################################## class inspection, QM

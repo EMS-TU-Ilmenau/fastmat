@@ -61,7 +61,37 @@ cdef class Fourier(Matrix):
             return self._order
 
     def __init__(self, order, **options):
-        '''Initialize Matrix instance with a list of child matrices'''
+        '''
+        Initialize Fourier matrix instance.
+
+        Parameters
+        ----------
+        order : int
+            The order of the DFT matrix represented by this matrix instance.
+
+        **options:
+            See the list of special options below and
+            :py:meth:`fastmat.Matrix.__init__` for general options.
+
+        Options
+        -------
+        optimize : bool
+            Allow application of the Bluestein algorithm for badly conditioned
+            fourier transform orders.
+
+            Defaults to True.
+
+        maxStage : int
+            Specify the maximum butterfly element size for the FFT. Larger
+            values can reduce the required order for the FFTs computed in the
+            Bluestein case. However, increasing only makes sense as long as an
+            efficient implementation of the butterfly structures exist in your
+            BLAS.
+
+            Defaults to 4, which is safe to assume on all architectures.
+            However, most implementations support sizes of 5 and on some cpu
+            architectures, also 7.
+        '''
 
         cdef intsize paddedSize
         cdef np.ndarray arrSamples, vecConv
@@ -126,9 +156,6 @@ cdef class Fourier(Matrix):
 
     ############################################## class property override
     cpdef np.ndarray _getArray(self):
-        '''
-        Return an explicit representation of the matrix as numpy-array.
-        '''
         return np.fft.fft(np.eye(self._order, dtype=self.dtype), axis=0)
 
     cpdef np.ndarray _getRow(self, intsize idx):
@@ -164,7 +191,6 @@ cdef class Fourier(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
         cdef np.ndarray arrRes
         cdef STRIDE_s strResPadding
         cdef intsize mm, M = arrX.shape[1]
@@ -191,17 +217,12 @@ cdef class Fourier(Matrix):
         return arrRes
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
         cdef np.ndarray arrRes = self._forward(_conjugate(arrX))
         _conjugateInplace(arrRes)
         return arrRes
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         return np.exp(
             np.multiply(
                 *np.meshgrid(np.arange(self._order), np.arange(self._order)

@@ -144,7 +144,33 @@ cdef class LFSRCirculant(Matrix):
                     else self._states)
 
     def __init__(self, int regSize, taps, start, **options):
-        '''Initialize Matrix instance'''
+        '''
+        Initialize a LFSR Circulant matrix instance.
+
+        The definition vector of the circulant matrix is defined by the output
+        [+1/-1] of a binary Linear Feedback Shift Register (LFSR) with the
+        given defining parameters over one period.
+
+        Parameters
+        ----------
+        regSize : int
+            The size of the register, defined as the number of its storage
+            elements. Only positive, non-zero values up to 31 are allowed.
+
+        taps : int
+            The tap configuration word. Every set bit k in this value
+            corresponds to one feedback tap at storage element k of the
+            register or the monome x^k of the generating polynomial that forms
+            a cycle in the galois field GF2 of order `regSize`. The bit
+            corresponding to `regSize` is implicitly assumed to be set and
+            may or may not be contained in the `taps` definition word.
+
+        start : int
+            The initial value of the storage elements of the register.
+
+        **options :
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
 
         cdef lfsrReg_t mask = 1 << regSize
 
@@ -205,13 +231,11 @@ cdef class LFSRCirculant(Matrix):
         return self.vecC[(idxN - idxM) % self.numN]
 
     cpdef np.ndarray _getCol(self, intsize idx):
-        '''Return selected columns of self.array'''
         cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes, idx)
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        '''Return selected rows of self.array'''
         cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes[::-1], self.numN - idx - 1)
         return arrRes
@@ -226,7 +250,6 @@ cdef class LFSRCirculant(Matrix):
 
     ############################################## class core methods
     cdef void _roll(self, np.ndarray vecOut, intsize shift):
-        '''Return self.vecC rolled by 'shift' elements.'''
         if shift == 0:
             vecOut[:] = self.vecC
         else:
@@ -355,26 +378,16 @@ cdef class LFSRCirculant(Matrix):
     ############################################## class forward / backward
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,
                     ftype typeX, ftype typeRes):
-        '''
-        Calculate the forward transform of this matrix.
-        '''
         # dispatch input ndarray to type specialization
         self._core(arrX, arrRes, True, False)
 
     cpdef _backwardC(self, np.ndarray arrX, np.ndarray arrRes,
                      ftype typeX, ftype typeRes):
-        '''
-        Calculate the backward transform of this matrix.
-        '''
         # dispatch input ndarray to type specialization
         self._core(arrX, arrRes, False, True)
 
     ############################################### class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes, vecSequence
         cdef np.int8_t[:] mvSequence
         cdef int ii, state, taps, mask, tmp, cnt

@@ -113,8 +113,20 @@ cdef class MLToeplitz(Partial):
     ############################################## class methods
     def __init__(self, tenT, **options):
         '''
-        Initialize MLToeplitz Matrix instance.
+        Initialize Multilevel Toeplitz matrix instance.
+
+        Parameters
+        ----------
+        tenC : :py:class:`numpy.ndarray`
+            The generating nd-array defining the toeplitz tensor. The matrix
+            data type is determined by the data type of this array.
+
+        **options:
+            See the special options of :py:class:`fastmat.Fourier`, which are
+            also supported by this matrix and the general options offered by
+            :py:meth:`fastmat.Matrix.__init__`.
         '''
+        cdef intsize inn, nn
 
         self._tenT = _arrSqueezedCopy(tenT)
 
@@ -201,7 +213,6 @@ cdef class MLToeplitz(Partial):
             self._tenT = self._tenT.astype(self.dtype)
 
     cpdef np.ndarray _getArray(self):
-        '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
 
     ############################################## class property override
@@ -216,9 +227,24 @@ cdef class MLToeplitz(Partial):
         arrN
     ):
         '''
-        preprocess one axis of the defining tensor. here we check for one
-        dimension, whether it makes sense to  zero-pad or not by estimating
-        the fft-complexity in each dimension.
+        Preprocess one axis of the defining tensor.
+
+        Here we check for one dimension, whether it makes sense to zero-pad or
+        not by estimating the FFT-complexity in each dimension.
+
+        Parameters
+        ----------
+        theSlice : :py:class:`numpy.ndarray`
+            ?
+
+        numSliceInd : int
+            ?
+
+        arrNopt : :py:class:`numpy.ndarray`
+            ?
+
+        arrN : :py:class:`numpy.ndarray`
+            ?
         '''
         arrRes = np.empty(1)
 
@@ -241,11 +267,35 @@ cdef class MLToeplitz(Partial):
         verbose=False
     ):
         '''
-        Iteratively filter out the non-zero elements in the padded version
-        of X. I know, that one can achieve this from a zero-padded
-        version of the tensor Xpadten, but the procedure itself is very
-        helpful for understanding how the nested levels have an impact on
-        the padding structure
+        Filter out the non-zero elements in the padded version of X iteratively.
+
+        One can achieve this from a zero-padded version of the tensor Xpadten,
+        but the procedure itself is very helpful for understanding how the
+        nested levels have an impact on the padding structure.
+
+        Parameters
+        ----------
+        arrN : :py:class:`numpy.ndarray`
+            The original sizes of the defining tensor.
+
+        arrNout : :py:class:`numpy.ndarray`
+            The desired sizes of the tensor.
+
+        arrNopt : :py:class:`numpy.ndarray`
+            The size we should optimize to.
+
+        arrN : :py:class:`numpy.ndarray`
+            The size the dimension originally had.
+
+        verbose : bool
+            Output verbose information.
+
+            Defaults to False.
+
+        Returns
+        -------
+        arrS : :py:class:`numpy.ndarray`
+            The output array which does the selection.
         '''
         n = arrN.shape[0]
         numNout = np.prod(arrNout)
@@ -327,11 +377,6 @@ cdef class MLToeplitz(Partial):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
-
         return self._refRecursion(self._arrN, self._tenT, False)
 
     def _refRecursion(
@@ -341,7 +386,24 @@ cdef class MLToeplitz(Partial):
         verbose=False       # verbosity flag
     ):
         '''
-        Construct a multilevel toeplitz matrix
+        Build the d-level circulant matrix recursively from a d-dimensional
+        tensor.
+
+        Build the (d-1) level matrices first and put them to the correct
+        locations for d=1.
+
+        Parameters
+        ----------
+        arrN : :py:class:`numpy.ndarray`
+            The dimensions in each level.
+
+        tenC : :py:class:`numpy.ndarray`
+            The defining elements.
+
+        verbose : bool
+            Output verbose information.
+
+            Defaults to False.
         '''
         # number of dimensions
         numD = arrN.shape[0]
