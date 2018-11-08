@@ -433,9 +433,9 @@ cdef class MLToeplitz(Partial):
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : 27,
                 TEST.NUM_M      : TEST.NUM_N,
-                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
-                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : (5, 5, 5),

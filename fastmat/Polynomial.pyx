@@ -150,9 +150,9 @@ cdef class Polynomial(Matrix):
                 TEST.NUM_N      : 7,
                 TEST.NUM_M      : 7,
 
-                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeM'        : TEST.Permutation(TEST.ALLTYPES),
-                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : ('order', ),

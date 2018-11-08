@@ -171,36 +171,43 @@ class FISTAinspect(Algorithm):
 
         return {
             TEST.ALGORITHM: {
-                'order': 6,
-                TEST.NUM_N: (lambda param: 3 * param['order']),
-                TEST.NUM_M: (lambda param: 2 ** param['order']),
-                'numK': 'order',
-                'lambda': 10.,
-                'maxSteps': 1000,
-                'typeA': TEST.Permutation(TEST.ALLTYPES),
+                'order'             : 6,
+                TEST.NUM_N          : (lambda param: 3 * param['order']),
+                TEST.NUM_M          : (lambda param: 2 ** param['order']),
+                'numK'              : 'order',
+                'lambda'            : 10.,
+                'maxSteps'          : 10,
+                'typeA'             : TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.OBJECT: Matrix,
-                TEST.INITARGS: (lambda param: [
-                    Product(Matrix(np.random.uniform(
-                        -100, 100, (getattr(param, TEST.NUM_M),
-                                    getattr(param, TEST.NUM_M))).astype(
-                        param['typeA'])),
-                        Hadamard(param.order),
-                        typeExpansion=param['typeA']).array]),
+                TEST.OBJECT         : Matrix,
+                TEST.INITARGS       : (
+                    lambda param: [
+                        Product(
+                            Matrix(
+                                np.random.uniform(
+                                    -100, 100, (getattr(param, TEST.NUM_M),
+                                                getattr(param, TEST.NUM_M))
+                                ).astype(param['typeA'])
+                            ), Hadamard(param.order),
+                            typeExpansion=param['typeA']
+                        ).array
+                    ]
+                ),
 
-                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
-                TEST.INIT_VARIANT: TEST.IgnoreFunc(testFISTA),
+                TEST.DATAALIGN      : TEST.ALIGNMENT.DONTCARE,
+                TEST.INIT_VARIANT   : TEST.IgnoreFunc(testFISTA),
 
-                'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
-                TEST.NAMINGARGS: dynFormat("(%dx%d)*Hadamard(%s)[%s]",
-                                           TEST.NUM_N, TEST.NUM_M,
-                                           'order', 'strTypeA'),
+                'strTypeA'          : (
+                    lambda param: TEST.TYPENAME[param['typeA']]
+                ),
+                TEST.NAMINGARGS     : dynFormat(
+                    "(%dx%d)*Hadamard(%s)[%s]", TEST.NUM_N, TEST.NUM_M,
+                    'order', 'strTypeA'
+                ),
 
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION: np.float32,
-                TEST.TOL_MINEPS: getTypeEps(np.float32),
-                TEST.TOL_POWER: 5.
-                # TEST.CHECK_PROXIMITY    : False
+                TEST.TYPE_PROMOTION     : np.float32,
+                TEST.CHECK_PROXIMITY    : False
             },
         }
 

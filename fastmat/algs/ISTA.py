@@ -181,7 +181,7 @@ class ISTAinspect(Algorithm):
                 TEST.NUM_M      : (lambda param: 2 ** param['order']),
                 'numK'          : 'order',
                 'lambda'        : 10.,
-                'maxSteps'      : 1000,
+                'maxSteps'      : 10,
                 'typeA'         : TEST.Permutation(TEST.ALLTYPES),
 
                 TEST.OBJECT     : Matrix,
@@ -203,9 +203,7 @@ class ISTAinspect(Algorithm):
 
                 # matrix inversion always expands data type to floating-point
                 TEST.TYPE_PROMOTION     : np.float32,
-                TEST.TOL_MINEPS         : getTypeEps(np.float32),
-                TEST.TOL_POWER          : 5.
-                #TEST.CHECK_PROXIMITY    : False
+                TEST.CHECK_PROXIMITY    : False
             },
         }
 

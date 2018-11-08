@@ -201,7 +201,7 @@ cdef class BlockDiag(Matrix):
                 TEST.NUM_N      : (lambda param: param['size'] * 3),
                 TEST.NUM_M      : TEST.NUM_N,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
-                'mType2'        : TEST.Permutation(TEST.ALLTYPES),
+                'mType2'        : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
                     TEST.SHAPE  : ('size', 'size')

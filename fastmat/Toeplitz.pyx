@@ -309,12 +309,13 @@ cdef class Toeplitz(Partial):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : TEST.Permutation([5, 41]),
                 'num_M'         : TEST.Permutation([4, 6]),
                 TEST.NUM_M      : (lambda param: param['num_M'] + 1),
-                'mTypeH'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
                 'vecH'          : TEST.ArrayGenerator({

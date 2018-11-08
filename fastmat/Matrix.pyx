@@ -1514,7 +1514,7 @@ cdef class Matrix(object):
                 TEST.COMMON: {
                     TEST.NUM_N      : numN,
                     TEST.NUM_M      : TEST.Permutation([numM, TEST.NUM_N]),
-                    'mType'         : TEST.Permutation(TEST.ALLTYPES),
+                    'mType'         : TEST.Permutation(TEST.FEWTYPES),
                     TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                     'arrM'          : TEST.ArrayGenerator({
                         TEST.DTYPE  : 'mType',

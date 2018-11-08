@@ -267,11 +267,12 @@ cdef class Product(Matrix):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 7,
-                TEST.NUM_M      : TEST.Permutation([10, TEST.NUM_N]),
+                TEST.NUM_N      : 5,
+                TEST.NUM_M      : TEST.Permutation([7, TEST.NUM_N]),
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
                 'mType2'        : TEST.Permutation(TEST.FEWTYPES),
-                'sType'         : TEST.Permutation(TEST.ALLTYPES),
+                'sType'         : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
                     TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)

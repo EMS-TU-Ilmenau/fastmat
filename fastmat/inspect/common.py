@@ -693,7 +693,7 @@ class NAME(object):
     ALLTYPES        = [np.int8, np.int16, np.int32, np.int64,
                        np.float32, np.float64,
                        np.complex64, np.complex128]
-    FEWTYPES        = [np.int8, np.int32, np.float32, np.complex64]
+    FEWTYPES        = [np.int32, np.float32, np.complex64]
 
     SINGLETYPES     = [np.int32, np.int16, np.float32, np.complex64]
     DOUBLETYPES     = [np.int64, np.float64, np.complex128]

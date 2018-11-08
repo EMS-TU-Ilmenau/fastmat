@@ -279,7 +279,9 @@ cdef class MLUltraSound(Partial):
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : 40,
                 TEST.NUM_M      : TEST.NUM_N,
-                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : (2, 2, 7, 9)

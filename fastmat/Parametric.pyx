@@ -287,8 +287,9 @@ cdef class Parametric(Matrix):
         return {
             TEST.COMMON: {
                 # define parameters for test
-                TEST.NUM_N      : 4,
-                TEST.NUM_M      : TEST.Permutation([6, TEST.NUM_N]),
+                TEST.NUM_N      : 2,
+                TEST.NUM_M      : TEST.Permutation([3, TEST.NUM_N]),
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'typeY'         : TEST.Permutation(TEST.LARGETYPES),
                 'typeX'         : TEST.Permutation(TEST.FEWTYPES),
                 'rangeAccess'   : TEST.Permutation([False, True]),
