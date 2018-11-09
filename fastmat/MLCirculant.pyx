@@ -68,6 +68,26 @@ cdef class MLCirculant(Partial):
         c_{2,2} & c_{2,1} & c_{1,2} & c_{1,1}
         \end{bmatrix}.
 
+    The approach we follow here is similar to the Circulant matrix case. But
+    here, we have matrix, which is defined by a tensor of order d because of
+    its d-level nature. The remarkable thing is, that a very analogue thing as
+    to the Circulant case holds. We only have to calculate an d-dimensional
+    fourier transform on the defining tensor. then its vectorized version is
+    the spectrum of the d-level circulant matrix it defines. Another way to
+    view this, is that a kronecker product of fourier matrices diagonalizes
+    this d-level matrix. So, we have that
+
+            C = (F_n1 kron ... kron F_nd)^H
+                 * diag((F_n1 kron ... kron F_nd) * tenC)
+                 * (F_n1 kron ... kron F_nd)
+
+    As another performance improvement, we do not simply calculate the fourier
+    transform of tenC in every dimension, but instead we make use of the
+    bluestein algorithm in each dimension independently. as such the d-level
+    circulant matrix gets embedded into a larger d-level circulant matrix,
+    which is then more efficient in reducing the bottleneck of the FFTs. this
+    is why this matrix class is derived from Partial.
+
     >>> # import the package
     >>> import fastmat as fm
     >>> import numpy as np
@@ -112,25 +132,21 @@ cdef class MLCirculant(Partial):
             return self._tenC
 
     def __init__(self, tenC, **options):
-        # The approach we follow here is similar to the Circulant matrix
-        # case. But here, we have matrix, which is defined by a tensor of
-        # order d because of its d-level nature. The remarkable thing is,
-        # that a very analogue thing as to the Circulant case holds. We only
-        # have to calculate an d-dimensional fourier transform on the
-        # defining tensor. then its vectorized version is the spectrum of
-        # the d-level circulant matrix it defines. Another way to view this,
-        # is that a kronecker product of fourier matrices diagonalizes this
-        # d-level matrix. So, we have that
-        #     C = (F_n1 kron ... kron F_nd)^H
-        #         * diag((F_n1 kron ... kron F_nd) * tenC)
-        #         * (F_n1 kron ... kron F_nd)
-        # As another performance improvement, we do not simply calculate the
-        # fourier transform of tenC in every dimension, but instead we make use
-        # of the bluestein algorithm in each dimension independently. as such
-        # the d-level circulant matrix gets embedded into a larger d-level
-        # circulant matrix, which is then more efficient in reducing the
-        # bottleneck of the FFTs. this is why this matrix class is derived from
-        # Partial.
+        '''
+        Initialize Multilevel Circulant matrix instance.
+
+        Parameters
+        ----------
+        tenC : :py:class:`numpy.ndarray`
+            The generating nd-array defining the circulant tensor. The matrix
+            data type is determined by the data type of this array.
+
+        **options:
+            See the special options of :py:class:`fastmat.Fourier`, which are
+            also supported by this matrix and the general options offered by
+            :py:meth:`fastmat.Matrix.__init__`.
+        '''
+        cdef intsize iin, nn
 
         # copy tensor in class itself
         self._tenC = _arrSqueezedCopy(tenC)
@@ -143,21 +159,21 @@ cdef class MLCirculant(Partial):
 
         # get the size of the matrix, which must be the product of the
         # defining tensor
-        numN = np.prod(self._arrN)
+        cdef intsize numN = np.prod(self._arrN)
 
         # stages during optimization to get the best FFT size
         cdef int maxStage = options.get('maxStage', 4)
 
         # minimum numbers to pad to during FFT optimization
-        arrNpad = 2 * self._arrN - 1
+        cdef np.ndarray arrNpad = 2 * self._arrN - 1
 
         # array that will hold the calculated optimal FFT sizes
-        arrOptSize = np.zeros_like(self._arrN)
+        cdef np.ndarray arrOptSize = np.zeros_like(self._arrN)
 
         # array that will hold 0 if we don't do an expansion of the
         # FFT size into this dimension and 1 if we do.
         # the dimensions are sorted like in arrN
-        arrDoOpt = np.zeros_like(self._arrN)
+        cdef np.ndarray arrDoOpt = np.zeros_like(self._arrN)
 
         # check if the optimization flag was set
         cdef bint optimize = options.get('optimize', True)
@@ -174,18 +190,18 @@ cdef class MLCirculant(Partial):
 
         # convert the array to a boolean array
         arrDoOpt = arrDoOpt == 1
-        arrNopt = np.copy(self._arrN)
+        cdef np.ndarray arrNopt = np.copy(self._arrN)
 
         # set the optimization size to the calculated one by replacing
         # the original sizes by the calculated better FFT sizes
         arrNopt[arrDoOpt] = arrOptSize[arrDoOpt]
 
         # get the size of the inflated matrix
-        numNopt = np.prod(arrNopt)
+        cdef intsize numNopt = np.prod(arrNopt)
 
         # allocate memory for the tensor in d-dimensional fourier domain
         # and save the memory
-        tenChat = np.empty_like(self._tenC, dtype='complex')
+        cdef np.ndarray tenChat = np.empty_like(self._tenC, dtype='complex')
         tenChat[:] = self._tenC[:]
 
         # go through the array and apply the preprocessing in direction
@@ -209,7 +225,9 @@ cdef class MLCirculant(Partial):
 
         # subselection array to remember the parts of the inflated matrix,
         # where the original d-level circulant matrix has its entries
-        arrIndices = np.arange(numNopt)[self._genArrS(self._arrN, arrNopt)]
+        cdef np.ndarray arrIndices = np.arange(numNopt)[
+            self._genArrS(self._arrN, arrNopt)
+        ]
 
         # create the decomposing kronecker product, which realizes
         # the d-dimensional FFT with measures offered by fastmat
@@ -224,10 +242,12 @@ cdef class MLCirculant(Partial):
 
         # initialize Partial of Product. Only use Partial when
         # inflating the size of the matrix
-        if np.allclose(self._arrN, arrNopt):
-            super(MLCirculant, self).__init__(P)
-        else:
-            super(MLCirculant, self).__init__(P, N=arrIndices, M=arrIndices)
+        cdef bint truncate = not np.allclose(self._arrN, arrNopt)
+        cdef dict kwargs = options.copy()
+        kwargs['N'] = (arrIndices if truncate else None)
+        kwargs['M'] = (arrIndices if truncate else None)
+
+        super(MLCirculant, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenC matches the precision of the
@@ -236,37 +256,45 @@ cdef class MLCirculant(Partial):
             self._tenC = self._tenC.astype(self.dtype)
 
     cpdef Matrix _getNormalized(self):
-
         # As in the single level Circulant case, we simply calculate the
         # frobenius norm of the whole tensor
-
         norm = np.linalg.norm(self._tenC.reshape((-1)))
         return self * (1. / norm)
 
     cpdef np.ndarray _getArray(self):
-        """Return an explicit representation of the matrix as numpy-array."""
         return self._reference()
 
-    def _preProcSlice(
+    cpdef np.ndarray _preProcSlice(
         self,
-        theTensor,          # the tensor we do the
-        numTensorDim,
-        arrNopt,
-        arrN
+        np.ndarray theTensor,
+        int numTensorDim,
+        np.ndarray arrNopt,
+        np.ndarray arrN
     ):
-        # Variables
-        ########################################################################
-        # theTensor,            the tensor we do the proprocessing on
-        # numTensorDim,         the current dimension we are operating on
-        # arrNopt,              the size we should optimize to
-        # arrN                  the size the dimension originally had
+        '''
+        Preprocess one axis of the defining tensor.
 
-        # preprocess one axis of the defining tensor. here we check for one
-        # dimension, whether it makes sense to zero-pad or not by comparing
-        # arrNopt and arrN. If arrNopt is larger, it seems like it makes sense
-        # to do zero padding into this dimension and then we do exactly that
+        Here we check for one dimension, whether it makes sense to zero-pad or
+        not by comparing arrNopt and arrN. If arrNopt is larger, it seems like
+        it makes sense to do zero padding into this dimension and then we do
+        exactly that.
 
-        arrRes = np.empty(1)
+        Parameters
+        ----------
+        theTensor : :py:class:`numpy.ndarray`
+            The tensor we do the proprocessing on.
+
+        numTensorDim : int
+            The current dimension we are operating on.
+
+        arrNopt : :py:class:`numpy.ndarray`
+            The size we should optimize to.
+
+        arrN : :py:class:`numpy.ndarray`
+            The size the dimension originally had.
+        '''
+        cdef np.ndarray arrRes = np.empty(1)
+        cdef np.ndarray z
 
         if arrNopt[numTensorDim] > arrN[numTensorDim]:
             z = np.zeros(arrNopt[numTensorDim] - 2 * arrN[numTensorDim] + 1)
@@ -274,31 +302,50 @@ cdef class MLCirculant(Partial):
         else:
             return np.copy(theTensor)
 
-    def _genArrS(
+    cpdef np.ndarray _genArrS(
         self,
-        arrN,
-        arrNout,
-        verbose=False
+        np.ndarray arrN,
+        np.ndarray arrNout,
+        bint verbose=False
     ):
-        # Variables
-        ########################################################################
-        # arrN,                 the original sizes of the defining tensor
-        # arrNout,              the desired sizes of the tensor
-        # verbose=False         verbositiy, yes or no?
-        # numNout               output size of the matrix we embedd into
-        # arrS                  the output array which does the selection
+        '''
+        Filter out the non-zero elements in the padded version of X iteratively.
 
-        # Iteratively filter out the non-zero elements in the padded version
-        # of X. I know, that one can achieve this from a zero-padded
-        # version of the tensor Xpadten, but the procedure itself is very
-        # helpful for understanding how the nested levels have an impact on
-        # the padding structure
+        One can achieve this from a zero-padded version of the tensor Xpadten,
+        but the procedure itself is very helpful for understanding how the
+        nested levels have an impact on the padding structure.
 
-        n = arrN.shape[0]
-        numNout = np.prod(arrNout)
+        Parameters
+        ----------
+        arrN : :py:class:`numpy.ndarray`
+            The original sizes of the defining tensor.
+
+        arrNout : :py:class:`numpy.ndarray`
+            The desired sizes of the tensor.
+
+        arrNopt : :py:class:`numpy.ndarray`
+            The size we should optimize to.
+
+        arrN : :py:class:`numpy.ndarray`
+            The size the dimension originally had.
+
+        verbose : bool
+            Output verbose information.
+
+            Defaults to False.
+
+        Returns
+        -------
+        arrS : :py:class:`numpy.ndarray`
+            The output array which does the selection.
+        '''
+        cdef intsize ii, n = arrN.shape[0]
+
+        # output size of the matrix we embed into
+        cdef intsize numNout = np.prod(arrNout)
 
         # initialize the result as all ones
-        arrS = np.arange(numNout) >= 0
+        cdef np.ndarray arrS = np.arange(numNout) >= 0
 
         # now buckle up!
         # we go through all dimensions first
@@ -336,50 +383,62 @@ cdef class MLCirculant(Partial):
         return arrS
 
     cpdef np.ndarray _reference(self):
-        # Return an explicit representation of the matrix without using
-        # any fastmat code.
-
         return self._refRecursion(self._arrN, self._tenC, False)
 
     def _refRecursion(
         self,
-        arrN,
-        tenC,
-        verbose=False
+        np.ndarray arrN,
+        np.ndarray tenC,
+        bint verbose=False
     ):
-        # Variables
-        ########################################################################
-        # arrN,                 dimensions in each level
-        # tenC,                 defining elements
-        # verbose=False         verbosity flag
-        # numD                  number of levels = d
-        # arrNprod              product of all dimensions
-        # C                     the resulting d-level matrix
-        # subC                  the submatrix, which is (d-1)-level at
-        #                       the current iteration position
+        '''
+        Build the d-level circulant matrix recursively from a d-dimensional
+        tensor.
 
-        # this is a recursive routine, which takes an d-dimensional tensor
-        # and builds up the d-level circulant matrix, by first building up
-        # the (d-1)-level matrices and putting them to the correct locations
-        # in the case d=1 we simply
+        Build the (d-1) level matrices first and put them to the correct
+        locations for d=1.
 
-        # number of dimensions
-        numD = arrN.shape[0]
+        Parameters
+        ----------
+        arrN : :py:class:`numpy.ndarray`
+            The dimensions in each level.
 
-        if verbose:
-            print(numD, arrN)
+        tenC : :py:class:`numpy.ndarray`
+            The defining elements.
+
+        verbose : bool
+            Output verbose information.
+
+            Defaults to False.
+
+        Returns
+        -------
+        arrC : :py:class:`numpy.ndarray`
+            The resulting d-level matrix.
+        '''
+        cdef intsize nn, ii, NN, MM
+
+        # the submatrix, which is (d-1)-level at the current iteration position
+        cdef np.ndarray subC
+
+        # number of dimensions (levels = d)
+        cdef intsize numD = arrN.shape[0]
 
         # get size of resulting block circulant matrix
-        numN = np.prod(arrN)
-        arrNprod = np.array(
+        cdef intsize numN = np.prod(arrN)
+
+        # product of all dimensions
+        cdef np.ndarray arrNprod = np.array(
             list(map(lambda ii : np.prod(arrN[ii:]), range(len(arrN) + 1)))
         )
         if verbose:
+            print(numD, arrN)
             print()
             print(tenC)
             print(arrNprod)
 
-        C = np.zeros((numN, numN), dtype=self.dtype)
+        # The resulting d-level matrix
+        cdef np.ndarray arrC = np.zeros((numN, numN), dtype=self.dtype)
 
         if numD > 1:
             # iterate over dimensions
@@ -402,14 +461,15 @@ cdef class MLCirculant(Partial):
                               % (nn, ii, NN, MM, NN + arrNprod[1],
                                  MM + arrNprod[1], subC.shape[0], subC.shape[1])
                               )
-                        print(C[NN:NN + arrNprod[1], MM:MM + arrNprod[1]].shape)
-                        print(C.shape)
+                        print(arrC[NN:NN + arrNprod[1],
+                                   MM:MM + arrNprod[1]].shape)
+                        print((<object> arrC).shape)
                         print(arrN[0])
 
                     # do the actual placement by copying in the right memor
                     # region
-                    C[NN:NN + arrNprod[1], MM:MM + arrNprod[1]] = subC
-            return C
+                    arrC[NN:NN + arrNprod[1], MM:MM + arrNprod[1]] = subC
+            return arrC
         else:
             # if we are in the lowest level, we just return the circulant
             # block by calling the normal circulant reference
@@ -427,9 +487,10 @@ cdef class MLCirculant(Partial):
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : 27,
                 TEST.NUM_M      : TEST.NUM_N,
-                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
-                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'tenC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : (3, 3, 3),
@@ -466,6 +527,3 @@ cdef class MLCirculant(Partial):
                     np.random.randn(*(2 * [c + 1])).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

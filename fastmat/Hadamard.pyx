@@ -99,8 +99,19 @@ cdef class Hadamard(Matrix):
         def __get__(self):
             return self._order
 
-    def __init__(self, order):
-        '''Initialize Matrix instance'''
+    def __init__(self, order, **options):
+        '''
+        Initialize Hadamard matrix instance.
+
+        Parameters
+        ----------
+        order : int
+            The order of the Hadamard matrix to generate. The matrix data type
+            is :py:class:`numpy.int8`
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         if order < 1:
             raise ValueError("Hadamard: Order must be larger than 0.")
 
@@ -114,13 +125,11 @@ cdef class Hadamard(Matrix):
 
         # set properties of matrix
         numN = 2 ** self._order
-        self._initProperties(numN, numN, np.int8, cythonCall=True,
-                             forceInputAlignment=True)
+        self._cythonCall = True
+        self._initProperties(numN, numN, np.int8, **options)
+        self._forceContiguousInput = True
 
     cpdef np.ndarray _getArray(self):
-        '''
-        Return an explicit representation of the matrix as numpy-array.
-        '''
         return self._reference()
 
     ############################################## class property override
@@ -151,9 +160,6 @@ cdef class Hadamard(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''
-        Calculate the forward transform of this matrix.
-        '''
         cdef ntype dtype = typeInfo[typeRes].numpyType
         cdef intsize N = arrX.shape[0], M = arrX.shape[1], order = self._order
         cdef intsize mm, oo
@@ -167,7 +173,7 @@ cdef class Hadamard(Matrix):
             opCopyVector(&strOutput, mm, &strInput, mm)
 
             butterflyDistance = 1
-            butterflyCount = N / 2
+            butterflyCount = N // 2
             for oo in range(order):
                 strideCopy(&strA, &strOutput)
                 strideCopy(&strB, &strOutput)
@@ -201,6 +207,8 @@ cdef class Hadamard(Matrix):
                     _hadamardCore[np.int64_t](&strA, &strB, 0)
                 elif typeX == TYPE_INT32:
                     _hadamardCore[np.int32_t](&strA, &strB, 0)
+                elif typeX == TYPE_INT16:
+                    _hadamardCore[np.int16_t](&strA, &strB, 0)
                 elif typeX == TYPE_INT8:
                     _hadamardCore[np.int8_t](&strA, &strB, 0)
                 else:
@@ -217,17 +225,10 @@ cdef class Hadamard(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''
-        Calculate the backward transform of this matrix.
-        '''
         return self._forwardC(arrX, arrRes, typeX, typeRes)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         global spHadamard
         if spHadamard is None:
             spHadamard = __import__('scipy.linalg', globals(), locals(),
@@ -266,9 +267,6 @@ cdef class Hadamard(Matrix):
             BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, datatype: Hadamard(c))
+                BENCH.FUNC_GEN  : (lambda c, dt: Hadamard(c, minType=dt))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

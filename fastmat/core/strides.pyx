@@ -57,7 +57,7 @@ cdef void strideSliceVectors(STRIDE_s *stride,
         stop = stride[0].numVectors
 
     stride[0].base += start * stride[0].strideVector
-    stride[0].numVectors = stop if step == 0 else (stop - start) / step
+    stride[0].numVectors = stop if step == 0 else (stop - start) // step
     stride[0].strideVector = stride[0].strideVector * step
 
 cdef void strideSliceElements(STRIDE_s *stride,
@@ -69,7 +69,7 @@ cdef void strideSliceElements(STRIDE_s *stride,
         stop = stride[0].numElements
 
     stride[0].base += start * stride[0].strideElement
-    stride[0].numElements = stop if step == 0 else (stop - start) / step
+    stride[0].numElements = stop if step == 0 else (stop - start) // step
     stride[0].strideElement = stride[0].strideElement * step
 
 cdef void strideSubgridVector(STRIDE_s *stride,
@@ -142,6 +142,11 @@ cdef opCopyVector(STRIDE_s *strideDst, intsize idxVectorDst,
             (<np.int32_t *> ptrDst)[0] = (<np.int32_t *> ptrSrc)[0]
             ptrDst += dstStride
             ptrSrc += srcStride
+    elif sizeItem == 2:
+        for nn in range(numElements):
+            (<np.int16_t *> ptrDst)[0] = (<np.int16_t *> ptrSrc)[0]
+            ptrDst += dstStride
+            ptrSrc += srcStride
     elif sizeItem == 1:
         for nn in range(numElements):
             ptrDst[0] = ptrSrc[0]
@@ -177,6 +182,10 @@ cdef opZeroVector(STRIDE_s *stride, intsize idxVector):
     elif sizeItem == 4:
         for nn in range(numElements):
             (<np.int32_t *> ptr)[0] = 0
+            ptr += strideElement
+    elif sizeItem == 2:
+        for nn in range(numElements):
+            (<np.int16_t *> ptr)[0] = 0
             ptr += strideElement
     elif sizeItem == 1:
         for nn in range(numElements):
@@ -227,6 +236,12 @@ cdef opZeroVectors(STRIDE_s *stride):
             ptrVector = ptr + strideVector
             for nn in range(numElements):
                 (<np.int32_t *> ptrVector)[0] = 0
+                ptrVector += strideElement
+    elif sizeItem == 2:
+        for mm in range(numVectors):
+            ptrVector = ptr + strideVector
+            for nn in range(numElements):
+                (<np.int16_t *> ptrVector)[0] = 0
                 ptrVector += strideElement
     elif sizeItem == 1:
         for mm in range(numVectors):

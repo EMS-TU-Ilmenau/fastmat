@@ -95,36 +95,18 @@ cdef class Circulant(Partial):
     ############################################## class methods
     def __init__(self, vecC, **options):
         '''
-        Initialize Circulant Matrix instance.
+        Initialize Circulant matrix instance.
 
-        Circulant([ d c C C C]) represents this matrix:
-          [ d C C C c ]
-          [ c d C C C ]
-          [ C c d C C ]
-          [ C C c d C ]
-          [ C C C c d ]
+        Parameters
+        ----------
+        vecC : :py:class:`numpy.ndarray`
+            The generating vector of the circulant matrix describing the first
+            column of the matrix.
 
-        the generating vector passed as vecC may be zero-padded to increase
-        computation efficiency of involved fft operations. However, the padded
-        zeros must be appended to the center of the generating column. The
-        generating vector must head the column vector to define the resulting
-        lower triangular matrix. The upper triangular is defined by a reversed
-        copy of the vector at the end of column vector. This is short by one
-        entry, which is already placed at the very first position. The minimal
-        column vector length is one element short of twice the generating vector
-        length. Thus, padding is only efficient for really bad behaved fourier
-        transforms.
-          [ d c C C C 0 0 0 0 0 0 0 c C C C]
-
-        Valid options
-        -------------
-         'pad'=[FALSE true]
-            perform zero-padding of Circulant for efficiency. By default set to
-            False as padding introduces significant overhead to non-padded for
-            most but some sizes.
-
-        All options specified will also be passed on to the generation of the
-        underlying Product instance initialization.
+        **options:
+            See the special options of :py:class:`fastmat.Fourier`, which are
+            also supported by this matrix and the general options offered by
+            :py:meth:`fastmat.Matrix.__init__`.
         '''
 
         # save generating vector. Matrix sizes will be set by Product
@@ -142,7 +124,6 @@ cdef class Circulant(Partial):
 
         cdef intsize size = len(vecC)
         cdef intsize paddedSize, minimalSize = size * 2 - 1
-        cdef np.ndarray arrIndices
 
         # determine if zero-padding of the convolution to achieve a better FFT
         # size is beneficial or not
@@ -164,17 +145,19 @@ cdef class Circulant(Partial):
         # size, which will be compensated in Diag().
 
         # Create inner product
-        cdef Fourier FN = Fourier(size)
-        cdef Product P = Product(FN.H, Diag(np.fft.fft(vecC, axis=0) / size),
-                                 FN, **options)
+        cdef Fourier FN = Fourier(size, **options)
+        cdef Product P = Product(
+            FN.H, Diag(np.fft.fft(vecC, axis=0) / size), FN, **options
+        )
 
         # initialize Partial of Product. Only use Partial when padding size
-        if size == len(self._vecC):
-            super(Circulant, self).__init__(P)
-        else:
-            # generate index array once to save memory by one shared reference
-            arrIndices = np.arange(len(self._vecC))
-            super(Circulant, self).__init__(P, N=arrIndices, M=arrIndices)
+        cdef dict kwargs = options.copy()
+        cdef bint truncate = size != len(self._vecC)
+        cdef np.ndarray arrIndices = np.arange(len(self._vecC))
+        kwargs['N'] = (arrIndices if truncate else None)
+        kwargs['M'] = (arrIndices if truncate else None)
+
+        super(Circulant, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure vecC matches the precision of the
@@ -183,7 +166,6 @@ cdef class Circulant(Partial):
             self._vecC = self._vecC.astype(self.dtype)
 
     cpdef np.ndarray _getArray(self):
-        '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
 
     ############################################## class property override
@@ -191,13 +173,11 @@ cdef class Circulant(Partial):
         return self._vecC[(idxN - idxM) % self.numN]
 
     cpdef np.ndarray _getCol(self, intsize idx):
-        '''Return selected columns of self.array'''
         cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes, idx)
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        '''Return selected rows of self.array'''
         cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
         self._roll(arrRes[::-1], self.numN - idx - 1)
         return arrRes
@@ -212,7 +192,17 @@ cdef class Circulant(Partial):
 
     ############################################## internal roll core
     cdef void _roll(self, np.ndarray vecOut, intsize shift):
-        '''Return self.vecC rolled by 'shift' elements.'''
+        '''
+        Return self.vecC rolled by 'shift' elements.
+
+        Parameters
+        ----------
+        vecOut : :py:class:`numpy.ndarray`
+            1d vector to be filled with an rolled version of self._vecC.
+
+        shift : int
+            Amount of (rolling) shift to be applied.
+        '''
         if shift == 0:
             vecOut[:] = self._vecC
         else:
@@ -224,10 +214,6 @@ cdef class Circulant(Partial):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
         cdef intsize ii, N = self.numN, M = self.numM
 
@@ -289,6 +275,3 @@ cdef class Circulant(Partial):
                     np.random.randn(2 ** c).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

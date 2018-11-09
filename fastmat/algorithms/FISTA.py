@@ -201,8 +201,10 @@ class FISTA(Algorithm):
                 TEST.NUM_N: (lambda param: 3 * param['order']),
                 TEST.NUM_M: (lambda param: 2 ** param['order']),
                 'numK': 'order',
-                'lambda': 0.1,
-                'maxSteps': 3,
+                'lambda': 1.,
+                'maxSteps': 10,
+                'typeA': TEST.Permutation(TEST.ALLTYPES),
+
                 TEST.ALG_MATRIX: lambda param:
                     Product(Matrix(np.random.uniform(
                         -100, 100, (getattr(param, TEST.NUM_M),
@@ -210,14 +212,13 @@ class FISTA(Algorithm):
                                         param['typeA'])),
                             Hadamard(param.order),
                             typeExpansion=param['typeA']),
-                'typeA': TEST.Permutation(TEST.ALLTYPES),
-
                 TEST.OBJECT: FISTA,
                 TEST.INITARGS: [TEST.ALG_MATRIX],
                 TEST.INITKWARGS: {
                     'numLambda': 'lambda',
                     'numMaxSteps': 'maxSteps'
                 },
+
 
                 TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT: TEST.IgnoreFunc(testFISTA),
@@ -233,8 +234,6 @@ class FISTA(Algorithm):
 
                 # matrix inversion always expands data type to floating-point
                 TEST.TYPE_PROMOTION: np.float32,
-                TEST.TOL_MINEPS: getTypeEps(np.float32),
-                TEST.TOL_POWER: 5.,
                 TEST.CHECK_PROXIMITY: False
             },
         }
@@ -242,8 +241,3 @@ class FISTA(Algorithm):
     @staticmethod
     def _getBenchmark():
         return {}
-
-    @staticmethod
-    def _getDocumentation():
-        from ..inspect import DOC
-        return ""

@@ -26,9 +26,10 @@ ctypedef np.uint32_t lfsrReg_t
 ################################################## class LfsrConv
 cdef class LFSRCirculant(Matrix):
 
-    cdef public int         _regSize
-    cdef public lfsrReg_t   _regTaps
-    cdef public lfsrReg_t   _resetState
+    cdef readonly int       size
+    cdef readonly lfsrReg_t taps
+    cdef readonly lfsrReg_t start
+    cdef readonly lfsrReg_t period
 
     cdef public np.ndarray  _vecC
     cdef public np.ndarray  _states

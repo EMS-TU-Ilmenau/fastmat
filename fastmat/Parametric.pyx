@@ -112,15 +112,44 @@ cdef class Parametric(Matrix):
         def __get__(self):
             return self._fun
 
-    def __init__(
-        self,
-        vecX,
-        vecY,
-        funF,
-        funDtype=None,
-        rangeAccess=True
-    ):
-        '''Initialize Matrix instance'''
+    def __init__(self, vecX, vecY, funF, **options):
+        '''
+        Initialize a Parametric matrix instance.
+
+        Parameters
+        ----------
+        vecX : :py:class:`numpy.ndarray`
+            A 1d vector mapping the matrix column index to the x-values of
+            funF.
+
+        vecY : :py:class:`numpy.ndarray`
+            A 1d vector mapping the matrix row index to the y-values of funF.
+
+        funF : callable with arguments (x, y)
+            A function returning the element at index (x, y).
+
+        **options:
+            See the list of special options below and
+            :py:meth:`fastmat.Matrix.__init__` for general options.
+
+        Options
+        -------
+        funDtype : :py:class:`numpy.dtype`
+            Data type of the values returned by funF
+
+            Not specified by default (determine the datatype from the element
+            at the first index funF(vecX[0], vecY[0]).
+
+        rangeAccess : bool
+            Allow passing row- and column vectors directly to funF. This can
+            lead to significant speed-ups compared to single-element access.
+
+            Defaults to True.
+        '''
+
+        # retrieve options
+        funDtype = options.get('funDtype', None)
+        rangeAccess = options.get('rangeAccess', True)
 
         # store flags
         self._rangeAccess = rangeAccess
@@ -138,19 +167,18 @@ cdef class Parametric(Matrix):
             if funDtype is None else funDtype
 
         # set properties of matrix
+        # deactivate automatic generation of array for transformation bypass.
+        # As Parametric is always slower than dot product with the dense array
+        # this would otherwise happen always for all sizes
+        self._cythonCall = True
         self._initProperties(
             len(self._vecY),            # numN
             len(self._vecX),            # numM
             self._funDtype,             # data type of matrix
-            cythonCall=True,
-            forceInputAlignment=True,
-            bypassAutoArray=False       # deactivate automatic generation of
-                                        # array for transformation bypass. As
-                                        # Parametric is always slower than dot
-                                        # product with the dense array this
-                                        # would otherwise happen always for all
-                                        # sizes
+            **options
         )
+        self._forceContiguousInput = True
+        self.bypassAutoArray = False
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
@@ -269,10 +297,6 @@ cdef class Parametric(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         arrRes = np.zeros(
             (self.numN, self.numM), dtype=self.dtype)
 
@@ -291,8 +315,9 @@ cdef class Parametric(Matrix):
         return {
             TEST.COMMON: {
                 # define parameters for test
-                TEST.NUM_N      : 4,
-                TEST.NUM_M      : TEST.Permutation([6, TEST.NUM_N]),
+                TEST.NUM_N      : 2,
+                TEST.NUM_M      : TEST.Permutation([3, TEST.NUM_N]),
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'typeY'         : TEST.Permutation(TEST.LARGETYPES),
                 'typeX'         : TEST.Permutation(TEST.FEWTYPES),
                 'rangeAccess'   : TEST.Permutation([False, True]),
@@ -369,6 +394,3 @@ cdef class Parametric(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

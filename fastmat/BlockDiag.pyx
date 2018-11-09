@@ -26,8 +26,6 @@ from .core.types cimport *
 ################################################## class BlockDiag
 cdef class BlockDiag(Matrix):
     r"""
-
-
     .. math::
         M = \mathrm{diag}\left\{\left(  A_{i}\right)_{i}\right\},
 
@@ -94,8 +92,19 @@ cdef class BlockDiag(Matrix):
     """
 
     ############################################## class methods
-    def __init__(self, *matrices):
-        '''Initialize Matrix instance with a list of child matrices'''
+    def __init__(self, *matrices, **options):
+        '''
+        Initialize a BlockDiag matrix instance.
+
+        Parameters
+        ----------
+        *matrices : :py:class:`fastmat.Matrix`
+            The matrix instances to be put along the main diagonal of the block
+            diagonal matrix, beginning at index (0, 0) with the first matrix.
+
+        **options :
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         cdef intsize numN = 0, numM = 0
         cdef Matrix term
 
@@ -116,11 +125,9 @@ cdef class BlockDiag(Matrix):
             dataType = np.promote_types(dataType, term.dtype)
 
         # set properties of matrix
-        self._initProperties(
-            numN, numM, dataType,
-            cythonCall=True,
-            widenInputDatatype=True
-        )
+        self._cythonCall = True
+        self._initProperties(numN, numM, dataType, **options)
+        self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -141,7 +148,6 @@ cdef class BlockDiag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the forward transform of this matrix'''
         cdef Matrix term
         cdef intsize idxN = 0, idxM = 0, ii, cnt = len(self._content)
 
@@ -160,7 +166,6 @@ cdef class BlockDiag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the backward transform of this matrix'''
         cdef Matrix term
         cdef intsize idxN = 0, idxM = 0, cnt = len(self._content)
 
@@ -175,10 +180,6 @@ cdef class BlockDiag(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
         cdef Matrix term
         cdef intsize idxN = 0, idxM = 0
@@ -203,7 +204,7 @@ cdef class BlockDiag(Matrix):
                 TEST.NUM_N      : (lambda param: param['size'] * 3),
                 TEST.NUM_M      : TEST.NUM_N,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
-                'mType2'        : TEST.Permutation(TEST.ALLTYPES),
+                'mType2'        : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
                     TEST.SHAPE  : ('size', 'size')
@@ -255,6 +256,3 @@ cdef class BlockDiag(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c * 16)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

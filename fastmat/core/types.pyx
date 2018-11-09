@@ -65,6 +65,8 @@ cdef ftype approximateType(INFO_TYPE_s *dtype):
         if dtype[0].isInt:
             if dtype[0].dsize <= 1:
                 return TYPE_INT8
+            elif dtype[0].dsize <= 2:
+                return TYPE_INT16
             elif dtype[0].dsize <= 4:
                 return TYPE_INT32
             elif dtype[0].dsize <= 8:
@@ -177,7 +179,7 @@ cdef ftype promoteFusedTypes(ftype type1, ftype type2):
     return typeInfo[type1].promote[type2]
 
 cpdef object safeTypeExpansion(object dtype):
-    return (np.float32 if dtype == np.int8
+    return (np.float32 if (dtype == np.int8) or (dtype == np.int16)
             else (np.float64 if (dtype == np.int32) or (dtype == np.int64)
                   else dtype))
 
@@ -216,6 +218,7 @@ for tt in range(<int> np.NPY_NTYPES):
 # set fused type definitions for specific numpy data types
 for tt, dtype in {
     TYPE_INT8: np.int8,
+    TYPE_INT16: np.int16,
     TYPE_INT32: np.int32,
     TYPE_INT64: np.int64,
     TYPE_FLOAT32: np.float32,
