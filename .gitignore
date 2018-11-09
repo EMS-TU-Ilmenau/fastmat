@@ -34,6 +34,9 @@ fastmat.egg-info
 # testing stuff
 test/results*
 
+# benchmark stuff
+*.csv
+
 # setup stuff
 setup.files
 

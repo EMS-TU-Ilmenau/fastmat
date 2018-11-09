@@ -251,7 +251,7 @@ class OMP(Algorithm):
                 arrSparseTestDist(
                     (numM, 1),
                     dtype=test[TEST.DATATYPE],
-                    density=1. * test['numK'] / numM
+                    density=1. * test['maxSteps'] / numM
                 ).toarray()
                 for nn in range(test[TEST.DATACOLS])
             ])

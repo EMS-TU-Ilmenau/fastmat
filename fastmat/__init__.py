@@ -32,11 +32,10 @@ This structure can be exploited twofold. First, the storage of these transforms
 in form of matrices, on computers normally an array of numbers in
 :math:`\mathbb{C}` or :math:`\mathbb{R}`, might be unnecessary.
 So for each structure there is a more concise way of representation, which
-leads to a benefit in memory consumption 
-when using these linear transforms. Second,
-the structure allows more efficient calculations when applying the linear
-transform to a vector. This may result in a drop in algorithmic complexity
-which implies that computing time can be saved.
+leads to a benefit in memory consumption when using these linear transforms.
+Second, the structure allows more efficient calculations when applying the
+linear transform to a vector. This may result in a drop in algorithmic
+complexity which implies that computing time can be saved.
 
 Still, these structural benefits have to be exploited and it is not often easy
 to accomplish this in a save and reuseable way. Moreover, in applications you
