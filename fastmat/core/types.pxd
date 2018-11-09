@@ -44,6 +44,7 @@ cdef extern from "types.h":
 
 ctypedef enum TYPES:
     TYPE_INT8
+    TYPE_INT16
     TYPE_INT32
     TYPE_INT64
     TYPE_FLOAT32
@@ -57,6 +58,7 @@ ctypedef enum TYPES:
 
 ctypedef fused TYPE_INT:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
 
@@ -76,6 +78,7 @@ ctypedef fused TYPE_FLOAT:
 
 ctypedef fused TYPE_ALL:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
     np.float32_t
@@ -87,6 +90,7 @@ ctypedef fused TYPE_ALL:
 ################################ one round of fused types for input arguments
 ctypedef fused TYPE_IN:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
     np.float32_t
@@ -96,6 +100,7 @@ ctypedef fused TYPE_IN:
 
 ctypedef fused TYPE_IN_R:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
     np.float32_t
@@ -103,6 +108,7 @@ ctypedef fused TYPE_IN_R:
 
 ctypedef fused TYPE_IN_I:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
 
@@ -110,6 +116,7 @@ ctypedef fused TYPE_IN_I:
 ################################ one round of fused types for operand arguments
 ctypedef fused TYPE_OP:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
     np.float32_t
@@ -119,6 +126,7 @@ ctypedef fused TYPE_OP:
 
 ctypedef fused TYPE_OP_R:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
     np.float32_t
@@ -126,6 +134,7 @@ ctypedef fused TYPE_OP_R:
 
 ctypedef fused TYPE_OP_I:
     np.int8_t
+    np.int16_t
     np.int32_t
     np.int64_t
 

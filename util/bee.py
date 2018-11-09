@@ -63,7 +63,7 @@ except ImportError:
     sys.path.append('.')
     import fastmat
 
-from fastmat.inspect import Test, Benchmark, Documentation, TEST, BENCH, DOC
+from fastmat.inspect import Test, Benchmark, TEST, BENCH
 from fastmat.inspect.common import AccessDict, \
     fmtBold, fmtGreen, fmtYellow, fmtRed
 
@@ -595,124 +595,6 @@ class Bee(CommandArgParser):
             # start tests of all targets of this element
             bench.cbResult = cbResult
             bench.run(*(selection[nameBench]))
-
-    ############################################## command: documentation
-    def documentation(self, *arguments):
-        '''Extract built-in documentation from units in package.'''
-        self.argParser.add_argument(
-            'units',
-            nargs='*',
-            default=[],
-            help="Specify the documentation sections to include in the TeX " +
-            "output. If this list is empty, all sections in the package will " +
-            "be considered. Any key=value pairs will be forwarded to " +
-            "benchmark operations"
-        )
-        self.argParser.add_argument(
-            '-p', '--path-results',
-            type=str,
-            default='.',
-            help='Path to the benchmark results.'
-        )
-        self.argParser.add_argument(
-            '-o', '--output',
-            type=str,
-            default='',
-            help="Filename to write the output to. If not file is specified " +
-            "the output will be directed to STDOUT."
-        )
-        self.argParser.add_argument(
-            '-c', '--calibration',
-            type=str,
-            default='',
-            help="Filename to read calibration data from. Loads calibration " +
-            "data for fastmat classes which is then used by the package."
-        )
-        self.argParser.add_argument(
-            '-t', '--no-version-tag',
-            action='store_true',
-            help="Do not add version tag to csv benchmark output."
-        )
-
-        # parse arguments, all extra stuff goes to 'extraParam'
-        self.args, extraArgs = self.argParser.parse_known_args(arguments)
-        self.args.units.extend(extraArgs)
-
-        # load calibration data
-        if len(self.args.calibration) > 0:
-            fastmat.core.loadCalibration(self.args.calibration)
-            print("  > Loaded calibration data from %s." %(
-                self.args.calibration))
-
-        # compile set of extra options for optional benchmarking
-        benchmarkOptions = unpackExtraArgs([name
-                                            for name in self.args.units
-                                            if '=' in name])
-        options = {'benchmarkOptions'   : benchmarkOptions,
-                   'addVersionTag'      : not self.args.no_version_tag,
-                   DOC.OUTPATH          : self.args.path_results}
-
-        selection = [name for name in self.args.units if '=' not in name]
-
-        # if selection is empty, take all sections of package
-        if len(selection) == 0:
-            selection = (sorted(packageClasses.keys()) +
-                         sorted(packageAlgs.keys()))
-        else:
-            selection = [name for name in selection if name in packageIndex]
-
-        if len(selection) < 1:
-            self.argParser.error("documentation: job list is empty.")
-
-        output = ["% THIS OUTPUT WAS GENERATED AUTOMATICALLY AND " +
-                  "MAY BE OVERWRITTEN ANYTIME"]
-
-        # add machine info ahead of documentation
-        import platform
-        machineInfo = (
-            " ".join([" \\verb|%s|" %(token)
-                      for token in platform.platform().split("-")]).strip("`"),
-            " ".join([" \\verb|%s|" %(token)
-                      for token in " ".join(
-                          platform.uname()).split(" ")]).strip("'"),
-            platform.processor(),
-            '---'
-        )
-        output.append(DOC.SUBSECTION('General information', r"""
-This section was automatically generated on a system with the following
-specifications
-
-\vspace{5mm}\begin{centering}
-  \begin{tabular}[t]{ m{.45\columnwidth} | m{.45\columnwidth} }
-    \textbf{\large System} & \textbf{\large Kernel} \\
-      \begin{flushleft}%s\end{flushleft} & \begin{flushleft}%s\end{flushleft} \\
-      \textbf{\large Processor} & \textbf{\large Memory} \\
-      \verb|%s| & \verb|%s|
-  \end{tabular}
-\end{centering}""" % machineInfo))
-
-        # get documentation of selected units
-        for name in selection:
-            # add class name to tex output and make output open on a new column
-            output.extend(['', '%' * 80,
-                           "%% Documentation of unit '%s'" %(name),
-                           '%' * 80, '',
-                           r'\vfill\null\columnbreak'])
-
-            # output class documentation
-            output.append(Documentation(packageIndex[name], **options))
-
-        # finally, print output
-        strOutput = os.linesep.join([str(item)
-                                     if isinstance(item, DOC.__DOC__) else item
-                                     for item in output])
-        if len(self.args.output) == 0:
-            print(strOutput)
-        else:
-            with open(self.args.output, "w") as f:
-                f.write(strOutput)
-
-            print(" >> output written to '%s'" %(self.args.output))
 
     ############################################## command: calibrate
     def calibrate(self, *arguments):
