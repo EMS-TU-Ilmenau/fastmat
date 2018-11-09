@@ -81,7 +81,21 @@ cdef class Outer(Matrix):
         def __get__(self):
             return self._vecH
 
-    def __init__(self, vecV, vecH):
+    def __init__(self, vecV, vecH, **options):
+        '''
+        Initialize a Outer product matrix instance.
+
+        Parameters
+        ----------
+        arrV : :py:class:`numpy.ndarray`
+            A 1d vector defining the column factors of the resulting matrix.
+
+        arrH : :py:class:`numpy.ndarray`
+            A 1d vector defining the row factors of the resulting matrix.
+
+        **options :
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
 
         # check dimensions
         vecV = _arrSqueezedCopy(vecV)
@@ -110,7 +124,7 @@ cdef class Outer(Matrix):
         self._vecVHerm = _conjugate(self._vecV).reshape((1, numN))
 
         # set properties of matrix
-        self._initProperties(numN, numM, datatype)
+        self._initProperties(numN, numM, datatype, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
@@ -129,21 +143,13 @@ cdef class Outer(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix.'''
-
         return self._vecV.dot(self._vecH.dot(arrX))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix.'''
-
         return self._vecHConj.dot(self._vecVHerm.dot(arrX))
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         dtype = np.promote_types(self.dtype, np.float64)
         return self._vecV.dot(self._vecH.astype(dtype))
 
@@ -202,6 +208,3 @@ cdef class Outer(Matrix):
                     arrTestDist((2 ** c, ), dtype=datatype)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

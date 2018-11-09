@@ -142,10 +142,7 @@ cdef class MLUltraSound(Partial):
 
         # build up the whole diagonalizing matrix
         # TODO checkout if this can be speeded up by doing FFTs
-        K = Kron(
-            Eye(self._numBlocksN),
-            *F._content
-        )
+        K = Kron(Eye(self._numBlocksN), *F._content)
 
         # allocate memory for the diagonal matrix
         diags = np.empty((
@@ -171,7 +168,10 @@ cdef class MLUltraSound(Partial):
         P = Product(K.H, B, K)
 
         # call the parent constructor
-        super(MLUltraSound, self).__init__(P, N=arrIndicesN, M=arrIndicesN)
+        cdef dict kwargs = options.copy()
+        kwargs['N'] = arrIndicesN
+        kwargs['M'] = arrIndicesN
+        super(MLUltraSound, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the
@@ -180,7 +180,6 @@ cdef class MLUltraSound(Partial):
             self._tenT = self._tenT.astype(self.dtype)
 
     cpdef np.ndarray _getArray(self):
-        '''Return an explicit representation of the matrix as numpy-array.'''
         return self._reference()
 
     cpdef Matrix _getNormalized(self):
@@ -249,10 +248,6 @@ cdef class MLUltraSound(Partial):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
 
         # go through all blocks and construct the corresponding
@@ -279,7 +274,9 @@ cdef class MLUltraSound(Partial):
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : 40,
                 TEST.NUM_M      : TEST.NUM_N,
-                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : (2, 2, 7, 9)
@@ -312,6 +309,3 @@ cdef class MLUltraSound(Partial):
                     np.random.randn(c, c, 2 * c - 1, 2 * c - 1).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

@@ -51,7 +51,28 @@ cdef class Product(Matrix):
     """
 
     def __init__(self, *matrices, **options):
-        '''Initialize Matrix instance'''
+        '''
+        Initialize a Product matrix instance.
+
+        Parameters
+        ----------
+        *matrices : :py:class:`fastmat.Matrix` or scalar value
+            The matrix instances to form a matrix-matrix product of. You may
+            also specify scalar values.
+
+        **options:
+            See the list of special options below and
+            :py:meth:`fastmat.Matrix.__init__` for general options.
+
+        Options
+        -------
+        typeExpansion : bool
+            Expand the data type of input data to the data type specified with
+            this paramter.
+
+            Defaults to a floating-point expansion of the promoted type of all
+            nested matrices' (and scalar values') data types.
+        '''
 
         # evaluate options passed to Product
         debug = options.get('debug', False)
@@ -125,7 +146,7 @@ cdef class Product(Matrix):
         self._content = tuple(lstFactors)
 
         # set properties of matrix
-        self._initProperties(numN, numM, dtype)
+        self._initProperties(numN, numM, dtype, **options)
 
         if debug:
             print("fastmat.Product instance %12x containing:" %(id(self)))
@@ -182,8 +203,6 @@ cdef class Product(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
-
         cdef int cnt = len(self._content)
         cdef int ii                     # index (0 .. cnt - 1)
         cdef int iii = cnt - 1          # index (cnt - 1 .. 0)
@@ -202,8 +221,6 @@ cdef class Product(Matrix):
         return arrRes
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
-
         cdef int cnt = len(self._content)
         cdef int ii
         cdef np.ndarray arrRes = arrX
@@ -224,10 +241,6 @@ cdef class Product(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef ii, cnt = len(self._content)
         cdef Matrix term
         cdef np.ndarray arrRes
@@ -267,11 +280,12 @@ cdef class Product(Matrix):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 7,
-                TEST.NUM_M      : TEST.Permutation([10, TEST.NUM_N]),
+                TEST.NUM_N      : 5,
+                TEST.NUM_M      : TEST.Permutation([7, TEST.NUM_N]),
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
                 'mType2'        : TEST.Permutation(TEST.FEWTYPES),
-                'sType'         : TEST.Permutation(TEST.ALLTYPES),
+                'sType'         : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
                     TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
@@ -320,6 +334,3 @@ cdef class Product(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Product(*([Eye(2 ** c)] * 2 ** c)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

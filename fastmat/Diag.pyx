@@ -70,8 +70,18 @@ cdef class Diag(Matrix):
             return self._vecD
 
     ############################################## class methods
-    def __init__(self, vecD):
-        '''Initialize Matrix instance with a list of child matrices'''
+    def __init__(self, vecD, **options):
+        '''
+        Initialize a Diag matrix instance.
+
+        Parameters
+        ----------
+        vecD : :py:class:`numpy.ndarray`
+            The generating vector of the diagonal entries of this matrix.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
         # numN is size of matrix (and of diagonal vector)
         numN = len(vecD)
 
@@ -83,12 +93,10 @@ cdef class Diag(Matrix):
                 "Diag: Definition vector must have exactly one dimension.")
 
         # set properties of matrix
-        self._initProperties(
-            numN, numN, self._vecD.dtype,
-            cythonCall=True,
-            forceInputAlignment=True,
-            fortranStyle=True
-        )
+        self._cythonCall = True
+        self._initProperties(numN, numN, self._vecD.dtype, **options)
+        self._forceContiguousInput = True
+        self._fortranStyle = True
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
@@ -137,7 +145,6 @@ cdef class Diag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        ''' Calculate the forward transform of this matrix.'''
         _multiply(arrX, self._vecD, arrRes,
                   typeX, self.fusedType, typeRes)
 
@@ -148,16 +155,11 @@ cdef class Diag(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        ''' Calculate the backward transform of this matrix.'''
         _multiply(arrX, _conjugate(self._vecD), arrRes,
                   typeX, self.fusedType, typeRes)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef intsize ii, N = self.numN
         cdef np.ndarray d = self.vecD
 
@@ -202,6 +204,3 @@ cdef class Diag(Matrix):
                     np.random.uniform(2, 3, 2 ** c).astype(dt)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

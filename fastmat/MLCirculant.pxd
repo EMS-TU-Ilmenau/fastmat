@@ -26,8 +26,11 @@ from .core.types cimport *
 cdef class MLCirculant(Partial):
 
     ############################################## class variables
-    cdef public np.ndarray _tenC                # matrix diagonal entries tensor
-    cpdef np.ndarray _arrN                      # dimensions per level
+    cdef public np.ndarray _tenC                 # matrix diagonal-entry tensor
+    cdef public np.ndarray _arrN                 # dimensions per level
 
     ############################################## class methods
+    cpdef np.ndarray _preProcSlice(
+        self, np.ndarray, int, np.ndarray, np.ndarray)
+    cpdef np.ndarray _genArrS(self, np.ndarray, np.ndarray, bint verbose=?)
     cpdef np.ndarray _reference(self)

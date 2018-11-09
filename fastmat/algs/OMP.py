@@ -219,10 +219,10 @@ class OMPinspect(Algorithm):
 
         return {
             TEST.ALGORITHM: {
-                'order'         : 5,
+                'order'         : 3,
                 TEST.NUM_N      : (lambda param: 2 ** param['order']),
                 TEST.NUM_M      : TEST.NUM_N,
-                'numK'          : 5,
+                'numK'          : 3,
                 'typeA'         : TEST.Permutation(TEST.ALLTYPES),
 
                 TEST.OBJECT     : Matrix,
@@ -237,7 +237,8 @@ class OMPinspect(Algorithm):
                                             'order', 'strTypeA'),
 
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION : np.float32
+                TEST.TYPE_PROMOTION : np.float32,
+                TEST.CHECK_PROXIMITY: False
             },
         }
 
@@ -285,8 +286,3 @@ class OMPinspect(Algorithm):
                 BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
             }
         }
-
-    @staticmethod
-    def _getDocumentation():
-        from ..inspect import DOC
-        return ""

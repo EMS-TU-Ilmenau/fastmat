@@ -64,8 +64,20 @@ cdef class DiagBlocks(Matrix):
     """
 
     ############################################## class methods
-    def __init__(self, tenDiags):
-        '''Initialize Matrix instance with a list of child matrices'''
+    def __init__(self, tenDiags, **options):
+        '''
+        Initialize DiagBlocks matrix instance.
+
+        Parameters
+        ----------
+        tenDiags : :py:class:`numpy.ndarray`
+            The generating 3d-array of the flattened diagonal tensor this
+            matrix describes. The matrix data type is determined by the data
+            type of this array.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
 
         self._numDiagsN = tenDiags.shape[0]
         self._numDiagsM = tenDiags.shape[1]
@@ -79,11 +91,9 @@ cdef class DiagBlocks(Matrix):
         dataType = tenDiags.dtype
 
         # set properties of matrix
-        self._initProperties(
-            numN, numM, dataType,
-            cythonCall=True,
-            widenInputDatatype=True
-        )
+        self._cythonCall = True
+        self._initProperties(numN, numM, dataType, **options)
+        self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -98,7 +108,6 @@ cdef class DiagBlocks(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the forward transform of this matrix'''
         arrRes[:] = np.einsum(
             'nmz,zmk -> znk',
             self._tenDiags,
@@ -112,7 +121,6 @@ cdef class DiagBlocks(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the backward transform of this matrix'''
         arrRes[:] = np.einsum(
             'mnz,zmk -> znk',
             self._tenDiags.conj(),
@@ -121,10 +129,6 @@ cdef class DiagBlocks(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
 
         arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
@@ -179,6 +183,3 @@ cdef class DiagBlocks(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c * c)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

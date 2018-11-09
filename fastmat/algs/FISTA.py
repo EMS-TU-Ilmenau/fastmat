@@ -171,83 +171,46 @@ class FISTAinspect(Algorithm):
 
         return {
             TEST.ALGORITHM: {
-                'order': 6,
-                TEST.NUM_N: (lambda param: 3 * param['order']),
-                TEST.NUM_M: (lambda param: 2 ** param['order']),
-                'numK': 'order',
-                'lambda': 10.,
-                'maxSteps': 1000,
-                'typeA': TEST.Permutation(TEST.ALLTYPES),
+                'order'             : 6,
+                TEST.NUM_N          : (lambda param: 3 * param['order']),
+                TEST.NUM_M          : (lambda param: 2 ** param['order']),
+                'numK'              : 'order',
+                'lambda'            : 10.,
+                'maxSteps'          : 10,
+                'typeA'             : TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.OBJECT: Matrix,
-                TEST.INITARGS: (lambda param: [
-                    Product(Matrix(np.random.uniform(
-                        -100, 100, (getattr(param, TEST.NUM_M),
-                                    getattr(param, TEST.NUM_M))).astype(
-                        param['typeA'])),
-                        Hadamard(param.order),
-                        typeExpansion=param['typeA']).array]),
+                TEST.OBJECT         : Matrix,
+                TEST.INITARGS       : (
+                    lambda param: [
+                        Product(
+                            Matrix(
+                                np.random.uniform(
+                                    -100, 100, (getattr(param, TEST.NUM_M),
+                                                getattr(param, TEST.NUM_M))
+                                ).astype(param['typeA'])
+                            ), Hadamard(param.order),
+                            typeExpansion=param['typeA']
+                        ).array
+                    ]
+                ),
 
-                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
-                TEST.INIT_VARIANT: TEST.IgnoreFunc(testFISTA),
+                TEST.DATAALIGN      : TEST.ALIGNMENT.DONTCARE,
+                TEST.INIT_VARIANT   : TEST.IgnoreFunc(testFISTA),
 
-                'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
-                TEST.NAMINGARGS: dynFormat("(%dx%d)*Hadamard(%s)[%s]",
-                                           TEST.NUM_N, TEST.NUM_M,
-                                           'order', 'strTypeA'),
+                'strTypeA'          : (
+                    lambda param: TEST.TYPENAME[param['typeA']]
+                ),
+                TEST.NAMINGARGS     : dynFormat(
+                    "(%dx%d)*Hadamard(%s)[%s]", TEST.NUM_N, TEST.NUM_M,
+                    'order', 'strTypeA'
+                ),
 
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION: np.float32,
-                TEST.TOL_MINEPS: getTypeEps(np.float32),
-                TEST.TOL_POWER: 5.
-                # TEST.CHECK_PROXIMITY    : False
+                TEST.TYPE_PROMOTION     : np.float32,
+                TEST.CHECK_PROXIMITY    : False
             },
         }
 
     @staticmethod
     def _getBenchmark():
-        from ..inspect import BENCH, arrTestDist
-        from ..Matrix import Matrix
-        from ..Product import Product
-        from ..Fourier import Fourier
-        from scipy import sparse as sps
-
-        def createTarget(M, datatype):
-            '''Create test target for algorithm performance evaluation.'''
-
-            if M < 10:
-                raise ValueError("Problem size too small for FISTA benchmark")
-
-            # assume a 1:5 ratio of measurements and problem size
-            # assume a sparsity of half the number of measurements
-            N = int(np.round(M / 5.0))
-            K = int(N / 2)
-
-            # generate matA (random measurement matrix, Fourier dictionary)
-            matA = Product(Matrix(arrTestDist((N, M), datatype)), Fourier(M))
-
-            # generate arrB from random baseline support (RHS)
-            arrB = matA * sps.rand(M, 1, 1.0 * K / M).todense().astype(datatype)
-
-            return (FISTA, [matA, arrB])
-
-        return {
-            BENCH.COMMON: {
-                BENCH.NAME: 'FISTA Algorithm',
-                BENCH.FUNC_GEN: (lambda c: createTarget(10 * c, np.float64)),
-                BENCH.FUNC_SIZE: (lambda c: 10 * c)
-            },
-            BENCH.PERFORMANCE: {
-                BENCH.CAPTION: 'FISTA performance'
-            },
-            BENCH.DTYPES: {
-                BENCH.FUNC_GEN: (lambda c, dt: createTarget(10 * c, dt)),
-                BENCH.FUNC_SIZE: (lambda c: 10 * c),
-                BENCH.FUNC_STEP: (lambda c: c * 10 ** (1. / 12)),
-            }
-        }
-
-    @staticmethod
-    def _getDocumentation():
-        from ..inspect import DOC
-        return ""
+        return {}

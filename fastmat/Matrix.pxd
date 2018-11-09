@@ -52,12 +52,20 @@ cdef class MatrixCallProfile(object):
 
 
 ################################################## class Matrix
+cdef struct TRANSFORM:
+    intsize numVectors
+    ftype fInput
+    ftype fInternal
+    ftype fOutput
+    ntype nInternal
+    ntype nOutput
+
 cdef class Matrix:
 
     cdef bint       _cythonCall                  # use _C() transforms in class
-    cdef bint       _forceInputAlignment         # force alignment of input data
+    cdef bint       _forceContiguousInput        # force contiguous input data
     #                                            # to be F-contiguous
-    cdef bint       _useFortranStyle             # if true, select Fortran style
+    cdef bint       _fortranStyle                # if true, select Fortran style
     cdef bint       _widenInputDatatype          # widen input data type upfront
 
     ############################################## class variables
@@ -78,6 +86,8 @@ cdef class Matrix:
     cdef readonly intsize   numM                 # column-count of matrix
     cdef readonly ntype     numpyType            # numpy typenum
     cdef readonly ftype     fusedType            # fastmat fused typenum
+    cdef readonly ftype     _minFusedType        # minimal fused type used
+    #                                            # internally for transform
 
     cdef public bint        bypassAllow          # if true, transform may be
     #                                            # bypassed based on runtime
@@ -113,8 +123,9 @@ cdef class Matrix:
     cpdef tuple _getComplexity(self)
     cdef void _initProfiles(self)
     cpdef _exploreNestedProfiles(self)
-    cpdef tuple estimateRuntime(self, intsize M=?)
+    cpdef tuple estimateRuntime(self, intsize numVectors=?)
 
+    cdef np.ndarray _prepareInputArray(self, np.ndarray, intsize, TRANSFORM *)
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef np.ndarray _forward(self, np.ndarray)

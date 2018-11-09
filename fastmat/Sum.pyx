@@ -52,10 +52,17 @@ cdef class Sum(Matrix):
         M =  A +  B +  C +  D.
     """
 
-    def __init__(self, *matrices):
+    def __init__(self, *matrices, **options):
         '''
-        Initialize Matrix instance with a list of other matrices to be summed.
-        If another Sum is seen, add its content instead of adding the Sum.
+        Initialize a Sum matrix instance.
+
+        Parameters
+        ----------
+        *matrices : :py:class:`fastmat.Matrix`
+            The matrix instances to be summed.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
         '''
         cpdef Matrix mat
 
@@ -95,11 +102,9 @@ cdef class Sum(Matrix):
             dataType = np.promote_types(dataType, self._content[ii].dtype)
 
         # set properties of matrix
-        self._initProperties(
-            numN, numM, dataType,
-            cythonCall=True,
-            widenInputDatatype=True
-        )
+        self._cythonCall = True
+        self._initProperties(numN, numM, dataType, **options)
+        self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
@@ -147,7 +152,6 @@ cdef class Sum(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the forward transform of this matrix'''
         cdef int cc, cnt = len(self._content)
 
         arrRes[:] = self._content[0].forward(arrX)
@@ -161,7 +165,6 @@ cdef class Sum(Matrix):
         ftype typeX,
         ftype typeRes
     ):
-        '''Calculate the backward transform of this matrix'''
         cdef int cc, cnt = len(self._content)
 
         arrRes[:] = self._content[0].backward(arrX)
@@ -170,10 +173,6 @@ cdef class Sum(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
         cdef int cc, cnt = len(self._content)
 
@@ -234,6 +233,3 @@ cdef class Sum(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

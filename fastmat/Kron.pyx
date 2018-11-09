@@ -77,7 +77,18 @@ cdef class Kron(Matrix):
     ############################################## class methods
 
     def __init__(self, *matrices, **options):
-        '''Initialize Matrix instance with a list of child matrices'''
+        '''
+        Initialize a Kron matrix instance.
+
+        Parameters
+        ----------
+        *matrices : :py:class:`fastmat.Matrix`
+            The matrix instances to form a kronecker product of. Currently only
+            square matrices are supported as kronecker product terms.
+
+        **options :
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
 
         cdef int ff, factorCount = len(matrices)
         cdef intsize numN = 1
@@ -113,7 +124,8 @@ cdef class Kron(Matrix):
                  else np.promote_types(dtype, typeExpansion))
 
         # set properties of matrix
-        self._initProperties(numN, numN, dtype, widenInputDatatype=True)
+        self._initProperties(numN, numN, dtype, **options)
+        self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
@@ -213,8 +225,6 @@ cdef class Kron(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
-
         # detect if we have an array of signals (assume the vector to
         # be two-dimensional)
         cdef intsize numSize = arrX.shape[0]
@@ -253,8 +263,6 @@ cdef class Kron(Matrix):
         return _arrReshape(arrData, 2, self.numN, numVecs, np.NPY_CORDER)
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
-
         # detect if we have an array of signals (assume the vector to
         # be two-dimensional)
         cdef intsize numSize = arrX.shape[0]
@@ -294,10 +302,6 @@ cdef class Kron(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         cdef np.ndarray arrRes
         cdef int ff, factorCount = len(self._content)
 
@@ -368,6 +372,3 @@ cdef class Kron(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: 8 * c ** 3)
             }
         }
-
-    def _getDocumentation(self):
-        return ""

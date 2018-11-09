@@ -110,23 +110,34 @@ cdef class Sparse(Matrix):
                 self._spArrayH = self._spArray.T.conj().tocsr()
             return self._spArrayH
 
-    def __init__(self, value):
-        '''Initialize Matrix instance'''
-        if not isinstance(value, spmatrix):
+    def __init__(self, matSparse, **options):
+        '''
+        Initialize a Sparse matrix instance.
+
+        Parameters
+        ----------
+        matSparse : :py:class:`scipy.sparse.spmatrix`
+            A 2d scipy sparse matrix to be cast as a fastmat matrix.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
+        if not isinstance(matSparse, spmatrix):
             raise TypeError("Sparse: Use Matrix() for numpy ndarrays."
-                            if isinstance(value, np.ndarray)
+                            if isinstance(matSparse, np.ndarray)
                             else "Sparse: Matrix is not a scipy spmatrix")
 
-        self._spArray = value.tocsr()
+        self._spArray = matSparse.tocsr()
 
         # set properties of matrix
-        self._initProperties(self._spArray.shape[0], self._spArray.shape[1],
-                             self._spArray.dtype)
+        self._initProperties(
+            self._spArray.shape[0],
+            self._spArray.shape[1],
+            self._spArray.dtype,
+            **options
+        )
 
     cpdef np.ndarray _getArray(self):
-        '''
-        Return an explicit representation of the matrix as numpy-array.
-        '''
         return self._spArray.toarray()
 
     ############################################## class property override
@@ -146,19 +157,13 @@ cdef class Sparse(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Calculate the forward transform of this matrix'''
         return self._spArray.dot(arrX)
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Calculate the backward transform of this matrix'''
         return self.spArrayH.dot(arrX)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        '''
         return self._spArray.toarray()
 
     ############################################## class inspection, QM
@@ -202,6 +207,3 @@ cdef class Sparse(Matrix):
                     if isFloat(dt) else None))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

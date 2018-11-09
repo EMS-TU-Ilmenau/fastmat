@@ -29,11 +29,6 @@ fastmat.inspect
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: fastmat.inspect.documentation
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 .. automodule:: fastmat.inspect.test
     :members:
     :undoc-members:
@@ -41,7 +36,6 @@ fastmat.inspect
 
 """
 
-from .documentation import DOC, Documentation
 from .benchmark import BENCH, Benchmark
 from .test import TEST, Test
 from .common import arrTestDist, arrSparseTestDist, dynFormat, showContent

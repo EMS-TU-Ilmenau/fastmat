@@ -363,7 +363,3 @@ class CGinspect(Algorithm):
                 BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12)),
             }
         }
-
-    def _getDocumentation(self):
-        from ..inspect import DOC
-        return ""
