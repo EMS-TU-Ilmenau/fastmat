@@ -159,8 +159,8 @@ cdef class Blocks(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        options['widenInputDatatype'] = True
         self._initProperties(numN, numM, dataType, **options)
+        self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -287,7 +287,7 @@ cdef class Blocks(Matrix):
                 TEST.NUM_N      : (lambda param: param['size'] * 2),
                 TEST.NUM_M      : TEST.NUM_N,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
-                'mType2'        : TEST.Permutation(TEST.ALLTYPES),
+                'mType2'        : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
                     TEST.SHAPE  : ('size', 'size')

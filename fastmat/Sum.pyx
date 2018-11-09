@@ -103,8 +103,8 @@ cdef class Sum(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        options['widenInputDatatype'] = True
         self._initProperties(numN, numM, dataType, **options)
+        self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):

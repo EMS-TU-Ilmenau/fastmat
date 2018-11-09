@@ -124,7 +124,6 @@ cdef class Circulant(Partial):
 
         cdef intsize size = len(vecC)
         cdef intsize paddedSize, minimalSize = size * 2 - 1
-        cdef np.ndarray arrIndices
 
         # determine if zero-padding of the convolution to achieve a better FFT
         # size is beneficial or not
@@ -152,12 +151,13 @@ cdef class Circulant(Partial):
         )
 
         # initialize Partial of Product. Only use Partial when padding size
-        if size != len(self._vecC):
-            arrIndices = np.arange(len(self._vecC))
-            options['M'] = arrIndices
-            options['N'] = arrIndices
+        cdef dict kwargs = options.copy()
+        cdef bint truncate = size != len(self._vecC)
+        cdef np.ndarray arrIndices = np.arange(len(self._vecC))
+        kwargs['N'] = (arrIndices if truncate else None)
+        kwargs['M'] = (arrIndices if truncate else None)
 
-        super(Circulant, self).__init__(P, **options)
+        super(Circulant, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure vecC matches the precision of the

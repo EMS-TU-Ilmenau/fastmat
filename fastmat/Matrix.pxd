@@ -63,9 +63,9 @@ cdef struct TRANSFORM:
 cdef class Matrix:
 
     cdef bint       _cythonCall                  # use _C() transforms in class
-    cdef bint       _forceInputAlignment         # force alignment of input data
+    cdef bint       _forceContiguousInput        # force contiguous input data
     #                                            # to be F-contiguous
-    cdef bint       _useFortranStyle             # if true, select Fortran style
+    cdef bint       _fortranStyle                # if true, select Fortran style
     cdef bint       _widenInputDatatype          # widen input data type upfront
 
     ############################################## class variables
@@ -123,7 +123,7 @@ cdef class Matrix:
     cpdef tuple _getComplexity(self)
     cdef void _initProfiles(self)
     cpdef _exploreNestedProfiles(self)
-    cpdef tuple estimateRuntime(self, intsize M=?)
+    cpdef tuple estimateRuntime(self, intsize numVectors=?)
 
     cdef np.ndarray _prepareInputArray(self, np.ndarray, intsize, TRANSFORM *)
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)

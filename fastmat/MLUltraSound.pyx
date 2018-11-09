@@ -168,9 +168,10 @@ cdef class MLUltraSound(Partial):
         P = Product(K.H, B, K)
 
         # call the parent constructor
-        options['M'] = arrIndicesN
-        options['N'] = arrIndicesN
-        super(MLUltraSound, self).__init__(P, **options)
+        cdef dict kwargs = options.copy()
+        kwargs['N'] = arrIndicesN
+        kwargs['M'] = arrIndicesN
+        super(MLUltraSound, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure tenT matches the precision of the
@@ -273,7 +274,9 @@ cdef class MLUltraSound(Partial):
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : 40,
                 TEST.NUM_M      : TEST.NUM_N,
-                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : (2, 2, 7, 9)

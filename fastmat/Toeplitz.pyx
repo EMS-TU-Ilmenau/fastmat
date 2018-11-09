@@ -183,11 +183,12 @@ cdef class Toeplitz(Partial):
 
         # initialize Partial of Product
         cdef dict kwargs = options.copy()
-        if size != len(self._vecC):
-            kwargs['N'] = np.arange(len(self._vecC))
-
-        if size != len(self._vecR) + 1:
-            kwargs['M'] = np.arange(len(self._vecR) + 1)
+        kwargs['N'] = (np.arange(len(self._vecC))
+                       if size != len(self._vecC)
+                       else None)
+        kwargs['M'] = (np.arange(len(self._vecR) + 1)
+                       if size != len(self._vecR) + 1
+                       else None)
 
         super(Toeplitz, self).__init__(P, **kwargs)
 
@@ -294,12 +295,13 @@ cdef class Toeplitz(Partial):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : TEST.Permutation([5, 41]),
                 'num_M'         : TEST.Permutation([4, 6]),
                 TEST.NUM_M      : (lambda param: param['num_M'] + 1),
-                'mTypeH'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
                 'vecH'          : TEST.ArrayGenerator({

@@ -94,9 +94,9 @@ cdef class Diag(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        options['forceInputAlignment'] = True
-        options['fortranStyle'] = True
         self._initProperties(numN, numN, self._vecD.dtype, **options)
+        self._forceContiguousInput = True
+        self._fortranStyle = True
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):

@@ -169,13 +169,14 @@ cdef class LowRank(Product):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'order'         : 4,
                 TEST.TOL_POWER  : (lambda param: np.sqrt(param['order'])),
                 TEST.NUM_N      : 7,
                 TEST.NUM_M      : TEST.Permutation([11, TEST.NUM_N]),
                 'mTypeS'        : TEST.Permutation(TEST.ALLTYPES),
                 'mTypeU'        : TEST.Permutation(TEST.FEWTYPES),
-                'mTypeV'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
                 'vecS'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeS',
                     TEST.SHAPE  : ('order',),

@@ -342,7 +342,8 @@ def arrTestDist(shape, dtype, center=0):
     if np.prod(shape) < 1:
         return np.array([])
 
-    if dtype in (np.int8, np.uint8, np.int32, np.uint32, np.int64, np.uint64):
+    if dtype in (np.int8, np.uint8, np.int16, np.uint16,
+                 np.int32, np.uint32, np.int64, np.uint64):
         result = np.random.choice(
             [center - 2, center - 1, center + 1, center + 2], shape).astype(
                 dtype)
@@ -684,20 +685,20 @@ class NAME(object):
     HEADER          = 'header'
 
     TYPENAME        = TypeDict({
-        np.int8:       'i08', np.int32:      'i32', np.int64:      'i64',
-        np.float32:    'f32', np.float64:    'f64',
+        np.int8:       'i08', np.int16:      'i16', np.int32:      'i32',
+        np.int64:      'i64', np.float32:    'f32', np.float64:    'f64',
         np.complex64:  'c32', np.complex128: 'c64', None:          '???'
     })
 
-    ALLTYPES        = [np.int8, np.int32, np.int64,
+    ALLTYPES        = [np.int8, np.int16, np.int32, np.int64,
                        np.float32, np.float64,
                        np.complex64, np.complex128]
-    FEWTYPES        = [np.int8, np.int32, np.float32, np.complex64]
+    FEWTYPES        = [np.int32, np.float32, np.complex64]
 
-    SINGLETYPES     = [np.int32, np.float32, np.complex64]
+    SINGLETYPES     = [np.int32, np.int16, np.float32, np.complex64]
     DOUBLETYPES     = [np.int64, np.float64, np.complex128]
 
-    INTTYPES        = [np.int8, np.int32, np.int64]
+    INTTYPES        = [np.int8, np.int16, np.int32, np.int64]
     FLOATTYPES      = [np.float32, np.float64]
     COMPLEXTYPES    = [np.complex64, np.complex128]
 

@@ -126,8 +126,8 @@ cdef class Hadamard(Matrix):
         # set properties of matrix
         numN = 2 ** self._order
         self._cythonCall = True
-        options['forceInputAlignment'] = True
         self._initProperties(numN, numN, np.int8, **options)
+        self._forceContiguousInput = True
 
     cpdef np.ndarray _getArray(self):
         return self._reference()
@@ -207,6 +207,8 @@ cdef class Hadamard(Matrix):
                     _hadamardCore[np.int64_t](&strA, &strB, 0)
                 elif typeX == TYPE_INT32:
                     _hadamardCore[np.int32_t](&strA, &strB, 0)
+                elif typeX == TYPE_INT16:
+                    _hadamardCore[np.int16_t](&strA, &strB, 0)
                 elif typeX == TYPE_INT8:
                     _hadamardCore[np.int8_t](&strA, &strB, 0)
                 else:
