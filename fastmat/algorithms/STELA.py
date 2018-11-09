@@ -24,6 +24,8 @@ from ..Matrix import Matrix
 class STELA(Algorithm):
     r"""Soft-Thresholding with simplified Exact Line search Algorithm (STELA)
 
+    The algorithm is presented in [4]_ with derivation and convergence results.
+
     **Definition and Interface**:
     For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with
     :math:`m \ll N` and a vector :math:`b \in \mathbb{C}^m` we approximately
@@ -67,7 +69,7 @@ class STELA(Algorithm):
         The proper choice of :math:`\lambda` is crucial for good perfomance
         of this algorithm, but this is not an easy task. Unfortunately we are
         not in the place here to give you a rule of thumb what to do, since it
-        highly depends on the application at hand. Again, consult [1]_ for any
+        highly depends on the application at hand. Again, consult [4]_ for any
         further considerations of this matter.
 
     .. todo::

@@ -43,3 +43,5 @@ References
 .. [3]  M. Hestenes, E. Stiefel, "Methods of Conjugate Gradients for
          Solving Linear Systems", The Springer International Series in
          Engineering and Computer Science, Volume 383, 1997
+
+.. [4]  Y. Yang, M. Pesavento, "A Unified Successive Pseudoconvex Approximation Framework", IEEE Transactions on Signal Processing, vol. 65, no. 13, pp. 3313-3327, Dec 2017
