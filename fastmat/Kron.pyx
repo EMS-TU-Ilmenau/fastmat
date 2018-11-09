@@ -215,7 +215,7 @@ cdef class Kron(Matrix):
         cdef intsize scale
         cdef bint bypass
         for item in self:
-            scale = self.numN / item.numN
+            scale = self.numN // item.numN
             bypass = (item.bypassAllow and
                       (item._array is not None or item.bypassAutoArray))
             self.profileForward.addNestedProfile(
@@ -245,18 +245,18 @@ cdef class Kron(Matrix):
             # reshape to match composition size
             arrData = _arrReshape(
                 arrData,
-                2, headIN, numVecs * self.numN / headIN,
+                2, headIN, numVecs * self.numN // headIN,
                 np.NPY_CORDER)
             # reshape to match term size
             arrData = _arrReshape(
                 arrData,
-                2, term.numN, numVecs * self.numN / term.numN,
+                2, term.numN, numVecs * self.numN // term.numN,
                 np.NPY_FORTRANORDER)
 
             # apply transform and reshape back to current comp. size
             arrData = _arrReshape(
                 term.forward(arrData),
-                2, headIN, numVecs * self.numN / headIN,
+                2, headIN, numVecs * self.numN // headIN,
                 np.NPY_FORTRANORDER)
 
         # reshape to matrix output dimensions
@@ -283,18 +283,18 @@ cdef class Kron(Matrix):
             # reshape to match composition size
             arrData = _arrReshape(
                 arrData,
-                2, headIN, numVecs * self.numN / headIN,
+                2, headIN, numVecs * self.numN // headIN,
                 np.NPY_CORDER)
             # reshape to match term size
             arrData = _arrReshape(
                 arrData,
-                2, term.numN, numVecs * self.numN / term.numN,
+                2, term.numN, numVecs * self.numN // term.numN,
                 np.NPY_FORTRANORDER)
 
             # apply transform and reshape back to current comp. size
             arrData = _arrReshape(
                 term.backward(arrData),
-                2, headIN, numVecs * self.numN / headIN,
+                2, headIN, numVecs * self.numN // headIN,
                 np.NPY_FORTRANORDER)
 
         # reshape to matrix output dimensions

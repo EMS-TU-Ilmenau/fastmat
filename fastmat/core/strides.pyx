@@ -57,7 +57,7 @@ cdef void strideSliceVectors(STRIDE_s *stride,
         stop = stride[0].numVectors
 
     stride[0].base += start * stride[0].strideVector
-    stride[0].numVectors = stop if step == 0 else (stop - start) / step
+    stride[0].numVectors = stop if step == 0 else (stop - start) // step
     stride[0].strideVector = stride[0].strideVector * step
 
 cdef void strideSliceElements(STRIDE_s *stride,
@@ -69,7 +69,7 @@ cdef void strideSliceElements(STRIDE_s *stride,
         stop = stride[0].numElements
 
     stride[0].base += start * stride[0].strideElement
-    stride[0].numElements = stop if step == 0 else (stop - start) / step
+    stride[0].numElements = stop if step == 0 else (stop - start) // step
     stride[0].strideElement = stride[0].strideElement * step
 
 cdef void strideSubgridVector(STRIDE_s *stride,

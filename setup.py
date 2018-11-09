@@ -296,7 +296,7 @@ if __name__ == '__main__':
             packageName, strPlatform))
 
     # define default cython directives, these may get extended along the script
-    cythonDirectives = {}
+    cythonDirectives = {'language_level': '3str'}
     defineMacros = []
     CMD_COVERAGE = '--enable-cython-tracing'
     if CMD_COVERAGE in sys.argv:
@@ -317,10 +317,10 @@ if __name__ == '__main__':
     setupRequires = []
     installRequires = []
     checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
-    checkRequirement(setupRequires, 'Cython', 'cython>=0.26')
-    checkRequirement(setupRequires, 'numpy', 'numpy')
+    checkRequirement(setupRequires, 'Cython', 'cython>=0.29')
+    checkRequirement(setupRequires, 'numpy', 'numpy>=1.7')
     checkRequirement(installRequires, 'six', 'six')
-    checkRequirement(installRequires, 'scipy', 'scipy')
+    checkRequirement(installRequires, 'scipy', 'scipy>=1.0')
 
     print("Requirements for setup: %s" % (setupRequires))
     print("Requirements for install: %s" % (installRequires))

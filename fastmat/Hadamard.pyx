@@ -173,7 +173,7 @@ cdef class Hadamard(Matrix):
             opCopyVector(&strOutput, mm, &strInput, mm)
 
             butterflyDistance = 1
-            butterflyCount = N / 2
+            butterflyCount = N // 2
             for oo in range(order):
                 strideCopy(&strA, &strOutput)
                 strideCopy(&strB, &strOutput)
