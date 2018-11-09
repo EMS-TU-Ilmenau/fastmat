@@ -444,21 +444,21 @@ cdef class LFSRCirculant(Matrix):
         from .inspect import BENCH
 
         # specify tap configurations for various maximum-length-sequences
-        db = {1: [0x1],         2: [0x3],           3: [0x3],
-              4: [0x9],         5: [0x05],          6: [0x21],
-              7: [0x09],        8: [0xC3],          9: [0x011],
-              10: [0x081],      11: [0x303],        12: [0xC11],
-              13: [0x0C41],     14: [0x1803],       15: [0x4001],
-              16: [0xA011],     17: [0x04001],      18: [0x00801],
-              19: [0x64001],    20: [0x20001],      21: [0x080001],
-              22: [0x200001],   23: [0x040001],     24: [0xC20001],
-              25: [0x0400001],  26: [0x3100001],    27: [0x6400001],
-              28: [0x2000001],  29: [0x08000001],   30: [0x30000081],
-              31: [0x10000001]}
+        # the list contains the tap configurations of registers corresponding
+        # to a register size of the list index of the element + 1.
+        db = {ll + 1: tt for ll, tt in enumerate([
+            0x1, 0x3, 0x3, 0x9, 0x05, 0x21, 0x09, 0xC3,
+            0x011, 0x081, 0x303, 0xC11, 0x0C41, 0x1803, 0x4001,
+            0xA011, 0x04001, 0x00801, 0x64001, 0x20001, 0x080001,
+            0x200001, 0x040001, 0xC20001, 0x0400001, 0x3100001, 0x6400001,
+            0x2000001, 0x08000001, 0x30000081, 0x10000001
+        ])}
 
         return {
             BENCH.COMMON: {
-                BENCH.FUNC_GEN  : (lambda c: LFSRCirculant(c, *db[c])),
+                BENCH.FUNC_GEN  : (
+                    lambda c: LFSRCirculant(c, db[c], 0xFFFFFFFF)
+                ),
                 BENCH.FUNC_SIZE : (lambda c: (2 ** c) - 1),
                 BENCH.FUNC_STEP : (lambda c: c + 1),
             },
@@ -466,6 +466,10 @@ cdef class LFSRCirculant(Matrix):
             BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, dt: LFSRCirculant(c, *db[c]))
+                BENCH.FUNC_GEN  : (
+                    lambda c, dt: LFSRCirculant(
+                        c, db[c], 0xFFFFFFFF, minType=dt
+                    )
+                )
             }
         }

@@ -267,6 +267,6 @@ cdef class Hadamard(Matrix):
             BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, datatype: Hadamard(c))
+                BENCH.FUNC_GEN  : (lambda c, dt: Hadamard(c, minType=dt))
             }
         }

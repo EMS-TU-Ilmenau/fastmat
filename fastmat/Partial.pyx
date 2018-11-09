@@ -320,6 +320,6 @@ cdef class Partial(Matrix):
             },
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Partial(
-                    Eye(2 ** c), np.arange(2 ** c)))
+                    Eye(2 ** c), N=np.arange(2 ** c), M=np.arange(2 ** c)))
             }
         }
