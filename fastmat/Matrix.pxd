@@ -67,8 +67,12 @@ cdef class Matrix:
 
     cdef public Matrix      _gram                # cache for gram matrix
     cdef public Matrix      _normalized          # cache for normalized matrix
-    cdef public object      _largestEV           # cache for largestEV
-    cdef public object      _largestSV           # cache for largestSV
+    cdef public object      _largestEigenVal     # cache for largestEigenVal
+    cdef public np.ndarray  _largestEigenVec
+    # cache for largestSingularVal
+    cdef public object      _largestSingularVal
+    # cache for largestSingularVecs
+    cdef public tuple       _largestSingularVecs # cache for largestSingularvecs
     cdef public object      _scipyLinearOperator # interface to scipy
     cdef public Matrix      _T                   # cache for transpose matrix
     cdef public Matrix      _H                   # cache for adjunct matrix
@@ -100,8 +104,10 @@ cdef class Matrix:
     cpdef np.ndarray _getCol(self, intsize)
     cpdef np.ndarray _getRow(self, intsize)
     cpdef object _getItem(self, intsize, intsize)
-    cpdef object _getLargestEV(self)
-    cpdef object _getLargestSV(self)
+    cpdef object _getLargestEigenVal(self)
+    cpdef tuple  _getLargestEigenVec(self)
+    cpdef object _getLargestSingularVal(self)
+    cpdef tuple  _getLargestSingularVecs(self)
     cpdef object _getScipyLinearOperator(self)
     cpdef Matrix _getGram(self)
     cpdef Matrix _getNormalized(self)

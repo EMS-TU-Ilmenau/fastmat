@@ -380,26 +380,33 @@ def testNormalized(test):
         return query
 
 
-################################################## test: largestSV (property)
-def testLargestSV(test):
+########################################### test: largestSingularVal (property)
+def testLargestSingularVal(test):
     instance = test[TEST.INSTANCE]
     query = {TEST.TYPE_EXPECTED: np.float64}
 
-    # account for "extra computation stage" (gram) in largestSV
+    # account for "extra computation stage" (gram) in largestSingularVal
     query[TEST.TOL_POWER] = test.get(TEST.TOL_POWER, 1.) * 2
     query[TEST.TOL_MINEPS] = getTypeEps(safeTypeExpansion(instance.dtype))
 
     # determine reference result
-    largestSV=np.linalg.svd(test[TEST.REFERENCE], compute_uv=False)[0]
-    query[TEST.RESULT_REF]=np.array(
-        largestSV, dtype=np.promote_types(largestSV.dtype, np.float32))
+    largestSingularVal = np.linalg.svd(
+        test[TEST.REFERENCE],
+        compute_uv=False
+    )[0]
 
-    # largestSV may not converge fast enough for a bad random starting point
+    query[TEST.RESULT_REF] = np.array(
+        largestSingularVal,
+        dtype=np.promote_types(largestSingularVal.dtype, np.float32)
+    )
+
+    # largestSingularVal may not converge fast enough
+    # for a bad random starting point
     # so retry some times before throwing up
     for tries in range(9):
         maxSteps=100. * 10. ** (tries / 2.)
         query[TEST.RESULT_OUTPUT]=np.array(
-            instance.getLargestSV())
+            instance.getLargestSingularVal())
         result=compareResults(test, query)
         if result[TEST.RESULT]:
             break
@@ -519,7 +526,7 @@ class Test(Worker):
                     'gRs'   : testGetRowsSingle,
                     'gRm'   : testGetRowsMultiple,
                     'nor'   : testNormalized,
-                    'lSV'   : testLargestSV,
+                    'lSV'   : testLargestSingularVal,
                     'gram'  : testGram,
                     'T'     : testTranspose,
                     'H'     : testHermitian,

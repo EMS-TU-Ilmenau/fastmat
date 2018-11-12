@@ -99,10 +99,10 @@ cdef class Diag(Matrix):
 
         return arrRes
 
-    cpdef object _getLargestEV(self):
+    cpdef object _getLargestEigenVal(self):
         return np.abs(self._vecD).max().astype(np.float64)
 
-    cpdef object _getLargestSV(self):
+    cpdef object _getLargestSingularVal(self):
         return np.abs(self._vecD).max().astype(np.float64)
 
     cpdef np.ndarray _getRow(self, intsize idx):

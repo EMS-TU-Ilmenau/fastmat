@@ -124,10 +124,10 @@ cdef class Hadamard(Matrix):
         return self._reference()
 
     ############################################## class property override
-    cpdef object _getLargestEV(self):
+    cpdef object _getLargestEigenVal(self):
         return np.sqrt(self.numN)
 
-    cpdef object _getLargestSV(self):
+    cpdef object _getLargestSingularVal(self):
         return np.sqrt(self.numN)
 
     cpdef Matrix _getNormalized(self):

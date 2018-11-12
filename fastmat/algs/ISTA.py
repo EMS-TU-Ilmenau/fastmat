@@ -124,7 +124,7 @@ def ISTA(
         raise ValueError("Only n x m arrays are supported for ISTA")
 
     # calculate the largest singular value to get the right step size
-    numL = 1.0 / (fmatA.largestSV ** 2)
+    numL = 1.0 / (fmatA.largestSingularVal ** 2)
 
     arrX = np.zeros(
         (fmatA.numM, arrB.shape[1]),

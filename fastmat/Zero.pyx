@@ -61,10 +61,10 @@ cdef class Zero(Matrix):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return 0
 
-    cpdef object _getLargestEV(self):
+    cpdef object _getLargestEigenVal(self):
         return 0.
 
-    cpdef object _getLargestSV(self):
+    cpdef object _getLargestSingularVal(self):
         return 0.
 
     cpdef Matrix _getT(self):

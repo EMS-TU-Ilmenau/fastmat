@@ -499,16 +499,16 @@ cdef class Matrix(object):
             return self._content
 
     ############################################## algorithmic properties
-    property largestEV:
+    property largestEigenVal:
         # r"""Return the largest eigenvalue for this matrix instance
         #
         # *(read-only)*
         # """
         def __get__(self):
-            return (self.getLargestEV() if self._largestEV is None
-                    else self._largestEV)
+            return (self.getLargestEigenVal() if self._largestEigenVal is None
+                    else self._largestEigenVal)
 
-    def getLargestEV(self):
+    def getLargestEigenVal(self):
         r"""
         Largest Singular Value
 
@@ -546,7 +546,7 @@ cdef class Matrix(object):
         >>> K2 = K1.array
         >>>
         >>> # calculate the eigenvalue
-        >>> x1 = K1.largestEV
+        >>> x1 = K1.largestEigenVal
         >>> x2 = npl.eigvals(K2)
         >>> x2 = np.sort(np.abs(x2))[-1]
         >>>
@@ -560,13 +560,14 @@ cdef class Matrix(object):
         """
 
         if self.numN != self.numM:
-            raise ValueError("largestEV: Matrix must be square.")
+            raise ValueError("largestEigenVal: Matrix must be square.")
 
-        result = self._getLargestEV()
-        self._largestEV = self._largestEV if np.isnan(result) else result
+        result = self._getLargestEigenVal()
+        self._largestEigenVal = self._largestEigenVal if np.isnan(
+            result) else result
         return result
 
-    cpdef object _getLargestEV(self):
+    cpdef object _getLargestEigenVal(self):
         # the scipy eigenvalue operations do not work on 1x1 transforms
 
         from scipy.sparse import linalg
@@ -588,17 +589,62 @@ cdef class Matrix(object):
         self.scipyLinearOperator.dtype = self.dtype
         return result
 
-    property largestSV:
-        r"""Return the largestSV for this matrix instance
+    property largestEigenVec:
+        r"""Return the vector corresponding to the largest eigen value
 
         *(read-only)*
         """
 
         def __get__(self):
-            return (self.getLargestSV() if self._largestSV is None
-                    else self._largestSV)
+            return (self.getLargestEigenVec() if self._largestEigenVec is None
+                    else self._largestEigenVec)
 
-    def getLargestSV(self):
+    def getLargestEigenVec(self):
+        if self.numN != self.numM:
+            raise ValueError("largestEigenVec: Matrix must be square.")
+
+        result = self._getLargestEigenVec()
+        self._largestEigenVal = result[0]
+        self._largestEigenVec = result[1]
+        return self._largestEigenVec
+
+    cpdef tuple _getLargestEigenVec(self):
+
+        # we temporally promote the operators type to satisfy scipy
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
+
+        if (self.numN > 1) and (self.numM > 1):
+            # now we can do the efficient thing using the linear operator
+            from scipy.sparse.linalg import eigs
+
+            S, V = eigs(
+                self.scipyLinearOperator,
+                1,
+                return_eigenvectors=True
+            )[0]
+        else:
+            S = self[0, 0]
+            V = np.ones((1, 1))
+
+        self.scipyLinearOperator.dtype = self.dtype
+        return (S, V)
+
+    property largestSingularVal:
+        r"""Return the largestSingularVal for this matrix instance
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._largestSingularVal is None:
+                return self.getLargestSingularVal()
+            else:
+                self._largestSingularVal
+
+    def getLargestSingularVal(self):
         r"""Largest Singular Value
 
         For a given matrix :math:`A \in \mathbb{C}^{n \times m}`, we calculate
@@ -636,7 +682,7 @@ cdef class Matrix(object):
         >>>
         >>> # calculate the largest SV
         >>> # and a reference solution
-        >>> x1 = largestSV(K1.largestSV
+        >>> x1 = largestSingularVal(K1.largestSingularVal
         >>> x2 = npl.svd(K2,compute_uv
         >>> # check if they match
         >>> print(x1-x2)
@@ -647,11 +693,12 @@ cdef class Matrix(object):
         happens.
         """
 
-        result = self._getLargestSV()
-        self._largestSV = self._largestSV if np.isnan(result) else result
+        result = self._getLargestSingularVal()
+        self._largestSingularVal = self._largestSingularVal if np.isnan(
+            result) else result
         return result
 
-    cpdef object _getLargestSV(self):
+    cpdef object _getLargestSingularVal(self):
 
         from scipy.sparse.linalg import svds
 
@@ -661,7 +708,7 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        if self.numN > 1:
+        if (self.numN > 1) and (self.numM > 1):
             result = svds(
                 self.scipyLinearOperator,
                 1,
@@ -669,10 +716,54 @@ cdef class Matrix(object):
             )[0]
         else:
             from numpy.linalg import svd
-            result = np.linalg.norm(self.getRow(0))
+            result = svd(self.array, compute_uv=False)[0]
 
         self.scipyLinearOperator.dtype = self.dtype
         return result
+
+    property largestSingularVecs:
+        r"""Return the vectors corresponding to the largest singular value
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._largestSingularVecs is None:
+                return self.getLargestSingularVecs()
+            else:
+                self._largestSingularVecs
+
+    def getLargestSingularVecs(self):
+        result = self._getLargestSingularVecs()
+        self._largestSingularVal = result[1]
+        self._largestSingularVecs = (result[0], result[2])
+        return self._largestSingularVecs
+
+    cpdef tuple _getLargestSingularVecs(self):
+
+        # we temporally promote the operators type to satisfy scipy
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
+
+        if (self.numN > 1) and (self.numM > 1):
+            # now we can do the efficient thing using the linear operator
+            from scipy.sparse.linalg import svds
+
+            U, S, V = svds(
+                self.scipyLinearOperator,
+                1,
+                return_singular_vectors=True
+            )[0]
+        else:
+            # now we do the stupid thing, but scipy forces us to do so
+            from numpy.linalg import svd
+
+            U, S, V = svd(self.array, compute_uv=True)
+
+        self.scipyLinearOperator.dtype = self.dtype
+        return (U, S, V)
 
     property scipyLinearOperator:
         """Return a Representation as scipy's linear Operator
@@ -1535,11 +1626,11 @@ cdef class Hermitian(Matrix):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return np.conjugate(self._nested._getItem(idxM, idxN))
 
-    cpdef object _getLargestEV(self):
-        return self._nested.largestEV
+    cpdef object _getLargestEigenVal(self):
+        return self._nested.largestEigenVal
 
-    cpdef object _getLargestSV(self):
-        return self._nested.largestSV
+    cpdef object _getLargestSingularVal(self):
+        return self._nested.largestSingularVal
 
     cpdef Matrix _getT(self):
         return getConjugate(self._nested)
@@ -1630,11 +1721,11 @@ cdef class Conjugate(Matrix):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return np.conjugate(self._nested._getItem(idxN, idxM))
 
-    cpdef object _getLargestEV(self):
-        return self._nested.largestEV
+    cpdef object _getLargestEigenVal(self):
+        return self._nested.largestEigenVal
 
-    cpdef object _getLargestSV(self):
-        return self._nested.largestSV
+    cpdef object _getLargestSingularVal(self):
+        return self._nested.largestSingularVal
 
     cpdef Matrix _getT(self):
         return Hermitian(self._nested)
@@ -1737,11 +1828,11 @@ cdef class Transpose(Hermitian):
     cpdef object _getItem(self, intsize idxN, intsize idxM):
         return self._nestedConj._getItem(idxM, idxN)
 
-    cpdef object _getLargestEV(self):
-        return self._nestedConj.largestEV
+    cpdef object _getLargestEigenVal(self):
+        return self._nestedConj.largestEigenVal
 
-    cpdef object _getLargestSV(self):
-        return self._nestedConj.largestSV
+    cpdef object _getLargestSingularVal(self):
+        return self._nestedConj.largestSingularVal
 
     cpdef Matrix _getT(self):
         return self._nestedConj
