@@ -304,7 +304,6 @@ def testGetColsSingle(test):
         vecCol = instance.getCols(mm)
         if vecCol.ndim != 1:
             print('testGetColsSingle', vecCol.shape, vecCol)
-            result, ignored = False, False
             query[TEST.RESULT], query[TEST.RESULT_IGNORED] = False, False
             query[TEST.RESULT_INFO] = fmtRed('!=(N,)')
             return query

@@ -666,7 +666,6 @@ class Benchmark(Worker):
 
         result=self.results[nameResult]
         arrResult=result[BENCH.RESULT]
-        lstHeader=result[BENCH.HEADER]
 
         filename=self.getFilename(nameResult, path=outPath,
                                   addVersionTag=addVersionTag)

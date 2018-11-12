@@ -169,7 +169,6 @@ class ISTA(Algorithm):
     @staticmethod
     def _getTest():
         from ..inspect import TEST, dynFormat, arrSparseTestDist
-        from ..core.types import getTypeEps
         from ..Product import Product
         from ..Hadamard import Hadamard
         from ..Matrix import Matrix

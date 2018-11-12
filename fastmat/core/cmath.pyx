@@ -16,7 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libc.string cimport memcpy, memset
 from libc.math cimport ceil
 
 import numpy as np
