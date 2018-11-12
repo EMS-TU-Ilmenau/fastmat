@@ -576,11 +576,14 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        result = linalg.eigs(
-            self.scipyLinearOperator,
-            1,
-            return_eigenvectors=False
-        )[0]
+        if self.numN > 1:
+            result = linalg.eigs(
+                self.scipyLinearOperator,
+                1,
+                return_eigenvectors=False
+            )[0]
+        else:
+            result = self[0, 0]
 
         self.scipyLinearOperator.dtype = self.dtype
         return result
@@ -650,7 +653,6 @@ cdef class Matrix(object):
 
     cpdef object _getLargestSV(self):
 
-
         from scipy.sparse.linalg import svds
 
         # we temporally promote the operators type to satisfy scipy
@@ -659,11 +661,15 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        result = svds(
-            self.scipyLinearOperator,
-            1,
-            return_singular_vectors=False
-        )[0]
+        if self.numN > 1:
+            result = svds(
+                self.scipyLinearOperator,
+                1,
+                return_singular_vectors=False
+            )[0]
+        else:
+            from numpy.linalg import svd
+            result = np.linalg.norm(self.getRow(0))
 
         self.scipyLinearOperator.dtype = self.dtype
         return result
