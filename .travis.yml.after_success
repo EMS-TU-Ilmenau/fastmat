@@ -13,7 +13,7 @@ if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
     fi
 
 elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
-    if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+    if [[ ("$TRAVIS_PYTHON_VERSION" == "3.6") && ("$TRAVIS_PULL_REQUEST" == "false") ]] ; then
         echo "Submitting coverage analysis results..."
         coveralls
 
