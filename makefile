@@ -95,6 +95,9 @@ STYLE_FILES=util/*.py *.py fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
 # STYLE_IGNORES lists the errors to be skipped during style check
 STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,E731,W504
 
+# TEST_OPTIONS allows passing extra options to tests during `testCode`target
+TEST_OPTIONS=-i
+
 # CODEBASE_FILES lists all source code files in codebase
 CODEBASE_FILES:=$(shell find .\
 		-name 'makefile' -o -name '*.tex' -o\
@@ -174,7 +177,7 @@ testBee:
 .PHONY: testCode
 testCode: compile
 	$(info * running unit tests)
-	$(PYTHON) util/bee.py test -vi
+	$(PYTHON) util/bee.py test -v $(TEST_OPTIONS)
 
 
 # target 'test': Run unit tests for package

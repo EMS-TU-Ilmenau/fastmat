@@ -135,8 +135,7 @@ script:
             coverage run -a --source=fastmat util/bee.py documentation maxIter=0.001 maxInit=0.01 minItems=1 > /dev/null
             coverage run -a --source=fastmat util/bee.py calibrate all
         else
-            make compile
-            python util/bee.py test -v
+            make test
         fi
     fi
 
