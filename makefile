@@ -17,6 +17,9 @@
 #    - compile all cython source files locally
 #        EXAMPLE:        'make compile'
 #
+#    - debug the package by running an interactive session after compiling
+#        EXAMPLE:        'make debug'
+#
 #    - uninstall fastmat package
 #        EXAMPLE:        'make uninstall'
 #        NOTE: If you have installed fastmat manually you need to specify the
@@ -144,6 +147,17 @@ compile-coverage:
 doc: | compile
 	$(info * building documentation: redirecting to './doc/make doc')
 	@$(MAKE) -C doc doc OPTIONS=$(OPTIONS) PYTHON=$(PYTHON)
+
+# targer 'debug': Debug package
+.PHONY: debug
+debug: | compile
+	$(info * debugging package)
+	$(PYTHON) -i -c '\
+		from numpy import *;\
+		from fastmat import *;\
+		from fastmat.algorithms import *;\
+		from fastmat.inspect import *;\
+		'
 
 # target 'test': Run unit tests for package
 .PHONY: test

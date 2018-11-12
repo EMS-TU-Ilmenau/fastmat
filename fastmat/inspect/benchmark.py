@@ -24,6 +24,7 @@ from .common import *
 from ..core.cmath import profileCall
 from ..core.resource import getMemoryFootprint
 from ..Matrix import Matrix
+from scipy.sparse.linalg import bicg
 from ..version import __version__
 
 
@@ -227,8 +228,44 @@ def timeCalls(calls, **options):
                 timeCall(call['func'], *(call['args']), **options)).items()}
 
 
-#  TESTS: specification
+################################################################################
+##################################################  TESTS: specification
 
+################################################## testInitSolve()
+def testInitSolve(funcConstr, numSize, numN):
+
+    instance = funcConstr(numSize)
+    mem1 = instance.nbytes
+
+    func1 = lambda A, b: bicg(A, b)[0]
+    args1 = [
+        instance.scipyLinearOperator,
+        arrTestDist((numN, 1), instance.dtype)
+    ]
+    func2 = np.linalg.solve
+    args2 = [
+        instance._forwardReference(np.eye(numN)),
+        args1[1]
+    ]
+
+    if instance._forwardReferenceMatrix is None:
+        instance._forwardReferenceInit()
+
+    mem2 = instance.nbytesReference
+
+    return {
+        'fastmat': {
+            'func': func1,
+            'args': args1,
+            'Mem': mem1
+        },  'numpy': {
+            'func': func2,
+            'args': args2,
+            'Mem': mem2
+        }
+    }
+
+################################################## testInitForward()
 def testInitForward(funcConstr, numSize, numN):
     instance = funcConstr(numSize)
     mem1 = instance.nbytes

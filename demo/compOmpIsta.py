@@ -108,10 +108,10 @@ b = mat * x0
 # run OMP and ISTA
 # result = fastmat.OMP(mat, b, K)
 xOMP = printTime("running OMP",
-                 fastmat.algs.OMP, mat, b, K)
+                 fastmat.algorithms.OMP, mat, b, K)
 # result = fastmat.ISTA(mat, b, numLambda=1e4)
 xISTA = printTime("running ISTA",
-                  fastmat.algs.ISTA, mat, b,
+                  fastmat.algorithms.ISTA, mat, b,
                   numLambda = 1e6, numMaxSteps = 1000)
 
 # plot:

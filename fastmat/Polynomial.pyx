@@ -64,7 +64,20 @@ cdef class Polynomial(Matrix):
             return self._coeff
 
     def __init__(self, mat, coeff, **options):
-        '''Initialize Matrix instance'''
+        '''
+        Initialize a Polynomial matrix instance.
+
+        Parameters
+        ----------
+        mat : :py:class:`fastmat.Matrix`
+            A fastmat matrix instance subject to constructing the polynomial.
+
+        coeff : :py:class:`numpy.ndarray`
+            A 1d vector defining the polynomial coefficients.
+
+        **options:
+            See :py:meth:`fastmat.Matrix.__init__`.
+        '''
 
         if mat.numN != mat.numM:
             raise ValueError("Polynomial: Matrix must be square.")
@@ -83,8 +96,9 @@ cdef class Polynomial(Matrix):
         self._coeffConj = self._coeff.conj()
 
         # set properties of matrix
-        self._initProperties(self._content[0].numN, self._content[0].numM,
-                             dtype)
+        self._initProperties(
+            self._content[0].numN, self._content[0].numM, dtype
+        )
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -93,13 +107,13 @@ cdef class Polynomial(Matrix):
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
-        '''Apply the Horner scheme to a polynomial of matrices.'''
         cdef cc, cnt = self._coeff.shape[0]
         cdef np.ndarray arrRes, arrIn = arrX
 
         arrRes = np.inner(arrX, self._coeff[0])
 
-        # use inner for element-wise scalar mul as inner does type promotion
+        # Apply the Horner scheme to a polynomial of matrices.
+        # Use inner for element-wise scalar mul as inner does type promotion
         for cc in range(1, cnt):
             arrRes  = self._content[0].forward(arrRes) + np.inner(
                 arrX, self._coeff[cc])
@@ -107,12 +121,12 @@ cdef class Polynomial(Matrix):
         return arrRes
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
-        '''Apply the Horner scheme to a polynomial of matrices.'''
         cdef cc, cnt = self._coeffConj.shape[0]
         cdef np.ndarray arrRes
 
         arrRes = np.inner(arrX, self._coeffConj[0])
 
+        # Apply the Horner scheme to a polynomial of matrices.
         # use inner for element-wise scalar mul as inner does type promotion
         for cc in range(1, cnt):
             arrRes  = self._content[0].backward(arrRes) + np.inner(
@@ -149,9 +163,9 @@ cdef class Polynomial(Matrix):
                 TEST.NUM_N      : 7,
                 TEST.NUM_M      : 7,
 
-                'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeM'        : TEST.Permutation(TEST.ALLTYPES),
-                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : ('order', ),
@@ -189,6 +203,3 @@ cdef class Polynomial(Matrix):
                     Eye(2 ** c), np.random.uniform(1, 2, 10)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

@@ -116,31 +116,24 @@ cdef class Toeplitz(Partial):
 
     def __init__(self, vecC, vecR, **options):
         '''
-        Initialize Toeplitz Matrix instance.
+        Initialize Circulant matrix instance.
 
-        The toeplitz matrix is embedded into a circulant matrix. See class
-        Circulant for further details.
+        Parameters
+        ----------
+        vecC : :py:class:`numpy.ndarray`
+            The generating column vector of the toeplitz matrix describing the
+            first column of the matrix.
 
-        Toeplitz([ c C C C C ], [ r R R R ]) represents this matrix:
-          [ c r R R R ]
-          [ C c r R R ]
-          [ C C c r R ]
-          [ C C C c r ]
-          [ C C C C c ]
+        vecR : :py:class:`numpy.ndarray`
+            The generating row vector of the toeplitz matrix excluding the
+            element corresponding to the first column, which is already defined
+            in `vecC`.
 
-        The Circulant it is derived from has the following generator:
-          [ c C C C C R R R r ] [9 x 9]
-
-        ...and may be zero-padded to a [16 x 16] Matrix for efficiency:
-          [ c C C C C 0 0 0 0 0 0 0 R R R r]
-
-        Valid options
-        -------------
-         'pad'=[false TRUE]
-            perform zero-padding of Circulant for efficiency
-
-        All options specified will also be passed on to the geneation of the
-        underlying Product instance initialization.
+        **options:
+        **options:
+            See the special options of :py:class:`fastmat.Fourier`, which are
+            also supported by this matrix and the general options offered by
+            :py:meth:`fastmat.Matrix.__init__`.
         '''
 
         # save generating vectors. Matrix sizes will be set by Product
@@ -180,17 +173,22 @@ cdef class Toeplitz(Partial):
         # data vector by N, which will be compensated in Diag().
 
         # Create inner product
-        cdef Fourier FN = Fourier(vecSize)
-        cdef Product P = Product(FN.H, Diag(np.fft.fft(vec, axis=0) / vecSize),
-                                 FN, **options)
+        cdef Fourier FN = Fourier(vecSize, **options)
+        cdef Product P = Product(
+            FN.H,
+            Diag(np.fft.fft(vec, axis=0) / vecSize, **options),
+            FN,
+            **options
+        )
 
         # initialize Partial of Product
-        kwargs = {}
-        if size != len(self._vecC):
-            kwargs['N'] = np.arange(len(self._vecC))
-
-        if size != len(self._vecR) + 1:
-            kwargs['M'] = np.arange(len(self._vecR) + 1)
+        cdef dict kwargs = options.copy()
+        kwargs['N'] = (np.arange(len(self._vecC))
+                       if size != len(self._vecC)
+                       else None)
+        kwargs['M'] = (np.arange(len(self._vecR) + 1)
+                       if size != len(self._vecR) + 1
+                       else None)
 
         super(Toeplitz, self).__init__(P, **kwargs)
 
@@ -238,9 +236,6 @@ cdef class Toeplitz(Partial):
                 else self._vecC[distance])
 
     cpdef np.ndarray _getArray(self):
-        '''
-        Return an explicit representation of the matrix as numpy-array.
-        '''
         return self._reference()
 
     cpdef Matrix _getNormalized(self):
@@ -280,12 +275,8 @@ cdef class Toeplitz(Partial):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        '''
-        Return an explicit representation of the matrix without using
-        any fastmat code.
-        _reference borrowing from Partial is too slow. Therefore,
-        construct a reference directly from the vectors.
-        '''
+        # _reference overloading from Partial is too slow. Therefore, construct
+        # a reference directly from the vectors.
         cdef intsize ii, N = self.numN, M = self.numM
         cdef np.ndarray arrRes = np.empty((N, M), dtype=self.dtype)
 
@@ -304,12 +295,13 @@ cdef class Toeplitz(Partial):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_N      : TEST.Permutation([5, 41]),
                 'num_M'         : TEST.Permutation([4, 6]),
                 TEST.NUM_M      : (lambda param: param['num_M'] + 1),
-                'mTypeH'        : TEST.Permutation(TEST.ALLTYPES),
+                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
                 'vecH'          : TEST.ArrayGenerator({
@@ -361,6 +353,3 @@ cdef class Toeplitz(Partial):
                     arrTestDist((2 ** c - 1, ), dtype=datatype)))
             }
         }
-
-    def _getDocumentation(self):
-        return ""

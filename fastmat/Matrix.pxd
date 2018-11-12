@@ -52,12 +52,20 @@ cdef class MatrixCallProfile(object):
 
 
 ################################################## class Matrix
+cdef struct TRANSFORM:
+    intsize numVectors
+    ftype fInput
+    ftype fInternal
+    ftype fOutput
+    ntype nInternal
+    ntype nOutput
+
 cdef class Matrix:
 
     cdef bint       _cythonCall                  # use _C() transforms in class
-    cdef bint       _forceInputAlignment         # force alignment of input data
+    cdef bint       _forceContiguousInput        # force contiguous input data
     #                                            # to be F-contiguous
-    cdef bint       _useFortranStyle             # if true, select Fortran style
+    cdef bint       _fortranStyle                # if true, select Fortran style
     cdef bint       _widenInputDatatype          # widen input data type upfront
 
     ############################################## class variables
@@ -67,12 +75,17 @@ cdef class Matrix:
 
     cdef public Matrix      _gram                # cache for gram matrix
     cdef public Matrix      _normalized          # cache for normalized matrix
+<<<<<<< HEAD
     cdef public object      _largestEigenVal     # cache for largestEigenVal
     cdef public np.ndarray  _largestEigenVec
     # cache for largestSingularVal
     cdef public object      _largestSingularVal
     # cache for largestSingularVecs
     cdef public tuple       _largestSingularVecs # cache for largestSingularvecs
+=======
+    cdef public object      _largestEV           # cache for largestEV
+    cdef public object      _largestSV           # cache for largestSV
+>>>>>>> master
     cdef public object      _scipyLinearOperator # interface to scipy
     cdef public Matrix      _T                   # cache for transpose matrix
     cdef public Matrix      _H                   # cache for adjunct matrix
@@ -82,6 +95,8 @@ cdef class Matrix:
     cdef readonly intsize   numM                 # column-count of matrix
     cdef readonly ntype     numpyType            # numpy typenum
     cdef readonly ftype     fusedType            # fastmat fused typenum
+    cdef readonly ftype     _minFusedType        # minimal fused type used
+    #                                            # internally for transform
 
     cdef public bint        bypassAllow          # if true, transform may be
     #                                            # bypassed based on runtime
@@ -104,10 +119,15 @@ cdef class Matrix:
     cpdef np.ndarray _getCol(self, intsize)
     cpdef np.ndarray _getRow(self, intsize)
     cpdef object _getItem(self, intsize, intsize)
+<<<<<<< HEAD
     cpdef object _getLargestEigenVal(self)
     cpdef tuple  _getLargestEigenVec(self)
     cpdef object _getLargestSingularVal(self)
     cpdef tuple  _getLargestSingularVecs(self)
+=======
+    cpdef object _getLargestEV(self, intsize, float, float, bint)
+    cpdef object _getLargestSV(self, intsize, float, float, bint)
+>>>>>>> master
     cpdef object _getScipyLinearOperator(self)
     cpdef Matrix _getGram(self)
     cpdef Matrix _getNormalized(self)
@@ -119,8 +139,9 @@ cdef class Matrix:
     cpdef tuple _getComplexity(self)
     cdef void _initProfiles(self)
     cpdef _exploreNestedProfiles(self)
-    cpdef tuple estimateRuntime(self, intsize M=?)
+    cpdef tuple estimateRuntime(self, intsize numVectors=?)
 
+    cdef np.ndarray _prepareInputArray(self, np.ndarray, intsize, TRANSFORM *)
     cpdef _forwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef _backwardC(self, np.ndarray, np.ndarray, ftype, ftype)
     cpdef np.ndarray _forward(self, np.ndarray)
