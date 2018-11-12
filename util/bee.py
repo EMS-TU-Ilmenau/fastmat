@@ -58,16 +58,18 @@ colors = ['#003366', '#FF6600', '#CC0000', '#FCE1E1']
 ################################################## import fastmat
 try:
     import fastmat
+    import fastmat.algorithms as fmAlgs
 except ImportError:
     sys.path.append('..')
     sys.path.append('.')
     import fastmat
+    import fastmat.algorithms as fmAlgs
 
 from fastmat.inspect import Test, Benchmark, TEST, BENCH
 from fastmat.inspect.common import AccessDict, \
     fmtBold, fmtGreen, fmtYellow, fmtRed
 
-classBaseContainers = (fastmat.Matrix, fastmat.Algorithm)
+classBaseContainers = (fastmat.Matrix, fmAlgs.Algorithm)
 
 ################################################## package constant definition
 packageName = 'fastmat'
@@ -420,9 +422,10 @@ class Bee(CommandArgParser):
 
         # STAGE 2: add dependencies introduced in test case instances
         def crawlContent(item, targetSet):
-            for nestedItem in item:
-                targetSet.add(nestedItem.__class__)
-                crawlContent(nestedItem, targetSet)
+            if isinstance(item, fastmat.Matrix):
+                for nestedItem in item:
+                    targetSet.add(nestedItem.__class__)
+                    crawlContent(nestedItem, targetSet)
 
         for name, testWorker in tests.items():
             targetSet = testDependencies[name]
@@ -967,6 +970,7 @@ if __name__ == '__main__':
 
     # Index elements in fastmat by location
     packageIndexTree = crawlModule(fastmat, 1, classBaseContainers)
+    algsIndexTree = crawlModule(fmAlgs, 1, classBaseContainers)
 
     ############################################## Collect package infos
     # Flatten Index for categorization
@@ -989,11 +993,12 @@ if __name__ == '__main__':
 
     packageIndex={}
     appendDictFlattened(packageIndex, '', packageIndexTree)
+    appendDictFlattened(packageIndex, '', algsIndexTree)
 
     # now filter out the fastmat.Algorithm class as it is just a classifier
     packageIndex={name: element
                   for name, element in packageIndex.items()
-                  if element is not fastmat.Algorithm}
+                  if element is not fmAlgs.Algorithm}
 
     ############################################## analyze structure
     # categorize into classes (class) and algorithms (routine)
@@ -1003,7 +1008,7 @@ if __name__ == '__main__':
 
     packageAlgs={loc: element
                  for loc, element in packageIndex.items()
-                 if issubclass(element, fastmat.Algorithm)}
+                 if issubclass(element, fmAlgs.Algorithm)}
 
     ################################################## Parse and Run
     Bee(*(sys.argv[1:]), prevArgs=' '.join(sys.argv[:1]))
