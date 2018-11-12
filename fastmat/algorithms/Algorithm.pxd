@@ -15,7 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport numpy as np
-from ..Matrix cimport Matrix
 
-cpdef np.ndarray CG(Matrix, np.ndarray, bint hermitian=?, float errorTol=?)
+import cython
+import numpy as np
+cimport numpy as np
+
+################################################## class Algorithm
+cdef class Algorithm(object):
+    cpdef _process(self, np.ndarray)
+    cpdef handleCallback(self, object)
+    cpdef snapshot(self)

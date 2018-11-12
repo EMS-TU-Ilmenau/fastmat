@@ -24,7 +24,7 @@ from .common import *
 from ..core.cmath import profileCall
 from ..core.resource import getMemoryFootprint
 from ..Matrix import Matrix
-from ..algs.CG import CG
+from scipy.sparse.linalg import bicg
 from ..version import __version__
 
 
@@ -234,35 +234,35 @@ def timeCalls(calls, **options):
 
 ################################################## testInitSolve()
 def testInitSolve(funcConstr, numSize, numN):
-    instance=funcConstr(numSize)
-    mem1=instance.nbytes
 
-    func1=CG
-    func2=np.linalg.solve
+    instance = funcConstr(numSize)
+    mem1 = instance.nbytes
 
-    args1=[instance, arrTestDist((numN, 1), instance.dtype)]
-    args2=[instance._forwardReference(np.eye(numN)), args1[1]]
+    func1 = lambda A, b: bicg(A, b)[0]
+    args1 = [
+        instance.scipyLinearOperator,
+        arrTestDist((numN, 1), instance.dtype)
+    ]
+    func2 = np.linalg.solve
+    args2 = [
+        instance._forwardReference(np.eye(numN)),
+        args1[1]
+    ]
 
     if instance._forwardReferenceMatrix is None:
         instance._forwardReferenceInit()
 
-    mem2=instance.nbytesReference
+    mem2 = instance.nbytesReference
 
     return {
         'fastmat': {
             'func': func1,
             'args': args1,
             'Mem': mem1
-        }, 'fm10': {
-            'func': func1,
-            'args': [args1[0], np.resize(args1[1], (numN, 10))]
         },  'numpy': {
             'func': func2,
             'args': args2,
             'Mem': mem2
-        }, 'np10': {
-            'func': func2,
-            'args': [args1[0].array, np.resize(args1[1], (numN, 10))]
         }
     }
 
@@ -667,7 +667,6 @@ class Benchmark(Worker):
 
         result=self.results[nameResult]
         arrResult=result[BENCH.RESULT]
-        lstHeader=result[BENCH.HEADER]
 
         filename=self.getFilename(nameResult, path=outPath,
                                   addVersionTag=addVersionTag)

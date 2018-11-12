@@ -52,7 +52,7 @@ except ImportError:
 
 # global package constants
 packageName     = 'fastmat'
-packageVersion  = '0.2.a1'           # provide a version tag as fallback
+packageVersion  = '0.2.a2'           # provide a version tag as fallback
 fullVersion     = packageVersion
 strVersionFile  = "%s/version.py" %(packageName)
 
@@ -199,7 +199,7 @@ def extensions():
 
     return cythonize(
         [Extension("*", ["fastmat/*.pyx"], **extensionArguments),
-         Extension("*", ["fastmat/algs/*.pyx"], **extensionArguments),
+         Extension("*", ["fastmat/algorithms/*.pyx"], **extensionArguments),
          Extension("*", ["fastmat/core/*.pyx"], **extensionArguments)],
         compiler_directives=cythonDirectives,
         nthreads=4
@@ -362,7 +362,7 @@ if __name__ == '__main__':
         install_requires=installRequires,
         packages=[
             'fastmat',
-            'fastmat/algs',
+            'fastmat/algorithms',
             'fastmat/core',
             'fastmat/inspect'
         ],

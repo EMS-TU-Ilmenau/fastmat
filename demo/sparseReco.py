@@ -161,12 +161,12 @@ timeForward = time.time() - s
 # call the sparse recovery algorithm to extract the original pulses
 print(" * Do the reconstruction while exploiting structure")
 s = time.time()
-arrR1 = fastmat.algs.OMP(matC, arrY, numPulses)
+arrR1 = fastmat.algorithms.OMP(matC, arrY, numPulses)
 timeFastmat = time.time() - s
 
 print(" * Do the reconstruction without exploiting structure")
 s = time.time()
-arrR2 = fastmat.algs.OMP(matCHat, arrY, numPulses)
+arrR2 = fastmat.algorithms.OMP(matCHat, arrY, numPulses)
 timeRegular = time.time() - s
 
 ################################################################################
@@ -185,4 +185,3 @@ print("   Speedup factor              % 18.3f" %(timeRegular / timeFastmat))
 print("")
 print("   Efficient Matrix Storage    % 18.3f MB" %(matC.nbytes / 2. ** 20))
 print("   Reference Matrix Storage    % 18.3f MB" %(matCHat.nbytes / 2. ** 20))
-
