@@ -26,12 +26,9 @@ from .core.types cimport *
 cdef class MLUltraSound(Partial):
 
     ############################################## class variables
-    cdef public np.ndarray _tenT            # defining elements
-    cdef public np.ndarray _diags           # matrix diagonals tensor
-    cdef intsize _numBlocksN
-    cdef intsize _numSize1
-    cdef intsize _numSize2
-    cdef np.ndarray _arrN
+    cdef public np.ndarray _tenT                 # defining elements
+    cdef public np.ndarray _diags                # matrix diagonals tensor
+    cdef public np.ndarray _arrDim               # dimensions per level
 
     ############################################## class methods
     cpdef np.ndarray _reference(self)

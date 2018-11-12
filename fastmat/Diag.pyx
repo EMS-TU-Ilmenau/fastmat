@@ -82,8 +82,8 @@ cdef class Diag(Matrix):
         **options:
             See :py:meth:`fastmat.Matrix.__init__`.
         '''
-        # numN is size of matrix (and of diagonal vector)
-        numN = len(vecD)
+        # numRows is size of matrix (and of diagonal vector)
+        numRows = len(vecD)
 
         # store diagonal entry vector as copy of vecD and complain if
         # dimension does not match
@@ -94,7 +94,7 @@ cdef class Diag(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        self._initProperties(numN, numN, self._vecD.dtype, **options)
+        self._initProperties(numRows, numRows, self._vecD.dtype, **options)
         self._forceContiguousInput = True
         self._fortranStyle = True
 
@@ -102,7 +102,7 @@ cdef class Diag(Matrix):
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef np.ndarray arrRes
 
-        arrRes = _arrZero(1, self.numN, 1, self.numpyType)
+        arrRes = _arrZero(1, self.numRows, 1, self.numpyType)
         arrRes[idx] = self._vecD[idx]
 
         return arrRes
@@ -118,8 +118,8 @@ cdef class Diag(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._getCol(idx)
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._vecD[idxN] if idxN == idxM else self.dtype(0)
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return self._vecD[idxRow] if idxRow == idxCol else self.dtype(0)
 
     cpdef Matrix _getGram(self):
         return Diag(np.abs(self._vecD) ** 2)
@@ -135,7 +135,7 @@ cdef class Diag(Matrix):
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        return (2. * self.numN, 3. * self.numN)
+        return (2. * self.numRows, 3. * self.numRows)
 
     ############################################## class forward / backward
     cpdef _forwardC(
@@ -160,7 +160,7 @@ cdef class Diag(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        cdef intsize ii, N = self.numN
+        cdef intsize ii
         cdef np.ndarray d = self.vecD
 
         return np.diag(d)
@@ -170,13 +170,13 @@ cdef class Diag(Matrix):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 35,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 35,
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mTypeD'        : TEST.Permutation(TEST.ALLTYPES),
                 TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                 'vecD'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeD',
-                    TEST.SHAPE  : (TEST.NUM_N, ),
+                    TEST.SHAPE  : (TEST.NUM_ROWS, ),
                     TEST.ALIGN  : TEST.PARAMALIGN
                 }),
                 TEST.INITARGS   : (lambda param: [param['vecD']()]),

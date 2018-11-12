@@ -225,25 +225,25 @@ cdef class LFSRCirculant(Matrix):
         self._initProperties(self.period, self.period, np.int8, **options)
 
     ############################################## class property override
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self.vecC[(idxN - idxM) % self.numN]
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return self.vecC[(idxRow - idxCol) % self.numRows]
 
     cpdef np.ndarray _getCol(self, intsize idx):
-        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numRows, 0, self.numpyType)
         self._roll(arrRes, idx)
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
-        self._roll(arrRes[::-1], self.numN - idx - 1)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numRows, 0, self.numpyType)
+        self._roll(arrRes[::-1], self.numRows - idx - 1)
         return arrRes
 
     cpdef Matrix _getNormalized(self):
-        return self * np.float32(1. / np.sqrt(self.numN))
+        return self * np.float32(1. / np.sqrt(self.numRows))
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef float complexity = 2 * self._content[0].numN + 2 * self.numN
+        cdef float complexity = 2 * self._content[0].numRows + 2 * self.numRows
         return (complexity, complexity)
 
     ############################################## class core methods
@@ -251,8 +251,8 @@ cdef class LFSRCirculant(Matrix):
         if shift == 0:
             vecOut[:] = self.vecC
         else:
-            vecOut[:shift] = self.vecC[self.numN - shift:]
-            vecOut[shift:] = self.vecC[:self.numN - shift]
+            vecOut[:shift] = self.vecC[self.numRows - shift:]
+            vecOut[shift:] = self.vecC[:self.numRows - shift]
 
     cdef np.ndarray _getStates(self):
         cdef intsize nn
@@ -264,9 +264,9 @@ cdef class LFSRCirculant(Matrix):
         cdef lfsrReg_t taps = self.taps
         cdef lfsrReg_t state = self.start
 
-        arrStates = _arrEmpty(1, self.numN, 1, typeStates)
+        arrStates = _arrEmpty(1, self.numRows, 1, typeStates)
         mvStates = arrStates
-        for nn in range(self.numN):
+        for nn in range(self.numRows):
             mvStates[nn] = state & (mask - 1)
             state = lfsrGenStep(state, taps, mask)
 
@@ -283,9 +283,9 @@ cdef class LFSRCirculant(Matrix):
         cdef np.int8_t[:] mvRes
         cdef ntype typeElement = np.dtype(np.int8).type_num
 
-        arrRes = _arrEmpty(1, self.numN, 1, typeElement)
+        arrRes = _arrEmpty(1, self.numRows, 1, typeElement)
         mvRes = arrRes
-        for nn in range(self.numN):
+        for nn in range(self.numRows):
             mvRes[nn] = lfsrOutBit(state)
             state = lfsrGenStep(state, taps, mask)
 
@@ -393,9 +393,9 @@ cdef class LFSRCirculant(Matrix):
         state = self.start
         taps = self.taps
         mask = 1 << self.size
-        vecSequence = np.empty((self.numN, ), dtype=np.int8)
+        vecSequence = np.empty((self.numRows, ), dtype=np.int8)
         mvSequence = vecSequence
-        for ii in range(self.numN):
+        for ii in range(self.numRows):
             mvSequence[ii] = (state & 1) * -2 + 1
 
             tmp = state & taps
@@ -409,8 +409,8 @@ cdef class LFSRCirculant(Matrix):
 
             state >>= 1
 
-        arrRes = np.empty((self.numN, self.numN), dtype=self.dtype)
-        for ii in range(self.numN):
+        arrRes = np.empty((self.numRows, self.numRows), dtype=self.dtype)
+        for ii in range(self.numRows):
             arrRes[:, ii] = np.roll(vecSequence, ii)
 
         return arrRes
@@ -426,8 +426,8 @@ cdef class LFSRCirculant(Matrix):
                 'start'         : TEST.Permutation([0x5, 0x1]),
                 'length'        : (lambda param: (15 if param['taps'] == 0x9
                                                   else 7)),
-                TEST.NUM_N      : 'length',
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 'length',
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
 
                 # define constructor for test instances and naming of test
                 TEST.OBJECT     : LFSRCirculant,

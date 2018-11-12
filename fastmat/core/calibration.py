@@ -113,7 +113,7 @@ def calibrateClass(target, **options):
         flags.bypassAllow = _bypassAllow
 
     def estimate(nameTime, nameComplexity, nameOvhNested, nameEffNested):
-        arr = np.nan_to_num(B.getResult('overhead', 'numN',
+        arr = np.nan_to_num(B.getResult('overhead', 'numRows',
                                         nameTime, nameComplexity,
                                         nameOvhNested, nameEffNested))
 

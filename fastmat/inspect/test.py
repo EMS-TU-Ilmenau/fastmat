@@ -38,9 +38,9 @@ class TEST(NAME):
     OBJECT          = 'object'
     ARGS            = 'testArgs'
     KWARGS          = 'testKwargs'
-    NUM_N           = 'numN'
-    NUM_M           = 'numM'
-    DATACOLS        = 'numCols'
+    NUM_ROWS        = 'numRows'
+    NUM_COLS        = 'numCols'
+    DATACOLS        = 'numVectors'
     DATATYPE        = 'dataType'
     DATASHAPE       = 'dataShape'
     DATAALIGN       = 'dataAlign'
@@ -287,7 +287,8 @@ def testGetItem(test):
     query={}
     instance=test[TEST.INSTANCE]
     arrOutput=np.zeros(instance.shape, instance.dtype)
-    for nn, mm in itertools.product(range(instance.numN), range(instance.numM)):
+    for nn, mm in itertools.product(range(instance.numRows),
+                                    range(instance.numCols)):
         arrOutput[nn, mm]=instance[nn, mm]
     query[TEST.RESULT_OUTPUT]=arrOutput
     query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
@@ -299,7 +300,7 @@ def testGetColsSingle(test):
     query = {}
     instance = test[TEST.INSTANCE]
     arrOutput = np.empty(instance.shape, instance.dtype)
-    for mm in range(instance.numM):
+    for mm in range(instance.numCols):
         vecCol = instance.getCols(mm)
         if vecCol.ndim != 1:
             print('testGetColsSingle', vecCol.shape, vecCol)
@@ -318,7 +319,7 @@ def testGetColsSingle(test):
 def testGetColsMultiple(test):
     query={}
     instance=test[TEST.INSTANCE]
-    arrOutput=instance.getCols([c for c in range(instance.numM)])
+    arrOutput=instance.getCols([c for c in range(instance.numCols)])
     query[TEST.RESULT_OUTPUT]=arrOutput
     query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
     return compareResults(test, query)
@@ -328,8 +329,8 @@ def testGetColsMultiple(test):
 def testGetRowsSingle(test):
     query = {}
     instance = test[TEST.INSTANCE]
-    arrOutput = np.empty((instance.numN, instance.numM), instance.dtype)
-    for nn in range(instance.numN):
+    arrOutput = np.empty((instance.numRows, instance.numCols), instance.dtype)
+    for nn in range(instance.numRows):
         vecRow = instance.getRows(nn)
         if vecRow.ndim != 1:
             print('testGetRowsSingle', vecRow.shape, vecRow)
@@ -349,7 +350,7 @@ def testGetRowsSingle(test):
 def testGetRowsMultiple(test):
     query={}
     instance=test[TEST.INSTANCE]
-    arrOutput=instance.getRows([r for r in range(instance.numN)])
+    arrOutput=instance.getRows([r for r in range(instance.numRows)])
     query[TEST.RESULT_OUTPUT]=arrOutput
     query[TEST.RESULT_REF]=test[TEST.REFERENCE].astype(instance.dtype)
     return compareResults(test, query)
@@ -515,7 +516,9 @@ class Test(Worker):
         defaults={
             TEST.COMMON: {
                 NAME.NAME       : dynFormat("%s.%s", NAME.CLASS, NAME.TARGET),
-                TEST.NAMINGARGS : dynFormat("[%dx%d]", TEST.NUM_N, TEST.NUM_M),
+                TEST.NAMINGARGS : dynFormat(
+                    "[%dx%d]", TEST.NUM_ROWS, TEST.NUM_COLS
+                ),
                 TEST.NAMING     : dynFormat(
                     "%s(%s)", NAME.CLASS, TEST.NAMINGARGS)
 
@@ -545,8 +548,8 @@ class Test(Worker):
                 # define default arrB ArrayGenerator
                 TEST.DATACOLS   : Permutation([1, 5]),
                 TEST.DATATYPE   : VariantPermutation(TEST.ALLTYPES),
-                TEST.DATASHAPE  : (TEST.NUM_M, TEST.DATACOLS),
-                TEST.DATASHAPE_T: (TEST.NUM_N, TEST.DATACOLS),
+                TEST.DATASHAPE  : (TEST.NUM_COLS, TEST.DATACOLS),
+                TEST.DATASHAPE_T: (TEST.NUM_ROWS, TEST.DATACOLS),
                 TEST.DATAALIGN  : VariantPermutation(TEST.ALLALIGNMENTS),
                 TEST.DATACENTER : 0,
                 TEST.DATAARRAY  : ArrayGenerator({
@@ -572,8 +575,8 @@ class Test(Worker):
                 # define default arrB ArrayGenerator
                 TEST.DATACOLS   : Permutation([1, 5]),
                 TEST.DATATYPE   : VariantPermutation(TEST.LARGETYPES),
-                TEST.DATASHAPE  : (TEST.NUM_M, TEST.DATACOLS),
-                TEST.DATASHAPE_T: (TEST.NUM_N, TEST.DATACOLS),
+                TEST.DATASHAPE  : (TEST.NUM_COLS, TEST.DATACOLS),
+                TEST.DATASHAPE_T: (TEST.NUM_ROWS, TEST.DATACOLS),
                 TEST.DATAALIGN  : VariantPermutation(TEST.ALLALIGNMENTS),
                 TEST.DATACENTER : 0,
                 TEST.DATAARRAY  : ArrayGenerator({
@@ -697,7 +700,8 @@ class Test(Worker):
         # the hierarchy of this test for negative results. If none are found,
         # skip printing.
         if not self._verboseFull:
-            if all(all(query.get(TEST.RESULT, True)
+            if all(all((query.get(TEST.RESULT, True) or
+                        query.get(TEST.IGNORE, True))
                        for query in variant.values())
                    for variant in resultTest.values()):
                 return

@@ -115,7 +115,7 @@ cdef class Hadamard(Matrix):
         if order < 1:
             raise ValueError("Hadamard: Order must be larger than 0.")
 
-        cdef int maxOrder = sizeof(self.numN) * 8 - 2
+        cdef int maxOrder = sizeof(self.numRows) * 8 - 2
         if order > maxOrder:
             raise ValueError(
                 "Hadamard: Order exceeds maximum for this platform: %d" %(
@@ -124,9 +124,9 @@ cdef class Hadamard(Matrix):
         self._order = order
 
         # set properties of matrix
-        numN = 2 ** self._order
+        numRows = 2 ** self._order
         self._cythonCall = True
-        self._initProperties(numN, numN, np.int8, **options)
+        self._initProperties(numRows, numRows, np.int8, **options)
         self._forceContiguousInput = True
 
     cpdef np.ndarray _getArray(self):
@@ -135,21 +135,21 @@ cdef class Hadamard(Matrix):
     ############################################## class property override
     cpdef object _getLargestEV(self, intsize maxSteps,
                                float relEps, float eps, bint alwaysReturn):
-        return np.sqrt(self.numN)
+        return np.sqrt(self.numRows)
 
     cpdef object _getLargestSV(self, intsize maxSteps,
                                float relEps, float eps, bint alwaysReturn):
-        return np.sqrt(self.numN)
+        return np.sqrt(self.numRows)
 
     cpdef Matrix _getNormalized(self):
-        return Hadamard(self.order) * np.float32(1. / np.sqrt(self.numN))
+        return Hadamard(self.order) * np.float32(1. / np.sqrt(self.numRows))
 
     cpdef Matrix _getGram(self):
-        return Eye(self.numN) * np.float32(self.numN)
+        return Eye(self.numRows) * np.float32(self.numRows)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef float complexity = self.numN * self.order
+        cdef float complexity = self.numRows * self.order
         return (complexity, complexity + 1)
 
     ############################################## class forward / backward
@@ -234,7 +234,7 @@ cdef class Hadamard(Matrix):
             spHadamard = __import__('scipy.linalg', globals(), locals(),
                                     ['hadamard']).hadamard
 
-        return spHadamard(self.numN, dtype=self.dtype)
+        return spHadamard(self.numRows, dtype=self.dtype)
 
     ############################################## class inspection, QM
     def _getTest(self):
@@ -243,8 +243,8 @@ cdef class Hadamard(Matrix):
             TEST.COMMON: {
                 # define matrix sizes and parameters
                 'order'         : TEST.Permutation([4, 6]),
-                TEST.NUM_N      : (lambda param : 2 ** param['order']),
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : (lambda param : 2 ** param['order']),
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
 
                 # define constructor for test instances and naming of test
                 TEST.OBJECT     : Hadamard,

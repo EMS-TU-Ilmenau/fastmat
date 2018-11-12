@@ -28,8 +28,8 @@ cdef class DiagBlocks(Matrix):
     ############################################## class variables
     cpdef np.ndarray _tenDiags
 
-    cdef intsize _numDiagsN
-    cdef intsize _numDiagsM
+    cdef intsize _numDiagsRows
+    cdef intsize _numDiagsCols
     cdef intsize _numDiagsSize
 
     ############################################## class methods

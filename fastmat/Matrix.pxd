@@ -82,8 +82,8 @@ cdef class Matrix:
     cdef public Matrix      _H                   # cache for adjunct matrix
     cdef public Matrix      _conj                # cache for conjugate matrix
 
-    cdef readonly intsize   numN                 # row-count of matrix
-    cdef readonly intsize   numM                 # column-count of matrix
+    cdef readonly intsize   numRows              # row-count of matrix
+    cdef readonly intsize   numCols              # column-count of matrix
     cdef readonly ntype     numpyType            # numpy typenum
     cdef readonly ftype     fusedType            # fastmat fused typenum
     cdef readonly ftype     _minFusedType        # minimal fused type used

@@ -151,7 +151,8 @@ cdef class LowRank(Product):
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef float complexity = self.numN + self.numM + self._vecS.shape[0]
+        cdef float complexity = (self.numRows + self.numCols +
+                                 self._vecS.shape[0])
         return (complexity, complexity)
 
     cpdef np.ndarray _reference(self):
@@ -172,8 +173,8 @@ cdef class LowRank(Product):
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'order'         : 4,
                 TEST.TOL_POWER  : (lambda param: np.sqrt(param['order'])),
-                TEST.NUM_N      : 7,
-                TEST.NUM_M      : TEST.Permutation([11, TEST.NUM_N]),
+                TEST.NUM_ROWS   : 7,
+                TEST.NUM_COLS   : TEST.Permutation([11, TEST.NUM_ROWS]),
                 'mTypeS'        : TEST.Permutation(TEST.ALLTYPES),
                 'mTypeU'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
@@ -183,11 +184,11 @@ cdef class LowRank(Product):
                 }),
                 'arrU'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeU',
-                    TEST.SHAPE  : (TEST.NUM_N, 'order'),
+                    TEST.SHAPE  : (TEST.NUM_ROWS, 'order'),
                 }),
                 'arrV'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeV',
-                    TEST.SHAPE  : (TEST.NUM_M, 'order'),
+                    TEST.SHAPE  : (TEST.NUM_COLS, 'order'),
                 }),
                 TEST.INITARGS   : (lambda param : [param['vecS'](),
                                                    param['arrU'](),

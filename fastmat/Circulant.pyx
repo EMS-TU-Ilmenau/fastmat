@@ -154,8 +154,8 @@ cdef class Circulant(Partial):
         cdef dict kwargs = options.copy()
         cdef bint truncate = size != len(self._vecC)
         cdef np.ndarray arrIndices = np.arange(len(self._vecC))
-        kwargs['N'] = (arrIndices if truncate else None)
-        kwargs['M'] = (arrIndices if truncate else None)
+        kwargs['rows'] = (arrIndices if truncate else None)
+        kwargs['cols'] = (arrIndices if truncate else None)
 
         super(Circulant, self).__init__(P, **kwargs)
 
@@ -170,16 +170,16 @@ cdef class Circulant(Partial):
 
     ############################################## class property override
     cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._vecC[(idxN - idxM) % self.numN]
+        return self._vecC[(idxN - idxM) % self.numRows]
 
     cpdef np.ndarray _getCol(self, intsize idx):
-        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numRows, 0, self.numpyType)
         self._roll(arrRes, idx)
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        cdef np.ndarray arrRes = _arrEmpty(1, self.numN, 0, self.numpyType)
-        self._roll(arrRes[::-1], self.numN - idx - 1)
+        cdef np.ndarray arrRes = _arrEmpty(1, self.numRows, 0, self.numpyType)
+        self._roll(arrRes[::-1], self.numRows - idx - 1)
         return arrRes
 
     cpdef Matrix _getGram(self):
@@ -206,8 +206,8 @@ cdef class Circulant(Partial):
         if shift == 0:
             vecOut[:] = self._vecC
         else:
-            vecOut[:shift] = self._vecC[self.numN - shift:]
-            vecOut[shift:] = self._vecC[:self.numN - shift]
+            vecOut[:shift] = self._vecC[self.numRows - shift:]
+            vecOut[shift:] = self._vecC[:self.numRows - shift]
 
     cpdef Matrix _getNormalized(self):
         return self * (1. / np.linalg.norm(self._vecC))
@@ -215,11 +215,11 @@ cdef class Circulant(Partial):
     ############################################## class reference
     cpdef np.ndarray _reference(self):
         cdef np.ndarray arrRes
-        cdef intsize ii, N = self.numN, M = self.numM
+        cdef intsize ii
 
-        arrRes = np.empty((N, M), dtype=self.dtype)
+        arrRes = np.empty((self.numRows, self.numCols), dtype=self.dtype)
         arrRes[:, 0] = self._vecC
-        for ii in range(N):
+        for ii in range(self.numRows):
             self._roll(arrRes[:, ii], ii)
 
         return arrRes
@@ -231,14 +231,14 @@ cdef class Circulant(Partial):
             TEST.COMMON: {
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
-                TEST.NUM_N      : TEST.Permutation([31, 41]),
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : TEST.Permutation([31, 41]),
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
                 'optimize'      : True,
                 TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
-                    TEST.SHAPE  : (TEST.NUM_N, ),
+                    TEST.SHAPE  : (TEST.NUM_ROWS, ),
                     TEST.ALIGN  : TEST.PARAMALIGN
                 }),
                 TEST.INITARGS   : (lambda param : [param['vecC']()]),

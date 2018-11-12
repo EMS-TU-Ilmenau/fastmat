@@ -183,12 +183,10 @@ cdef class Toeplitz(Partial):
 
         # initialize Partial of Product
         cdef dict kwargs = options.copy()
-        kwargs['N'] = (np.arange(len(self._vecC))
-                       if size != len(self._vecC)
-                       else None)
-        kwargs['M'] = (np.arange(len(self._vecR) + 1)
-                       if size != len(self._vecR) + 1
-                       else None)
+        kwargs['rows'] = (np.arange(len(self._vecC))
+                          if size != len(self._vecC) else None)
+        kwargs['cols'] = (np.arange(len(self._vecR) + 1)
+                          if size != len(self._vecR) + 1 else None)
 
         super(Toeplitz, self).__init__(P, **kwargs)
 
@@ -203,35 +201,33 @@ cdef class Toeplitz(Partial):
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
-        cdef intsize N = self.numN
         cdef np.ndarray arrRes
 
         if idx == 0:
             return self._vecC
-        elif idx >= N:
-            # double slicing needed, otherwise fail when M = N + 1
-            return self._vecR[idx - N:idx][::-1]
+        elif idx >= self.numRows:
+            # double slicing needed, otherwise fail when numCols = numRows + 1
+            return self._vecR[idx - self.numRows:idx][::-1]
         else:
-            arrRes = _arrEmpty(1, N, 0, self.numpyType)
+            arrRes = _arrEmpty(1, self.numRows, 0, self.numpyType)
             arrRes[:idx] = self._vecR[idx - 1::-1]
-            arrRes[idx:] = self._vecC[:N - idx]
+            arrRes[idx:] = self._vecC[:self.numRows - idx]
             return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        cdef intsize M = self.numM
         cdef np.ndarray arrRes
 
-        if idx >= M - 1:
-            # double slicing needed, otherwise fail when N = M + 1
-            return self._vecC[idx - M + 1:idx + 1][::-1]
+        if idx >= self.numCols - 1:
+            # double slicing needed, otherwise fail when numRows = numCols + 1
+            return self._vecC[idx - self.numCols + 1:idx + 1][::-1]
         else:
-            arrRes = _arrEmpty(1, M, 0, self.numpyType)
+            arrRes = _arrEmpty(1, self.numCols, 0, self.numpyType)
             arrRes[:idx + 1] = self._vecC[idx::-1]
-            arrRes[idx + 1:] = self._vecR[:M - 1 - idx]
+            arrRes[idx + 1:] = self._vecR[:self.numCols - 1 - idx]
             return arrRes
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        cdef intsize distance = idxN - idxM
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        cdef intsize distance = idxRow - idxCol
         return (self._vecR[-distance - 1] if distance < 0
                 else self._vecC[distance])
 
@@ -241,11 +237,11 @@ cdef class Toeplitz(Partial):
     cpdef Matrix _getNormalized(self):
         # NOTE: This method suffers accuracy losses when elements with lower
         # indices are large in magnitude compared to ones with higher index!
-        cdef intsize ii, N = self.numN, M = self.numM
-        cdef intsize iiMax = (N + 1) if M > N else M
+        cdef intsize iiMax = ((self.numRows + 1) if self.numCols > self.numRows
+                              else self.numCols)
 
         # fill in a placeholder array
-        cdef np.ndarray arrNorms = _arrZero(1, M, 1, np.NPY_FLOAT64)
+        cdef np.ndarray arrNorms = _arrZero(1, self.numCols, 1, np.NPY_FLOAT64)
 
         # compute the absolute value of the squared elements in the defining
         # vectors
@@ -259,11 +255,12 @@ cdef class Toeplitz(Partial):
         # one more element of vecR and one less of vecC. Continue until vecC is
         # eaten up completely
         for ii in range(1, iiMax):
-            arrNorms[ii] = arrNorms[ii - 1] + vecRSqr[ii - 1] - vecCSqr[N - ii]
+            arrNorms[ii] = (arrNorms[ii - 1] + vecRSqr[ii - 1] -
+                            vecCSqr[self.numRows - ii])
 
         # then (as vecC is eaten up), proceed with rolling the remaining
         # elements of vecR until they are represented fully in arrNorms
-        for ii in range(iiMax, M):
+        for ii in range(iiMax, self.numCols):
             arrNorms[ii] = (arrNorms[ii - 1] +
                             vecRSqr[ii - 1] - vecRSqr[ii - iiMax])
 
@@ -277,16 +274,20 @@ cdef class Toeplitz(Partial):
     cpdef np.ndarray _reference(self):
         # _reference overloading from Partial is too slow. Therefore, construct
         # a reference directly from the vectors.
-        cdef intsize ii, N = self.numN, M = self.numM
-        cdef np.ndarray arrRes = np.empty((N, M), dtype=self.dtype)
+        cdef intsize ii
+        cdef np.ndarray arrRes = np.empty(
+            (self.numRows, self.numCols), dtype=self.dtype
+        )
 
         # put columns in lower-triangular part of matrix
-        for ii in range(0, min(N, M)):
-            arrRes[ii:N, ii] = self._vecC[0:(N - ii)]
+        for ii in range(0, min(self.numRows, self.numCols)):
+            arrRes[ii:self.numRows, ii] = self._vecC[0:(self.numRows - ii)]
 
         # put rows in upper-triangular part of matrix
-        for ii in range(0, min(N, M - 1)):
-            arrRes[ii, (ii + 1):M] = self._vecR[0:(M - ii - 1)]
+        for ii in range(0, min(self.numRows, self.numCols - 1)):
+            arrRes[ii, (ii + 1):self.numCols] = self._vecR[
+                0:(self.numCols - ii - 1)
+            ]
 
         return arrRes
 
@@ -298,19 +299,19 @@ cdef class Toeplitz(Partial):
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
-                TEST.NUM_N      : TEST.Permutation([5, 41]),
-                'num_M'         : TEST.Permutation([4, 6]),
-                TEST.NUM_M      : (lambda param: param['num_M'] + 1),
+                TEST.NUM_ROWS   : TEST.Permutation([5, 41]),
+                'num_cols'      : TEST.Permutation([4, 6]),
+                TEST.NUM_COLS   : (lambda param: param['num_cols'] + 1),
                 'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
                 'vecH'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeH',
-                    TEST.SHAPE  : (TEST.NUM_N, )
+                    TEST.SHAPE  : (TEST.NUM_ROWS, )
                 }),
                 'vecV'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeV',
-                    TEST.SHAPE  : ('num_M', )
+                    TEST.SHAPE  : ('num_cols', )
                 }),
                 TEST.INITARGS   : (lambda param : [param['vecH'](),
                                                    param['vecV']()]),
@@ -324,7 +325,7 @@ cdef class Toeplitz(Partial):
                 # perform thorough testing of slicing during array construction
                 # therefore, aside the symmetric shape case also test shapes
                 # that differ by +1/-1 and +x/-x in row and col size
-                TEST.NUM_N      : 4,
+                TEST.NUM_ROWS      : 4,
                 'num_M'         : TEST.Permutation([2, 3, 4, 5, 6]),
             },
             TEST.TRANSFORMS: {

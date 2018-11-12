@@ -144,7 +144,7 @@ class ISTA(Algorithm):
         self.numL = 1.0 / (self.fmatA.largestSV ** 2)
 
         self.arrX = np.zeros(
-            (self.fmatA.numM, self.arrB.shape[1]),
+            (self.fmatA.numCols, self.arrB.shape[1]),
             dtype=np.promote_types(np.float32, self.arrB.dtype)
         )
 
@@ -175,13 +175,13 @@ class ISTA(Algorithm):
 
         def testISTA(test):
             # prepare vectors
-            numM = test[TEST.NUM_M]
+            numCols = test[TEST.NUM_COLS]
             test[TEST.REFERENCE] = test[TEST.ALG_MATRIX].reference()
             test[TEST.RESULT_REF] = np.hstack([
                 arrSparseTestDist(
-                    (numM, 1),
+                    (numCols, 1),
                     dtype=test[TEST.DATATYPE],
-                    density=1. * test['numK'] / numM
+                    density=1. * test['numK'] / numCols
                 ).toarray()
                 for nn in range(test[TEST.DATACOLS])
             ])
@@ -194,37 +194,37 @@ class ISTA(Algorithm):
 
         return {
             TEST.ALGORITHM: {
-                'order': 6,
-                TEST.NUM_N: (lambda param: 3 * param['order']),
-                TEST.NUM_M: (lambda param: 2 ** param['order']),
-                'numK': 'order',
-                'lambda': 1.,
-                'maxSteps': 10,
+                'order'         : 6,
+                TEST.NUM_ROWS   : (lambda param: 3 * param['order']),
+                TEST.NUM_COLS   : (lambda param: 2 ** param['order']),
+                'numK'          : 'order',
+                'lambda'        : 1.,
+                'maxSteps'      : 10,
 
-                TEST.ALG_MATRIX: lambda param:
+                TEST.ALG_MATRIX : lambda param:
                     Product(Matrix(np.random.uniform(
-                        -100, 100, (getattr(param, TEST.NUM_M),
-                                    getattr(param, TEST.NUM_M))).astype(
+                        -100, 100, (getattr(param, TEST.NUM_COLS),
+                                    getattr(param, TEST.NUM_COLS))).astype(
                                         param['typeA'])),
                             Hadamard(param.order),
                             typeExpansion=param['typeA']),
-                'typeA': TEST.Permutation(TEST.ALLTYPES),
+                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.OBJECT: ISTA,
-                TEST.INITARGS: [TEST.ALG_MATRIX],
-                TEST.INITKWARGS: {
-                    'numLambda': 'lambda',
-                    'numMaxSteps': 'maxSteps'
+                TEST.OBJECT     : ISTA,
+                TEST.INITARGS   : [TEST.ALG_MATRIX],
+                TEST.INITKWARGS : {
+                    'numLambda'     : 'lambda',
+                    'numMaxSteps'   : 'maxSteps'
                 },
 
-                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT: TEST.IgnoreFunc(testISTA),
 
-                'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
+                'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
                 TEST.NAMINGARGS: dynFormat(
                     "(%dx%d)*Hadamard(%s)[%s]",
-                    TEST.NUM_N,
-                    TEST.NUM_M,
+                    TEST.NUM_ROWS,
+                    TEST.NUM_COLS,
                     'order',
                     'strTypeA'
                 ),

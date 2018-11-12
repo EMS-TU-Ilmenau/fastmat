@@ -127,17 +127,17 @@ cdef class Product(Matrix):
         if len(lstFactors) < 1:
             raise ValueError("Product has no terms.")
 
-        # iterate elements and check if their numN fit the previous numM
-        cdef intsize numN = lstFactors[0].numN
-        cdef intsize numM = lstFactors[0].numM
+        # iterate elements and check if their numRows fit the previous numCols
+        cdef intsize numRows = lstFactors[0].numRows
+        cdef intsize numCols = lstFactors[0].numCols
         cdef int ii
         for ii in range(1, len(lstFactors)):
             factor = lstFactors[ii]
-            if factor.numN != numM:
+            if factor.numRows != numCols:
                 raise ValueError(
                     "Product: Dimension mismatch for term %d [%dx%d]" %(
-                        ii, numN, numM))
-            numM = factor.numM
+                        ii, numRows, numCols))
+            numCols = factor.numCols
 
         # force scalar datatype to match matrix datatype (calculation accuracy)
         self._scalar = self._scalar.astype(dtype)
@@ -146,7 +146,7 @@ cdef class Product(Matrix):
         self._content = tuple(lstFactors)
 
         # set properties of matrix
-        self._initProperties(numN, numM, dtype, **options)
+        self._initProperties(numRows, numCols, dtype, **options)
 
         if debug:
             print("fastmat.Product instance %12x containing:" %(id(self)))
@@ -280,23 +280,23 @@ cdef class Product(Matrix):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 5,
-                TEST.NUM_M      : TEST.Permutation([7, TEST.NUM_N]),
+                TEST.NUM_ROWS   : 5,
+                TEST.NUM_COLS   : TEST.Permutation([7, TEST.NUM_ROWS]),
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
                 'mType2'        : TEST.Permutation(TEST.FEWTYPES),
                 'sType'         : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
-                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
+                    TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS)
                 }),
                 'arr2'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType2',
-                    TEST.SHAPE  : (TEST.NUM_M , TEST.NUM_N)
+                    TEST.SHAPE  : (TEST.NUM_COLS , TEST.NUM_ROWS)
                 }),
                 'arr3'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
-                    TEST.SHAPE  : (TEST.NUM_N , TEST.NUM_M)
+                    TEST.SHAPE  : (TEST.NUM_ROWS , TEST.NUM_COLS)
                 }),
                 'num4'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'sType',

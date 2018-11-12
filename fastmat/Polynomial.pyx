@@ -79,7 +79,7 @@ cdef class Polynomial(Matrix):
             See :py:meth:`fastmat.Matrix.__init__`.
         '''
 
-        if mat.numN != mat.numM:
+        if mat.numRows != mat.numCols:
             raise ValueError("Polynomial: Matrix must be square.")
 
         dtype = np.promote_types(mat.dtype, coeff.dtype)
@@ -97,12 +97,12 @@ cdef class Polynomial(Matrix):
 
         # set properties of matrix
         self._initProperties(
-            self._content[0].numN, self._content[0].numM, dtype
+            self._content[0].numRows, self._content[0].numCols, dtype
         )
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef float complexity = len(self._coeff) * (self.numN + self.numM)
+        cdef float complexity = len(self._coeff) * (self.numRows + self.numCols)
         return (complexity, complexity)
 
     ############################################## class forward / backward
@@ -140,11 +140,11 @@ cdef class Polynomial(Matrix):
         cdef np.ndarray arrRes, tmp
 
         dtype = np.promote_types(self.dtype, np.float64)
-        arrRes = np.zeros((self.numN, self.numN), dtype=dtype)
+        arrRes = np.zeros((self.numRows, self.numRows), dtype=dtype)
 
         for cc in np.flipud(self._coeff):
             arrTrafo = self._content[0].reference()
-            tmp = np.eye(self._content[0].numN, dtype=dtype)
+            tmp = np.eye(self._content[0].numRows, dtype=dtype)
             for ii in range(ind):
                 tmp = arrTrafo.dot(tmp)
 
@@ -160,8 +160,8 @@ cdef class Polynomial(Matrix):
             TEST.COMMON: {
                 'order'         : 5,
                 TEST.TOL_POWER  : 'order',
-                TEST.NUM_N      : 7,
-                TEST.NUM_M      : 7,
+                TEST.NUM_ROWS   : 7,
+                TEST.NUM_COLS   : 7,
 
                 'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeM'        : TEST.Permutation(TEST.ALLTYPES),
@@ -173,7 +173,7 @@ cdef class Polynomial(Matrix):
                 }),
                 'arrM'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeM',
-                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
+                    TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS)
                 }),
 
                 TEST.OBJECT     : Polynomial,
