@@ -79,12 +79,12 @@ cdef class DiagBlocks(Matrix):
             See :py:meth:`fastmat.Matrix.__init__`.
         '''
 
-        self._numDiagsN = tenDiags.shape[0]
-        self._numDiagsM = tenDiags.shape[1]
+        self._numDiagsRows = tenDiags.shape[0]
+        self._numDiagsCols = tenDiags.shape[1]
         self._numDiagsSize = tenDiags.shape[2]
 
-        cdef intsize numN = self._numDiagsN * self._numDiagsSize
-        cdef intsize numM = self._numDiagsM * self._numDiagsSize
+        cdef intsize numRows = self._numDiagsRows * self._numDiagsSize
+        cdef intsize numCols = self._numDiagsCols * self._numDiagsSize
 
         self._tenDiags = np.copy(tenDiags)
 
@@ -92,7 +92,7 @@ cdef class DiagBlocks(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        self._initProperties(numN, numM, dataType, **options)
+        self._initProperties(numRows, numCols, dataType, **options)
         self._widenInputDatatype = True
 
     ############################################## class property override
@@ -111,7 +111,7 @@ cdef class DiagBlocks(Matrix):
         arrRes[:] = np.einsum(
             'nmz,zmk -> znk',
             self._tenDiags,
-            arrX.reshape((-1, self._numDiagsM, arrX.shape[1]), order='F')
+            arrX.reshape((-1, self._numDiagsCols, arrX.shape[1]), order='F')
         ).reshape((-1, arrX.shape[1]), order='F')
 
     cpdef _backwardC(
@@ -124,17 +124,17 @@ cdef class DiagBlocks(Matrix):
         arrRes[:] = np.einsum(
             'mnz,zmk -> znk',
             self._tenDiags.conj(),
-            arrX.reshape((-1, self._numDiagsM, arrX.shape[1]), order='F')
+            arrX.reshape((-1, self._numDiagsCols, arrX.shape[1]), order='F')
         ).reshape((-1, arrX.shape[1]), order='F')
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
         cdef np.ndarray arrRes
 
-        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
+        arrRes = np.zeros((self.numRows, self.numCols), dtype=self.dtype)
 
-        for nn in range(self._numDiagsN):
-            for mm in range(self._numDiagsM):
+        for nn in range(self._numDiagsRows):
+            for mm in range(self._numDiagsCols):
                 arrRes[
                     nn *self._numDiagsSize:
                     (nn +1) *self._numDiagsSize,
@@ -150,10 +150,10 @@ cdef class DiagBlocks(Matrix):
         return {
             TEST.COMMON: {
                 'size'          : 4,
-                TEST.NUM_N      : 32,
-                TEST.NUM_M      : 32,
-                'mType'        : TEST.Permutation(TEST.ALLTYPES),
-                'arr'          : TEST.ArrayGenerator({
+                TEST.NUM_ROWS   : 32,
+                TEST.NUM_COLS   : 32,
+                'mType'         : TEST.Permutation(TEST.ALLTYPES),
+                'arr'           : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType',
                     TEST.SHAPE  : (8, 8, 4)
                 }),

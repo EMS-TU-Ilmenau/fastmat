@@ -84,10 +84,10 @@ cpdef float _getFFTComplexity(intsize N):
     '''
     Return an estimate on the complexity of a typical FFT algorithm.
 
-    Consider a DFT of size N to be pieced together by smaller DFTs corresponding
-    to the prime factors of N. Each factor F introduces one level of (N / F)
-    DFTs of size F each and a scalar multiplication of the stages' output. The
-    composite complexity of all stages is extended by one stage for
+    Consider a DFT of order N to be pieced together by smaller DFTs
+    corresponding to the prime factors of N. Each factor F introduces one level
+    of (N / F) DFTs of size F each and a scalar multiplication of the stages'
+    output. The composite complexity of all stages is extended by one stage for
     initialization of input and permutation of output.
     '''
 
@@ -192,8 +192,8 @@ def profileCall(reps, call, *args):
 ################################################## _arrZero()
 cpdef np.ndarray _arrZero(
     int dims,
-    intsize numN,
-    intsize numM,
+    intsize numRows,
+    intsize numCols,
     ntype dtype,
     bint fortranStyle=True
 ):
@@ -202,8 +202,8 @@ cpdef np.ndarray _arrZero(
     (up to two dimensions).
     '''
     cdef np.npy_intp shape[2]
-    shape[0] = numN
-    shape[1] = numM
+    shape[0] = numRows
+    shape[1] = numCols
 
     return np.PyArray_ZEROS(
         dims if dims < 2 else 2,    # Nr. Dimensions
@@ -216,8 +216,8 @@ cpdef np.ndarray _arrZero(
 ################################################## _arrEmpty()
 cpdef np.ndarray _arrEmpty(
     int dims,
-    intsize numN,
-    intsize numM,
+    intsize numRows,
+    intsize numCols,
     ntype dtype,
     bint fortranStyle=True
 ):
@@ -226,8 +226,8 @@ cpdef np.ndarray _arrEmpty(
     (up to two dimensions)
     '''
     cdef np.npy_intp shape[2]
-    shape[0] = numN
-    shape[1] = numM
+    shape[0] = numRows
+    shape[1] = numCols
 
     return np.PyArray_EMPTY(
         dims if dims < 2 else 2,    # Nr. Dimensions
@@ -277,16 +277,16 @@ cpdef np.ndarray _arrSqueezedCopy(
 cpdef np.ndarray _arrReshape(
     np.ndarray arr,
     int dims,
-    intsize numN,
-    intsize numM,
+    intsize numRows,
+    intsize numCols,
     np.NPY_ORDER order
 ):
     cdef np.PyArray_Dims shape2D
     cdef np.npy_intp shape[2]
     shape2D.ptr = &shape[0]
     shape2D.len = dims if dims < 2 else 2
-    shape[0] = numN
-    shape[1] = numM
+    shape[0] = numRows
+    shape[1] = numCols
 
     return np.PyArray_Newshape(arr, &shape2D, order)
 
@@ -295,16 +295,16 @@ cpdef np.ndarray _arrReshape(
 cpdef bint _arrResize(
     np.ndarray arr,
     int dims,
-    intsize numN,
-    intsize numM,
+    intsize numRows,
+    intsize numCols,
     np.NPY_ORDER order
 ):
     cdef np.PyArray_Dims shape2D
     cdef np.npy_intp shape[2]
     shape2D.ptr = &shape[0]
     shape2D.len = dims if dims < 2 else 2
-    shape[0] = numN
-    shape[1] = numM
+    shape[0] = numRows
+    shape[1] = numCols
 
     return np.PyArray_Resize(arr, &shape2D, False, order) is None
 

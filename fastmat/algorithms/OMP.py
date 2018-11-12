@@ -133,7 +133,7 @@ class OMP(Algorithm):
 
         # get the number of vectors to operate on
         self.numN, self.numM, self.numL = \
-            self.fmatA.numN, self.fmatA.numM, self.arrB.shape[1]
+            self.fmatA.numRows, self.fmatA.numCols, self.arrB.shape[1]
 
         self.fmatC = self.fmatA.normalized
 
@@ -245,13 +245,13 @@ class OMP(Algorithm):
 
         def testOMP(test):
             # prepare vectors
-            numM = test[TEST.NUM_M]
+            numCols = test[TEST.NUM_COLS]
             test[TEST.REFERENCE] = test[TEST.ALG_MATRIX].reference()
             test[TEST.RESULT_REF] = np.hstack([
                 arrSparseTestDist(
-                    (numM, 1),
+                    (numCols, 1),
                     dtype=test[TEST.DATATYPE],
-                    density=1. * test['maxSteps'] / numM
+                    density=1. * test['maxSteps'] / numCols
                 ).toarray()
                 for nn in range(test[TEST.DATACOLS])
             ])
@@ -264,33 +264,33 @@ class OMP(Algorithm):
 
         return {
             TEST.ALGORITHM: {
-                'order': 3,
-                TEST.NUM_N: (lambda param: 3 * param['order']),
-                TEST.NUM_M: (lambda param: 2 ** param['order']),
-                'maxSteps': 'order',
-                'typeA': TEST.Permutation(TEST.ALLTYPES),
+                'order'         : 3,
+                TEST.NUM_ROWS   : (lambda param: 3 * param['order']),
+                TEST.NUM_COLS   : (lambda param: 2 ** param['order']),
+                'maxSteps'      : 'order',
+                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
 
-                TEST.ALG_MATRIX: lambda param:
+                TEST.ALG_MATRIX : lambda param:
                     Product(Matrix(np.random.uniform(
-                        -100, 100, (getattr(param, TEST.NUM_M),
-                                    getattr(param, TEST.NUM_M))).astype(
+                        -100, 100, (getattr(param, TEST.NUM_COLS),
+                                    getattr(param, TEST.NUM_COLS))).astype(
                                         param['typeA'])),
                             Hadamard(param.order),
                             typeExpansion=param['typeA']),
-                TEST.OBJECT: OMP,
-                TEST.INITARGS: [TEST.ALG_MATRIX],
-                TEST.INITKWARGS: {
-                    'numMaxSteps': 'maxSteps'
+                TEST.OBJECT     : OMP,
+                TEST.INITARGS   : [TEST.ALG_MATRIX],
+                TEST.INITKWARGS : {
+                    'numMaxSteps'   : 'maxSteps'
                 },
 
-                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT: TEST.IgnoreFunc(testOMP),
 
-                'strTypeA': (lambda param: TEST.TYPENAME[param['typeA']]),
+                'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
                 TEST.NAMINGARGS: dynFormat(
                     "(%dx%d)*Hadamard(%s)[%s]",
-                    TEST.NUM_N,
-                    TEST.NUM_M,
+                    TEST.NUM_ROWS,
+                    TEST.NUM_COLS,
                     'order',
                     'strTypeA'
                 ),

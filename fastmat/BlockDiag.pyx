@@ -105,7 +105,7 @@ cdef class BlockDiag(Matrix):
         **options :
             See :py:meth:`fastmat.Matrix.__init__`.
         '''
-        cdef intsize numN = 0, numM = 0
+        cdef intsize numRows = 0, numCols = 0
         cdef Matrix term
 
         self._content = matrices
@@ -120,23 +120,23 @@ cdef class BlockDiag(Matrix):
                 raise ValueError(
                     "Only fastmat matrices supported, %s given." %(str(term)))
 
-            numN += term.numN
-            numM += term.numM
+            numRows += term.numRows
+            numCols += term.numCols
             dataType = np.promote_types(dataType, term.dtype)
 
         # set properties of matrix
         self._cythonCall = True
-        self._initProperties(numN, numM, dataType, **options)
+        self._initProperties(numRows, numCols, dataType, **options)
         self._widenInputDatatype = True
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef float complexityFwd = self.numN
-        cdef float complexityBwd = self.numM
+        cdef float complexityFwd = self.numRows
+        cdef float complexityBwd = self.numCols
         cdef Matrix item
         for item in self:
-            complexityFwd += item.numN + item.numM
-            complexityBwd += item.numM + item.numN
+            complexityFwd += item.numRows + item.numCols
+            complexityBwd += item.numCols + item.numRows
 
         return (complexityFwd, complexityBwd)
 
@@ -153,11 +153,11 @@ cdef class BlockDiag(Matrix):
 
         for ii in range(0, cnt):
             term = self._content[ii]
-            arrRes[idxN:(idxN + term.numN), :] \
-                = term.forward(arrX[idxM:(idxM + term.numM)])
+            arrRes[idxN:(idxN + term.numRows), :] \
+                = term.forward(arrX[idxM:(idxM + term.numCols)])
 
-            idxN += term.numN
-            idxM += term.numM
+            idxN += term.numRows
+            idxM += term.numCols
 
     cpdef _backwardC(
         self,
@@ -172,11 +172,11 @@ cdef class BlockDiag(Matrix):
         for ii in range(0, cnt):
             term = self._content[ii]
 
-            arrRes[idxM:(idxM + term.numM), :] \
-                = term.backward(arrX[idxN:(idxN + term.numN)])
+            arrRes[idxM:(idxM + term.numCols), :] \
+                = term.backward(arrX[idxN:(idxN + term.numRows)])
 
-            idxN += term.numN
-            idxM += term.numM
+            idxN += term.numRows
+            idxM += term.numCols
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
@@ -184,14 +184,17 @@ cdef class BlockDiag(Matrix):
         cdef Matrix term
         cdef intsize idxN = 0, idxM = 0
 
-        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
+        arrRes = np.zeros((self.numRows, self.numCols), dtype=self.dtype)
 
         for term in self._content:
-            arrRes[idxN:(idxN + term.numN), :][:, idxM:(idxM + term.numM)] = \
-                term._getArray()
+            arrRes[
+                idxN:(idxN + term.numRows), :
+            ][
+                :, idxM:(idxM + term.numCols)
+            ] = term._getArray()
 
-            idxN += term.numN
-            idxM += term.numM
+            idxN += term.numRows
+            idxM += term.numCols
 
         return arrRes
 
@@ -201,8 +204,8 @@ cdef class BlockDiag(Matrix):
         return {
             TEST.COMMON: {
                 'size'          : 5,
-                TEST.NUM_N      : (lambda param: param['size'] * 3),
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : (lambda param: param['size'] * 3),
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
                 'mType2'        : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({

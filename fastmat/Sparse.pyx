@@ -147,8 +147,8 @@ cdef class Sparse(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return _arrSqueeze(_conjugate(self.spArrayH.getcol(idx).toarray()))
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._spArray[idxN, idxM]
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return self._spArray[idxRow, idxCol]
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -171,18 +171,19 @@ cdef class Sparse(Matrix):
         from .inspect import TEST, dynFormat, arrSparseTestDist
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 25,
-                TEST.NUM_M      : TEST.Permutation([30, TEST.NUM_N]),
+                TEST.NUM_ROWS   : 25,
+                TEST.NUM_COLS   : TEST.Permutation([30, TEST.NUM_ROWS]),
                 'mType'         : TEST.Permutation(TEST.ALLTYPES),
                 'density'       : .1,
                 TEST.INITARGS   : (lambda param: [
                     arrSparseTestDist(
-                        (param[TEST.NUM_N], param[TEST.NUM_M]), param['mType'],
-                        density=param['density'], compactFullyOccupied=True
+                        (param[TEST.NUM_ROWS], param[TEST.NUM_COLS]),
+                        param['mType'], density=param['density'],
+                        compactFullyOccupied=True
                     )]),
                 TEST.OBJECT     : Sparse,
                 'strType'       : (lambda param: TEST.TYPENAME[param['mType']]),
-                TEST.NAMINGARGS : dynFormat("%s,%s", 'strType', TEST.NUM_M)
+                TEST.NAMINGARGS : dynFormat("%s,%s", 'strType', TEST.NUM_COLS)
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}

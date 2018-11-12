@@ -89,11 +89,11 @@ cdef class Sum(Matrix):
             raise ValueError("Sum: No terms given.")
 
         # check for matching transform dimensions
-        cdef intsize numN = self._content[0].numN
-        cdef intsize numM = self._content[0].numM
+        cdef intsize numRows = self._content[0].numRows
+        cdef intsize numCols = self._content[0].numCols
         for ii in range(1, cntTerms):
             mat = self._content[ii]
-            if (mat.numN != numN) or (mat.numM != numM):
+            if (mat.numRows != numRows) or (mat.numCols != numCols):
                 raise ValueError("Sum: Term dimension mismatch: " + repr(mat))
 
         # determine data type of sum result
@@ -103,7 +103,7 @@ cdef class Sum(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        self._initProperties(numN, numM, dataType, **options)
+        self._initProperties(numRows, numCols, dataType, **options)
         self._widenInputDatatype = True
 
     ############################################## class property override
@@ -125,12 +125,12 @@ cdef class Sum(Matrix):
 
         return result
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         cdef int cc, cnt = len(self._content)
 
-        result = self._content[0]._getItem(idxN, idxM).astype(self.dtype)
+        result = self._content[0]._getItem(idxRow, idxCol).astype(self.dtype)
         for cc in range(1, cnt):
-            result += self._content[cc]._getItem(idxN, idxM)
+            result += self._content[cc]._getItem(idxRow, idxCol)
 
         return result
 
@@ -140,7 +140,7 @@ cdef class Sum(Matrix):
         cdef Matrix item
 
         for item in self._content:
-            complexity += item.numN + item.numM
+            complexity += item.numRows + item.numCols
 
         return (complexity, complexity)
 
@@ -176,7 +176,7 @@ cdef class Sum(Matrix):
         cdef np.ndarray arrRes
         cdef int cc, cnt = len(self._content)
 
-        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
+        arrRes = np.zeros((self.numRows, self.numCols), dtype=self.dtype)
         for cc in range(cnt):
             arrRes += self._content[cc].reference()
 
@@ -187,21 +187,21 @@ cdef class Sum(Matrix):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 25,
-                TEST.NUM_M      : TEST.Permutation([17, TEST.NUM_N]),
+                TEST.NUM_ROWS   : 25,
+                TEST.NUM_COLS   : TEST.Permutation([17, TEST.NUM_ROWS]),
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
                 'mType2'        : TEST.Permutation(TEST.FEWTYPES),
                 'arrM1'         : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
-                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
+                    TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS)
                 }),
                 'arrM2'         : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType2',
-                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
+                    TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS)
                 }),
                 'arrM3'         : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mType1',
-                    TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M)
+                    TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS)
                 }),
                 TEST.INITARGS   : [lambda param: Matrix(param['arrM1']()),
                                    lambda param: Matrix(param['arrM2']()),
