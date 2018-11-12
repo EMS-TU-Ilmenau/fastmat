@@ -159,11 +159,27 @@ debug: | compile
 		from fastmat.inspect import *;\
 		'
 
-# target 'test': Run unit tests for package
-.PHONY: test
-test: compile
+
+# target 'testBee': Run some bee commands to find failures there
+.PHONY: testBee
+testBee:
+	$(info * running 'bee list makedump' and 'bee benchmark' code)
+	$(PYTHON) util/bee.py list makedump\
+		> test.makedump.log
+	$(PYTHON) util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1\
+		> test.benchmark.log
+
+
+# target ' testCode': Run unit tests
+.PHONY: testCode
+testCode: compile
 	$(info * running unit tests)
 	$(PYTHON) util/bee.py test -vi
+
+
+# target 'test': Run unit tests for package
+.PHONY: test
+test: styleCheck testCode testBee
 
 
 # target 'all': Compile everything (code, documentation and run tests)
@@ -180,14 +196,8 @@ else
 # target 'styleCheck': Perform a style check for all python code files
 .PHONY: styleCheck
 styleCheck:
+	$(info * running PEP8 code style check (excluding $(STYLE_IGNORES)))
 	@pycodestyle --max-line-length=80 --statistics --count\
-		--ignore=$(STYLE_IGNORES) $(STYLE_FILES)
-
-
-# target 'styleCheck': Fix coding style for all python code files
-.PHONY: styleFix
-styleFix:
-	@autopep8 --max-line-length=80 -i -v\
 		--ignore=$(STYLE_IGNORES) $(STYLE_FILES)
 
 
