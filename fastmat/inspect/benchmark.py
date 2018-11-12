@@ -266,6 +266,7 @@ def testInitSolve(funcConstr, numSize, numN):
         }
     }
 
+
 ################################################## testInitForward()
 def testInitForward(funcConstr, numSize, numN):
     instance=funcConstr(numSize)

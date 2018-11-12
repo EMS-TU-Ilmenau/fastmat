@@ -106,7 +106,6 @@ def compareResults(test, query):
         test[TEST.INSTANCE]
     )
 
-
     # get comparision options from test and query dicts. Priority has query
     minimalType=np.dtype(getOption(TEST.TYPE_PROMOTION, np.int8))
     expectedType=np.dtype(getOption(TEST.TYPE_EXPECTED,
