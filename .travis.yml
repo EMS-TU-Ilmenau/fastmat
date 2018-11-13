@@ -98,13 +98,13 @@ before_install: |
 
 
 install:
-  - pip install six --user
-  - pip install cython numpy scipy --user --only-binary all 
-  - pip install pycodestyle --user
+  - pip install six
+  - pip install cython numpy scipy --only-binary all
+  - pip install pycodestyle
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION $PYTHON"
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
-        pip install cibuildwheel==0.9.4 twine --user
+        pip install cibuildwheel==0.9.4 twine
     else
         if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
             pip install coverage coveralls
