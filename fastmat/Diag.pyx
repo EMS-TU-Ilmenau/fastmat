@@ -192,7 +192,6 @@ cdef class Diag(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Diag(np.random.uniform(2, 3, c)))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c:
                                    Diag(np.random.uniform(2, 3, 2 ** c)))

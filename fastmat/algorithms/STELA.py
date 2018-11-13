@@ -290,7 +290,7 @@ class STELA(Algorithm):
                                         param['typeA'])),
                             Hadamard(param.order),
                             typeExpansion=param['typeA']),
-                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
+                'typeA'         : TEST.Permutation(TEST.FLOATTYPES),
 
                 TEST.OBJECT     : STELA,
                 TEST.INITARGS   : [TEST.ALG_MATRIX],

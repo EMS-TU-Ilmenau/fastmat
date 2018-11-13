@@ -373,7 +373,7 @@ cdef class Parametric(Matrix):
                     np.arange(c).astype(np.double) / c,
                     np.arange(c).astype(np.double) / c,
                     (lambda x, y: np.sin(2 * np.pi * x ** y)))),
-                BENCH.FUNC_SIZE : (lambda c: c + 1),
+                BENCH.FUNC_SIZE : (lambda c: c),
                 BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12))
             },
             BENCH.FORWARD: {},
@@ -382,7 +382,7 @@ cdef class Parametric(Matrix):
                     np.arange(2 ** c).astype(np.double) / (2 ** c),
                     np.arange(2 ** c).astype(np.double) / (2 ** c),
                     (lambda x, y: 1.0))),
-                BENCH.FUNC_SIZE : (lambda c: 2 ** c + 1),
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
                 BENCH.FUNC_STEP : (lambda c: c + 1)
             },
             BENCH.DTYPES: {
@@ -390,6 +390,6 @@ cdef class Parametric(Matrix):
                     np.arange(2 ** c).astype(datatype) / (2 ** c),
                     np.arange(2 ** c).astype(datatype) / (2 ** c),
                     (lambda x, y: datatype(1)))),
-                BENCH.FUNC_SIZE : (lambda c: 2 ** c + 1)
+                BENCH.FUNC_SIZE : (lambda c: 2 ** c)
             }
         }
