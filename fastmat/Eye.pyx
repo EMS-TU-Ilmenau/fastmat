@@ -79,12 +79,10 @@ cdef class Eye(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._getCol(idx)
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return 1.
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return 1.
 
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
@@ -141,9 +139,6 @@ cdef class Eye(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Eye(c)),
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {
-                BENCH.FUNC_GEN  : (lambda c: Eye(c))
-            },
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Eye(2 ** c)),
             }

@@ -227,7 +227,6 @@ cdef class Sum(Matrix):
                 BENCH.FUNC_SIZE : (lambda c: c)
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Sum(*([Eye(2 ** c)] * c))),
                 BENCH.FUNC_SIZE : (lambda c: 2 ** c)

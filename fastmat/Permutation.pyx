@@ -88,12 +88,10 @@ cdef class Permutation(Matrix):
     cpdef np.ndarray _getArray(self):
         return np.eye(self.numRows, dtype=self.dtype)[self.sigma, :]
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return 1.
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return 1.
 
     cpdef Matrix _getNormalized(self):
@@ -138,7 +136,6 @@ cdef class Permutation(Matrix):
                                    Permutation(np.random.permutation(c)))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c:
                                    Permutation(np.random.permutation(2 ** c)))

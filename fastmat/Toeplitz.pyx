@@ -343,7 +343,6 @@ cdef class Toeplitz(Partial):
                     arrTestDist((c - 1, ), dtype=np.float32)))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Toeplitz(
                     arrTestDist((2 ** c, ), dtype=np.float32),

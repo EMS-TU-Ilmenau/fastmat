@@ -461,7 +461,6 @@ cdef class LFSRCirculant(Matrix):
                 BENCH.FUNC_STEP : (lambda c: c + 1),
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (

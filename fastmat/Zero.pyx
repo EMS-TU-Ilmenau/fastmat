@@ -74,12 +74,10 @@ cdef class Zero(Matrix):
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         return 0
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return 0.
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return 0.
 
     cpdef Matrix _getT(self):

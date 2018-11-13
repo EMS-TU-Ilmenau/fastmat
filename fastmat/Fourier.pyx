@@ -161,12 +161,10 @@ cdef class Fourier(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._getCol(idx)
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return np.sqrt(self._order)
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return np.sqrt(self._order)
 
     cpdef Matrix _getNormalized(self):
@@ -262,7 +260,6 @@ cdef class Fourier(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Fourier(c))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Fourier(2 ** c))
             },
