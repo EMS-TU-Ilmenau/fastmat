@@ -756,7 +756,7 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        if (self.numN > 1) and (self.numM > 1):
+        if self.numN > 2:
             # now we can do the efficient thing using the linear operator
             from scipy.sparse.linalg import eigs
 
@@ -766,8 +766,10 @@ cdef class Matrix(object):
                 return_eigenvectors=True
             )[0]
         else:
-            S = self[0, 0]
-            V = np.ones((1, 1))
+            from numpy.linalg import eig
+            result = eig(self.array)
+            S = (result[0]).astype(self.scipyLinearOperator.dtype)[0]
+            V = (result[1][:, 0]).astype(self.scipyLinearOperator.dtype)
 
         self.scipyLinearOperator.dtype = self.dtype
         return (S, V)
@@ -832,35 +834,9 @@ cdef class Matrix(object):
         SVD. For demonstration, try to increase :math:`n` to `>10` and see what
         happens.
 
-        Parameters
-        ----------
-        maxSteps : int
-            Maximum number of steps for the power iteration.
-
-            Defaults to 10000.
-
-        relEps : float
-            Relative error threshold specified as a factor of the matrix data
-            type's eps in case `eps`is set to 0 (default).
-
-            Defaults to 1.
-
-        eps : float
-            Specify an absolute error threshold for convergance. If set to 0,
-            determine the error relatively to the eps of the matrix data type.
-
-            Defaults to 0.
-
-        alwaysReturn : bool
-            If True, return the eigenvalue estimated at the last iteration
-            instead of NaN.
-
-            Defaults to False
-
         Returns
         -------
-            The largest singular value as float or NaN if the algorithm did not
-            converge.
+            The largest singular value
         """
 
         result = self._getLargestSingularVal()
@@ -878,7 +854,7 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        if (self.numN > 1) and (self.numM > 1):
+        if (self.numN > 2) and (self.numM > 2):
             result = svds(
                 self.scipyLinearOperator,
                 1,
@@ -886,7 +862,10 @@ cdef class Matrix(object):
             )[0]
         else:
             from numpy.linalg import svd
-            result = svd(self.array, compute_uv=False)[0]
+            result = (svd(
+                np.atleast_2d(self.array),
+                compute_uv=False
+            )).astype(np.float64)[0]
 
         self.scipyLinearOperator.dtype = self.dtype
         return result
@@ -905,8 +884,11 @@ cdef class Matrix(object):
 
     def getLargestSingularVecs(self):
         result = self._getLargestSingularVecs()
-        self._largestSingularVal = result[1]
-        self._largestSingularVecs = (result[0], result[2])
+        self._largestSingularVal = (result[1]).astype(np.float64)
+        self._largestSingularVecs = (
+            result[0].astype(np.float64),
+            result[2].astype(np.float64)
+        )
         return self._largestSingularVecs
 
     cpdef tuple _getLargestSingularVecs(self):
@@ -930,7 +912,7 @@ cdef class Matrix(object):
             # now we do the stupid thing, but scipy forces us to do so
             from numpy.linalg import svd
 
-            U, S, V = svd(self.array, compute_uv=True)
+            U, S, V = svd(np.atleast_2d(self.array), compute_uv=True)
 
         self.scipyLinearOperator.dtype = self.dtype
         return (U, S, V)
@@ -964,42 +946,6 @@ cdef class Matrix(object):
             rmatvec=self.backward,
             matmat=self.forward,
             dtype=self.dtype
-        )
-
-    property scipyLinearOperator:
-        """Return a representation as scipy's LinearOperator
-
-        This property allows to make use of all the powerfull algorithms
-        provided by scipy, that allow passing a linear operator to
-        them, like optimization routines, system solvers or decomposition
-        algorithms.
-
-        *(read-only)*
-        """
-
-        def __get__(self):
-            if self._scipyLinearOperator is None:
-                return self.getScipyLinearOperator()
-            else:
-                return self._scipyLinearOperator
-
-    def getScipyLinearOperator(self):
-        """Return a scipyLinearOperator representing this matrix."""
-        self._scipyLinearOperator = self._getScipyLinearOperator()
-        return self._scipyLinearOperator
-
-    cpdef object _getScipyLinearOperator(self):
-        '''
-        Internally overloadable method for customizing
-        self.getScipyLinearOperator.
-        '''
-        from scipy.sparse.linalg import LinearOperator
-        return LinearOperator(
-            shape=(self.numN, self.numM),
-            matvec=self.forward,
-            rmatvec=self.backward,
-            matmat=self.forward,
-            dtype=np.promote_types(np.int8, self.dtype)
         )
 
     ############################################## generic algebraic properties
