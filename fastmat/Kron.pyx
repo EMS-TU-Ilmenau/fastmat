@@ -151,14 +151,14 @@ cdef class Kron(Matrix):
 
         return arrRes
 
-    cpdef object _getLargestEigenVal(self):
+    cpdef object _getLargestEigenValue(self):
         return np.prod(np.array(
-            [term._getLargestEigenVal().astype(np.float64)
+            [term._getLargestEigenValue().astype(np.float64)
              for term in self._content]))
 
-    cpdef object _getLargestSingularVal(self):
+    cpdef object _getLargestSingularValue(self):
         return np.prod(np.array(
-            [term._getLargestSingularVal().astype(np.float64)
+            [term._getLargestSingularValue().astype(np.float64)
              for term in self._content]))
 
     cpdef Matrix _getNormalized(self):

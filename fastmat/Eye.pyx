@@ -79,10 +79,10 @@ cdef class Eye(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._getCol(idx)
 
-    cpdef object _getLargestSingularVal(self):
+    cpdef object _getLargestSingularValue(self):
         return 1.
 
-    cpdef object _getLargestEigenVal(self):
+    cpdef object _getLargestEigenValue(self):
         return 1.
 
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):

@@ -141,7 +141,7 @@ class ISTA(Algorithm):
             self.arrB = arrB
 
         # calculate the largest singular value to get the right step size
-        self.numL = 1.0 / (self.fmatA.largestSingularVal ** 2)
+        self.numL = 1.0 / (self.fmatA.largestSingularValue ** 2)
 
         self.arrX = np.zeros(
             (self.fmatA.numCols, self.arrB.shape[1]),

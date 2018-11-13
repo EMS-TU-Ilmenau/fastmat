@@ -88,10 +88,10 @@ cdef class Permutation(Matrix):
     cpdef np.ndarray _getArray(self):
         return np.eye(self.numRows, dtype=self.dtype)[self.sigma, :]
 
-    cpdef object _getLargestSingularVal(self):
+    cpdef object _getLargestSingularValue(self):
         return 1.
 
-    cpdef object _getLargestEigenVal(self):
+    cpdef object _getLargestEigenValue(self):
         return 1.
 
     cpdef Matrix _getNormalized(self):

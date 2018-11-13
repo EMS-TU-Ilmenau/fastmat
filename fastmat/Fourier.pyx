@@ -161,10 +161,10 @@ cdef class Fourier(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._getCol(idx)
 
-    cpdef object _getLargestSingularVal(self):
+    cpdef object _getLargestSingularValue(self):
         return np.sqrt(self._order)
 
-    cpdef object _getLargestEigenVal(self):
+    cpdef object _getLargestEigenValue(self):
         return np.sqrt(self._order)
 
     cpdef Matrix _getNormalized(self):
