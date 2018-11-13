@@ -167,7 +167,7 @@ cdef class MatrixCallProfile(object):
         return self.__str__()
 
     cpdef void addNestedProfile(
-            self, intsize numM, bint allowBypass, MatrixCallProfile nested):
+            self, intsize numCols, bint allowBypass, MatrixCallProfile nested):
         '''
         Add the runtime estimate of a nested (child) class instance to the
         total estimate for this class instances' profile.
@@ -178,7 +178,7 @@ cdef class MatrixCallProfile(object):
 
         Parameters
         ----------
-        numM : int
+        numCols : int
             Number of computations to be processed. Acts as a scaling factor
             to account for situations where an implemented transforms requires
             multiple invokations of the profiled nested classes' call to
@@ -198,13 +198,13 @@ cdef class MatrixCallProfile(object):
             The call profile of the nested class instance to be added to the
             `nested` section of this call profile.
         '''
-        cdef bint bypass = allowBypass and nested.isBypassFaster(numM)
+        cdef bint bypass = allowBypass and nested.isBypassFaster(numCols)
         if bypass:
             self.timeNestedCallOverhead += nested.timeBypassCallOverhead
-            self.timeNestedPerUnit += nested.timeBypassPerUnit * numM
+            self.timeNestedPerUnit += nested.timeBypassPerUnit * numCols
         else:
             self.timeNestedCallOverhead += nested.timeAlgCallOverhead
-            self.timeNestedPerUnit += nested.timeAlgPerUnit * numM
+            self.timeNestedPerUnit += nested.timeAlgPerUnit * numCols
 
     cpdef bint isValid(self):
         '''
@@ -312,7 +312,7 @@ cdef class Matrix(object):
         # *(read-only)*
         # """
         def __get__(self):
-            return (self.numN, self.numM)
+            return (self.numRows, self.numCols)
 
     ############################################## class resource handling
     # nbytes - Property(read)
@@ -393,7 +393,7 @@ cdef class Matrix(object):
             # representation of this matrix. This calculation is very slow but
             # also very general. Therefore it is used also in child classes
             # when no explicit code for self._getArray() is provided.
-            return self._forward(np.eye(self.numM, dtype=self.dtype))
+            return self._forward(np.eye(self.numCols, dtype=self.dtype))
 
     def getCols(self, indices):
         r"""
@@ -427,7 +427,7 @@ cdef class Matrix(object):
                 arrResult = self._array[:, indices]
             else:
                 numSize = arrIdx.size
-                arrResult = _arrEmpty(2, self.numN, numSize, self.numpyType)
+                arrResult = _arrEmpty(2, self.numRows, numSize, self.numpyType)
 
                 for ii in range(numSize):
                     arrResult[:, ii] = self.getCol(arrIdx[ii])
@@ -447,7 +447,7 @@ cdef class Matrix(object):
         -------
             1d-:py:class:`numpy.ndarray` holding the specified column.
         """
-        if idx < 0 or idx >= self.numM:
+        if idx < 0 or idx >= self.numCols:
             raise ValueError("Column index exceeds matrix dimensions.")
 
         # if a dense representation already exists, use it!
@@ -458,7 +458,7 @@ cdef class Matrix(object):
 
     cpdef np.ndarray _getCol(self, intsize idx):
         '''Internally overloadable method for customizing self.getCol.'''
-        cdef np.ndarray arrData = _arrZero(1, self.numM, 1, self.numpyType)
+        cdef np.ndarray arrData = _arrZero(1, self.numCols, 1, self.numpyType)
         arrData[idx] = 1
         return self.forward(arrData)
 
@@ -494,7 +494,7 @@ cdef class Matrix(object):
                 arrResult = self._array[indices, :]
             else:
                 numSize = arrIdx.size
-                arrResult = _arrEmpty(2, numSize, self.numM, self.numpyType)
+                arrResult = _arrEmpty(2, numSize, self.numCols, self.numpyType)
 
                 for ii in range(numSize):
                     arrResult[ii, :] = self.getRow(arrIdx[ii])
@@ -514,7 +514,7 @@ cdef class Matrix(object):
         -------
             1d-:py:class:`numpy.ndarray` holding the specified row.
         """
-        if idx < 0 or idx >= self.numN:
+        if idx < 0 or idx >= self.numRows:
             raise ValueError("Row index exceeds matrix dimensions.")
 
         # if a dense representation already exists, use it!
@@ -525,7 +525,7 @@ cdef class Matrix(object):
 
     cpdef np.ndarray _getRow(self, intsize idx):
         '''Internally overloadable method for customizing self.getRow.'''
-        cdef np.ndarray arrData = _arrZero(1, self.numN, 1, self.numpyType)
+        cdef np.ndarray arrData = _arrZero(1, self.numRows, 1, self.numpyType)
         arrData[idx] = 1
         return self.backward(arrData).conj()
 
@@ -581,14 +581,14 @@ cdef class Matrix(object):
 
                 # determine slice index ranges, number of requested elements
                 # along each axis and whether full axis access is possible
-                idxRows = slcRow.indices(self.numN)
-                idxCols = slcCol.indices(self.numM)
+                idxRows = slcRow.indices(self.numRows)
+                idxCols = slcCol.indices(self.numCols)
                 numRows = (idxRows[1] - idxRows[0]) // idxRows[2]
                 numCols = (idxCols[1] - idxCols[0]) // idxCols[2]
-                fullAccessCols = (numRows == self.numN and
-                                  idxRows == (0, self.numN, 1))
-                fullAccessRows = (numCols == self.numM and
-                                  idxCols == (0, self.numM, 1))
+                fullAccessCols = (numRows == self.numRows and
+                                  idxRows == (0, self.numRows, 1))
+                fullAccessRows = (numCols == self.numCols and
+                                  idxCols == (0, self.numCols, 1))
 
                 # check if the slices result in a true element access
                 if numRows == 1 and numCols == 1:
@@ -604,7 +604,7 @@ cdef class Matrix(object):
                     return self.getRows(np.arange(*idxCols))
                 else:
                     # do what involves less resulting memory
-                    if numCols * self.numN < numRows * self.numM:
+                    if numCols * self.numRows < numRows * self.numCols:
                         return self.getCols(np.arange(*idxCols))[slcRow, ...]
                     else:
                         return self.getRows(np.arange(*idxRows))[..., slcCol]
@@ -619,15 +619,15 @@ cdef class Matrix(object):
             # Row access!
             return self.getRows(tplIdx[0])[..., tplIdx[1]]
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         '''Internally overloadable method for customizing self.getItem.'''
         if self._array is not None:
-            return self._array[idxN, idxM]
+            return self._array[idxRow, idxCol]
         else:
-            if self.numN < self.numM:
-                return self._getCol(idxM)[idxN]
+            if self.numRows < self.numCols:
+                return self._getCol(idxCol)[idxRow]
             else:
-                return self._getRow(idxN)[idxM]
+                return self._getRow(idxRow)[idxCol]
 
     ############################################## Matrix content property
     property content:
@@ -699,7 +699,7 @@ cdef class Matrix(object):
         what happens.
         """
 
-        if self.numN != self.numM:
+        if self.numRows != self.numCols:
             raise ValueError("largestEigenVal: Matrix must be square.")
 
         result = self._getLargestEigenVal()
@@ -717,7 +717,7 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        if self.numN > 1:
+        if self.numRows > 1:
             result = linalg.eigs(
                 self.scipyLinearOperator,
                 1,
@@ -740,7 +740,7 @@ cdef class Matrix(object):
                     else self._largestEigenVec)
 
     def getLargestEigenVec(self):
-        if self.numN != self.numM:
+        if self.numRows != self.numCols:
             raise ValueError("largestEigenVec: Matrix must be square.")
 
         result = self._getLargestEigenVec()
@@ -756,7 +756,7 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        if self.numN > 2:
+        if self.numRows > 2:
             # now we can do the efficient thing using the linear operator
             from scipy.sparse.linalg import eigs
 
@@ -854,7 +854,7 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        if (self.numN > 2) and (self.numM > 2):
+        if (self.numRows > 2) and (self.numCols > 2):
             result = svds(
                 self.scipyLinearOperator,
                 1,
@@ -899,7 +899,7 @@ cdef class Matrix(object):
             self.dtype
         )
 
-        if (self.numN > 1) and (self.numM > 1):
+        if (self.numRows > 1) and (self.numCols > 1):
             # now we can do the efficient thing using the linear operator
             from scipy.sparse.linalg import svds
 
@@ -993,18 +993,18 @@ cdef class Matrix(object):
         diagType = safeTypeExpansion(self.dtype)
 
         # array that contains the norms of each column
-        cdef np.ndarray arrDiag = np.empty(self.numM, dtype=diagType)
+        cdef np.ndarray arrDiag = np.empty(self.numCols, dtype=diagType)
 
         # number of elements we consider at once during normalization
         cdef intsize numStrideSize = 256
 
         cdef np.ndarray arrSelector = np.zeros(
-            (self.numM, min(numStrideSize, self.numM)),
+            (self.numCols, min(numStrideSize, self.numCols)),
             dtype=diagType)
 
         cdef int ii
-        for ii in range(0, self.numM, numStrideSize):
-            vecIndices = np.arange(ii, min(ii + numStrideSize, self.numM))
+        for ii in range(0, self.numCols, numStrideSize):
+            vecIndices = np.arange(ii, min(ii + numStrideSize, self.numCols))
             if ii == 0 or vecSlice.size != vecIndices.size:
                 vecSlice = np.arange(0, vecIndices.size)
 
@@ -1084,6 +1084,19 @@ cdef class Matrix(object):
         '''Internally overloadable method for customizing self.getConj.'''
         return getConjugate(self)
 
+    ############################################## numN deprecation warning
+    property numN:
+        def __get__(self):
+            import warnings
+            warnings.warn('numN is deprecated. Use numRows.', FutureWarning)
+            return self.numRows
+
+    property numM:
+        def __get__(self):
+            import warnings
+            warnings.warn('numM is deprecated. Use numCols.', FutureWarning)
+            return self.numCols
+
     ############################################## computation complexity
     property complexity:
         r"""Complexity
@@ -1112,7 +1125,7 @@ cdef class Matrix(object):
         '''
         Internally overloadable method for customizing self.getComplexity.
         '''
-        cdef float complexity = self.numN * self.numM
+        cdef float complexity = self.numRows * self.numCols
         return (complexity, complexity)
 
     cdef void _initProfiles(self):
@@ -1321,16 +1334,16 @@ cdef class Matrix(object):
 
         # set properties of matrix
         self._initProperties(
-            self._array.shape[0],        # numN
-            self._array.shape[1],        # numM
+            self._array.shape[0],        # numRows
+            self._array.shape[1],        # numCols
             self._array.dtype,           # data type of matrix
             **options
         )
 
     def _initProperties(
         self,
-        intsize numN,
-        intsize numM,
+        intsize numRows,
+        intsize numCols,
         object dataType,
         **options
     ):
@@ -1342,8 +1355,8 @@ cdef class Matrix(object):
         """
 
         # assign basic class options (at c-level)
-        self.numN = numN
-        self.numM = numM
+        self.numRows = numRows
+        self.numCols = numCols
         self.fusedType = getFusedType(dataType)
         self.numpyType = typeInfo[self.fusedType].numpyType
 
@@ -1387,7 +1400,7 @@ cdef class Matrix(object):
         # identification module name, class name, instance id and shape will
         # be returned formatted as string.
         return "<%s[%dx%d]:0x%12x>" %(
-            self.__class__.__name__, self.numN, self.numM, id(self)
+            self.__class__.__name__, self.numRows, self.numCols, id(self)
         )
 
     def __str__(self):
@@ -1530,7 +1543,8 @@ cdef class Matrix(object):
             if arrInput.ndim > 2:
                 raise ValueError("Input data array must be at most 2D")
 
-            # arrInput.N must match self.M in forward() and .N in backward()
+            # arrInput.N must match self.numCols in forward() and
+            # .numRows in backward()
             if arrInput.shape[0] != requiredSize:
                 raise ValueError(
                     "Mismatch of vector size %d to relevant matrix axis %d" %(
@@ -1592,7 +1606,7 @@ cdef class Matrix(object):
             # Determine types, prepare input array and create output array
             # bypass dimension check in _prepareInputArray() call (already OK)
             arrX = self._prepareInputArray(arrX, 0, &xform)
-            arrOutput = _arrEmpty(2, self.numN, arrX.shape[1], xform.nOutput)
+            arrOutput = _arrEmpty(2, self.numRows, arrX.shape[1], xform.nOutput)
             self._forwardC(arrX, arrOutput, xform.fInput, xform.fOutput)
             return arrOutput
         else:
@@ -1634,7 +1648,7 @@ cdef class Matrix(object):
 
         # Determine types, prepare input array and create output array
         cdef TRANSFORM xform
-        arrInput = self._prepareInputArray(arrInput, self.numM, &xform)
+        arrInput = self._prepareInputArray(arrInput, self.numCols, &xform)
 
         # estimate runtimes according profile for Forward
         # if the dot-product bypass strategy leads to smaller runtimes, do it!
@@ -1647,7 +1661,7 @@ cdef class Matrix(object):
             if self._cythonCall:
                 # Create output array
                 arrOutput = _arrEmpty(
-                    2, self.numN, xform.numVectors if ndimInput > 1 else 1,
+                    2, self.numRows, xform.numVectors if ndimInput > 1 else 1,
                     xform.nOutput
                 )
 
@@ -1662,7 +1676,7 @@ cdef class Matrix(object):
         if ndimInput == 1:
             # reshape back to single-dimensional vector
             arrOutput = _arrReshape(
-                arrOutput, 1, self.numN, 1, np.NPY_ANYORDER)
+                arrOutput, 1, self.numRows, 1, np.NPY_ANYORDER)
 
         return arrOutput
 
@@ -1685,7 +1699,7 @@ cdef class Matrix(object):
             # Determine types, prepare input array and create output array
             # bypass dimension check in _prepareInputArray() call (already OK)
             arrX = self._prepareInputArray(arrX, 0, &xform)
-            arrOutput = _arrEmpty(2, self.numM, arrX.shape[1], xform.nOutput)
+            arrOutput = _arrEmpty(2, self.numCols, arrX.shape[1], xform.nOutput)
             self._backwardC(arrX, arrOutput, xform.fInput, xform.fOutput)
             return arrOutput
         else:
@@ -1728,7 +1742,7 @@ cdef class Matrix(object):
 
         # Determine types, prepare input array and create output array
         cdef TRANSFORM xform
-        arrInput = self._prepareInputArray(arrInput, self.numN, &xform)
+        arrInput = self._prepareInputArray(arrInput, self.numRows, &xform)
 
         # estimate runtimes according profile for Backward if the dot-product
         # bypass strategy leads to smaller runtimes, do it!
@@ -1744,7 +1758,7 @@ cdef class Matrix(object):
             if self._cythonCall:
                 # Create output array
                 arrOutput = _arrEmpty(
-                    2, self.numM, xform.numVectors if ndimInput > 1 else 1,
+                    2, self.numCols, xform.numVectors if ndimInput > 1 else 1,
                     xform.nOutput
                 )
 
@@ -1759,7 +1773,7 @@ cdef class Matrix(object):
         if ndimInput == 1:
             # reshape back to single-dimensional vector
             arrOutput = _arrReshape(
-                arrOutput, 1, self.numM, 1, np.NPY_ANYORDER)
+                arrOutput, 1, self.numCols, 1, np.NPY_ANYORDER)
 
         return arrOutput
 
@@ -1830,13 +1844,13 @@ cdef class Matrix(object):
             # Test code for Matrix base class
             return {
                 TEST.COMMON: {
-                    TEST.NUM_N      : 35,
-                    TEST.NUM_M      : TEST.Permutation([30, TEST.NUM_N]),
+                    TEST.NUM_ROWS   : 35,
+                    TEST.NUM_COLS   : TEST.Permutation([30, TEST.NUM_ROWS]),
                     'mType'         : TEST.Permutation(TEST.ALLTYPES),
                     TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                     'arrM'          : TEST.ArrayGenerator({
                         TEST.DTYPE  : 'mType',
-                        TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M),
+                        TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS),
                         TEST.ALIGN  : TEST.PARAMALIGN
                     }),
                     TEST.OBJECT     : Matrix,
@@ -1856,23 +1870,25 @@ cdef class Matrix(object):
             # Transpose so we must reflect this when specifying the shape of the
             # to-be-generated data array. As Permutations of a dimension is not
             # uncommon the corresponding fields must be linked in DATASHAPE
-            numN = 35
-            numM = 30
+            numRows = 35
+            numCols = 30
             swap = isinstance(self, Conjugate)
             return {
                 TEST.COMMON: {
-                    TEST.NUM_N      : numN,
-                    TEST.NUM_M      : TEST.Permutation([numM, TEST.NUM_N]),
+                    TEST.NUM_ROWS   : numRows,
+                    TEST.NUM_COLS   : TEST.Permutation([
+                        numCols, TEST.NUM_ROWS
+                    ]),
                     'mType'         : TEST.Permutation(TEST.FEWTYPES),
                     TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                     'arrM'          : TEST.ArrayGenerator({
                         TEST.DTYPE  : 'mType',
-                        TEST.SHAPE  : (TEST.NUM_N, TEST.NUM_M),
+                        TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS),
                         TEST.ALIGN  : TEST.PARAMALIGN
                     }),
-                    TEST.DATASHAPE  : (TEST.NUM_M if swap else TEST.NUM_N,
+                    TEST.DATASHAPE  : (TEST.NUM_COLS if swap else TEST.NUM_ROWS,
                                        TEST.DATACOLS),
-                    TEST.DATASHAPE_T: (TEST.NUM_N if swap else TEST.NUM_M,
+                    TEST.DATASHAPE_T: (TEST.NUM_ROWS if swap else TEST.NUM_COLS,
                                        TEST.DATACOLS),
                     TEST.OBJECT     : self.__class__,
                     TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
@@ -1967,8 +1983,8 @@ cdef class Hermitian(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return _conjugate(self._nested._getCol(idx))
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return np.conjugate(self._nested._getItem(idxM, idxN))
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return np.conjugate(self._nested._getItem(idxCol, idxRow))
 
     cpdef object _getLargestEigenVal(self):
         return self._nested.largestEigenVal
@@ -1987,7 +2003,7 @@ cdef class Hermitian(Matrix):
 
     ############################################## class performance estimation
     cpdef tuple _getComplexity(self):
-        return (self.numM + self.numN, self.numN + self.numM)
+        return (self.numCols + self.numRows, self.numRows + self.numCols)
 
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,
                     ftype typeX, ftype typeRes):
@@ -2068,8 +2084,8 @@ cdef class Conjugate(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return _conjugate(self._nested._getRow(idx))
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return np.conjugate(self._nested._getItem(idxN, idxM))
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return np.conjugate(self._nested._getItem(idxRow, idxCol))
 
     cpdef object _getLargestEigenVal(self):
         return self._nested.largestEigenVal
@@ -2088,7 +2104,7 @@ cdef class Conjugate(Matrix):
 
     ############################################## class performance estimation
     cpdef tuple _getComplexity(self):
-        cdef float complexity = self.numN + self.numM
+        cdef float complexity = self.numRows + self.numCols
         return (complexity, complexity)
 
     ############################################## class forward / backward
@@ -2166,8 +2182,8 @@ cdef class Transpose(Hermitian):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._nestedConj._getCol(idx)
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._nestedConj._getItem(idxM, idxN)
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return self._nestedConj._getItem(idxCol, idxRow)
 
     cpdef object _getLargestEigenVal(self):
         return self._nestedConj.largestEigenVal

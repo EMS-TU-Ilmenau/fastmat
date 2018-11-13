@@ -173,8 +173,10 @@ cdef class Fourier(Matrix):
     cpdef Matrix _getGram(self):
         return Eye(self._order) * self.dtype(self._order)
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return np.exp(idxN * idxM * -2j * np.pi / self.order).astype(self.dtype)
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return np.exp(idxRow * idxCol * -2j * np.pi / self.order).astype(
+            self.dtype
+        )
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -235,16 +237,16 @@ cdef class Fourier(Matrix):
                 # define matrix sizes and parameters
                 # 35 is just any number with non-2 and non-4 primes
                 # 89 is the first size for which bluestein is faster
-                TEST.NUM_N      : TEST.Permutation([35, 89]),
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : TEST.Permutation([35, 89]),
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'optimize'      : TEST.Permutation([False, True]),
 
                 # define constructor for test instances and naming of test
                 TEST.OBJECT     : Fourier,
-                TEST.INITARGS   : [TEST.NUM_N],
+                TEST.INITARGS   : [TEST.NUM_ROWS],
                 TEST.INITKWARGS : {'optimize': 'optimize'},
                 TEST.TOL_POWER  : 3.,
-                TEST.NAMINGARGS : dynFormat("%d, optimize=%d", TEST.NUM_N,
+                TEST.NAMINGARGS : dynFormat("%d, optimize=%d", TEST.NUM_ROWS,
                                             'optimize'),
             },
             TEST.CLASS: {},

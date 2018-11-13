@@ -265,6 +265,7 @@ def testInitSolve(funcConstr, numSize, numN):
         }
     }
 
+
 ################################################## testInitForward()
 def testInitForward(funcConstr, numSize, numN):
     instance = funcConstr(numSize)
@@ -660,7 +661,6 @@ class Benchmark(Worker):
 
         result=self.results[nameResult]
         arrResult=result[BENCH.RESULT]
-        lstHeader=result[BENCH.HEADER]
 
         filename=self.getFilename(nameResult, path=outPath,
                                   addVersionTag=addVersionTag)

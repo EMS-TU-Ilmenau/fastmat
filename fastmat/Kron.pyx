@@ -91,7 +91,7 @@ cdef class Kron(Matrix):
         '''
 
         cdef int ff, factorCount = len(matrices)
-        cdef intsize numN = 1
+        cdef intsize numRows = 1
         cdef Matrix factor
 
         #check the number of matrices
@@ -106,15 +106,15 @@ cdef class Kron(Matrix):
             factor = self._content[ff]
 
             #check for symmetry of matrices
-            if (factor.numN != factor.numM):
+            if (factor.numRows != factor.numCols):
                 raise ValueError("Kronecker: Product terms must be symmetric")
 
             # acknowledge size and data type of factor
-            numN *= self._content[ff].numN
+            numRows *= self._content[ff].numRows
             dtype = np.promote_types(dtype, factor.dtype)
 
         # determine dimensions of all factor terms in one tuple
-        self._dims = tuple([factor.numN for factor in self._content])
+        self._dims = tuple([factor.numRows for factor in self._content])
 
         # handle type expansion with default depending on matrix type
         # default: expand small types due to accumulation during transforms
@@ -124,7 +124,7 @@ cdef class Kron(Matrix):
                  else np.promote_types(dtype, typeExpansion))
 
         # set properties of matrix
-        self._initProperties(numN, numN, dtype, **options)
+        self._initProperties(numRows, numRows, dtype, **options)
         self._widenInputDatatype = True
 
     ############################################## class property override
@@ -182,9 +182,9 @@ cdef class Kron(Matrix):
             terms[tt] = terms[tt].normalized
         return Kron(*terms)
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        cdef tuple idxTermsN = np.unravel_index(idxN, self._dims)
-        cdef tuple idxTermsM = np.unravel_index(idxM, self._dims)
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        cdef tuple idxTermsN = np.unravel_index(idxRow, self._dims)
+        cdef tuple idxTermsM = np.unravel_index(idxCol, self._dims)
         cdef intsize ii, cnt = len(self._content)
 
         numResult = self._content[0][idxTermsN[0], idxTermsM[0]].astype(
@@ -197,8 +197,8 @@ cdef class Kron(Matrix):
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef intsize N = len(self._content)
-        return (2 * N * self.numN, 2 * N * self.numN)
+        cdef intsize numFactors = len(self._content)
+        return (2 * numFactors * self.numRows, 2 * numFactors * self.numRows)
 
     cpdef _exploreNestedProfiles(self):
         '''
@@ -211,7 +211,7 @@ cdef class Kron(Matrix):
         cdef intsize scale
         cdef bint bypass
         for item in self:
-            scale = self.numN // item.numN
+            scale = self.numRows // item.numRows
             bypass = (item.bypassAllow and
                       (item._array is not None or item.bypassAutoArray))
             self.profileForward.addNestedProfile(
@@ -236,27 +236,27 @@ cdef class Kron(Matrix):
             term = self._content[ii]
 
             # increase size of identity composition for this term
-            headIN *= term.numN
+            headIN *= term.numRows
 
             # reshape to match composition size
             arrData = _arrReshape(
                 arrData,
-                2, headIN, numVecs * self.numN // headIN,
+                2, headIN, numVecs * self.numRows // headIN,
                 np.NPY_CORDER)
             # reshape to match term size
             arrData = _arrReshape(
                 arrData,
-                2, term.numN, numVecs * self.numN // term.numN,
+                2, term.numRows, numVecs * self.numRows // term.numRows,
                 np.NPY_FORTRANORDER)
 
             # apply transform and reshape back to current comp. size
             arrData = _arrReshape(
                 term.forward(arrData),
-                2, headIN, numVecs * self.numN // headIN,
+                2, headIN, numVecs * self.numRows // headIN,
                 np.NPY_FORTRANORDER)
 
         # reshape to matrix output dimensions
-        return _arrReshape(arrData, 2, self.numN, numVecs, np.NPY_CORDER)
+        return _arrReshape(arrData, 2, self.numRows, numVecs, np.NPY_CORDER)
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         # detect if we have an array of signals (assume the vector to
@@ -274,27 +274,27 @@ cdef class Kron(Matrix):
             term = self._content[ii]
 
             # increase size of identity composition for this term
-            headIN *= term.numN
+            headIN *= term.numRows
 
             # reshape to match composition size
             arrData = _arrReshape(
                 arrData,
-                2, headIN, numVecs * self.numN // headIN,
+                2, headIN, numVecs * self.numRows // headIN,
                 np.NPY_CORDER)
             # reshape to match term size
             arrData = _arrReshape(
                 arrData,
-                2, term.numN, numVecs * self.numN // term.numN,
+                2, term.numRows, numVecs * self.numRows // term.numRows,
                 np.NPY_FORTRANORDER)
 
             # apply transform and reshape back to current comp. size
             arrData = _arrReshape(
                 term.backward(arrData),
-                2, headIN, numVecs * self.numN // headIN,
+                2, headIN, numVecs * self.numRows // headIN,
                 np.NPY_FORTRANORDER)
 
         # reshape to matrix output dimensions
-        return _arrReshape(arrData, 2, self.numN, numVecs, np.NPY_CORDER)
+        return _arrReshape(arrData, 2, self.numRows, numVecs, np.NPY_CORDER)
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
@@ -313,8 +313,8 @@ cdef class Kron(Matrix):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 5 * 4 * 3,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 5 * 4 * 3,
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
                 'mType2'        : TEST.Permutation(TEST.ALLTYPES),
                 'arr1'          : TEST.ArrayGenerator({

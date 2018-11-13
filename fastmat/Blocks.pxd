@@ -29,8 +29,8 @@ cdef class Blocks(Matrix):
     cdef public tuple _rows                      # list of list of Matrix terms
     #                                            # (array of matrix terms)
     cdef public tuple _cols                      # same as _rows, transposed
-    cdef public tuple _rowN                      # heights of rows
-    cdef public tuple _colM                      # widths of columns
+    cdef public tuple _rowSize                   # heights of rows
+    cdef public tuple _colSize                   # widths of columns
     cdef public intsize _numRows                 # Row-count of term array
     cdef public intsize _numCols                 # Column-count of term array
 

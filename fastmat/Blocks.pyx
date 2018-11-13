@@ -86,7 +86,7 @@ cdef class Blocks(Matrix):
         if len(arrMatrices) < 1:
             raise ValueError("Blocks: Contains no matrices.")
 
-        cdef intsize numN = 0, numM = 0
+        cdef intsize numRows = 0, numCols = 0
         cdef intsize ii, rr, cc
         cdef tuple row, firstRow
         cdef Matrix term
@@ -103,15 +103,15 @@ cdef class Blocks(Matrix):
         firstRow = self._rows[0]
 
         # extract list of row heights and column widths
-        self._rowN = tuple([row[0].numN for row in self._rows])
-        self._colM = tuple([term.numM for term in firstRow])
+        self._rowSize = tuple([row[0].numRows for row in self._rows])
+        self._colSize = tuple([term.numCols for term in firstRow])
 
         # enumerate rows
         for rr in range(self._numRows):
             row = self._rows[rr]
 
             # get number of rows from first elements in columns
-            numN += row[0].numN
+            numRows += row[0].numRows
 
             # check for presence of enough blocks
             if len(row) != self._numCols:
@@ -123,22 +123,22 @@ cdef class Blocks(Matrix):
                 term = row[cc]
 
                 # check for matching column height and width
-                if term.numN != row[0].numN:
+                if term.numRows != row[0].numRows:
                     raise ValueError(
                         ("Blocks[%d,%d] with shape %s is incompatible with " +
                          "row height (%d,:)") %(
-                            rr, cc, str(term.shape), row[0].numN))
+                            rr, cc, str(term.shape), row[0].numRows))
 
-                if term.numM != firstRow[cc].numM:
+                if term.numCols != firstRow[cc].numCols:
                     raise ValueError(
                         ("Blocks[%d,%d] with shape %s is incompatible with " +
                          "column width (:,%d)") %(
-                            rr, cc, str(term.shape), firstRow[cc].numM))
+                            rr, cc, str(term.shape), firstRow[cc].numCols))
 
                 # first run: get stats and update dimension of
                 # Blocks from first column's entries
                 if rr == 0:
-                    numM += term.numM
+                    numCols += term.numCols
 
                 # build transposed copy of blocks to work on
                 # in backward
@@ -159,7 +159,7 @@ cdef class Blocks(Matrix):
 
         # set properties of matrix
         self._cythonCall = True
-        self._initProperties(numN, numM, dataType, **options)
+        self._initProperties(numRows, numCols, dataType, **options)
         self._widenInputDatatype = True
 
     ############################################## class property override
@@ -167,10 +167,10 @@ cdef class Blocks(Matrix):
         cdef float complexityFwd, complexityBwd
         cdef Matrix item
 
-        complexityFwd = complexityBwd = sum(self._colM) + sum(self._rowN)
+        complexityFwd = complexityBwd = sum(self._colSize) + sum(self._rowSize)
         for item in self:
-            complexityFwd += item.numN + item.numM
-            complexityBwd += item.numM + item.numN
+            complexityFwd += item.numRows + item.numCols
+            complexityBwd += item.numCols + item.numRows
 
         return (complexityFwd, complexityBwd)
 
@@ -185,24 +185,24 @@ cdef class Blocks(Matrix):
         cdef np.ndarray viewOut, arrOut
         cdef Matrix term
         cdef tuple row, viewRows, viewCols
-        cdef intsize idxN, idxM, rr, cc
+        cdef intsize idxRow, idxCol, rr, cc
         cdef list lst
 
         # generate views into output array
         lst = [None] * self._numRows
-        idxN = 0
+        idxRow = 0
         for rr in range(self._numRows):
-            lst[rr] = arrRes[idxN:(idxN + self._rowN[rr])]
-            idxN += self._rowN[rr]
+            lst[rr] = arrRes[idxRow:(idxRow + self._rowSize[rr])]
+            idxRow += self._rowSize[rr]
 
         viewRows = tuple(lst)
 
         # generate views into input array
         lst = [None] * self._numCols
-        idxM = 0
+        idxCol = 0
         for cc in range(self._numCols):
-            lst[cc] = arrX[idxM:(idxM + self._colM[cc])]
-            idxM += self._colM[cc]
+            lst[cc] = arrX[idxCol:(idxCol + self._colSize[cc])]
+            idxCol += self._colSize[cc]
 
         viewCols = tuple(lst)
 
@@ -225,24 +225,24 @@ cdef class Blocks(Matrix):
         cdef np.ndarray viewOut
         cdef Matrix term
         cdef tuple col, viewRows, viewCols
-        cdef intsize idxN, idxM, rr, cc
+        cdef intsize idxRow, idxCol, rr, cc
         cdef list lst
 
         # generate views into output array
         lst = [None] * self._numCols
-        idxM = 0
+        idxCol = 0
         for cc in range(self._numCols):
-            lst[cc] = arrRes[idxM:(idxM + self._colM[cc])]
-            idxM += self._colM[cc]
+            lst[cc] = arrRes[idxCol:(idxCol + self._colSize[cc])]
+            idxCol += self._colSize[cc]
 
         viewCols = tuple(lst)
 
         # generate views into input array
         lst = [None] * self._numRows
-        idxN = 0
+        idxRow = 0
         for rr in range(self._numRows):
-            lst[rr] = arrX[idxN:(idxN + self._rowN[rr])]
-            idxN += self._rowN[rr]
+            lst[rr] = arrX[idxRow:(idxRow + self._rowSize[rr])]
+            idxRow += self._rowSize[rr]
 
         viewRows = tuple(lst)
 
@@ -260,21 +260,21 @@ cdef class Blocks(Matrix):
         cdef np.ndarray arrRes
         cdef Matrix term
         cdef tuple row
-        cdef intsize idxN = 0, idxM = 0
+        cdef intsize idxRow = 0, idxCol = 0
 
-        arrRes = np.empty((self.numN, self.numM), dtype=self.dtype)
+        arrRes = np.empty((self.numRows, self.numCols), dtype=self.dtype)
 
         cdef intsize rr, tt
         for rr in range(self._numRows):
             row = self._rows[rr]
-            idxM = 0
+            idxCol = 0
             for tt in range(self._numCols):
                 term = row[tt]
-                arrRes[idxN:(idxN + term.numN), idxM:(idxM + term.numM)] = \
-                    term._reference()
-                idxM += term.numM
+                arrRes[idxRow:(idxRow + term.numRows),
+                       idxCol:(idxCol + term.numCols)] = term._reference()
+                idxCol += term.numCols
 
-            idxN += term.numN
+            idxRow += term.numRows
 
         return arrRes
 
@@ -284,8 +284,8 @@ cdef class Blocks(Matrix):
         return {
             TEST.COMMON: {
                 'size'          : 4,
-                TEST.NUM_N      : (lambda param: param['size'] * 2),
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : (lambda param: param['size'] * 2),
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mType1'        : TEST.Permutation(TEST.ALLTYPES),
                 'mType2'        : TEST.Permutation(TEST.FEWTYPES),
                 'arr1'          : TEST.ArrayGenerator({

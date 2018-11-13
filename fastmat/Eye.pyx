@@ -47,31 +47,31 @@ cdef class Eye(Matrix):
     This yields the identity matrix :math:`I_{10}` with dimension :math:`10`.
     """
 
-    def __init__(self, numN, **options):
+    def __init__(self, order, **options):
         '''
         Initialize Identity (Eye) matrix instance.
 
         Parameters
         ----------
-        numN : int
-            Size of the desired identity matrix [numN x numN].
+        order : int
+            Size of the desired identity matrix [order x order].
 
         **options:
             See :py:meth:`fastmat.Matrix.__init__`.
         '''
-        self._initProperties(numN, numN, np.int8, **options)
+        self._initProperties(order, order, np.int8, **options)
 
     cpdef np.ndarray _getArray(Eye self):
         '''
         Return an explicit representation of the matrix as numpy-array.
         '''
-        return np.eye(self.numN, dtype=self.dtype)
+        return np.eye(self.numRows, dtype=self.dtype)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef np.ndarray arrRes
 
-        arrRes = _arrZero(1, self.numN, 1, self.numpyType)
+        arrRes = _arrZero(1, self.numRows, 1, self.numpyType)
         arrRes[idx] = 1
 
         return arrRes
@@ -85,8 +85,8 @@ cdef class Eye(Matrix):
     cpdef object _getLargestEigenVal(self):
         return 1.
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return 1 if (idxN == idxM) else 0
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return 1 if (idxRow == idxCol) else 0
 
     cpdef Matrix _getNormalized(self):
         return self
@@ -116,17 +116,17 @@ cdef class Eye(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(Eye self):
-        return np.eye(self.numN, dtype=self.dtype)
+        return np.eye(self.numRows, dtype=self.dtype)
 
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 35,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 35,
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 TEST.OBJECT     : Eye,
-                TEST.INITARGS   : [TEST.NUM_N]
+                TEST.INITARGS   : [TEST.NUM_ROWS]
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}

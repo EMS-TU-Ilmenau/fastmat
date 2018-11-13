@@ -134,24 +134,24 @@ cdef class MLToeplitz(Partial):
             raise ValueError("Column-definition tensor must be at least 1D")
 
         # extract the level dimensions from the defining tensor
-        self._arrN = (
+        self._arrDim = (
             (np.array((<object> self._tenT).shape) + 1) / 2).astype('int')
 
         # get the size of the matrix
-        cdef intsize numN = np.prod(self._arrN)
+        cdef intsize numN = np.prod(self._arrDim)
 
         # stages during optimization
         cdef int maxStage = options.get('maxStage', 4)
 
         # minimum number to pad to during optimization and helper arrays
-        cdef np.ndarray arrNpad = 2 * self._arrN - 1
-        cdef np.ndarray arrOptSize = np.zeros_like(self._arrN)
-        cdef np.ndarray arrDoOpt = np.zeros_like(self._arrN)
+        cdef np.ndarray arrDimpad = 2 * self._arrDim - 1
+        cdef np.ndarray arrOptSize = np.zeros_like(self._arrDim)
+        cdef np.ndarray arrDoOpt = np.zeros_like(self._arrDim)
 
         cdef bint optimize = options.get('optimize', True)
         if optimize:
             # go through all level dimensions and get optimal FFT size
-            for inn, nn in enumerate(arrNpad):
+            for inn, nn in enumerate(arrDimpad):
                 arrOptSize[inn] = _findOptimalFFTSize(nn, maxStage)
 
                 # use this size, if we get better in that level
@@ -159,13 +159,13 @@ cdef class MLToeplitz(Partial):
                     arrDoOpt[inn] = 1
 
         arrDoOpt = arrDoOpt == 1
-        cdef np.ndarray arrNopt = np.copy(2 * self._arrN - 1)
+        cdef np.ndarray arrDimopt = np.copy(2 * self._arrDim - 1)
 
         # set the optimization size to the calculated one
-        arrNopt[arrDoOpt] = arrOptSize[arrDoOpt]
+        arrDimopt[arrDoOpt] = arrOptSize[arrDoOpt]
 
         # get the size of the zero padded matrix
-        cdef intsize numNopt = np.prod(arrNopt)
+        cdef intsize numNopt = np.prod(arrDimopt)
 
         # allocate memory for the tensor in MD fourier domain
         cdef np.ndarray tenThat = np.empty_like(self._tenT, dtype='complex')
@@ -174,14 +174,14 @@ cdef class MLToeplitz(Partial):
         # go through the array and apply the preprocessing in direction
         # of each axis. this cannot be done without the for loop, since
         # manipulations always influence the data for the next dimension
-        for ii in range(len(self._arrN)):
+        for ii in range(len(self._arrDim)):
             tenThat = np.apply_along_axis(
                 self._preProcSlice,
                 ii,
                 tenThat,
                 ii,
-                arrNopt,
-                self._arrN
+                arrDimopt,
+                self._arrDim
             )
 
         # after correct zeropadding, go into fourier domain
@@ -189,12 +189,12 @@ cdef class MLToeplitz(Partial):
 
         # subselection array
         cdef np.ndarray arrIndices = np.arange(numNopt)[
-            self._genArrS(self._arrN, arrNopt)
+            self._genArrS(self._arrDim, arrDimopt)
         ]
 
         # create the decomposing kronecker product
         cdef Kron KN = Kron(*list(map(
-            lambda ii : Fourier(ii, optimize=False), arrNopt
+            lambda ii : Fourier(ii, optimize=False), arrDimopt
         )), **options)
 
         # now decompose the ML matrix as a product
@@ -202,9 +202,9 @@ cdef class MLToeplitz(Partial):
 
         # initialize Partial of Product. Only use Partial when padding size
         cdef dict kwargs = options.copy()
-        cdef bint truncate = not np.allclose(self._arrN, arrNopt)
-        kwargs['N'] = (arrIndices if truncate else None)
-        kwargs['M'] = (arrIndices if truncate else None)
+        cdef bint truncate = not np.allclose(self._arrDim, arrDimopt)
+        kwargs['rows'] = (arrIndices if truncate else None)
+        kwargs['cols'] = (arrIndices if truncate else None)
 
         super(MLToeplitz, self).__init__(P, **kwargs)
 
@@ -225,8 +225,8 @@ cdef class MLToeplitz(Partial):
         self,
         np.ndarray theSlice,
         int numSliceInd,
-        np.ndarray arrNopt,
-        np.ndarray arrN
+        np.ndarray arrDimopt,
+        np.ndarray arrDim
     ):
         '''
         Preprocess one axis of the defining tensor.
@@ -242,20 +242,20 @@ cdef class MLToeplitz(Partial):
         numSliceInd : int
             ?
 
-        arrNopt : :py:class:`numpy.ndarray`
+        arrDimopt : :py:class:`numpy.ndarray`
             ?
 
-        arrN : :py:class:`numpy.ndarray`
+        arrDim : :py:class:`numpy.ndarray`
             ?
         '''
         cdef np.ndarray z, arrRes = np.empty(1)
 
-        if arrNopt[numSliceInd] > 2 *arrN[numSliceInd] -1:
-            z = np.zeros(arrNopt[numSliceInd] - 2 *arrN[numSliceInd] +1)
+        if arrDimopt[numSliceInd] > 2 *arrDim[numSliceInd] -1:
+            z = np.zeros(arrDimopt[numSliceInd] - 2 *arrDim[numSliceInd] +1)
             arrRes = np.concatenate((
-                np.copy(theSlice[:arrN[numSliceInd]]),
+                np.copy(theSlice[:arrDim[numSliceInd]]),
                 z,
-                np.copy(theSlice[arrN[numSliceInd]:])
+                np.copy(theSlice[arrDim[numSliceInd]:])
             ))
         else:
             arrRes = np.copy(theSlice)
@@ -264,8 +264,8 @@ cdef class MLToeplitz(Partial):
 
     cpdef np.ndarray _genArrS(
         self,
-        np.ndarray arrN,
-        np.ndarray arrNout,
+        np.ndarray arrDim,
+        np.ndarray arrDimout,
         bint verbose=False
     ):
         '''
@@ -277,16 +277,16 @@ cdef class MLToeplitz(Partial):
 
         Parameters
         ----------
-        arrN : :py:class:`numpy.ndarray`
+        arrDim : :py:class:`numpy.ndarray`
             The original sizes of the defining tensor.
 
-        arrNout : :py:class:`numpy.ndarray`
+        arrDimout : :py:class:`numpy.ndarray`
             The desired sizes of the tensor.
 
-        arrNopt : :py:class:`numpy.ndarray`
+        arrDimopt : :py:class:`numpy.ndarray`
             The size we should optimize to.
 
-        arrN : :py:class:`numpy.ndarray`
+        arrDim : :py:class:`numpy.ndarray`
             The size the dimension originally had.
 
         verbose : bool
@@ -299,10 +299,10 @@ cdef class MLToeplitz(Partial):
         arrS : :py:class:`numpy.ndarray`
             The output array which does the selection.
         '''
-        cdef intsize ii, n = arrN.shape[0]
+        cdef intsize ii, n = arrDim.shape[0]
 
         # output size of the matrix we embed into
-        cdef intsize numNout = np.prod(arrNout)
+        cdef intsize numNout = np.prod(arrDimout)
 
         # initialize the result as all ones
         cdef np.ndarray arrS = np.arange(numNout) >= 0
@@ -312,29 +312,30 @@ cdef class MLToeplitz(Partial):
                 print("state", arrS)
                 print("modulus", np.mod(
                     np.arange(numNout),
-                    np.prod(arrNout[:(n -ii)])
+                    np.prod(arrDimout[:(n -ii)])
                 ))
-                print("inequ", arrN[n -1 -ii] * np.prod(arrNout[:(n -1 -ii)]))
+                print("inequ",
+                      arrDim[n -1 -ii] * np.prod(arrDimout[:(n -1 -ii)]))
                 print("res", np.mod(
                     np.arange(numNout),
-                    np.prod(arrNout[:(n -1 -ii)])
-                ) < arrN[n -1 -ii] * np.prod(arrNout[:(n -1 -ii)]))
+                    np.prod(arrDimout[:(n -1 -ii)])
+                ) < arrDim[n -1 -ii] * np.prod(arrDimout[:(n -1 -ii)]))
             # iteratively subselect more and more indices in arrS
             np.logical_and(
                 arrS,
                 np.mod(
                     np.arange(numNout),
-                    np.prod(arrNout[ii:])
-                ) < arrN[ii] * np.prod(arrNout[ii +1:]),
+                    np.prod(arrDimout[ii:])
+                ) < arrDim[ii] * np.prod(arrDimout[ii +1:]),
                 arrS
             )
 
         return arrS
 
     cpdef Matrix _getNormalized(self):
-        arrNorms = self._normalizeCore(self._tenT)
+        arrDimorms = self._normalizeCore(self._tenT)
 
-        return self * Diag(1. / np.sqrt(arrNorms))
+        return self * Diag(1. / np.sqrt(arrDimorms))
 
     cpdef np.ndarray _normalizeCore(self, np.ndarray tenT):
         cdef intsize ii, numS1, numS2, numS3
@@ -344,25 +345,25 @@ cdef class MLToeplitz(Partial):
 
         cdef intsize numD = tenT.ndim
 
-        cdef np.ndarray arrT, arrNorms
+        cdef np.ndarray arrT, arrDimorms
         if numD == 1:
             # if we are deep enough we do the normal toeplitz stuff
             arrT = tenT
 
-            arrNorms = np.zeros(numL)
+            arrDimorms = np.zeros(numL)
 
-            arrNorms[0] = np.linalg.norm(arrT[:numL]) **2
+            arrDimorms[0] = np.linalg.norm(arrT[:numL]) **2
 
             for ii in range(numL - 1):
 
-                arrNorms[ii + 1] = arrNorms[ii] \
+                arrDimorms[ii + 1] = arrDimorms[ii] \
                     + np.abs(arrT[2 * numL - 2 - ii]) ** 2 \
                     - np.abs(arrT[numL - ii - 1]) ** 2
 
         else:
-            numS1 = np.prod(self._arrN[-numD :])
-            numS2 = np.prod(self._arrN[-(numD - 1) :])
-            arrNorms = np.zeros(numS1)
+            numS1 = np.prod(self._arrDim[-numD :])
+            numS2 = np.prod(self._arrDim[-(numD - 1) :])
+            arrDimorms = np.zeros(numS1)
             arrT = np.zeros((numEll, numS2))
 
             # go deeper in recursion and get norms of blocks
@@ -370,26 +371,26 @@ cdef class MLToeplitz(Partial):
                 arrT[ii, :] = self._normalizeCore(tenT[ii, :])
 
             numS3 = arrT.shape[1]
-            arrNorms[:numS3] = np.sum(arrT[:numL, :], axis=0)
+            arrDimorms[:numS3] = np.sum(arrT[:numL, :], axis=0)
 
             # now do blockwise subtraction and addition
             for ii in range(numL - 1):
 
-                arrNorms[
+                arrDimorms[
                     (ii +1) *numS2 : (ii +2) *numS2
-                ] = arrNorms[ii *numS2 : (ii +1) *numS2] + \
+                ] = arrDimorms[ii *numS2 : (ii +1) *numS2] + \
                     + arrT[2 * numL - 2 - ii] \
                     - arrT[numL - ii - 1]
 
-        return arrNorms
+        return arrDimorms
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        return self._refRecursion(self._arrN, self._tenT, False)
+        return self._refRecursion(self._arrDim, self._tenT, False)
 
     def _refRecursion(
         self,
-        np.ndarray arrN,
+        np.ndarray arrDim,
         np.ndarray tenU,
         bint verbose=False
     ):
@@ -402,7 +403,7 @@ cdef class MLToeplitz(Partial):
 
         Parameters
         ----------
-        arrN : :py:class:`numpy.ndarray`
+        arrDim : :py:class:`numpy.ndarray`
             The dimensions in each level.
 
         tenC : :py:class:`numpy.ndarray`
@@ -416,22 +417,22 @@ cdef class MLToeplitz(Partial):
         cdef intsize nn_, mm, countAbs
 
         # number of dimensions
-        cdef intsize numD = arrN.shape[0]
+        cdef intsize numD = arrDim.shape[0]
 
         # get size of resulting block toeplitz matrix
-        cdef intsize numN = np.prod(arrN)
+        cdef intsize numN = np.prod(arrDim)
 
         # get an array of all partial sequential products
         # starting at the front
-        cdef np.ndarray arrNprod = np.array(
-            list(map(lambda ii : np.prod(arrN[ii:]), range(numN - 1)))
+        cdef np.ndarray arrDimprod = np.array(
+            list(map(lambda ii : np.prod(arrDim[ii:]), range(numN - 1)))
         )
 
         # permutation array for block placement, since we need to place the
         # blocks in the same fashion, we arrange the elements in the blocks,
         # such that the preprocessing does the right thing
-        cdef np.ndarray arrP = np.arange(2 * arrN[0] - 1)
-        arrP = np.concatenate((arrP[:arrN[0]][::-1], arrP[arrN[0]:][::-1]))
+        cdef np.ndarray arrP = np.arange(2 * arrDim[0] - 1)
+        arrP = np.concatenate((arrP[:arrDim[0]][::-1], arrP[arrDim[0]:][::-1]))
         arrP = np.argsort(arrP)
 
         # allocate memory for the result
@@ -442,16 +443,16 @@ cdef class MLToeplitz(Partial):
         if numD > 1:
 
             # iterate over size of the first dimension
-            for nn_ in range(2 * arrN[0] - 1):
+            for nn_ in range(2 * arrDim[0] - 1):
 
                 # select the right block position with the permutation array
                 nn       = arrP[nn_]
-                tmp      = nn - arrN[0] + 1
-                countAbs = arrN[0] - abs(tmp)
+                tmp      = nn - arrDim[0] + 1
+                countAbs = arrDim[0] - abs(tmp)
                 countSig = 0 if tmp == 0 else tmp / abs(tmp)
 
                 # now calculate the block recursively
-                subT     = self._refRecursion(arrN[1 :], tenU[nn_])
+                subT     = self._refRecursion(arrDim[1 :], tenU[nn_])
 
                 # decide whether it is below or above the diagonal or on it
                 # and the act accordingly
@@ -459,25 +460,25 @@ cdef class MLToeplitz(Partial):
                     # we are on the diagonal
                     for mm in range(countAbs):
                         T[
-                            mm * arrNprod[1] : (mm + 1) * arrNprod[1],
-                            mm * arrNprod[1] : (mm + 1) * arrNprod[1]
+                            mm * arrDimprod[1] : (mm + 1) * arrDimprod[1],
+                            mm * arrDimprod[1] : (mm + 1) * arrDimprod[1]
                         ] = subT
                 elif countSig < 0:
                     # we are below the diagonal
                     for mm in range(countAbs):
                         T[
-                            (mm + abs(tmp))     * arrNprod[1] :
-                            (mm + 1 + abs(tmp)) * arrNprod[1],
-                            mm       * arrNprod[1]            :
-                            (mm + 1) * arrNprod[1]
+                            (mm + abs(tmp))     * arrDimprod[1] :
+                            (mm + 1 + abs(tmp)) * arrDimprod[1],
+                            mm       * arrDimprod[1]            :
+                            (mm + 1) * arrDimprod[1]
                         ] = subT
                 else:
                     # we are above the diagonal
                     for mm in range(countAbs):
                         T[
-                            mm * arrNprod[1] : (mm + 1) * arrNprod[1],
-                            (mm + abs(tmp))     * arrNprod[1] :
-                            (mm + 1 + abs(tmp)) * arrNprod[1],
+                            mm * arrDimprod[1] : (mm + 1) * arrDimprod[1],
+                            (mm + abs(tmp))     * arrDimprod[1] :
+                            (mm + 1 + abs(tmp)) * arrDimprod[1],
                         ] = subT
 
             return T
@@ -493,8 +494,8 @@ cdef class MLToeplitz(Partial):
             TEST.COMMON: {
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
-                TEST.NUM_N      : 27,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 27,
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
                 TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,

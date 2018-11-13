@@ -20,11 +20,12 @@ env:
 matrix:
   include:
     - python: '3.7'
-      if: branch = stable
       dist: xenial
       sudo: true
+      if: type != pull_request
       env: CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
     - python: '3.6'
+      if: branch = stable OR type = pull_request
       env: CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
     - python: '3.5'
       if: branch = stable
@@ -33,15 +34,17 @@ matrix:
       if: branch = stable
       env: CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
     - python: '2.7'
+      if: type != pull_request
       env: CIBW_SKIP='cp[!2]?-* cp2[!7]-*'
     - os: osx
       language: generic
-      if: branch = stable
+      if: type != pull_request
       env:
         - PYTHON=3.7
         - CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - os: osx
+      if: branch = stable
       language: generic
       env:
         - PYTHON=3.6
@@ -103,7 +106,7 @@ install:
     if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
         pip install cibuildwheel==0.9.4 twine
     else
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
             pip install coverage coveralls
         fi
     fi
@@ -121,7 +124,7 @@ script:
         ls -l wheelhouse/*
     elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
         # master branch: regular tests and code coverage analysis
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
             make compile-coverage
             echo "Running coverage analysis..."
             coverage run --source=fastmat util/bee.py list makedump
@@ -132,8 +135,7 @@ script:
             coverage run -a --source=fastmat util/bee.py documentation maxIter=0.001 maxInit=0.01 minItems=1 > /dev/null
             coverage run -a --source=fastmat util/bee.py calibrate all
         else
-            make compile
-            python util/bee.py test -v
+            make test
         fi
     fi
 

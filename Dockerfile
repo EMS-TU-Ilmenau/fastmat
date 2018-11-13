@@ -1,5 +1,4 @@
 FROM debian:jessie
-MAINTAINER Christoph Wagner <christoph.wagner@tu-ilmenau.de>
 
 # update distribution
 RUN \
