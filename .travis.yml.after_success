@@ -28,7 +28,7 @@ elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
         git remote add origin-stable https://${GH_TOKEN}@${GH_REPO} > /dev/null 2>&1
 
         git checkout stable
-        git merge master
+        git merge master -X theirs
         git push --set-upstream origin-stable stable
 
         popd

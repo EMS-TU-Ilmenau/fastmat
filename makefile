@@ -166,11 +166,13 @@ debug: | compile
 # target 'testBee': Run some bee commands to find failures there
 .PHONY: testBee
 testBee:
-	$(info * running 'bee list makedump' and 'bee benchmark' code)
+	$(info * running bee 'list makedump', 'benchmark' and 'calibrate' code)
 	$(PYTHON) util/bee.py list makedump\
 		> test.makedump.log
 	$(PYTHON) util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1\
 		> test.benchmark.log
+	$(PYTHON) util/bee.py calibrate Circulant\
+		> test.calibrate.log
 
 
 # target ' testCode': Run unit tests
