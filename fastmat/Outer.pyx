@@ -105,26 +105,26 @@ cdef class Outer(Matrix):
             raise ValueError("Outer parameters must be one-dimensional.")
 
         # height and width of matrix is defined by length of input vectors
-        cdef intsize numN = len(vecV)
-        cdef intsize numM = len(vecH)
+        cdef intsize numRows = len(vecV)
+        cdef intsize numCols = len(vecH)
 
         # determine joint data type of operation
         datatype = np.promote_types(vecV.dtype, vecH.dtype)
 
         # store H/V entry vectors as copies of vecH/vecV
-        self._vecH = vecH.astype(datatype, copy=True).reshape((1, numM))
-        self._vecV = vecV.astype(datatype, copy=True).reshape((numN, 1))
+        self._vecH = vecH.astype(datatype, copy=True).reshape((1, numCols))
+        self._vecV = vecV.astype(datatype, copy=True).reshape((numRows, 1))
 
         # store ravelled pointers of vecH/vecV
         self._vecHRav = self._vecH.ravel()
         self._vecVRav = self._vecV.ravel()
 
         # hermitian transpose of vecH/vecV for backward
-        self._vecHConj = _conjugate(self._vecH).reshape((numM, 1))
-        self._vecVHerm = _conjugate(self._vecV).reshape((1, numN))
+        self._vecHConj = _conjugate(self._vecH).reshape((numCols, 1))
+        self._vecVHerm = _conjugate(self._vecV).reshape((1, numRows))
 
         # set properties of matrix
-        self._initProperties(numN, numM, datatype, **options)
+        self._initProperties(numRows, numCols, datatype, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
@@ -133,12 +133,12 @@ cdef class Outer(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._vecVRav[idx] * self._vecHRav
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._vecVRav[idxN] * self._vecHRav[idxM]
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return self._vecVRav[idxRow] * self._vecHRav[idxCol]
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        cdef float complexity = 2 * (self.numN + self.numM)
+        cdef float complexity = 2 * (self.numRows + self.numCols)
         return (complexity, complexity)
 
     ############################################## class forward / backward
@@ -158,17 +158,17 @@ cdef class Outer(Matrix):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 4,
-                TEST.NUM_M      : TEST.Permutation([6, TEST.NUM_N]),
+                TEST.NUM_ROWS   : 4,
+                TEST.NUM_COLS   : TEST.Permutation([6, TEST.NUM_ROWS]),
                 'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
                 'mTypeV'        : TEST.Permutation(TEST.ALLTYPES),
                 'vecH'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeH',
-                    TEST.SHAPE  : (TEST.NUM_N, 1)
+                    TEST.SHAPE  : (TEST.NUM_ROWS, 1)
                 }),
                 'vecV'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeV',
-                    TEST.SHAPE  : (TEST.NUM_M, 1)
+                    TEST.SHAPE  : (TEST.NUM_COLS, 1)
                 }),
                 TEST.INITARGS   : (lambda param : [param['vecH'](),
                                                    param['vecV']()]),

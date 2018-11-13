@@ -155,25 +155,25 @@ cdef class MLCirculant(Partial):
             raise ValueError("Column-definition tensor must be at least 1D.")
 
         # extract the level dimensions from the defining tensor
-        self._arrN = np.array((<object> self._tenC).shape)
+        self._arrDim = np.array((<object> self._tenC).shape)
 
         # get the size of the matrix, which must be the product of the
         # defining tensor
-        cdef intsize numN = np.prod(self._arrN)
+        cdef intsize numRows = np.prod(self._arrDim)
 
         # stages during optimization to get the best FFT size
         cdef int maxStage = options.get('maxStage', 4)
 
         # minimum numbers to pad to during FFT optimization
-        cdef np.ndarray arrNpad = 2 * self._arrN - 1
+        cdef np.ndarray arrNpad = 2 * self._arrDim - 1
 
         # array that will hold the calculated optimal FFT sizes
-        cdef np.ndarray arrOptSize = np.zeros_like(self._arrN)
+        cdef np.ndarray arrOptSize = np.zeros_like(self._arrDim)
 
         # array that will hold 0 if we don't do an expansion of the
         # FFT size into this dimension and 1 if we do.
-        # the dimensions are sorted like in arrN
-        cdef np.ndarray arrDoOpt = np.zeros_like(self._arrN)
+        # the dimensions are sorted like in arrDim
+        cdef np.ndarray arrDoOpt = np.zeros_like(self._arrDim)
 
         # check if the optimization flag was set
         cdef bint optimize = options.get('optimize', True)
@@ -185,19 +185,19 @@ cdef class MLCirculant(Partial):
 
                 # use this size, if we get better in that level
                 if (_getFFTComplexity(arrOptSize[inn]) <
-                        _getFFTComplexity(self._arrN[inn])):
+                        _getFFTComplexity(self._arrDim[inn])):
                     arrDoOpt[inn] = 1
 
         # convert the array to a boolean array
         arrDoOpt = arrDoOpt == 1
-        cdef np.ndarray arrNopt = np.copy(self._arrN)
+        cdef np.ndarray arrNopt = np.copy(self._arrDim)
 
         # set the optimization size to the calculated one by replacing
         # the original sizes by the calculated better FFT sizes
         arrNopt[arrDoOpt] = arrOptSize[arrDoOpt]
 
         # get the size of the inflated matrix
-        cdef intsize numNopt = np.prod(arrNopt)
+        cdef intsize numRowsopt = np.prod(arrNopt)
 
         # allocate memory for the tensor in d-dimensional fourier domain
         # and save the memory
@@ -209,24 +209,24 @@ cdef class MLCirculant(Partial):
         # algorithm in every direction
         # this cannot be done without the for loop, since
         # manipulations always influence the data for the next dimension
-        for ii in range(len(self._arrN)):
+        for ii in range(len(self._arrDim)):
             tenChat = np.apply_along_axis(
                 self._preProcSlice,
                 ii,
                 tenChat,
                 ii,
                 arrNopt,
-                self._arrN
+                self._arrDim
             )
 
         # after correct zeropadding, go into fourier domain by calculating the
         # d-dimensional fourier transform on the preprocessed tensor
-        tenChat = np.fft.fftn(tenChat).reshape(numNopt) / numNopt
+        tenChat = np.fft.fftn(tenChat).reshape(numRowsopt) / numRowsopt
 
         # subselection array to remember the parts of the inflated matrix,
         # where the original d-level circulant matrix has its entries
-        cdef np.ndarray arrIndices = np.arange(numNopt)[
-            self._genArrS(self._arrN, arrNopt)
+        cdef np.ndarray arrIndices = np.arange(numRowsopt)[
+            self._genArrS(self._arrDim, arrNopt)
         ]
 
         # create the decomposing kronecker product, which realizes
@@ -242,10 +242,10 @@ cdef class MLCirculant(Partial):
 
         # initialize Partial of Product. Only use Partial when
         # inflating the size of the matrix
-        cdef bint truncate = not np.allclose(self._arrN, arrNopt)
+        cdef bint truncate = not np.allclose(self._arrDim, arrNopt)
         cdef dict kwargs = options.copy()
-        kwargs['N'] = (arrIndices if truncate else None)
-        kwargs['M'] = (arrIndices if truncate else None)
+        kwargs['rows'] = (arrIndices if truncate else None)
+        kwargs['cols'] = (arrIndices if truncate else None)
 
         super(MLCirculant, self).__init__(P, **kwargs)
 
@@ -342,10 +342,10 @@ cdef class MLCirculant(Partial):
         cdef intsize ii, n = arrN.shape[0]
 
         # output size of the matrix we embed into
-        cdef intsize numNout = np.prod(arrNout)
+        cdef intsize numRowsout = np.prod(arrNout)
 
         # initialize the result as all ones
-        cdef np.ndarray arrS = np.arange(numNout) >= 0
+        cdef np.ndarray arrS = np.arange(numRowsout) >= 0
 
         # now buckle up!
         # we go through all dimensions first
@@ -353,12 +353,12 @@ cdef class MLCirculant(Partial):
             if verbose:
                 print("state", arrS)
                 print("modulus", np.mod(
-                    np.arange(numNout),
+                    np.arange(numRowsout),
                     np.prod(arrNout[:(n -ii)])
                 ))
                 print("inequ", arrN[n -1 -ii] * np.prod(arrNout[:(n -1 -ii)]))
                 print("res", np.mod(
-                    np.arange(numNout),
+                    np.arange(numRowsout),
                     np.prod(arrNout[:(n -1 -ii)])
                 ) < arrN[n -1 -ii] * np.prod(arrNout[:(n -1 -ii)]))
 
@@ -375,7 +375,7 @@ cdef class MLCirculant(Partial):
             np.logical_and(
                 arrS,
                 np.mod(
-                    np.arange(numNout),
+                    np.arange(numRowsout),
                     np.prod(arrNout[ii:])
                 ) < arrN[ii] * np.prod(arrNout[ii +1:]),
                 arrS
@@ -383,7 +383,7 @@ cdef class MLCirculant(Partial):
         return arrS
 
     cpdef np.ndarray _reference(self):
-        return self._refRecursion(self._arrN, self._tenC, False)
+        return self._refRecursion(self._arrDim, self._tenC, False)
 
     def _refRecursion(
         self,
@@ -425,7 +425,7 @@ cdef class MLCirculant(Partial):
         cdef intsize numD = arrN.shape[0]
 
         # get size of resulting block circulant matrix
-        cdef intsize numN = np.prod(arrN)
+        cdef intsize numRows = np.prod(arrN)
 
         # product of all dimensions
         cdef np.ndarray arrNprod = np.array(
@@ -438,7 +438,7 @@ cdef class MLCirculant(Partial):
             print(arrNprod)
 
         # The resulting d-level matrix
-        cdef np.ndarray arrC = np.zeros((numN, numN), dtype=self.dtype)
+        cdef np.ndarray arrC = np.zeros((numRows, numRows), dtype=self.dtype)
 
         if numD > 1:
             # iterate over dimensions
@@ -476,7 +476,7 @@ cdef class MLCirculant(Partial):
             if verbose:
                 print("Deepest level reached")
 
-            return Circulant(tenC[:numN])._reference()
+            return Circulant(tenC[:numRows])._reference()
 
     ############################################## class inspection, QM
     def _getTest(self):
@@ -485,8 +485,8 @@ cdef class MLCirculant(Partial):
             TEST.COMMON: {
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
-                TEST.NUM_N      : 27,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 27,
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
                 TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,

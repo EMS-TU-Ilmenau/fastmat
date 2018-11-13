@@ -125,41 +125,38 @@ cdef class MLUltraSound(Partial):
 
         # store the defining elements and extract the needed dimensions
         self._tenT = np.copy(tenT)
-        self._numBlocksN = tenT.shape[0]
-        self._numSize1 = int((tenT.shape[2] + 1) /2)
-        self._numSize2 = int((tenT.shape[3] + 1) /2)
-        self._arrN = np.array([self._numSize1, self._numSize2], dtype='int')
+        cdef intsize numDim0 = tenT.shape[0]
+        self._arrDim = np.array(
+            [numDim0, (tenT.shape[2] + 1) // 2, (tenT.shape[3] + 1) // 2],
+            dtype='int'
+        )
 
         # construct one sample MLToeplitz instance to get optimal fourier
         # sizes
         _T = MLToeplitz(np.copy(tenT[0, 0, :, :]))
 
         # subselection index of the embedded partials
-        indK = _T.indicesN.reshape((-1, 1))
+        indK = _T.rowSelection.reshape((-1, 1))
 
         # the diagonalizing matrices of each embedded block
         F = _T._content[0]._content[-1]
 
         # build up the whole diagonalizing matrix
         # TODO checkout if this can be speeded up by doing FFTs
-        K = Kron(Eye(self._numBlocksN), *F._content)
+        K = Kron(Eye(self._arrDim[0]), *F._content)
 
         # allocate memory for the diagonal matrix
-        diags = np.empty((
-            self._numBlocksN,
-            self._numBlocksN,
-            F.numN
-        ), dtype='complex')
+        diags = np.empty((numDim0, numDim0, F.numRows), dtype='complex')
 
         # calculate the large subselection index array for the whole matrix
-        rgn = np.arange(self._numBlocksN) *F.numN
+        rgn = np.arange(numDim0) * F.numRows
         arrIndicesN = (rgn + np.repeat(
-            indK, self._numBlocksN, 1
+            indK, numDim0, 1
         )).reshape(-1, order='F')
 
         # extract the diagonalizing stuff from the nested toeplitz matrices
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
+        for ii in range(numDim0):
+            for jj in range(numDim0):
                 T = MLToeplitz(np.copy(tenT[ii, jj, :, :]))
                 diags[ii, jj, :] = (T._content[0]._content[1].vecD)[:]
 
@@ -169,8 +166,8 @@ cdef class MLUltraSound(Partial):
 
         # call the parent constructor
         cdef dict kwargs = options.copy()
-        kwargs['N'] = arrIndicesN
-        kwargs['M'] = arrIndicesN
+        kwargs['rows'] = arrIndicesN
+        kwargs['cols'] = arrIndicesN
         super(MLUltraSound, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
@@ -183,15 +180,15 @@ cdef class MLUltraSound(Partial):
         return self._reference()
 
     cpdef Matrix _getNormalized(self):
-        cdef intsize ii, jj
+        cdef intsize ii, jj, numDim0 = self._arrDim[0]
 
-        cdef intsize stride = np.prod(self._arrN)
+        cdef intsize stride = np.prod(self._arrDim[1:])
 
-        cdef np.ndarray arrNorms = np.zeros(self.numM)
+        cdef np.ndarray arrNorms = np.zeros(self.numCols)
 
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
-                arrNorms[jj *stride:(jj +1) *stride] += self._normalizeCore(
+        for ii in range(numDim0):
+            for jj in range(numDim0):
+                arrNorms[jj * stride:(jj +1) * stride] += self._normalizeCore(
                     self._tenT[ii, jj, :, :]
                 )
 
@@ -221,8 +218,8 @@ cdef class MLUltraSound(Partial):
                     - np.abs(arrT[numL - ii - 1]) ** 2
 
         else:
-            numS1 = np.prod(self._arrN[-numD :])
-            numS2 = np.prod(self._arrN[-(numD - 1) :])
+            numS1 = np.prod(self._arrDim[-numD :])
+            numS2 = np.prod(self._arrDim[-(numD - 1) :])
             arrNorms = np.zeros(numS1)
             arrT = np.zeros((tenT.shape[0], numS2))
 
@@ -248,17 +245,21 @@ cdef class MLUltraSound(Partial):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        arrRes = np.zeros((self.numN, self.numM), dtype=self.dtype)
+        arrRes = np.zeros((self.numRows, self.numCols), dtype=self.dtype)
+
+        cdef intsize numDim0 = self._arrDim[0]
+        cdef intsize numDim1 = self._arrDim[1]
+        cdef intsize numDim2 = self._arrDim[2]
 
         # go through all blocks and construct the corresponding
         # MLToeplitz instance by calling its reference
-        for ii in range(self._numBlocksN):
-            for jj in range(self._numBlocksN):
+        for ii in range(numDim0):
+            for jj in range(numDim0):
                 arrRes[
-                    ii * self._numSize1 * self._numSize2:
-                    (ii + 1) * self._numSize1 * self._numSize2,
-                    jj * self._numSize1 * self._numSize2:
-                    (jj + 1) * self._numSize1 * self._numSize2
+                    ii * numDim1 * numDim2:
+                    (ii + 1) * numDim1 * numDim2,
+                    jj * numDim1 * numDim2:
+                    (jj + 1) * numDim1 * numDim2
                 ] = MLToeplitz(
                     np.copy(self._tenT[ii, jj, :, :])
                 )._reference()
@@ -272,8 +273,8 @@ cdef class MLUltraSound(Partial):
             TEST.COMMON: {
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
-                TEST.NUM_N      : 40,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 40,
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,

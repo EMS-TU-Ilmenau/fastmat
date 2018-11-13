@@ -43,35 +43,35 @@ cdef class Zero(Matrix):
     >>> O = fm.Zero(n)
     """
 
-    def __init__(self, numN, numM, **options):
+    def __init__(self, numRows, numCols, **options):
         '''
         Initialize Zero matrix instance.
 
         Parameters
         ----------
-        numN : int
+        numRows : int
             Height (row count) of the desired zero matrix.
 
-        numM : int
+        numCols : int
             Width (column count) of the desired zero matrix.
 
         **options:
             See :py:meth:`fastmat.Matrix.__init__`.
         '''
         # set properties of matrix
-        self._initProperties(numN, numM, np.int8, **options)
+        self._initProperties(numRows, numCols, np.int8, **options)
 
     ############################################## class property override
     cpdef np.ndarray _getArray(self):
-        return _arrZero(2, self.numN, self.numM, self.numpyType)
+        return _arrZero(2, self.numRows, self.numCols, self.numpyType)
 
     cpdef np.ndarray _getCol(self, intsize idx):
-        return _arrZero(1, self.numN, 1, self.numpyType)
+        return _arrZero(1, self.numRows, 1, self.numpyType)
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        return _arrZero(1, self.numM, 1, self.numpyType)
+        return _arrZero(1, self.numCols, 1, self.numpyType)
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         return 0
 
     cpdef object _getLargestEV(self, intsize maxSteps,
@@ -83,49 +83,51 @@ cdef class Zero(Matrix):
         return 0.
 
     cpdef Matrix _getT(self):
-        return Zero(self.numM, self.numN)
+        return Zero(self.numCols, self.numRows)
 
     cpdef Matrix _getH(self):
-        return Zero(self.numM, self.numN)
+        return Zero(self.numCols, self.numRows)
 
     cpdef Matrix _getConj(self):
         return self
 
     cpdef Matrix _getGram(self):
-        return Zero(self.numM, self.numM)
+        return Zero(self.numCols, self.numCols)
 
     cpdef Matrix _getNormalized(self):
         raise ValueError("A Zero Matrix cannot be normalized.")
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        return (self.numN, self.numM)
+        return (self.numRows, self.numCols)
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         return _arrZero(
-            arrX.ndim, self.numN, arrX.shape[1] if arrX.ndim > 1 else 1,
+            arrX.ndim, self.numRows, arrX.shape[1] if arrX.ndim > 1 else 1,
             getNumpyType(arrX))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         return _arrZero(
-            arrX.ndim, self.numM, arrX.shape[1] if arrX.ndim > 1 else 1,
+            arrX.ndim, self.numCols, arrX.shape[1] if arrX.ndim > 1 else 1,
             getNumpyType(arrX))
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        return np.zeros((self.numN, self.numM), dtype=self.dtype)
+        return np.zeros((self.numRows, self.numCols), dtype=self.dtype)
 
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 35,
-                TEST.NUM_M      : TEST.Permutation([30, TEST.NUM_N]),
+                TEST.NUM_ROWS   : 35,
+                TEST.NUM_COLS   : TEST.Permutation([30, TEST.NUM_ROWS]),
                 TEST.OBJECT     : Zero,
-                TEST.INITARGS   : [TEST.NUM_N, TEST.NUM_M],
-                TEST.NAMINGARGS : dynFormat("%dx%d", TEST.NUM_N, TEST.NUM_M)
+                TEST.INITARGS   : [TEST.NUM_ROWS, TEST.NUM_COLS],
+                TEST.NAMINGARGS : dynFormat(
+                    "%dx%d", TEST.NUM_ROWS, TEST.NUM_COLS
+                )
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}

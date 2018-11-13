@@ -52,7 +52,7 @@ except ImportError:
 
 # global package constants
 packageName     = 'fastmat'
-packageVersion  = '0.2.a2'           # provide a version tag as fallback
+packageVersion  = '0.2.a3'           # provide a version tag as fallback
 fullVersion     = packageVersion
 strVersionFile  = "%s/version.py" %(packageName)
 
@@ -84,7 +84,7 @@ def getCurrentVersion():
         print("Override of version string to '%s' (from .version file )" % (
             stdout))
 
-        packageVersion = stdout
+        fullVersion = stdout
 
     else:
         # check if source directory is a git repository
@@ -113,14 +113,16 @@ def getCurrentVersion():
                    "leaving version file '%s' untouched.") % (strVersionFile))
             return
 
-        # output results to version string, extract package version number
-        # from git tag
         fullVersion = stdout
-        versionMatch = re.match(r"[.+\d+]+\d*[abr]\d*", fullVersion)
-        if versionMatch:
-            packageVersion = versionMatch.group(0)
-            print("Fetched package version number from git tag (%s)." % (
-                packageVersion))
+
+    # output results to version string, extract package version number from
+    # `fullVersion` as this string might also contain additional tags (e.g.
+    # commit hashes or `-dirty` flags from git tags)
+    versionMatch = re.match(r"[.+\d+]+\d*[abr]\d*", fullVersion)
+    if versionMatch:
+        packageVersion = versionMatch.group(0)
+        print("Fetched package version number from git tag (%s)." % (
+            packageVersion))
 
 
 # Enable flexible dependency handling by installing missing base components

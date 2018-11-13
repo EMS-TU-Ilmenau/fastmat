@@ -172,8 +172,8 @@ cdef class Parametric(Matrix):
         # this would otherwise happen always for all sizes
         self._cythonCall = True
         self._initProperties(
-            len(self._vecY),            # numN
-            len(self._vecX),            # numM
+            len(self._vecY),            # numRows
+            len(self._vecX),            # numCols
             self._funDtype,             # data type of matrix
             **options
         )
@@ -182,33 +182,33 @@ cdef class Parametric(Matrix):
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
-        cdef intsize nn, N = self.numN
+        cdef intsize nn
         cdef np.ndarray arrRes
 
         if self._rangeAccess:
             arrRes = self._fun(self._vecX[idx], self._vecY)
         else:
-            arrRes = _arrEmpty(1, N, 1, self.numpyType)
-            for nn in range(N):
+            arrRes = _arrEmpty(1, self.numRows, 1, self.numpyType)
+            for nn in range(self.numRows):
                 arrRes[nn] = self._fun(self._vecX[idx], self._vecY[nn])
 
         return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        cdef intsize mm, M = self.numM
+        cdef intsize mm
         cdef np.ndarray arrRes
 
         if self._rangeAccess:
             arrRes = self._fun(self._vecX, self._vecY[idx])
         else:
-            arrRes = _arrEmpty(1, M, 1, self.numpyType)
-            for mm in range(M):
+            arrRes = _arrEmpty(1, self.numCols, 1, self.numpyType)
+            for mm in range(self.numCols):
                 arrRes[mm] = self._fun(self._vecX[mm], self._vecY[idx])
 
         return arrRes
 
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return self._fun(self._vecX[idxM], self._vecY[idxN])
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return self._fun(self._vecX[idxCol], self._vecY[idxRow])
 
     ############################################## class core methods
     cdef void _core(
@@ -222,29 +222,29 @@ cdef class Parametric(Matrix):
     ):
 
         # determine size of matrices
-        cdef intsize mm, nn, numN = self.numN, numM = self.numM
+        cdef intsize mm, nn, numRows = self.numRows, numCols = self.numCols
 
-        cdef np.ndarray vecSuppN = self._vecY
-        cdef np.ndarray vecSuppM = self._vecX
+        cdef np.ndarray vecSuppRows = self._vecY
+        cdef np.ndarray vecSuppCols = self._vecX
 
         # if backward, N and M indexing is swapped and each element must
         # be conjugated
         if backward:
-            numN, numM = numM, numN
-            vecSuppN, vecSuppM = vecSuppM, vecSuppN
+            numRows, numCols = numCols, numRows
+            vecSuppRows, vecSuppCols = vecSuppCols, vecSuppRows
 
-        cdef object val, numSuppN
+        cdef object val, numSuppRow
         cdef np.ndarray vecVal = _arrEmpty(
-            1, vecSuppM.shape[0], 1, self.numpyType)
+            1, vecSuppCols.shape[0], 1, self.numpyType)
 
-        for nn in range(numN):
+        for nn in range(numRows):
             # when rangeAccess is allowed, _fun may be called for multiple
             # elements at once
-            numSuppN = vecSuppN[nn]
+            numSuppRow = vecSuppRows[nn]
             if self._rangeAccess:
                 val = self._fun(
-                    numSuppN if backward else vecSuppM,
-                    vecSuppM if backward else numSuppN
+                    numSuppRow if backward else vecSuppCols,
+                    vecSuppCols if backward else numSuppRow
                 )
 
                 if isinstance(val, np.ndarray):
@@ -254,16 +254,16 @@ cdef class Parametric(Matrix):
                 else:
                     # otherwise, interpret as scalar value and assign it to all
                     # elements of the requested range
-                    for mm in range(numM):
+                    for mm in range(numCols):
                         vecVal[mm] = val
             elif backward:
                 # backward, element-wise
-                for mm in range(numM):
-                    vecVal[mm] = self._fun(numSuppN, vecSuppM[mm])
+                for mm in range(numCols):
+                    vecVal[mm] = self._fun(numSuppRow, vecSuppCols[mm])
             else:
                 # forward, element-wirde
-                for mm in range(numM):
-                    vecVal[mm] = self._fun(vecSuppM[mm], numSuppN)
+                for mm in range(numCols):
+                    vecVal[mm] = self._fun(vecSuppCols[mm], numSuppRow)
 
             # conjugate in backward case
             if backward:
@@ -298,13 +298,13 @@ cdef class Parametric(Matrix):
     ############################################## class reference
     cpdef np.ndarray _reference(self):
         arrRes = np.zeros(
-            (self.numN, self.numM), dtype=self.dtype)
+            (self.numRows, self.numCols), dtype=self.dtype)
 
-        for nn in range(self.numN):
+        for nn in range(self.numRows):
             if self._rangeAccess:
                 arrRes[nn, :] = self._fun(self._vecX, self._vecY[nn])
             else:
-                for mm in range(self.numM):
+                for mm in range(self.numCols):
                     arrRes[nn, mm] = self._fun(self._vecX[mm], self._vecY[nn])
 
         return arrRes
@@ -315,8 +315,8 @@ cdef class Parametric(Matrix):
         return {
             TEST.COMMON: {
                 # define parameters for test
-                TEST.NUM_N      : 2,
-                TEST.NUM_M      : TEST.Permutation([3, TEST.NUM_N]),
+                TEST.NUM_ROWS   : 2,
+                TEST.NUM_COLS   : TEST.Permutation([3, TEST.NUM_ROWS]),
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
                 'typeY'         : TEST.Permutation(TEST.LARGETYPES),
                 'typeX'         : TEST.Permutation(TEST.FEWTYPES),
@@ -326,11 +326,11 @@ cdef class Parametric(Matrix):
                 # define arguments for test
                 'vecY'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'typeY',
-                    TEST.SHAPE  : (TEST.NUM_N, )
+                    TEST.SHAPE  : (TEST.NUM_ROWS, )
                 }),
                 'vecX'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'typeX',
-                    TEST.SHAPE  : (TEST.NUM_M, )
+                    TEST.SHAPE  : (TEST.NUM_COLS, )
                 }),
 
                 # define constructor for test instances and naming of test

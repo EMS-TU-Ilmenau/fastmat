@@ -56,7 +56,7 @@ cdef class Partial(Matrix):
         M = {\mathcal{F}}_I
     """
 
-    property indicesN:
+    property rowSelection:
         r"""Return the support of the base matrix which defines the partial
 
         Subselected rows
@@ -65,9 +65,10 @@ cdef class Partial(Matrix):
         """
 
         def __get__(self):
-            return self._indicesN if self._pruneN else np.arange(self.numN)
+            return (self._rowSelection if self._rowSelection is not None
+                    else np.arange(self.numRows))
 
-    property indicesM:
+    property colSelection:
         r"""Return the support of the base matrix which defines the partial
 
         Subselected columns
@@ -76,7 +77,24 @@ cdef class Partial(Matrix):
         """
 
         def __get__(self):
-            return self._indicesM if self._pruneM else np.arange(self.numM)
+            return (self._colSelection if self._colSelection is not None
+                    else np.arange(self.numCols))
+
+    property indicesN:
+        '''Deprecated. See .rowSelection'''
+        def __get__(self):
+            import warnings
+            warnings.warn('indicesN is deprecated. Use rowSelection.',
+                          FutureWarning)
+            return self.rowSelection
+
+    property indicesM:
+        '''Deprecated. See .colSelection'''
+        def __get__(self):
+            import warnings
+            warnings.warn('indicesM is deprecated. Use colSelection.',
+                          FutureWarning)
+            return self.colSelection
 
     def __init__(self, mat, **options):
         '''
@@ -113,64 +131,55 @@ cdef class Partial(Matrix):
             Defaults to selecting all columns.
         '''
 
-        # extract options
-        N = options.get('N', None)
-        M = options.get('M', None)
-
         # initialize matrix for full support (used anyway for checking)
         if not isinstance(mat, Matrix):
             raise ValueError("Partial: fastmat Matrix required.")
 
-        self._indicesM = None
-        self._indicesN = None
         self._content = (mat, )
 
-        # check if anything needs to be done in N- or M-dimension
-        # store support indices in N- and M- dimension if needed
-        self._pruneN = False
-        if N is not None:
-            N = np.array(N)
-            if N.dtype == np.bool:
-                # convert specification of boolean decisions to indices
-                N = np.arange(mat.numN)[N]
-            elif isInteger(N):
-                pass
-            else:
-                raise TypeError(
-                    "Partial: Type of row indices must be integer or bool.")
+        # check if anything needs to be done in the row- or column dimensions
+        # store support indices in row and column dimension if needed
 
-            if (len(N) != mat.numN) or (np.sum(N - np.arange(mat.numN)) != 0):
-                if np.any((N >= mat.numN) | (N < 0)):
+        def checkSelection(vecSelection, sizeDim, nameDim):
+            if vecSelection is not None:
+                vecSelection = np.array(vecSelection)
+                if vecSelection.dtype == np.bool:
+                    # convert specification of boolean decisions to indices
+                    vecSelection = np.arange(sizeDim)[vecSelection]
+                elif isInteger(vecSelection):
+                    pass
+                else:
+                    raise TypeError(
+                        "Partial: Type of %s indices must be int or bool." %(
+                            nameDim, ))
+
+                bounded = (
+                    ((len(vecSelection) != sizeDim) or
+                     (np.sum(vecSelection - np.arange(sizeDim)) != 0)) and
+                    (np.any((vecSelection >= sizeDim) | (vecSelection < 0)))
+                )
+                if bounded:
                     raise ValueError(
-                        "Partial: A row index exceed matrix dimensions.")
+                        "Partial: A %s index exceeds matrix dimensions." %(
+                            nameDim, ))
 
-                self._indicesN = N
-                self._pruneN = True
-
-        self._pruneM = False
-        if M is not None:
-            M = np.array(M)
-            if M.dtype == np.bool:
-                # convert specification of boolean decisions to indices
-                M = np.arange(mat.numM)[M]
-            elif isInteger(M):
-                pass
+                return vecSelection
             else:
-                raise TypeError(
-                    "Partial: Type of column indices must be integer or bool.")
+                return None
 
-            if (len(M) != mat.numM) or (np.sum(M - np.arange(mat.numM)) != 0):
-                if np.any((M >= mat.numM) | (M < 0)):
-                    raise ValueError(
-                        "Partial: A column index exceeds matrix dimensions.")
-
-            self._indicesM = M
-            self._pruneM = True
+        self._rowSelection = checkSelection(
+            options.get('rows', None), mat.numRows, 'row'
+        )
+        self._colSelection = checkSelection(
+            options.get('cols', None), mat.numCols, 'col'
+        )
 
         # set properties of matrix.
         self._initProperties(
-            len(self._indicesN) if self._pruneN else mat.numN,
-            len(self._indicesM) if self._pruneM else mat.numM,
+            (len(self._rowSelection) if self._rowSelection is not None
+             else mat.numRows),
+            (len(self._colSelection) if self._colSelection is not None
+             else mat.numCols),
             mat.dtype,
             **options
         )
@@ -186,36 +195,40 @@ cdef class Partial(Matrix):
         if type(self) == Partial:
             return "<%s[%dx%d](%s[%dx%d]):0x%12x>" %(
                 self.__class__.__name__,
-                self.numN, self.numM,
+                self.numRows, self.numCols,
                 self._content[0].__class__.__name__,
-                self._content[0].numN, self._content[0].numM,
+                self._content[0].numRows, self._content[0].numCols,
                 id(self))
         else:
             return super(Partial, self).__repr__()
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
-        cdef intsize idxM = self._indicesM[idx] if self._pruneM else idx
-        return _arrSqueeze(self._content[0].getCol(idxM)[self._indicesN]
-                           if self._pruneN else self._content[0].getCol(idxM))
+        cdef intsize idxCol = (self._colSelection[idx]
+                               if self._colSelection is not None else idx)
+        return _arrSqueeze(self._content[0].getCol(idxCol)[self._rowSelection]
+                           if self._rowSelection is not None
+                           else self._content[0].getCol(idxCol))
 
     cpdef np.ndarray _getRow(self, intsize idx):
-        cdef intsize idxN = self._indicesN[idx] if self._pruneN else idx
-        return _arrSqueeze(self._content[0].getRow(idxN)[self._indicesM]
-                           if self._pruneM else self._content[0].getRow(idxN))
+        cdef intsize idxRow = (self._rowSelection[idx]
+                               if self._rowSelection is not None else idx)
+        return _arrSqueeze(self._content[0].getRow(idxRow)[self._colSelection]
+                           if self._colSelection is not None
+                           else self._content[0].getRow(idxRow))
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
         cdef Matrix M = self._content[0]
         cdef float complexityFwd = 0.
         cdef float complexityBwd = 0.
-        if self._pruneM:
-            complexityFwd += M.numM + self.numM
-            complexityBwd += self.numN
+        if self._colSelection is not None:
+            complexityFwd += M.numCols + self.numCols
+            complexityBwd += self.numRows
 
-        if self._pruneN:
-            complexityBwd += M.numN + self.numN
-            complexityFwd += self.numM
+        if self._rowSelection is not None:
+            complexityBwd += M.numRows + self.numRows
+            complexityFwd += self.numCols
 
         return (complexityFwd, complexityBwd)
 
@@ -223,35 +236,39 @@ cdef class Partial(Matrix):
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         cdef np.ndarray arrInput
 
-        if self._pruneM:
+        if self._colSelection is not None:
             arrInput = _arrZero(
-                2, self.content[0].numM, arrX.shape[1], getNumpyType(arrX))
-            arrInput[self._indicesM, :] = arrX
+                2, self.content[0].numCols, arrX.shape[1], getNumpyType(arrX))
+            arrInput[self._colSelection, :] = arrX
         else:
             arrInput = arrX
 
-        return (self.content[0].forward(arrInput)[self._indicesN, :]
-                if self._pruneN else self._content[0].forward(arrInput))
+        return (self.content[0].forward(arrInput)[self._rowSelection, :]
+                if self._rowSelection is not None
+                else self._content[0].forward(arrInput))
 
     cpdef np.ndarray _backward(self, np.ndarray arrX):
         cdef np.ndarray arrInput
 
-        if self._pruneN:
+        if self._rowSelection is not None:
             arrInput = _arrZero(
-                2, self.content[0].numN, arrX.shape[1], getNumpyType(arrX))
-            arrInput[self._indicesN, :] = arrX
+                2, self.content[0].numRows, arrX.shape[1], getNumpyType(arrX))
+            arrInput[self._rowSelection, :] = arrX
         else:
             arrInput = arrX
 
-        return (self.content[0].backward(arrInput)[self._indicesM, :]
-                if self._pruneM else self.content[0].backward(arrInput))
+        return (self.content[0].backward(arrInput)[self._colSelection, :]
+                if self._colSelection is not None
+                else self.content[0].backward(arrInput))
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
         cdef np.ndarray arrFull = self.content[0].reference()
         return arrFull[
-            self._indicesN if self._pruneN else np.s_, :][
-            :, self._indicesM if self._pruneM else np.s_]
+            self._rowSelection if self._rowSelection is not None else np.s_, :
+        ][
+            :, self._colSelection if self._colSelection is not None else np.s_
+        ]
 
     ############################################## class inspection, QM
     def _getTest(self):
@@ -260,14 +277,14 @@ cdef class Partial(Matrix):
         return {
             TEST.COMMON: {
                 'order'         : 4,
-                'num_N'         : (lambda param: 2 ** param['order']),
-                'num_M'         : 'num_N',
-                TEST.NUM_N      : (lambda param: (
+                'num_rows'      : (lambda param: 2 ** param['order']),
+                'num_cols'      : 'num_rows',
+                TEST.NUM_ROWS   : (lambda param: (
                     np.count_nonzero(param['subRows'])
                     if param['subRows'].dtype == np.bool
                     else len(param['subRows'])
                 )),
-                TEST.NUM_M      : (lambda param: (
+                TEST.NUM_COLS   : (lambda param: (
                     np.count_nonzero(param['subCols'])
                     if param['subCols'].dtype == np.bool
                     else len(param['subCols'])
@@ -292,8 +309,8 @@ cdef class Partial(Matrix):
                     Hadamard(param['order']),
                 ]),
                 TEST.INITKWARGS : (lambda param: {
-                    'N': param['subRows'],
-                    'M': param['subCols']
+                    'rows': param['subRows'],
+                    'cols': param['subCols']
                 }),
                 'strIndexTypeM' : (lambda param: (
                     'B' if param['subCols'].dtype == np.bool else 'I'
@@ -302,9 +319,11 @@ cdef class Partial(Matrix):
                     'B' if param['subRows'].dtype == np.bool else 'I'
                 )),
                 TEST.OBJECT     : Partial,
-                TEST.NAMINGARGS : dynFormat("Hadamard(%d)->%dx%d,%s%s",
-                                            'order', TEST.NUM_N, TEST.NUM_M,
-                                            'strIndexTypeN', 'strIndexTypeM')
+                TEST.NAMINGARGS : dynFormat(
+                    "Hadamard(%d)->%dx%d,%s%s",
+                    'order', TEST.NUM_ROWS, TEST.NUM_COLS,
+                    'strIndexTypeN', 'strIndexTypeM'
+                )
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}
@@ -316,10 +335,12 @@ cdef class Partial(Matrix):
         return {
             BENCH.FORWARD: {
                 BENCH.FUNC_GEN  : (lambda c: Partial(
-                    Eye(2 * c), N=np.arange(c), M=np.arange(c)))
+                    Eye(2 * c), rows=np.arange(c), cols=np.arange(c)
+                ))
             },
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Partial(
-                    Eye(2 ** c), N=np.arange(2 ** c), M=np.arange(2 ** c)))
+                    Eye(2 ** c), rows=np.arange(2 ** c), cols=np.arange(2 ** c)
+                ))
             }
         }

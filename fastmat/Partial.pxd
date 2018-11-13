@@ -25,10 +25,8 @@ from .Matrix cimport Matrix
 cdef class Partial(Matrix):
 
     ############################################## class variables
-    cdef public np.ndarray _indicesN             # Support indices in N-dim
-    cdef public np.ndarray _indicesM             # Support indices in M-dim
-    cdef bint _pruneN                            # selective support for N-dim
-    cdef bint _pruneM                            # selective support for M-dim
+    cdef public np.ndarray _rowSelection         # Support row indices
+    cdef public np.ndarray _colSelection         # Support col indices
 
     ############################################## class methods
     cpdef np.ndarray _forward(self, np.ndarray)

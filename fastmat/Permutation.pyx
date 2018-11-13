@@ -71,22 +71,22 @@ cdef class Permutation(Matrix):
         **options:
             See :py:meth:`fastmat.Matrix.__init__`.
         '''
-        numN = sigma.shape[0]
+        numRows = sigma.shape[0]
 
-        if not np.allclose(np.sort(sigma), np.arange(numN)):
+        if not np.allclose(np.sort(sigma), np.arange(numRows)):
             raise ValueError("Not a permutation.")
 
         self._sigma = sigma
         self._tau = np.argsort(sigma)
 
-        self._initProperties(numN, numN, np.int8, **options)
+        self._initProperties(numRows, numRows, np.int8, **options)
 
     ############################################## class property override
-    cpdef object _getItem(self, intsize idxN, intsize idxM):
-        return 1 if (self._sigma[idxN] == idxM) else 0
+    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
+        return 1 if (self._sigma[idxRow] == idxCol) else 0
 
     cpdef np.ndarray _getArray(self):
-        return np.eye(self.numN, dtype=self.dtype)[self.sigma, :]
+        return np.eye(self.numRows, dtype=self.dtype)[self.sigma, :]
 
     cpdef object _getLargestSV(self, intsize maxSteps,
                                float relEps, float eps, bint alwaysReturn):
@@ -101,7 +101,7 @@ cdef class Permutation(Matrix):
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
-        return (self.numN, self.numM)
+        return (self.numRows, self.numCols)
 
     ############################################## class forward / backward
     cpdef np.ndarray _forward(self, np.ndarray arrX):
@@ -112,18 +112,19 @@ cdef class Permutation(Matrix):
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        return np.eye(self.numN, dtype=self.dtype)[self._sigma, :]
+        return np.eye(self.numRows, dtype=self.dtype)[self._sigma, :]
 
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST
         return {
             TEST.COMMON: {
-                TEST.NUM_N      : 35,
-                TEST.NUM_M      : TEST.NUM_N,
+                TEST.NUM_ROWS   : 35,
+                TEST.NUM_COLS   : TEST.NUM_ROWS,
                 TEST.OBJECT     : Permutation,
-                TEST.INITARGS   : (lambda param :
-                                   [np.random.permutation(param[TEST.NUM_N])])
+                TEST.INITARGS   : (
+                    lambda param: [np.random.permutation(param[TEST.NUM_ROWS])]
+                )
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}
