@@ -1219,7 +1219,53 @@ cdef class Matrix(object):
         '''Internally overloadable method for customizing self.getConj.'''
         return getConjugate(self)
 
-    ############################################## deprecated properties
+    property inverse:
+        r"""Return the inverse
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._inverse is None:
+                return self.getInverse()
+            else:
+                return self._inverse
+
+    def getInverse(self):
+        r"""
+        Return the hermitian transpose of this matrix as fastmat matrix.
+        """
+        self._inverse = self._getInverse()
+        return self._inverse
+
+    cpdef Matrix _getInverse(self):
+        '''Internally overloadable method for self.inverse.'''
+        return Inverse(self)
+
+    property pseudoInverse:
+        r"""Return the moore penrose inverse
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._pseudoInverse is None:
+                return self.getPseudoInverse()
+            else:
+                return self._pseudoInverse
+
+    def getPseudoInverse(self):
+        r"""
+        Return the hermitian transpose of this matrix as fastmat matrix.
+        """
+        self._pseudoInverse = self._getPseudoInverse()
+        return self._pseudoInverse
+
+    cpdef Matrix _getPseudoInverse(self):
+        '''Internally overloadable method for self.pseudoInverse.'''
+        return PseudoInverse(self)
+
+    ############################################## numN deprecation warning
     property numN:
         def __get__(self):
             import warnings
@@ -2338,3 +2384,124 @@ cdef class Transpose(Hermitian):
     ########################################## references: test / benchmark
     cpdef np.ndarray _reference(self):
         return self._nestedConj._reference().T
+
+
+cdef class Inverse(Matrix):
+    r""" Inverse of a Matrix
+
+    This class is implemented by always solving a system of linear equations
+    in order to act out the forward transform of a given matrix.
+    """
+    ############################################## class methods
+
+    def __init__(self, Matrix matrix):
+        '''
+        Initialize an instance of an inverted matrix.
+
+        Parameters
+        ----------
+        matrix : :py:class:`fastmat.Matrix`
+            The matrix instance to be inverse.
+        '''
+        from scipy.sparse.linalg import lgmres
+
+        if not isinstance(matrix, Matrix):
+            raise TypeError("Inverse: Not a fastmat Matrix")
+
+        if matrix.shape[0] != matrix.shape[1]:
+            raise ValueError("Inverse: Matrix not square, so not invertible.")
+
+        self._nested = matrix
+        self._content = (matrix, )
+        self._cythonCall = False
+        self._initProperties(
+            matrix.shape[0],
+            matrix.shape[0],
+            np.promote_types(matrix.dtype, np.float64),
+            **matrix._getProperties()
+        )
+        self._linearOperator = matrix.scipyLinearOperator
+        self._solver = lgmres
+
+    cpdef np.ndarray _solveForward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator, arrX)[0]
+
+    cpdef np.ndarray _solveBackward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator.H, arrX)[0]
+
+    def __repr__(self):
+        return "<%s.(^-1)>" %(self._nested.__repr__())
+
+
+    cpdef np.ndarray _forward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveForward, 0, arrX
+        )
+
+    cpdef np.ndarray _backward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveBackward, 0, arrX
+        )
+
+    cpdef np.ndarray _reference(self):
+        import numpy.linalg as npl
+        return npl.inv(self._nested.reference())
+
+
+cdef class PseudoInverse(Matrix):
+    r""" Inverse of a Matrix
+
+    This class is implemented by always solving a system of linear equations
+    in order to act out the forward transform of a given matrix.
+    """
+    ############################################## class methods
+
+    def __init__(self, Matrix matrix):
+        '''
+        Initialize an instance of an inverted matrix.
+
+        Parameters
+        ----------
+        matrix : :py:class:`fastmat.Matrix`
+            The matrix instance to be inverse.
+        '''
+        from scipy.sparse.linalg import lsmr
+
+        if not isinstance(matrix, Matrix):
+            raise TypeError("Inverse: Not a fastmat Matrix")
+
+        self._nested = matrix
+        self._content = (matrix, )
+        self._cythonCall = False
+        self._initProperties(
+            matrix.shape[0],
+            matrix.shape[0],
+            np.promote_types(matrix.dtype, np.float64),
+            **matrix._getProperties()
+        )
+        self._linearOperator = matrix.scipyLinearOperator
+        self._solver = lsmr
+
+    cpdef np.ndarray _solveForward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator, arrX)[0]
+
+    cpdef np.ndarray _solveBackward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator.H, arrX)[0]
+
+    def __repr__(self):
+        return "<%s.(^-1)>" %(self._nested.__repr__())
+
+
+    cpdef np.ndarray _forward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveForward, 0, arrX
+        )
+
+    cpdef np.ndarray _backward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveBackward, 0, arrX
+        )
+
+    cpdef np.ndarray _reference(self):
+        import numpy.linalg as npl
+        return npl.pinv(self._nested.reference())

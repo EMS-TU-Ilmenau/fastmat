@@ -51,6 +51,7 @@ development of algorithms and leave the internals to fastmat.
 
 # import fundamental types and classes first, also behavioural flags
 from .Matrix import Matrix, Hermitian, Conjugate, Transpose, flags
+from .Matrix import Inverse, PseudoInverse
 from .Product import Product
 
 # import all fastmat classes
