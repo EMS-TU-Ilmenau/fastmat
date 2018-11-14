@@ -106,6 +106,7 @@ The main module also containts some important submodules, which we list here
 
 # import fundamental types and classes first, also behavioural flags
 from .Matrix import Matrix, Hermitian, Conjugate, Transpose, flags
+from .Matrix import Inverse, PseudoInverse
 from .Product import Product
 
 # import all fastmat classes
