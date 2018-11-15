@@ -2041,7 +2041,9 @@ cdef class Matrix(object):
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
             }
-        elif isinstance(self, (Hermitian, Conjugate, Transpose)):
+        elif isinstance(
+            self, (Hermitian, Conjugate, Transpose)
+        ):
             # Test code for the three Transposition classes that are also
             # defined in this submodule. As the Transpositions are directly
             # derived from the Matrix base class we can put the relevant code
@@ -2053,14 +2055,14 @@ cdef class Matrix(object):
             # uncommon the corresponding fields must be linked in DATASHAPE
             numRows = 35
             numCols = 30
-            swap = isinstance(self, Conjugate)
+            swap = isinstance(self, (Conjugate))
             return {
                 TEST.COMMON: {
                     TEST.NUM_ROWS   : numRows,
-                    TEST.NUM_COLS   : TEST.Permutation([
-                        numCols, TEST.NUM_ROWS
-                    ]),
-                    'mType'         : TEST.Permutation(TEST.FEWTYPES),
+                    TEST.NUM_COLS   : TEST.Permutation(
+                        [numCols, TEST.NUM_ROWS]
+                    ),
+                    'mType'         : TEST.Permutation(TEST.FLOATTYPES),
                     TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                     'arrM'          : TEST.ArrayGenerator({
                         TEST.DTYPE  : 'mType',
@@ -2074,6 +2076,41 @@ cdef class Matrix(object):
                     TEST.OBJECT     : self.__class__,
                     TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
                     TEST.NAMINGARGS : dynFormat("%s", 'arrM')
+                },
+                TEST.CLASS: {},
+                TEST.TRANSFORMS: {}
+            }
+        elif isinstance(
+            self, (Inverse, PseudoInverse)
+        ):
+            # Test code for the two Inversion classes that are also
+            # defined in this submodule.
+            numRows = 10
+            numCols1 = 9
+            numCols2 = 11
+            square = isinstance(self, (Inverse))
+            return {
+                TEST.COMMON: {
+                    TEST.NUM_ROWS   : numRows,
+                    TEST.NUM_COLS   : (TEST.NUM_ROWS if square else
+                                       TEST.Permutation(
+                                           [numCols1, numCols2, TEST.NUM_ROWS]
+                                       )),
+                    'mType'         : TEST.Permutation(TEST.FLOATTYPES),
+                    TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                    'arrM'          : TEST.ArrayGenerator({
+                        TEST.DTYPE  : 'mType',
+                        TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS),
+                        TEST.ALIGN  : TEST.PARAMALIGN
+                    }),
+                    TEST.DATASHAPE  : (TEST.NUM_ROWS, TEST.DATACOLS),
+                    TEST.DATASHAPE_T: (TEST.NUM_COLS, TEST.DATACOLS),
+                    TEST.OBJECT     : self.__class__,
+                    TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
+                    TEST.NAMINGARGS : dynFormat("%s", 'arrM'),
+                    TEST.RESULT_TOLERR : 1e-2,
+                    TEST.CHECK_DATATYPE : False,
+                    TEST.CHECK_PROXIMITY : False
                 },
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
@@ -2103,7 +2140,9 @@ cdef class Matrix(object):
                                                        dtype=dt)))
                 }
             }
-        elif isinstance(self, (Hermitian, Conjugate, Transpose)):
+        elif isinstance(
+            self, (Hermitian, Conjugate, Transpose, Inverse, PseudoInverse)
+        ):
             # Benchmark code for the three Transposition classes that are also
             # defined in this submodule. As the Transpositions are directly
             # derived from the Matrix base class we can put the relevant code
@@ -2415,7 +2454,7 @@ cdef class Inverse(Matrix):
         self._content = (matrix, )
         self._cythonCall = False
         self._initProperties(
-            matrix.shape[0],
+            matrix.shape[1],
             matrix.shape[0],
             np.promote_types(matrix.dtype, np.float64),
             **matrix._getProperties()
@@ -2431,7 +2470,6 @@ cdef class Inverse(Matrix):
 
     def __repr__(self):
         return "<%s.(^-1)>" %(self._nested.__repr__())
-
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         return np.apply_along_axis(
@@ -2483,14 +2521,13 @@ cdef class PseudoInverse(Matrix):
         self._solver = lsmr
 
     cpdef np.ndarray _solveForward(self, np.ndarray arrX):
-        return self._solver(self._linearOperator, arrX)[0]
+        return self._solver(self._linearOperator, arrX, atol=1e-12)[0]
 
     cpdef np.ndarray _solveBackward(self, np.ndarray arrX):
-        return self._solver(self._linearOperator.H, arrX)[0]
+        return self._solver(self._linearOperator.H, arrX, atol=1e-12)[0]
 
     def __repr__(self):
         return "<%s.(^-1)>" %(self._nested.__repr__())
-
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         return np.apply_along_axis(
