@@ -72,7 +72,9 @@ class STELA(Algorithm):
         highly depends on the application at hand. Again, consult [1]_ for any
         further considerations of this matter.
 
-    .. [1]  Y. Yang, M. Pesavento, "A Unified Successive Pseudoconvex Approximation Framework", IEEE Transactions on Signal Processing, vol. 65, no. 13, pp. 3313-3327, Dec 2017
+    .. [1]  Y. Yang, M. Pesavento, "A Unified Successive Pseudoconvex
+            Approximation Framework", IEEE Transactions on Signal Processing,
+            vol. 65, no. 13, pp. 3313-3327, Dec 2017
 
 
     Parameters

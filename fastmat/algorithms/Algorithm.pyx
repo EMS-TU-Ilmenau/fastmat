@@ -32,7 +32,6 @@ cdef class Algorithm(object):
     baseclass introduces general framework concepts such as interfaces for
     parameter specification, algorithm execution, logging and callbacks.
 
-        
     >>> algI = fma.ISTA(Fourier(10))
     >>> algI.cbResult = lambda i: print(i.arrResult)
     >>> algI.cbStep = lambda i: print(i.numStep)

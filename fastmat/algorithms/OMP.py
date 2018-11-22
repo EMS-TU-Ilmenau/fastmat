@@ -82,7 +82,8 @@ class OMP(Algorithm):
       - optimize einsum-stuff
 
     .. [1]  S. G. Mallat, Z. Zhang, "Matching pursuits with time-frequency
-             dictionaries", IEEE Transactions on Signal Processing, vol. 41, no. 12, pp. 3397-3415, Dec 1993
+             dictionaries", IEEE Transactions on Signal Processing, vol. 41,
+             no. 12, pp. 3397-3415, Dec 1993
 
     Parameters
     ----------
