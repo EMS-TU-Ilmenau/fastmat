@@ -15,7 +15,7 @@ Any commit in master will start a process of thorough testing through our CI. Fi
 The release of fastmat versions *into the wild* is triggered by defining a fresh version tag into the file `.version`. This then gets processed by setup.py and controls the fastmat version number used for deployment and documentation. Pypi assists us by only accepting the first build of a version. Therefore only when we update the `.version`file, a new version gets released. If and only if all wheels were built the tag specifying the release version is set for the newest commit in the `stable` branch (being the released state).
 
 ## Pull Requests
-We would like to organize our work by tracking ongoing work in pull reqeusts. So as soon as you have started hacking away in a new branch, you can push it upstream and issue a pull request to get the discussion with everyone else going going. If it is a larger feature or a more involved refactoring, there ight be some discussion happening and we might need some iterations and modifications in your branch until we see it fit for merging.
+We would like to organize our work by tracking ongoing work in pull requests. So as soon as you have started hacking away in a new branch, you can push it upstream and issue a pull request to get the discussion with everyone else going. If it is a larger feature or a more involved refactoring, there might be some discussion happening and we might need some iterations and modifications in your branch until we see it fit for merging.
 
 Since we aim at providing some simple checks of your code whenever pushing to some feature branch, the code itself should already be of high(ish) quality if these checks pass in the sense of coding style and test approval.
 
