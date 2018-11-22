@@ -1,4 +1,4 @@
-..  Copyright 2016 Sebastian Semper, Christoph Wagner
+..  Copyright 2018 Sebastian Semper, Christoph Wagner
         https://www.tu-ilmenau.de/it-ems/
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,36 +14,40 @@
     limitations under the License.
 
 .. toctree::
-   :maxdepth: 1
+   :glob:
+   :maxdepth: 2
    :hidden:
 
-   architecture
-   classes
-   submod
-   bee
-   tutorials
+   classes/*
+   algorithms/*
    scipy
-
-Welcome to fastmat's documentation!
-===================================
-
-Table of Contents
------------------
-
-* :ref:`architecture`
-* :ref:`bee`
-* :ref:`classes`
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-* :ref:`submod`
-* :ref:`scipy`
-* :ref:`tutorials`
- * :ref:`Tutorial for Scientific Users`
- * :ref:`Tutorial for Scientific Programmers`
-
+   submod
 
 .. automodule:: fastmat
+
+.. automodule:: fastmat.algorithms
+
+Auxiliary Submodules
+--------------------
+
+To dig into the docu of our internals, have a look at :ref:`submod`.
+
+
+Scipy Interface
+---------------
+
+We have a very neat and simple interface to the linear Operators offered by SciPy, which also allow the same lazy evaluation as the fast mat classes. See :ref:`scipy` for further information.
+
+Publications
+------------
+
+Since we created a package for scientific computing, it makes sense to use it for science. Below we list all publications, which make use of our package with varying degree. If you used fastmat in you publication, we are happy to reference it here:
+
+    - The White Paper: `Fast Linear Transforms in Python <https://arxiv.org/abs/1710.09578>`_
+    - `Defect Detection from 3D Ultrasonic Measurements Using Matrix-free Sparse Recovery Algorithms <https://www.researchgate.net/publication/327768393_Defect_Detection_from_3D_Ultrasonic_Measurements_Using_Matrix-free_Sparse_Recovery_Algorithms>`_
+    - `GPU-accelerated Matrix-Free 3D Ultrasound Reconstruction for Nondestructive Testing <https://www.researchgate.net/publication/328476659_GPU-accelerated_Matrix-Free_3D_Ultrasound_Reconstruction_for_Nondestructive_Testing>`_
+
+If you use fastmat in your own work we kindly ask you to cite the above mentioned white paper as an acknowledgement.
 
 Public Appearances
 ------------------
@@ -56,19 +60,8 @@ Sometimes we also get out in the wild and present the package. The talks we held
 Contributions
 -------------
 
-There are many ways you as an individual can contribute. We are happy about feature requests, bug reports and of course contributions in form of additional features.
+There are many ways you as an individual can contribute. We are happy about feature requests, bug reports and of course contributions in form of additional features. To these ends, please step by at `Github <https://github.com/EMS-TU-Ilmenau/fastmat>`_ where we organize the work on the package.
 
-
-Bugs or Requests
-^^^^^^^^^^^^^^^^
-
-If you found anything is missing in our current implementation or is just plain wrong, we first are very sorry for that! Furthermore, we encourage you to open an `issue <https://github.com/EMS-TU-Ilmenau/fastmat/issues>`_ on Github, where you state your problem or the error and we will get to it as soon as possible.
-
-
-New Features
-^^^^^^^^^^^^
-
-If you hacked away on a new feature for our package, we are happy to see your merge request on `Github <https://github.com/EMS-TU-Ilmenau/fastmat>`_, which explicitly encourages everyone to get their hands dirty!
 
 Affiliations and Credits
 ------------------------

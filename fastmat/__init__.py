@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,8 @@
 # limitations under the License.
 
 r"""
-fastmat
-=======
-
 Introduction
-^^^^^^^^^^^^
+------------
 
 In many fields of engineering linear transforms play a key role during modeling
 and solving real world problems. Often these linear transforms have an inherent
@@ -54,13 +51,9 @@ benefits in memory and calculation efficiency without too much overhead.
 This way you can worry about really urgent matters to you, like research and
 development of algorithms and leave the internals to fastmat.
 
-Summarizing, purpose of fastmat is to provide a convenient way to work with
-fast transforms to harness their advantages in algorithms like the above
-mentioned while making use of already established Python libraries, i.e. Numpy
-and Scipy.
 
 Classes
-^^^^^^^
+-------
 
 Here we list the classes in the package for easy referencing and access.
 
@@ -73,6 +66,7 @@ Here we list the classes in the package for easy referencing and access.
  * :py:class:`fastmat.DiagBlocks`
  * :py:class:`fastmat.Eye`
  * :py:class:`fastmat.Fourier`
+ * :py:class:`fastmat.Inverse`
  * :py:class:`fastmat.Hadamard`
  * :py:class:`fastmat.Hermitian`
  * :py:class:`fastmat.Kron`
@@ -87,21 +81,12 @@ Here we list the classes in the package for easy referencing and access.
  * :py:class:`fastmat.Permutation`
  * :py:class:`fastmat.Polynomial`
  * :py:class:`fastmat.Product`
+ * :py:class:`fastmat.PseudoInverse`
  * :py:class:`fastmat.Sparse`
  * :py:class:`fastmat.Sum`
  * :py:class:`fastmat.Toeplitz`
- * :py:class:`fastmat.Zero`
  * :py:class:`fastmat.Transpose`
-
-Submodules
-^^^^^^^^^^
-
-The main module also containts some important submodules, which we list here
-
- * :py:mod:`fastmat.algorithms`
- * :py:mod:`fastmat.core`
- * :py:mod:`fastmat.inspect`
-
+ * :py:class:`fastmat.Zero`
 """
 
 # import fundamental types and classes first, also behavioural flags

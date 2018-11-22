@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #cython: boundscheck=False, wraparound=False
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

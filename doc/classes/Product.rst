@@ -1,4 +1,4 @@
-..  Copyright 2016 Sebastian Semper, Christoph Wagner
+..  Copyright 2018 Sebastian Semper, Christoph Wagner
         https://www.tu-ilmenau.de/it-ems/
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +13,12 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.. _bee:
+.. _Product:
 
-The Worker Bee
-==============
+Product Class
+=============
 
-.. automodule:: bee
+.. autoclass:: fastmat.Product
     :members:
     :undoc-members:
     :show-inheritance:
