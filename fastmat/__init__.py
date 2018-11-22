@@ -51,42 +51,11 @@ benefits in memory and calculation efficiency without too much overhead.
 This way you can worry about really urgent matters to you, like research and
 development of algorithms and leave the internals to fastmat.
 
+Types of Matrices
+-----------------
 
-Classes
--------
-
-Here we list the classes in the package for easy referencing and access.
-
- * :py:class:`fastmat.Matrix`
- * :py:class:`fastmat.BlockDiag`
- * :py:class:`fastmat.Blocks`
- * :py:class:`fastmat.Circulant`
- * :py:class:`fastmat.Conjugate`
- * :py:class:`fastmat.Diag`
- * :py:class:`fastmat.DiagBlocks`
- * :py:class:`fastmat.Eye`
- * :py:class:`fastmat.Fourier`
- * :py:class:`fastmat.Inverse`
- * :py:class:`fastmat.Hadamard`
- * :py:class:`fastmat.Hermitian`
- * :py:class:`fastmat.Kron`
- * :py:class:`fastmat.LFSRCirculant`
- * :py:class:`fastmat.LowRank`
- * :py:class:`fastmat.MLCirculant`
- * :py:class:`fastmat.MLToeplitz`
- * :py:class:`fastmat.MLUltraSound`
- * :py:class:`fastmat.Outer`
- * :py:class:`fastmat.Parametric`
- * :py:class:`fastmat.Partial`
- * :py:class:`fastmat.Permutation`
- * :py:class:`fastmat.Polynomial`
- * :py:class:`fastmat.Product`
- * :py:class:`fastmat.PseudoInverse`
- * :py:class:`fastmat.Sparse`
- * :py:class:`fastmat.Sum`
- * :py:class:`fastmat.Toeplitz`
- * :py:class:`fastmat.Transpose`
- * :py:class:`fastmat.Zero`
+If you want to find out, what types of structures we provide, have a look at
+the :ref:`classes`. There is a whole zoo of them!
 """
 
 # import fundamental types and classes first, also behavioural flags

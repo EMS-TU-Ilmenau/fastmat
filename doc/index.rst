@@ -19,6 +19,7 @@
    :hidden:
 
    classes/*
+   classes
    algorithms/*
    scipy
    submod
