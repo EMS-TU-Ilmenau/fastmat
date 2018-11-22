@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,7 +36,7 @@ class OMP(Algorithm):
 
     If it holds that :math:`b =  A \cdot  x_0` for some :math:`k`-sparse
     :math:`x_0` and :math:`k` is low enough, we can recover :math:`x_0` via
-    OMP [2]_.
+    OMP [1]_.
 
     This type of problem as the one described above occurs in Compressed
     Sensing and Sparse Signal Recovery, where signals are approximated by
@@ -80,6 +80,10 @@ class OMP(Algorithm):
 
     .. todo::
       - optimize einsum-stuff
+
+    .. [1]  S. G. Mallat, Z. Zhang, "Matching pursuits with time-frequency
+             dictionaries", IEEE Transactions on Signal Processing, vol. 41,
+             no. 12, pp. 3397-3415, Dec 1993
 
     Parameters
     ----------

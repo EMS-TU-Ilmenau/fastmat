@@ -58,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'fastmat'
-copyright = '2017, Sebastian Semper, Christoph Wagner'
+copyright = '2018, Sebastian Semper, Christoph Wagner'
 author = 'Sebastian Semper, Christoph Wagner'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -94,7 +94,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'haiku'
+html_theme = 'bizstyle'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -121,7 +121,7 @@ htmlhelp_basename = 'fastmatdoc'
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'fastmat', 'fastmat Documentation',
-     author, 'fastmat', 'One line description of project.',
+     author, 'fastmat', 'Fast Linear Transforms in Python',
      'Miscellaneous'),
 ]
 
@@ -133,6 +133,7 @@ def skip(app, what, name, obj, skip, options):
     if name == "__init__":
         return False
     return skip
+
 
 def setup(app):
     app.connect("autodoc-skip-member", skip)
