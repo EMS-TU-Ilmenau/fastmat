@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,9 +70,9 @@ class FISTA(Algorithm):
         highly depends on the application at hand. Again, consult [1]_ for any
         further considerations of this matter.
 
-    .. todo::
-        - Todos for ISTA
-        - Check if its working
+    .. [1]  Amir Beck, Marc Teboulle, "A Fast Iterative Shrinkage-Thresholding
+             Algorithm for Linear Inverse Problems", SIAM Journal on Imaging
+             Sciences, 2009, Vol. 2, No. 1 : pp. 183-202
 
     Parameters
     ----------
