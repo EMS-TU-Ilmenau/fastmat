@@ -329,8 +329,8 @@ cdef class Toeplitz(Partial):
                 'num_M'         : TEST.Permutation([2, 3, 4, 5, 6]),
             },
             TEST.TRANSFORMS: {
-                # test differences in padding only for the transforms
-                'padding'       : TEST.Permutation([True, False]),
+                # during class tests we do not need to verify bluestein again
+                TEST.NUM_ROWS   : TEST.Permutation([7]),
             }
         }
 
