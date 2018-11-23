@@ -73,18 +73,18 @@ cdef class Matrix:
     cdef public np.ndarray  _arrayH              # backward dense representation
     cdef public tuple       _content             # nested fastmat matrices
 
-    cdef public Matrix      _gram                # cache for gram matrix
-    cdef public Matrix      _normalized          # cache for normalized matrix
-    cdef public object      _largestEigenValue   # cache for largestEigenValue
-    cdef public np.ndarray  _largestEigenVector
-    # cache for largestSingularValue
+    ############################################## property caches
+    cdef public Matrix      _gram
+    cdef public np.ndarray  _colNorms
+    cdef public np.ndarray  _rowNorms
+    cdef public Matrix      _colNormalized
+    cdef public Matrix      _rowNormalized
+    cdef public object      _largestEigenValue
     cdef public object      _largestSingularValue
-    # cache for largestSingularVectors
-    cdef public tuple       _largestSingularVectors
-    cdef public object      _scipyLinearOperator # interface to scipy
-    cdef public Matrix      _T                   # cache for transpose matrix
-    cdef public Matrix      _H                   # cache for adjunct matrix
-    cdef public Matrix      _conj                # cache for conjugate matrix
+    cdef public object      _scipyLinearOperator
+    cdef public Matrix      _T
+    cdef public Matrix      _H
+    cdef public Matrix      _conj
 
     cdef readonly intsize   numRows              # row-count of matrix
     cdef readonly intsize   numCols              # column-count of matrix
@@ -120,7 +120,10 @@ cdef class Matrix:
     cpdef tuple  _getLargestSingularVectors(self)
     cpdef object _getScipyLinearOperator(self)
     cpdef Matrix _getGram(self)
-    cpdef Matrix _getNormalized(self)
+    cpdef np.ndarray _getColNorms(self)
+    cpdef np.ndarray _getRowNorms(self)
+    cpdef Matrix _getColNormalized(self)
+    cpdef Matrix _getRowNormalized(self)
     cpdef Matrix _getT(self)
     cpdef Matrix _getH(self)
     cpdef Matrix _getConj(self)

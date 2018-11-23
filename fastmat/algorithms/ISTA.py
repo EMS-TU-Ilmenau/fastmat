@@ -104,6 +104,9 @@ class ISTA(Algorithm):
         self.numLambda = 0.1
         self.numMaxSteps = 100
 
+        # initialize callbacks
+        self.cbStep = None
+
         # Update with extra arguments
         self.updateParameters(**kwargs)
 
@@ -118,8 +121,6 @@ class ISTA(Algorithm):
 
         self.arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
         return np.multiply((self.arrM / (self.arrM + numAlpha)), arrX)
-
-    cbStep = None
 
     def _process(self, arrB):
         # fmatA         - input system matrix
