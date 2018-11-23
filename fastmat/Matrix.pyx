@@ -33,13 +33,10 @@ np.import_array()
 from .core.types cimport *
 from .core.cmath cimport *
 from .core.calibration import getMatrixCalibration, CALL_FORWARD, CALL_BACKWARD
-#_conjugate, _arrEmpty, _arrReshape, _arrForceContType
+from .core.resource import getMemoryFootprint
 from .Product cimport Product
 from .Sum cimport Sum
 from .Diag cimport Diag
-
-# have a very lazy import to avoid various package imports during main init
-getMemoryFootprint = None
 
 ################################################################################
 ################################################## class FastmatFlags
@@ -318,15 +315,9 @@ cdef class Matrix(object):
     # nbytes - Property(read)
     # Size of the Matrix object
     property nbytes:
-        # r"""Number of bytes
+        # r"""Number of bytes in memory used by this instance
         # """
         def __get__(self):
-            global getMemoryFootprint
-            if getMemoryFootprint is None:
-                getMemoryFootprint = __import__(
-                    'fastmat.core.resource', globals(), locals(),
-                    ['getMemoryFootprint']).getMemoryFootprint
-
             return getMemoryFootprint(self)
 
     # _nbytesReference - Property(read)

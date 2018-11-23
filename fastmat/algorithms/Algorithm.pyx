@@ -21,6 +21,7 @@ cimport numpy as np
 
 from copy import copy
 from cpython.object cimport PyObject_GenericSetAttr
+from ..core.resource import getMemoryFootprint
 
 ################################################################################
 ################################################## class Algorithm
@@ -75,6 +76,15 @@ cdef class Algorithm(object):
                 raise TypeError("Algorithm trace must be a list")
 
             self._trace = value
+
+    ############################################## algorithm resource handling
+    # nbytes - Property(read)
+    # Size of the Matrix object
+    property nbytes:
+        # r"""Number of bytes in memory used by this instance
+        # """
+        def __get__(self):
+            return getMemoryFootprint(self)
 
 #    def __setattr__(self, attr, val):
 #        try:
