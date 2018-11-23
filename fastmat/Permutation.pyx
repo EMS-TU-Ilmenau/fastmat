@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,12 +88,10 @@ cdef class Permutation(Matrix):
     cpdef np.ndarray _getArray(self):
         return np.eye(self.numRows, dtype=self.dtype)[self.sigma, :]
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return 1.
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return 1.
 
     cpdef np.ndarray _getColNorms(self):
@@ -147,7 +145,6 @@ cdef class Permutation(Matrix):
                                    Permutation(np.random.permutation(c)))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c:
                                    Permutation(np.random.permutation(2 ** c)))

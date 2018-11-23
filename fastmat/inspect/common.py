@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -358,7 +358,7 @@ def arrTestDist(shape, dtype, center=0):
 
     # increase the largest element in magnitude a little bit more to avoid
     # too close neighbours to the largest element in the distribution
-    # this helps at least largestSV in Diag matrices to converge ;)
+    # this helps at least largestSingularValue in Diag matrices to converge ;)
     idxMax = np.unravel_index(np.abs(result).argmax(), result.shape)
     if isInteger(dtype):
         result[idxMax] += np.sign(result[idxMax])

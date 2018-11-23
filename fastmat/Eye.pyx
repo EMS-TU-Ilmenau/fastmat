@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,12 +79,10 @@ cdef class Eye(Matrix):
     cpdef np.ndarray _getRow(self, intsize idx):
         return self._getCol(idx)
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return 1.
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return 1.
 
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
@@ -150,9 +148,6 @@ cdef class Eye(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Eye(c)),
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {
-                BENCH.FUNC_GEN  : (lambda c: Eye(c))
-            },
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Eye(2 ** c)),
             }

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #    https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -629,23 +629,33 @@ cdef class Matrix(object):
         def __get__(self):
             return self._content
 
-    ############################################## algorithmic properties
     property largestEV:
-        # r"""Return the largest eigenvalue for this matrix instance
-        #
-        # *(read-only)*
-        # """
         def __get__(self):
-            return (self.getLargestEV() if self._largestEV is None
-                    else self._largestEV)
+            import warnings
+            warnings.warn(
+                'largestEV is deprecated. Use largestEigenValue.',
+                FutureWarning
+            )
+            return self.largestEigenValue
 
-    def getLargestEV(self, maxSteps=10000,
-                     relEps=1., eps=0., alwaysReturn=False):
+    ############################################## algorithmic properties
+    property largestEigenValue:
+        r"""Return the largest eigenvalue for this matrix instance
+
+        *(read-only)*
+        """
+        def __get__(self):
+            if self._largestEigenValue is None:
+                return self.getLargestEigenValue()
+            else:
+                return self._largestEigenValue
+
+    def getLargestEigenValue(self):
         r"""
-        Return the largest eigenvalue of the matrix.
+        Largest Singular Value
 
-        For a given matrix :math:`a \in \mathbb{c}^{n \times n}`, so :math:`a`
-        square, we calculate the absolute value of the largest eigenvalue
+        For a given matrix :math:`A \in \mathbb{C}^{n \times n}`, so :math:`A`
+        is square, we calculate the absolute value of the largest eigenvalue
         :math:`\lambda \in \mathbb{C}`. The eigenvalues obey the equation
 
         .. math::
@@ -678,7 +688,7 @@ cdef class Matrix(object):
         >>> K2 = K1.array
         >>>
         >>> # calculate the eigenvalue
-        >>> x1 = K1.largestEV
+        >>> x1 = K1.largestEigenValue
         >>> x2 = npl.eigvals(K2)
         >>> x2 = np.sort(np.abs(x2))[-1]
         >>>
@@ -689,111 +699,106 @@ cdef class Matrix(object):
         matrix. Then we also cast it into a numpy-array and use the integrated
         EVD. For demonstration, try to increase :math:`n`to :math:`>10`and see
         what happens.
-
-        Parameters
-        ----------
-        maxSteps : int
-            Maximum number of steps for the power iteration.
-
-            Defaults to 10000.
-
-        relEps : float
-            Relative error threshold specified as a factor of the matrix data
-            type's eps in case `eps`is set to 0 (default).
-
-            Defaults to 1.
-
-        eps : float
-            Specify an absolute error threshold for convergance. If set to 0,
-            determine the error relatively to the eps of the matrix data type.
-
-            Defaults to 0.
-
-        alwaysReturn : bool
-            If True, return the eigenvalue estimated at the last iteration
-            instead of NaN.
-
-            Defaults to False
-
-        Returns
-        -------
-            The largest eigenvalue as float or NaN if the algorithm did not
-            converge.
         """
 
         if self.numRows != self.numCols:
-            raise ValueError("largestEV: Matrix must be square.")
+            raise ValueError("largestEigenValue: Matrix must be square.")
 
-        result = self._getLargestEV(maxSteps, relEps, eps, alwaysReturn)
-        self._largestEV = self._largestEV if np.isnan(result) else result
+        result = self._getLargestEigenValue()
+        self._largestEigenValue = self._largestEigenValue if np.isnan(
+            result) else result
         return result
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        '''
-        Internally overloadable method for customizing self.getLargestEV.
-        '''
-        # The following variables are used:
-        # eps            - relative stopping threshold
-        # numRowsormOld     - norm of vector from last iteration
-        # numRowsormNew     - norm of vector in current iteration
-        # vecBNew        - normalized current iterate
-        # vecBOld        - normalized last iterate
+    cpdef object _getLargestEigenValue(self):
 
-        cdef np.ndarray vecBOld, vecBNew, vecBNewHat
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
 
-        # determine an convergance threshold if eps is deliberately set to zero
-        if eps == 0:
-            eps = relEps * getTypeEps(safeTypeExpansion(self.dtype)) * (
-                self.numRows if self.numRows >= self.numCols else self.numCols)
-
-        if self.numRows != self.numCols:
-            raise ValueError("largestEV: Matrix must be square.")
-
-        # sample one point uniformly in space, have a zero-vector reference
-        vecBNew = np.random.randn(self.numCols, 1).astype(
-            np.promote_types(np.float32, self.dtype))
-        vecBNew /= np.linalg.norm(vecBNew)
-        vecBOld = np.zeros((<object> vecBNew).shape, vecBNew.dtype)
-
-        # now continiously apply the matrix and renormalize until convergence
-        for numSteps in range(maxSteps):
-            vecBOld = vecBNew
-            vecBNew = self.forward(vecBOld)
-
-            normNew = np.linalg.norm(vecBNew)
-            if normNew == 0:
-                # presumably a zero-matrix
-                return vecBNew.dtype.type(0.)
-
-            vecBNew /= normNew
-
-            if np.linalg.norm(vecBNew - vecBOld) < eps:
-                vecBNewHat = vecBNew.conj()
-                return (np.inner(vecBNewHat, self.forward(vecBNew)) /
-                        np.inner(vecBNewHat, vecBNew))
-
-        # did not converge - return NaN
-        if alwaysReturn:
-            vecBNewHat = vecBNew.conj()
-            return (np.inner(vecBNewHat, self.forward(vecBNew)) /
-                    np.inner(vecBNewHat, vecBNew))
+        # the scipy eigenvalue operations do not work on 1x1 transforms
+        if self.numRows > 1:
+            from scipy.sparse import linalg
+            result = linalg.eigs(
+                self.scipyLinearOperator,
+                1,
+                return_eigenvectors=False
+            )[0]
         else:
-            return vecBNew.dtype.type(np.NaN)
+            from numpy.linalg import eigvals
+            result = eigvals(self.array)[0]
+
+        self.scipyLinearOperator.dtype = self.dtype
+        return result
+
+    property largestEigenVec:
+        r"""Return the vector corresponding to the largest eigen value
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            return (self.getLargestEigenVec() if self._largestEigenVec is None
+                    else self._largestEigenVec)
+
+    def getLargestEigenVec(self):
+        if self.numRows != self.numCols:
+            raise ValueError("largestEigenVec: Matrix must be square.")
+
+        result = self._getLargestEigenVec()
+        self._largestEigenValue = result[0]
+        self._largestEigenVec = result[1]
+        return self._largestEigenVec
+
+    cpdef tuple _getLargestEigenVec(self):
+
+        # we temporally promote the operators type to satisfy scipy
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
+
+        if self.numRows > 2:
+            # now we can do the efficient thing using the linear operator
+            from scipy.sparse.linalg import eigs
+
+            S, V = eigs(
+                self.scipyLinearOperator,
+                1,
+                return_eigenvectors=True
+            )[0]
+        else:
+            from numpy.linalg import eig
+            result = eig(self.array)
+            S = (result[0]).astype(self.scipyLinearOperator.dtype)[0]
+            V = (result[1][:, 0]).astype(self.scipyLinearOperator.dtype)
+
+        self.scipyLinearOperator.dtype = self.dtype
+        return (S, V)
 
     property largestSV:
-        # r"""Return the largestSV for this matrix instance
-        #
-        # *(read-only)*
-        # """
         def __get__(self):
-            return (self.getLargestSV() if self._largestSV is None
-                    else self._largestSV)
+            import warnings
+            warnings.warn(
+                'largestSV is deprecated. Use largestSingularValue.',
+                FutureWarning
+            )
+            return self.largestSingularValue
 
-    def getLargestSV(self, maxSteps=10000,
-                     relEps=1., eps=0., alwaysReturn=False):
-        r"""
-        Return the largest singular value of the matrix.
+    property largestSingularValue:
+        r"""Return the largestSingularValue for this matrix instance
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._largestSingularValue is None:
+                return self.getLargestSingularValue()
+            else:
+                self._largestSingularValue
+
+    def getLargestSingularValue(self):
+        r"""Largest Singular Value
 
         For a given matrix :math:`A \in \mathbb{C}^{n \times m}`, we calculate
         the largest singular value :math:`\sigma_{\rm max}( A) > 0`, which is
@@ -830,7 +835,7 @@ cdef class Matrix(object):
         >>>
         >>> # calculate the largest SV
         >>> # and a reference solution
-        >>> x1 = largestSV(K1.largestSV
+        >>> x1 = largestSingularValue(K1.largestSingularValue
         >>> x2 = npl.svd(K2,compute_uv
         >>> # check if they match
         >>> print(x1-x2)
@@ -840,80 +845,100 @@ cdef class Matrix(object):
         SVD. For demonstration, try to increase :math:`n` to `>10` and see what
         happens.
 
-        Parameters
-        ----------
-        maxSteps : int
-            Maximum number of steps for the power iteration.
-
-            Defaults to 10000.
-
-        relEps : float
-            Relative error threshold specified as a factor of the matrix data
-            type's eps in case `eps`is set to 0 (default).
-
-            Defaults to 1.
-
-        eps : float
-            Specify an absolute error threshold for convergance. If set to 0,
-            determine the error relatively to the eps of the matrix data type.
-
-            Defaults to 0.
-
-        alwaysReturn : bool
-            If True, return the eigenvalue estimated at the last iteration
-            instead of NaN.
-
-            Defaults to False
-
         Returns
         -------
-            The largest singular value as float or NaN if the algorithm did not
-            converge.
+            The largest singular value
         """
 
-        result = self._getLargestSV(maxSteps, relEps, eps, alwaysReturn)
-        self._largestSV = self._largestSV if np.isnan(result) else result
+        result = self._getLargestSingularValue()
+        self._largestSingularValue = self._largestSingularValue if np.isnan(
+            result) else result
         return result
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        '''
-        Internally overloadable method for customizing self.getLargestSV.
-        '''
-        cdef np.ndarray vecBOld, vecBNew
-        cdef Matrix matGram = self.gram
-        cdef intsize ii
+    cpdef object _getLargestSingularValue(self):
 
-        # determine an convergance threshold if eps is deliberately set to zero
-        if eps == 0:
-            eps = relEps * getTypeEps(safeTypeExpansion(self.dtype)) * (
-                self.numRows if self.numRows >= self.numCols else self.numCols)
+        from scipy.sparse.linalg import svds
 
-        # sample one initial sample, have a zero-vector reference
-        vecB = np.random.randn(self.numCols, 1).astype(
-            np.promote_types(np.float64, self.dtype))
-        normNew = np.linalg.norm(vecB)
+        # we temporally promote the operators type to satisfy scipy
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
 
-        # iterate until changes cool down
-        for ii in range(maxSteps):
-            vecB = matGram.forward(vecB / normNew)
+        if (self.numRows > 2) and (self.numCols > 2):
+            result = svds(
+                self.scipyLinearOperator,
+                1,
+                return_singular_vectors=False
+            )[0]
+        else:
+            from numpy.linalg import svd
+            result = (svd(
+                np.atleast_2d(self.array),
+                compute_uv=False
+            )).astype(np.float64)[0]
 
-            normOld = normNew
-            normNew = np.linalg.norm(vecB)
-            if normNew == 0:
-                # presumably a zero-matrix
-                return vecB.dtype.type(0.)
+        self.scipyLinearOperator.dtype = self.dtype
+        return result
 
-            if np.abs(normNew - normOld) < eps:
-                # return square root of the current norm after applying the gram
-                # matrix
-                return np.sqrt(normNew)
+    property largestSingularVectors:
+        r"""Return the vectors corresponding to the largest singular value
 
-        # did not converge - return NaN
-        return (np.sqrt(normNew) if alwaysReturn else np.float64(np.NaN))
+        This property returns a tuple (u, v) of the first
+        columns of U and V in the singular value decomposition of
+
+        .. math::
+             A =  U  \Sigma  V^{\rm H},
+
+        which means that the tuple contains the leading left and right
+        singular vectors of the matrix
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._largestSingularVectors is None:
+                return self.getLargestSingularVectors()
+            else:
+                self._largestSingularVectors
+
+    def getLargestSingularVectors(self):
+        result = self._getLargestSingularVectors()
+        self._largestSingularValue = (result[1]).astype(np.float64)
+        self._largestSingularVectors = (
+            result[0].astype(np.float64),
+            result[2].astype(np.float64)
+        )
+        return self._largestSingularVectors
+
+    cpdef tuple _getLargestSingularVectors(self):
+
+        # we temporally promote the operators type to satisfy scipy
+        self.scipyLinearOperator.dtype = np.promote_types(
+            np.float64,
+            self.dtype
+        )
+
+        if (self.numRows > 1) and (self.numCols > 1):
+            # now we can do the efficient thing using the linear operator
+            from scipy.sparse.linalg import svds
+
+            U, S, V = svds(
+                self.scipyLinearOperator,
+                1,
+                return_singular_vectors=True
+            )[0]
+        else:
+            # now we do the stupid thing, but scipy forces us to do so
+            from numpy.linalg import svd
+
+            U, S, V = svd(np.atleast_2d(self.array), compute_uv=True)
+
+        self.scipyLinearOperator.dtype = self.dtype
+        return (U, S, V)
 
     property scipyLinearOperator:
-        """Return a representation as scipy's LinearOperator
+        """Return a Representation as scipy's linear Operator
 
         This property allows to make use of all the powerfull algorithms
         provided by scipy, that allow passing a linear operator to
@@ -930,22 +955,17 @@ cdef class Matrix(object):
                 return self._scipyLinearOperator
 
     def getScipyLinearOperator(self):
-        """Return a scipyLinearOperator representing this matrix."""
         self._scipyLinearOperator = self._getScipyLinearOperator()
         return self._scipyLinearOperator
 
     cpdef object _getScipyLinearOperator(self):
-        '''
-        Internally overloadable method for customizing
-        self.getScipyLinearOperator.
-        '''
         from scipy.sparse.linalg import LinearOperator
         return LinearOperator(
-            shape=(self.numRows, self.numCols),
+            shape=self.shape,
             matvec=self.forward,
             rmatvec=self.backward,
             matmat=self.forward,
-            dtype=np.promote_types(np.int8, self.dtype)
+            dtype=self.dtype
         )
 
     ############################################## gram
@@ -1645,7 +1665,7 @@ cdef class Matrix(object):
 
         requiredSize : int
             The data (column) vector size the input data array must proof
-            during dimension checks.
+            during dimension checks. Bypass this check if equal to zero.
 
         xform : :py:class:`TRANSFORM`
             extension-class structure holding the data types determined in
@@ -2108,13 +2128,11 @@ cdef class Hermitian(Matrix):
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         return np.conjugate(self._nested._getItem(idxCol, idxRow))
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        return self._nested.largestEV
+    cpdef object _getLargestEigenValue(self):
+        return self._nested.largestEigenValue
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        return self._nested.largestSV
+    cpdef object _getLargestSingularValue(self):
+        return self._nested.largestSingularValue
 
     cpdef Matrix _getT(self):
         return getConjugate(self._nested)
@@ -2211,13 +2229,11 @@ cdef class Conjugate(Matrix):
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         return np.conjugate(self._nested._getItem(idxRow, idxCol))
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        return self._nested.largestEV
+    cpdef object _getLargestEigenValue(self):
+        return self._nested.largestEigenValue
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        return self._nested.largestSV
+    cpdef object _getLargestSingularValue(self):
+        return self._nested.largestSingularValue
 
     cpdef Matrix _getT(self):
         return Hermitian(self._nested)
@@ -2311,13 +2327,11 @@ cdef class Transpose(Hermitian):
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         return self._nestedConj._getItem(idxCol, idxRow)
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        return self._nestedConj.largestEV
+    cpdef object _getLargestEigenValue(self):
+        return self._nestedConj.largestEigenValue
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
-        return self._nestedConj.largestSV
+    cpdef object _getLargestSingularValue(self):
+        return self._nestedConj.largestSingularValue
 
     cpdef Matrix _getT(self):
         return self._nestedConj

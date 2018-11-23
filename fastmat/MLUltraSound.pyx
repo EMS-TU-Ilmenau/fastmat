@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -303,7 +303,6 @@ cdef class MLUltraSound(Partial):
                 BENCH.FUNC_STEP : (lambda c: c + 2)
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (lambda c, dt: MLUltraSound(

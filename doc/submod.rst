@@ -18,10 +18,6 @@
 Submodules
 ==========
 
-.. automodule:: fastmat.algorithms
-    :members:
-    :undoc-members:
-
 .. automodule:: fastmat.core
     :members:
     :undoc-members:
@@ -29,19 +25,3 @@ Submodules
 .. automodule:: fastmat.inspect
     :members:
     :undoc-members:
-
-References
-----------
-
-.. [1]  Amir Beck, Marc Teboulle, "A Fast Iterative Shrinkage-Thresholding
-         Algorithm for Linear Inverse Problems", SIAM Journal on Imaging
-         Sciences, 2009, Vol. 2, No. 1 : pp. 183-202
-
-.. [2]  S. G. Mallat, Z. Zhang, "Matching pursuits with time-frequency
-         dictionaries", IEEE Transactions on Signal Processing, vol. 41, no. 12, pp. 3397-3415, Dec 1993
-
-.. [3]  M. Hestenes, E. Stiefel, "Methods of Conjugate Gradients for
-         Solving Linear Systems", The Springer International Series in
-         Engineering and Computer Science, Volume 383, 1997
-
-.. [4]  Y. Yang, M. Pesavento, "A Unified Successive Pseudoconvex Approximation Framework", IEEE Transactions on Signal Processing, vol. 65, no. 13, pp. 3313-3327, Dec 2017

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ from ..Matrix import Matrix
 class STELA(Algorithm):
     r"""Soft-Thresholding with simplified Exact Line search Algorithm (STELA)
 
-    The algorithm is presented in [4]_ with derivation and convergence results.
+    The algorithm is presented in [1]_ with derivation and convergence results.
 
     **Definition and Interface**:
     For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with
@@ -69,12 +69,13 @@ class STELA(Algorithm):
         The proper choice of :math:`\lambda` is crucial for good perfomance
         of this algorithm, but this is not an easy task. Unfortunately we are
         not in the place here to give you a rule of thumb what to do, since it
-        highly depends on the application at hand. Again, consult [4]_ for any
+        highly depends on the application at hand. Again, consult [1]_ for any
         further considerations of this matter.
 
-    .. todo::
-        - Todos for STELA
-        - Check if its working
+    .. [1]  Y. Yang, M. Pesavento, "A Unified Successive Pseudoconvex
+            Approximation Framework", IEEE Transactions on Signal Processing,
+            vol. 65, no. 13, pp. 3313-3327, Dec 2017
+
 
     Parameters
     ----------
@@ -296,7 +297,7 @@ class STELA(Algorithm):
                                         param['typeA'])),
                             Hadamard(param.order),
                             typeExpansion=param['typeA']),
-                'typeA'         : TEST.Permutation(TEST.ALLTYPES),
+                'typeA'         : TEST.Permutation(TEST.FLOATTYPES),
 
                 TEST.OBJECT     : STELA,
                 TEST.INITARGS   : [TEST.ALG_MATRIX],

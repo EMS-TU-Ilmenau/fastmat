@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -133,12 +133,10 @@ cdef class Hadamard(Matrix):
         return self._reference()
 
     ############################################## class property override
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return np.sqrt(self.numRows)
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return np.sqrt(self.numRows)
 
     cpdef np.ndarray _getColNorms(self):
@@ -273,7 +271,6 @@ cdef class Hadamard(Matrix):
                 BENCH.FUNC_STEP : (lambda c: c + 1),
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (lambda c, dt: Hadamard(c, minType=dt))

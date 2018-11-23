@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -439,21 +439,28 @@ def testLargestSV(test):
     query={TEST.TYPE_EXPECTED: np.float64}
     instance=test[TEST.INSTANCE]
 
-    # account for "extra computation stage" (gram) in largestSV
+    # account for "extra computation stage" (gram) in largestSingularValue
     query[TEST.TOL_POWER] = test.get(TEST.TOL_POWER, 1.) * 2
     query[TEST.TOL_MINEPS] = getTypeEps(safeTypeExpansion(instance.dtype))
 
     # determine reference result
-    largestSV=np.linalg.svd(test[TEST.REFERENCE], compute_uv=False)[0]
-    query[TEST.RESULT_REF]=np.array(
-        largestSV, dtype=np.promote_types(largestSV.dtype, np.float64))
+    largestSingularValue = np.linalg.svd(
+        test[TEST.REFERENCE],
+        compute_uv=False
+    )[0]
 
-    # largestSV may not converge fast enough for a bad random starting point
+    query[TEST.RESULT_REF] = np.array(
+        largestSingularValue,
+        dtype=np.promote_types(largestSingularValue.dtype, np.float32)
+    )
+
+    # largestSingularValue may not converge fast enough
+    # for a bad random starting point
     # so retry some times before throwing up
     for tries in range(9):
         maxSteps=100. * 10. ** (tries / 2.)
         query[TEST.RESULT_OUTPUT]=np.array(
-            instance.getLargestSV(maxSteps=maxSteps, alwaysReturn=True))
+            instance.getLargestSingularValue())
         result=compareResults(test, query)
         if result[TEST.RESULT]:
             break

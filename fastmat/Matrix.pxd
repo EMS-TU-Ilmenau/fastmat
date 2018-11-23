@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,19 +73,18 @@ cdef class Matrix:
     cdef public np.ndarray  _arrayH              # backward dense representation
     cdef public tuple       _content             # nested fastmat matrices
 
-    cdef public Matrix      _gram                # cache for gram matrix
-    cdef public np.ndarray  _colNorms            # cache for column norms
-    cdef public np.ndarray  _rowNorms            # cache for row norms
-    cdef public Matrix      _colNormalized       # cache for column-normalized
-    #                                            # matrix
-    cdef public Matrix      _rowNormalized       # cache for row-normalized
-    #                                            # matrix
-    cdef public object      _largestEV           # cache for largestEV
-    cdef public object      _largestSV           # cache for largestSV
-    cdef public object      _scipyLinearOperator # interface to scipy
-    cdef public Matrix      _T                   # cache for transpose matrix
-    cdef public Matrix      _H                   # cache for adjunct matrix
-    cdef public Matrix      _conj                # cache for conjugate matrix
+    ############################################## property caches
+    cdef public Matrix      _gram
+    cdef public np.ndarray  _colNorms
+    cdef public np.ndarray  _rowNorms
+    cdef public Matrix      _colNormalized
+    cdef public Matrix      _rowNormalized
+    cdef public object      _largestEigenValue
+    cdef public object      _largestSingularValue
+    cdef public object      _scipyLinearOperator
+    cdef public Matrix      _T
+    cdef public Matrix      _H
+    cdef public Matrix      _conj
 
     cdef readonly intsize   numRows              # row-count of matrix
     cdef readonly intsize   numCols              # column-count of matrix
@@ -115,8 +114,10 @@ cdef class Matrix:
     cpdef np.ndarray _getCol(self, intsize)
     cpdef np.ndarray _getRow(self, intsize)
     cpdef object _getItem(self, intsize, intsize)
-    cpdef object _getLargestEV(self, intsize, float, float, bint)
-    cpdef object _getLargestSV(self, intsize, float, float, bint)
+    cpdef object _getLargestEigenValue(self)
+    cpdef tuple  _getLargestEigenVec(self)
+    cpdef object _getLargestSingularValue(self)
+    cpdef tuple  _getLargestSingularVectors(self)
     cpdef object _getScipyLinearOperator(self)
     cpdef Matrix _getGram(self)
     cpdef np.ndarray _getColNorms(self)

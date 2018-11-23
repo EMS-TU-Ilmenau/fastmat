@@ -20,7 +20,7 @@ import numpy as np
 cimport numpy as np
 
 from copy import copy
-from cpython.object cimport PyObject_GenericSetAttr
+#from cpython.object cimport PyObject_GenericSetAttr
 from ..core.resource import getMemoryFootprint
 
 ################################################################################

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,12 +107,10 @@ cdef class Diag(Matrix):
 
         return arrRes
 
-    cpdef object _getLargestEV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestEigenValue(self):
         return np.abs(self._vecD).max().astype(np.float64)
 
-    cpdef object _getLargestSV(self, intsize maxSteps,
-                               float relEps, float eps, bint alwaysReturn):
+    cpdef object _getLargestSingularValue(self):
         return np.abs(self._vecD).max().astype(np.float64)
 
     cpdef np.ndarray _getRow(self, intsize idx):
@@ -203,7 +201,6 @@ cdef class Diag(Matrix):
                 BENCH.FUNC_GEN  : (lambda c: Diag(np.random.uniform(2, 3, c)))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c:
                                    Diag(np.random.uniform(2, 3, 2 ** c)))

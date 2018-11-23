@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -377,7 +377,6 @@ cdef class Parametric(Matrix):
                 BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12))
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Parametric(
                     np.arange(2 ** c).astype(np.double) / (2 ** c),

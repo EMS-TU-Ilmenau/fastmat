@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -198,7 +198,6 @@ cdef class Polynomial(Matrix):
                 BENCH.FUNC_STEP : (lambda c: c + 1)
             },
             BENCH.FORWARD: {},
-            BENCH.SOLVE: {},
             BENCH.OVERHEAD: {
                 BENCH.FUNC_GEN  : (lambda c: Polynomial(
                     Eye(2 ** c), np.random.uniform(1, 2, 10)))
