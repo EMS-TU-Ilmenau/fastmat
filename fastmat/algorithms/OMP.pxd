@@ -20,17 +20,29 @@ import cython
 import numpy as np
 cimport numpy as np
 
+from ..core.types cimport *
 from ..Matrix cimport Matrix
+from .Algorithm cimport Algorithm
 
 ################################################## class Algorithm
-cdef class Algorithm(object):
-    cpdef np.ndarray _process(self, np.ndarray)
-    cpdef handleCallback(self, object)
-    cpdef snapshot(self)
-
-    cdef dict __dict__
-
-    cdef list _trace
-
-    cdef object _cbTrace
-    cdef object _cbResult
+cdef class OMP(Algorithm):
+    cdef public intsize numN
+    cdef public intsize numM
+    cdef public intsize numL
+    cdef public Matrix fmatA
+    cdef public Matrix fmatC
+    cdef public np.ndarray arrB
+    cdef public np.ndarray arrX
+    cdef public np.ndarray arrXtmp
+    cdef public np.ndarray arrResidual
+    cdef public np.ndarray arrSupport
+    cdef public np.ndarray matPinv
+    cdef public np.ndarray arrA
+    cdef public np.ndarray v2
+    cdef public np.ndarray v2n
+    cdef public np.ndarray v2y
+    cdef public np.ndarray newCols
+    cdef public np.ndarray arrC
+    cdef public np.ndarray newIndex
+    cdef public intsize numMaxSteps
+    cdef public intsize numStep

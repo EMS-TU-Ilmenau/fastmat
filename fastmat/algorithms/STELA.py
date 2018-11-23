@@ -107,6 +107,9 @@ class STELA(Algorithm):
         self.numMaxSteps = 100
         self.numMaxError = 1e-6
 
+        # initialize callbacks
+        self.cbStep = None
+
         # Update with extra arguments
         self.updateParameters(**kwargs)
 
@@ -244,6 +247,9 @@ class STELA(Algorithm):
                 self.arrGamma[self.arrActive] * self.arrABxx[:, self.arrActive]
             self.arrZ[:, self.arrActive] = \
                 self.fmatA.backward(self.arrRes[:, self.arrActive])
+
+            self.handleCallback(self.cbStep)
+            self.handleCallback(self.cbTrace)
 
         # return the unthresholded values for all non-zero support elements
         # if we did not converge in the given number of steps

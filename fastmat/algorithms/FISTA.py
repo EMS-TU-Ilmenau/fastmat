@@ -102,6 +102,9 @@ class FISTA(Algorithm):
         self.numLambda = 0.1
         self.numMaxSteps = 100
 
+        # initialize callbacks
+        self.cbStep = None
+
         # Update with extra arguments
         self.updateParameters(**kwargs)
 
@@ -164,6 +167,9 @@ class FISTA(Algorithm):
             self.arrY = self.arrX + ((tOld - 1) / self.t) * (
                 self.arrX - self.arrXold
             )
+
+            self.handleCallback(self.cbStep)
+            self.handleCallback(self.cbTrace)
 
         # return the unthresholded values for all non-zero support elements
         return np.where(self.arrX != 0, self.arrStep, self.arrX)

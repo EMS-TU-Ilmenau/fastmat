@@ -16,13 +16,15 @@
 # limitations under the License.
 
 import numpy as np
+cimport numpy as np
 import numpy.linalg as npl
 
-from .Algorithm import Algorithm
-from ..Matrix import Matrix
+from ..core.types cimport *
+from ..Matrix cimport Matrix
+from .Algorithm cimport Algorithm
 
 
-class OMP(Algorithm):
+cdef class OMP(Algorithm):
     r"""Orthogonal Matching Pursuit
 
     **Definition and Interface**:
@@ -104,12 +106,15 @@ class OMP(Algorithm):
         self.fmatA = fmatA
 
         # set default parameters (and create attributes)
-        self.numMaxSteps = None
+        self.numMaxSteps = 0
+
+        # initialize callbacks
+        self.cbStep = None
 
         # Update with extra arguments
         self.updateParameters(**kwargs)
 
-    def _process(self, arrB):
+    cpdef np.ndarray _process(self, np.ndarray arrB):
         #     fmatA           - input system matrix
         #     arrB            - input data vector (measurements)
         #     numMaxSteps            - specified sparsity order, i.e. number of
@@ -135,12 +140,12 @@ class OMP(Algorithm):
         self.numN, self.numM, self.numL = \
             self.fmatA.numRows, self.fmatA.numCols, self.arrB.shape[1]
 
-        self.fmatC = self.fmatA.normalized
+        self.fmatC = self.fmatA.colNormalized
 
         # determine return value data type
         self.returnType = np.promote_types(
             np.promote_types(self.fmatC.dtype, self.arrB.dtype),
-            np.float32
+            np.float64
         )
 
         # temporary array to store only support entries in
@@ -178,6 +183,7 @@ class OMP(Algorithm):
         self.newIndex = np.empty((self.numL, ), dtype=np.intp)
 
         # iterativly build up the solution
+        cdef intsize ii
         for self.numStep in range(self.numMaxSteps):
             # shorten access to index variable
             ii = self.numStep
@@ -228,6 +234,9 @@ class OMP(Algorithm):
 
             # update the residual
             self.arrResidual -= self.v2y * self.v2
+
+            self.handleCallback(self.cbStep)
+            self.handleCallback(self.cbTrace)
 
         # return the computed vector
         self.arrX = np.zeros((self.numM, self.numL), dtype=self.returnType)
@@ -296,7 +305,7 @@ class OMP(Algorithm):
                 ),
 
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION: np.float32,
+                TEST.TYPE_PROMOTION: np.float64,
                 TEST.CHECK_PROXIMITY: False
             },
         }
