@@ -108,6 +108,9 @@ class STELA(Algorithm):
         self.numMaxSteps = 100
         self.numMaxError = 1e-6
 
+        # initialize callbacks
+        self.cbStep = None
+
         # Update with extra arguments
         self.updateParameters(**kwargs)
 
@@ -157,7 +160,7 @@ class STELA(Algorithm):
 
         # squared norms of the system matrix
         self.arrD = (
-            1. / self.fmatA.normalized._content[-1]._vecD ** 2
+            1. / self.fmatA.colNormalized._content[-1]._vecD ** 2
         ).reshape((-1, 1))
 
         # vector for the stopping criterion
@@ -245,6 +248,9 @@ class STELA(Algorithm):
                 self.arrGamma[self.arrActive] * self.arrABxx[:, self.arrActive]
             self.arrZ[:, self.arrActive] = \
                 self.fmatA.backward(self.arrRes[:, self.arrActive])
+
+            self.handleCallback(self.cbStep)
+            self.handleCallback(self.cbTrace)
 
         # return the unthresholded values for all non-zero support elements
         # if we did not converge in the given number of steps

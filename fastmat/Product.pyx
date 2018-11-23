@@ -196,6 +196,8 @@ cdef class Product(Matrix):
         # don't forget to return the conjugate as we use the backward
         return _conjugate(arrRes)
 
+    # TODO: Implement column and row norms
+
     ############################################## class property override
     cpdef tuple _getComplexity(self):
         cdef float complexity = len(self._content)

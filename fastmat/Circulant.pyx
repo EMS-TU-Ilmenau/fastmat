@@ -21,11 +21,11 @@ cimport numpy as np
 
 from .core.types cimport *
 from .core.cmath cimport *
+from .Diag cimport Diag
+from .Fourier cimport Fourier
 from .Matrix cimport Matrix
 from .Partial cimport Partial
 from .Product cimport Product
-from .Fourier cimport Fourier
-from .Diag cimport Diag
 
 
 ################################################################################
@@ -209,7 +209,16 @@ cdef class Circulant(Partial):
             vecOut[:shift] = self._vecC[self.numRows - shift:]
             vecOut[shift:] = self._vecC[:self.numRows - shift]
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
+        return np.full((self.numCols, ), np.linalg.norm(self._vecC))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.full((self.numRows, ), np.linalg.norm(self._vecC))
+
+    cpdef Matrix _getColNormalized(self):
+        return self * (1. / np.linalg.norm(self._vecC))
+
+    cpdef Matrix _getRowNormalized(self):
         return self * (1. / np.linalg.norm(self._vecC))
 
     ############################################## class reference
@@ -229,13 +238,13 @@ cdef class Circulant(Partial):
         from .inspect import TEST, dynFormat
         return {
             TEST.COMMON: {
-                # 35 is just any number that causes no padding
+                # 7 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
-                TEST.NUM_ROWS   : TEST.Permutation([31, 41]),
+                TEST.NUM_ROWS   : TEST.Permutation([7, 41]),
                 TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'mTypeC'        : TEST.Permutation(TEST.ALLTYPES),
                 'optimize'      : True,
-                TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                TEST.PARAMALIGN : TEST.Permutation(TEST.ALIGNMENT.DONTCARE),
                 'vecC'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : (TEST.NUM_ROWS, ),
@@ -244,13 +253,15 @@ cdef class Circulant(Partial):
                 TEST.INITARGS   : (lambda param : [param['vecC']()]),
                 TEST.INITKWARGS : {'optimize' : 'optimize'},
                 TEST.OBJECT     : Circulant,
-                TEST.NAMINGARGS : dynFormat("%s,optimize=%s",
-                                            'vecC', str('optimize')),
+                TEST.NAMINGARGS : dynFormat("%s", 'vecC'),
                 TEST.TOL_POWER  : 2.,
                 TEST.TOL_MINEPS : getTypeEps(np.float64)
             },
             TEST.CLASS: {},
-            TEST.TRANSFORMS: {}
+            TEST.TRANSFORMS: {
+                # during class tests we do not need to verify bluestein again
+                TEST.NUM_ROWS   : 15,
+            }
         }
 
     def _getBenchmark(self):

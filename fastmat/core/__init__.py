@@ -47,3 +47,4 @@ fastmat.core
 """
 
 from .calibration import *
+from .resource import *
