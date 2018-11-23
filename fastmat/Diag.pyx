@@ -124,11 +124,20 @@ cdef class Diag(Matrix):
     cpdef Matrix _getGram(self):
         return Diag(np.abs(self._vecD) ** 2)
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
+        return np.abs(self._vecD)
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.abs(self._vecD)
+
+    cpdef Matrix _getColNormalized(self):
         if typeInfo[self.fusedType].isComplex:
-            return Diag((self._vecD / abs(self._vecD)).astype(self.dtype))
+            return Diag((self._vecD / np.abs(self._vecD)).astype(self.dtype))
         else:
             return Diag(np.sign(self._vecD).astype(self.dtype))
+
+    cpdef Matrix _getRowNormalized(self):
+        return self.colNormalized
 
     cpdef Matrix _getT(self):
         return self

@@ -74,7 +74,12 @@ cdef class Matrix:
     cdef public tuple       _content             # nested fastmat matrices
 
     cdef public Matrix      _gram                # cache for gram matrix
-    cdef public Matrix      _normalized          # cache for normalized matrix
+    cdef public np.ndarray  _colNorms            # cache for column norms
+    cdef public np.ndarray  _rowNorms            # cache for row norms
+    cdef public Matrix      _colNormalized       # cache for column-normalized
+    #                                            # matrix
+    cdef public Matrix      _rowNormalized       # cache for row-normalized
+    #                                            # matrix
     cdef public object      _largestEV           # cache for largestEV
     cdef public object      _largestSV           # cache for largestSV
     cdef public object      _scipyLinearOperator # interface to scipy
@@ -114,7 +119,10 @@ cdef class Matrix:
     cpdef object _getLargestSV(self, intsize, float, float, bint)
     cpdef object _getScipyLinearOperator(self)
     cpdef Matrix _getGram(self)
-    cpdef Matrix _getNormalized(self)
+    cpdef np.ndarray _getColNorms(self)
+    cpdef np.ndarray _getRowNorms(self)
+    cpdef Matrix _getColNormalized(self)
+    cpdef Matrix _getRowNormalized(self)
     cpdef Matrix _getT(self)
     cpdef Matrix _getH(self)
     cpdef Matrix _getConj(self)

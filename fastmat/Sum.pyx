@@ -134,6 +134,8 @@ cdef class Sum(Matrix):
 
         return result
 
+    # TODO: Implement column and row norms
+
     ############################################## class property override
     cpdef tuple _getComplexity(self):
         cdef float complexity = 0.

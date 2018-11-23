@@ -957,7 +957,7 @@ cdef class Matrix(object):
             dtype=np.promote_types(np.int8, self.dtype)
         )
 
-    ############################################## generic algebraic properties
+    ############################################## gram
     property gram:
         r"""Return the gram matrix for this fastmat class
 
@@ -979,30 +979,34 @@ cdef class Matrix(object):
         '''Internally overloadable method for customizing self.getGram.'''
         return Product(self.H, self)
 
-    property normalized:
-        r"""Return a normalized matrix for this instance
+    ############################################## colNorms
+    property colNorms:
+        r"""Return the column norms for this matrix instance
 
         *(read-only)*
         """
 
         def __get__(self):
-            return (self.getNormalized() if self._normalized is None
-                    else self._normalized)
+            return (self.getColNorms() if self._colNorms is None
+                    else self._colNorms)
 
-    def getNormalized(self):
+    def getColNorms(self):
         r"""
-        Return a normalized version of this matrix as fastmat matrix.
+        Return a column normalized version of this matrix as fastmat matrix.
         """
-        self._normalized = self._getNormalized()
-        return self._normalized
+        self._colNorms = self._getColNorms()
+        return self._colNorms
 
-    cpdef Matrix _getNormalized(self):
-        '''Internally overloadable method for customizing self.getNormalized.'''
-        # determine type of normalization diagonal matrix
-        diagType = safeTypeExpansion(self.dtype)
+    cpdef np.ndarray _getColNorms(self):
+        '''
+        Internally overloadable method for customizing self.getColNorms.
+        '''
+        # choose float64 as type of normalization diagonal matrix to preserve
+        # accuracy of norms also when constructing meta classed of larger type
+        diagType = np.float64
 
         # array that contains the norms of each column
-        cdef np.ndarray arrDiag = np.empty(self.numCols, dtype=diagType)
+        cdef np.ndarray arrNorms = np.empty(self.numCols, dtype=diagType)
 
         # number of elements we consider at once during normalization
         cdef intsize numStrideSize = 256
@@ -1011,7 +1015,7 @@ cdef class Matrix(object):
             (self.numCols, min(numStrideSize, self.numCols)),
             dtype=diagType)
 
-        cdef int ii
+        cdef intsize ii
         for ii in range(0, self.numCols, numStrideSize):
             vecIndices = np.arange(ii, min(ii + numStrideSize, self.numCols))
             if ii == 0 or vecSlice.size != vecIndices.size:
@@ -1019,20 +1023,129 @@ cdef class Matrix(object):
 
             arrSelector[vecIndices, vecSlice] = 1
 
-            arrDiag[vecIndices] = np.linalg.norm(
+            arrNorms[vecIndices] = np.linalg.norm(
                 self.forward(
                     arrSelector if vecIndices.size == arrSelector.shape[1]
                     else arrSelector[:, vecSlice]),
+                axis=0
+            )
+            arrSelector[vecIndices, vecSlice] = 0
+
+        return arrNorms
+
+    ############################################## rowNorms
+    property rowNorms:
+        r"""Return the row norms for this matrix instance
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            return (self.getRowNorms() if self._rowNorms is None
+                    else self._rowNorms)
+
+    def getRowNorms(self):
+        r"""
+        Return a row normalized version of this matrix as fastmat matrix.
+        """
+        self._rowNorms = self._getRowNorms()
+        return self._rowNorms
+
+    cpdef np.ndarray _getRowNorms(self):
+        '''
+        Internally overloadable method for customizing self.getRowNorms.
+        '''
+        # choose float64 as type of normalization diagonal matrix to preserve
+        # accuracy of norms also when constructing meta classed of larger type
+        diagType = np.float64
+
+        # array that contains the norms of each column
+        cdef np.ndarray arrNorms = np.empty(self.numRows, dtype=diagType)
+
+        # number of elements we consider at once during normalization
+        cdef intsize numStrideSize = 256
+
+        cdef np.ndarray arrSelector = np.zeros(
+            (self.numRows, min(numStrideSize, self.numRows)),
+            dtype=diagType)
+
+        cdef intsize ii
+        for ii in range(0, self.numRows, numStrideSize):
+            vecIndices = np.arange(ii, min(ii + numStrideSize, self.numRows))
+            if ii == 0 or vecSlice.size != vecIndices.size:
+                vecSlice = np.arange(0, vecIndices.size)
+
+            arrSelector[vecIndices, vecSlice] = 1
+
+            arrNorms[vecIndices] = np.linalg.norm(
+                self.backward(
+                    arrSelector if vecIndices.size == arrSelector.shape[1]
+                    else arrSelector[:, vecSlice]
+                ),
                 axis=0)
             arrSelector[vecIndices, vecSlice] = 0
 
+        return arrNorms
+
+    ############################################## colNormalized
+    property colNormalized:
+        r"""Return a column normalized matrix for this instance
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            return (self.getColNormalized() if self._colNormalized is None
+                    else self._colNormalized)
+
+    def getColNormalized(self):
+        r"""
+        Return a column normalized version of this matrix as fastmat matrix.
+        """
+        self._colNormalized = self._getColNormalized()
+        return self._colNormalized
+
+    cpdef Matrix _getColNormalized(self):
+
+        cpdef np.ndarray arrNorms = self.colNorms
+
         # check if we've found any zero
-        if np.any(arrDiag == 0):
+        if np.any(arrNorms == 0):
             raise ValueError("Normalization: Matrix has zero-norm column.")
 
         # finally invert the diagonal and generate normalized matrix
-        return self * Diag(1. / arrDiag)
+        return self * Diag(1. / arrNorms)
 
+    ############################################## rowNormalized
+    property rowNormalized:
+        r"""Return a column normalized matrix for this instance
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            return (self.getRowNormalized() if self._rowNormalized is None
+                    else self._rowNormalized)
+
+    def getRowNormalized(self):
+        r"""
+        Return a column normalized version of this matrix as fastmat matrix.
+        """
+        self._rowNormalized = self._getRowNormalized()
+        return self._rowNormalized
+
+    cpdef Matrix _getRowNormalized(self):
+
+        cpdef np.ndarray arrNorms = self.rowNorms
+
+        # check if we've found any zero
+        if np.any(arrNorms == 0):
+            raise ValueError("Normalization: Matrix has zero-norm row.")
+
+        # finally invert the diagonal and generate normalized matrix
+        return Diag(1. / arrNorms) * self
+
+    ############################################## Transpose
     property T:
         r"""Return the transpose of the matrix as fastmat class
 
@@ -1053,6 +1166,7 @@ cdef class Matrix(object):
         '''Internally overloadable method for customizing self.getT.'''
         return Transpose(self)
 
+    ############################################## Hermitian
     property H:
         r"""Return the hermitian transpose
 
@@ -1073,6 +1187,7 @@ cdef class Matrix(object):
         '''Internally overloadable method for customizing self.getH.'''
         return Hermitian(self)
 
+    ############################################## conjugate
     property conj:
         r"""Return the conjugate of the matrix as fastmat class
 
@@ -1093,7 +1208,7 @@ cdef class Matrix(object):
         '''Internally overloadable method for customizing self.getConj.'''
         return getConjugate(self)
 
-    ############################################## numN deprecation warning
+    ############################################## deprecated properties
     property numN:
         def __get__(self):
             import warnings
@@ -1105,6 +1220,13 @@ cdef class Matrix(object):
             import warnings
             warnings.warn('numM is deprecated. Use numCols.', FutureWarning)
             return self.numCols
+
+    property normalized:
+        def __get__(self):
+            import warnings
+            warnings.warn('normalized is deprecated. Use colNormalized.',
+                          FutureWarning)
+            return self.colNormalized
 
     ############################################## computation complexity
     property complexity:

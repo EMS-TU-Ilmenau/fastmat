@@ -96,7 +96,16 @@ cdef class Permutation(Matrix):
                                float relEps, float eps, bint alwaysReturn):
         return 1.
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
+        return np.ones((self.numCols, ), dtype=self.dtype)
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.ones((self.numRows, ), dtype=self.dtype)
+
+    cpdef Matrix _getColNormalized(self):
+        return self
+
+    cpdef Matrix _getRowNormalized(self):
         return self
 
     ############################################## class property override

@@ -156,7 +156,7 @@ class STELA(Algorithm):
 
         # squared norms of the system matrix
         self.arrD = (
-            1. / self.fmatA.normalized._content[-1]._vecD ** 2
+            1. / self.fmatA.colNormalized._content[-1]._vecD ** 2
         ).reshape((-1, 1))
 
         # vector for the stopping criterion

@@ -217,6 +217,24 @@ cdef class Partial(Matrix):
                            if self._colSelection is not None
                            else self._content[0].getRow(idxRow))
 
+    cpdef np.ndarray _getColNorms(self):
+        cpdef np.ndarray arrNorms
+        if self._rowSelection is not None:
+            return super(Partial, self)._getColNorms()
+        else:
+            arrNorms = self._content[0].colNorms
+            return (arrNorms if self._colSelection is None
+                    else arrNorms[self._colSelection])
+
+    cpdef np.ndarray _getRowNorms(self):
+        cpdef np.ndarray arrNorms
+        if self._colSelection is not None:
+            return super(Partial, self)._getRowNorms()
+        else:
+            arrNorms = self._content[0].rowNorms
+            return (arrNorms if self._rowSelection is None
+                    else arrNorms[self._rowSelection])
+
     ############################################## class property override
     cpdef tuple _getComplexity(self):
         cdef Matrix M = self._content[0]

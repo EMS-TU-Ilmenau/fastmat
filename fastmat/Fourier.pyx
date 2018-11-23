@@ -18,10 +18,10 @@
 import numpy as np
 cimport numpy as np
 
-from .Matrix cimport Matrix
-from .Eye cimport Eye
 from .core.cmath cimport *
 from .core.strides cimport *
+from .Eye cimport Eye
+from .Matrix cimport Matrix
 
 cdef class Fourier(Matrix):
     r"""
@@ -169,8 +169,17 @@ cdef class Fourier(Matrix):
                                float relEps, float eps, bint alwaysReturn):
         return np.sqrt(self._order)
 
-    cpdef Matrix _getNormalized(self):
-        return Fourier(self._order) * (1. / np.sqrt(self._order))
+    cpdef np.ndarray _getColNorms(self):
+        return np.full((self.numCols, ), np.sqrt(self._order))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.full((self.numRows, ), np.sqrt(self._order))
+
+    cpdef Matrix _getColNormalized(self):
+        return self * (1. / np.sqrt(self._order))
+
+    cpdef Matrix _getRowNormalized(self):
+        return self * (1. / np.sqrt(self._order))
 
     cpdef Matrix _getGram(self):
         return Eye(self._order) * self.dtype(self._order)

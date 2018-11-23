@@ -165,7 +165,27 @@ cdef class Kron(Matrix):
                 maxSteps, relEps, eps, alwaysReturn).astype(np.float64)
              for term in self._content]))
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
+        cdef intsize tt
+        cdef np.ndarray arrNorms = self._content[0].colNorms
+
+        for tt in range(1, len(self._content)):
+            arrNorms = np.kron(arrNorms, self._content[tt].colNorms)
+
+        return arrNorms
+
+    cpdef np.ndarray _getRowNorms(self):
+        cdef intsize tt
+        cdef np.ndarray arrNorms = self._content[0].rowNorms
+
+        for tt in range(1, len(self._content)):
+            arrNorms = np.kron(arrNorms, self._content[tt].rowNorms)
+
+        return arrNorms
+
+    # TODO: Figure out if we can get aroung this typing stuff applied here
+
+    cpdef Matrix _getColNormalized(self):
         # redo normalization for product terms, which were normalized for a
         # different data type. Otherwide the best possible accuracy cannot be
         # achieved if a wide-type kronecker product containing matrices with
@@ -183,7 +203,30 @@ cdef class Kron(Matrix):
                     terms[tt] = Product(term, typeExpansion=np.float64)
 
         for tt in range(len(terms)):
-            terms[tt] = terms[tt].normalized
+            terms[tt] = terms[tt].colNormalized
+
+        return Kron(*terms)
+
+    cpdef Matrix _getRowNormalized(self):
+        # redo normalization for product terms, which were normalized for a
+        # different data type. Otherwide the best possible accuracy cannot be
+        # achieved if a wide-type kronecker product containing matrices with
+        # narrow data types.
+        cdef list terms = list(self._content)
+        cdef Matrix term
+        cdef intsize tt
+        cdef ftype fusedType = self.fusedType
+
+        if (fusedType == TYPE_COMPLEX128 or fusedType == TYPE_FLOAT64):
+            for tt in range(len(terms)):
+                term = terms[tt]
+                if not (term.fusedType == TYPE_COMPLEX128 or
+                        term.fusedType == TYPE_FLOAT64):
+                    terms[tt] = Product(term, typeExpansion=np.float64)
+
+        for tt in range(len(terms)):
+            terms[tt] = terms[tt].rowNormalized
+
         return Kron(*terms)
 
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):

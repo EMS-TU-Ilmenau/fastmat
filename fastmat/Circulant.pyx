@@ -21,11 +21,11 @@ cimport numpy as np
 
 from .core.types cimport *
 from .core.cmath cimport *
+from .Diag cimport Diag
+from .Fourier cimport Fourier
 from .Matrix cimport Matrix
 from .Partial cimport Partial
 from .Product cimport Product
-from .Fourier cimport Fourier
-from .Diag cimport Diag
 
 
 ################################################################################
@@ -209,7 +209,16 @@ cdef class Circulant(Partial):
             vecOut[:shift] = self._vecC[self.numRows - shift:]
             vecOut[shift:] = self._vecC[:self.numRows - shift]
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
+        return np.full((self.numCols, ), np.linalg.norm(self._vecC))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.full((self.numRows, ), np.linalg.norm(self._vecC))
+
+    cpdef Matrix _getColNormalized(self):
+        return self * (1. / np.linalg.norm(self._vecC))
+
+    cpdef Matrix _getRowNormalized(self):
         return self * (1. / np.linalg.norm(self._vecC))
 
     ############################################## class reference

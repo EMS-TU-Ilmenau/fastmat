@@ -234,7 +234,7 @@ cdef class Toeplitz(Partial):
     cpdef np.ndarray _getArray(self):
         return self._reference()
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
         # NOTE: This method suffers accuracy losses when elements with lower
         # indices are large in magnitude compared to ones with higher index!
         cdef intsize iiMax = ((self.numRows + 1) if self.numCols > self.numRows
@@ -264,7 +264,7 @@ cdef class Toeplitz(Partial):
             arrNorms[ii] = (arrNorms[ii - 1] +
                             vecRSqr[ii - 1] - vecRSqr[ii - iiMax])
 
-        return self * Diag(1. / np.sqrt(arrNorms))
+        return np.sqrt(arrNorms)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

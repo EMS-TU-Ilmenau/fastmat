@@ -356,26 +356,24 @@ def testGetRowsMultiple(test):
     return compareResults(test, query)
 
 
-################################################## test: normalized (property)
-def testNormalized(test):
-    instance, reference=test[TEST.INSTANCE], test[TEST.REFERENCE]
+################################################## test: column,rowNorms
+###                                            ### test: column,rowNormalized
+def _testNorms(test, funcTestcase, expectedType):
+    instance, reference = test[TEST.INSTANCE], test[TEST.REFERENCE]
 
     # usually expect the normalized matrix to be promoted in type complexity
     # due to division by column-norm during the process. However there exist
     # matrices that treat the problem differently. Exclude the expected pro-
     # motion for them.
     query=({} if isinstance(instance, (Diag, Eye, Zero))
-           else {TEST.TYPE_PROMOTION: np.float32})
+           else {TEST.TYPE_EXPECTED: expectedType})
 
     # ignore actual type of generated gram:
     query[TEST.CHECK_DATATYPE] = False
     query[TEST.TOL_MINEPS] = getTypeEps(safeTypeExpansion(instance.dtype))
 
     try:
-        query[TEST.RESULT_OUTPUT] = instance.normalized.array
-        query[TEST.RESULT_REF] = np.einsum(
-            'ij,j->ij', reference,
-            1. / np.apply_along_axis(np.linalg.norm, 0, reference))
+        funcTestcase(query, instance, reference)
         return compareResults(test, query)
     except ValueError:
         if isinstance(instance, Zero):
@@ -390,6 +388,50 @@ def testNormalized(test):
         query[TEST.RESULT], query[TEST.RESULT_IGNORED] = result, ignored
         query[TEST.RESULT_INFO] = '!RNK'
         return query
+
+
+def testcolNorms(test):
+    def columnTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.colNorms
+        query[TEST.RESULT_REF] = np.apply_along_axis(
+            np.linalg.norm, 0, reference
+        )
+
+    return _testNorms(test, columnTestcase, np.float64)
+
+
+def testRowNorms(test):
+    def rowTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.rowNorms
+        query[TEST.RESULT_REF] = np.apply_along_axis(
+            np.linalg.norm, 1, reference
+        )
+
+    return _testNorms(test, rowTestcase, np.float64)
+
+
+def testcolNormsColNormalized(test):
+    def columnTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.colNormalized.array
+        query[TEST.RESULT_REF] = np.einsum(
+            'ij,j->ij',
+            reference,
+            1. / np.apply_along_axis(np.linalg.norm, 0, reference))
+
+    return _testNorms(test, columnTestcase,
+                      np.promote_types(test[TEST.INSTANCE].dtype, np.float64))
+
+
+def testRowNormalized(test):
+    def rowTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.rowNormalized.array
+        query[TEST.RESULT_REF] = np.einsum(
+            'i,ij->ij',
+            1. / np.apply_along_axis(np.linalg.norm, 1, reference),
+            reference)
+
+    return _testNorms(test, rowTestcase,
+                      np.promote_types(test[TEST.INSTANCE].dtype, np.float64))
 
 
 ################################################## test: largestSV (property)
@@ -532,7 +574,10 @@ class Test(Worker):
                     'gCm'   : testGetColsMultiple,
                     'gRs'   : testGetRowsSingle,
                     'gRm'   : testGetRowsMultiple,
-                    'nor'   : testNormalized,
+                    'CnVec' : testcolNorms,
+                    'RnVec' : testRowNorms,
+                    'CnMat' : testcolNormsColNormalized,
+                    'RnMat' : testRowNormalized,
                     'lSV'   : testLargestSV,
                     'gram'  : testGram,
                     'T'     : testTranspose,
