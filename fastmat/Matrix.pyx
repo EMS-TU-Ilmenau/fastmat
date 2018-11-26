@@ -2108,9 +2108,8 @@ cdef class Matrix(object):
                     TEST.OBJECT     : self.__class__,
                     TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
                     TEST.NAMINGARGS : dynFormat("%s", 'arrM'),
-                    TEST.RESULT_TOLERR : 1e-2,
-                    TEST.CHECK_DATATYPE : False,
-                    TEST.CHECK_PROXIMITY : False
+                    TEST.TOL_POWER  : 5.0,
+                    TEST.CHECK_DATATYPE: False
                 },
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
@@ -2456,17 +2455,17 @@ cdef class Inverse(Matrix):
         self._initProperties(
             matrix.shape[1],
             matrix.shape[0],
-            np.promote_types(matrix.dtype, np.float64),
+            np.promote_types(matrix.dtype, np.float32),
             **matrix._getProperties()
         )
         self._linearOperator = matrix.scipyLinearOperator
         self._solver = lgmres
 
     cpdef np.ndarray _solveForward(self, np.ndarray arrX):
-        return self._solver(self._linearOperator, arrX)[0]
+        return self._solver(self._linearOperator, arrX, atol=1e-12)[0]
 
     cpdef np.ndarray _solveBackward(self, np.ndarray arrX):
-        return self._solver(self._linearOperator.H, arrX)[0]
+        return self._solver(self._linearOperator.H, arrX, atol=1e-12)[0]
 
     def __repr__(self):
         return "<%s.(^-1)>" %(self._nested.__repr__())
@@ -2514,7 +2513,7 @@ cdef class PseudoInverse(Matrix):
         self._initProperties(
             matrix.shape[0],
             matrix.shape[0],
-            np.promote_types(matrix.dtype, np.float64),
+            np.promote_types(matrix.dtype, np.float32),
             **matrix._getProperties()
         )
         self._linearOperator = matrix.scipyLinearOperator
@@ -2527,7 +2526,7 @@ cdef class PseudoInverse(Matrix):
         return self._solver(self._linearOperator.H, arrX, atol=1e-12)[0]
 
     def __repr__(self):
-        return "<%s.(^-1)>" %(self._nested.__repr__())
+        return "<%s.(^+)>" %(self._nested.__repr__())
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
         return np.apply_along_axis(
