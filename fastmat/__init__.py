@@ -19,7 +19,7 @@ r"""
 In many fields of engineering linear transforms play a key role during modeling
 and solving real world problems. Often these linear transforms have an inherent
 structure which reduces the degrees of freedom in their parametrization.
-Moreover this structure allows to describe the action of a linear mapping on a
+Moreover, this structure allows to describe the action of a linear mapping on a
 given vector more efficiently than the general one.
 
 This structure can be exploited twofold. First, the storage of these transforms
