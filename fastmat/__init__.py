@@ -16,9 +16,6 @@
 # limitations under the License.
 
 r"""
-Introduction
-------------
-
 In many fields of engineering linear transforms play a key role during modeling
 and solving real world problems. Often these linear transforms have an inherent
 structure which reduces the degrees of freedom in their parametrization.
