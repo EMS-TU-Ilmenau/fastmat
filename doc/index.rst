@@ -24,6 +24,14 @@
    scipy
    submod
 
+
+.. image:: _static/gfx/logo_long.png
+  :width: 300px
+  :alt: fastmat
+  :align: center
+  :class: pixelated
+
+
 .. automodule:: fastmat
 
 .. automodule:: fastmat.algorithms
