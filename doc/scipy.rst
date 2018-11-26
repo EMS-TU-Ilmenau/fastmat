@@ -18,7 +18,6 @@
 SciPy Interface
 ===============
 
-
 Motivation
 ----------
 
@@ -39,19 +38,20 @@ Solve a system of linear equations with preconditioning, where the preconditione
 >>> from scipy.sparse.linalg import cgs
 >>>
 >>> # diagonal matrix with no zeros
->>> d = np.random.uniform(1, 20, 2**numO)
+>>> d = np.random.uniform(1, 20, 2 ** 10)
 >>>
 >>> # fastmat object
 >>> H = fm.Diag(d)
 >>>
 >>> # use the new property to generate a scipy linear operator
->>> Hs = H1.scipyLinearOperator
+>>> Hs = H.scipyLinearOperator
 >>>
 >>> # also generate a Preconditioning linear operator,
 >>> # which in this case is the exact inverse
 >>> Ms = fm.Diag(1.0 / d).scipyLinearOperator
 >>>
 >>> # get a baseline
->>> y = np.linalg.solve(H1.array, x)
+>>> x = np.random.uniform(1, 20, 2 ** 10)
+>>> y = np.linalg.solve(H.array, x)
 >>> cgs(Hs, x, tol=1e-10)
 >>> cgs(Hs, x, tol=1e-10, M=Ms)

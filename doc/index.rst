@@ -55,7 +55,7 @@ Introduction
 Publications
 ------------
 
-Since we created a package for scientific computing, it makes sense to use it for science. Below we list all publications, which make use of our package with varying degree. If you used fastmat in you publication, we are happy to reference it here:
+Since we created a package for scientific computing, it makes sense to use it for science. Below we list all publications, which make use of our package with varying degree. If made use of fastmat in your publication, we are happy to reference it here:
 
     - The White Paper: `Fast Linear Transforms in Python <https://arxiv.org/abs/1710.09578>`_
     - `Defect Detection from 3D Ultrasonic Measurements Using Matrix-free Sparse Recovery Algorithms <https://www.researchgate.net/publication/327768393_Defect_Detection_from_3D_Ultrasonic_Measurements_Using_Matrix-free_Sparse_Recovery_Algorithms>`_
