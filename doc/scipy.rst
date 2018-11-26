@@ -18,16 +18,9 @@
 SciPy Interface
 ===============
 
-Table of Contents
------------------
 
- * `Motivation`_
- * `Examples`_
-
-.. _`Motivation`:
-
-Motivation for a SciPy Interface
---------------------------------
+Motivation
+----------
 
 SciPy offers a large zoo of algorithms which exploit the possibility to pass a so called LinearOperator, which only provides methods for forward and backward transforms together with some simple properties like a datatype and shape parameters. This is exactly what we can provide for a specific instance of a fastmat Matrix. To this end, each fastmat Matrix has the (read only) property scipyLinearOperator, which provides a SciPy Linear operator realizing the transform specified by the fastmat object.
 

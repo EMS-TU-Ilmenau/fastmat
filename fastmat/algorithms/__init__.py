@@ -16,9 +16,6 @@
 # limitations under the License.
 
 r"""
-Algorithms
-^^^^^^^^^^
-
 We provide some algorithms, which make use of the speedups provided by fastmat
 to allow easy production use out of the box.
 

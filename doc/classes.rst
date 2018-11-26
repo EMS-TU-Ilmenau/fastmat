@@ -15,8 +15,16 @@
 
 .. _classes:
 
-Classes
-=======
+#################
+  Classes
+#################
+
+.. toctree::
+   :glob:
+   :hidden:
+
+   classes/*
+
 
 Here we list the classes in the package for easy referencing and access.
 
