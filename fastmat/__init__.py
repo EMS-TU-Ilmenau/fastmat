@@ -47,12 +47,6 @@ benefits in memory and calculation efficiency without too much overhead.
 
 This way you can worry about really urgent matters to you, like research and
 development of algorithms and leave the internals to fastmat.
-
-Types of Matrices
------------------
-
-If you want to find out, what types of structures we provide, have a look at
-the :ref:`classes`. There is a whole zoo of them!
 """
 
 # import fundamental types and classes first, also behavioural flags

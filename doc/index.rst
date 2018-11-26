@@ -14,38 +14,43 @@
     limitations under the License.
 
 .. toctree::
-   :glob:
-   :maxdepth: 2
+   :maxdepth: -1
    :hidden:
 
-   classes/*
+
+.. toctree::
+   :maxdepth: -1
+   :hidden:
+
+   algorithms
+
+.. toctree::
+   :maxdepth: -1
+   :hidden:
+
    classes
-   algorithms/*
-   scipy
-   submod
+
+.. toctree::
+  :maxdepth: -1
+  :hidden:
+
+  scipy
+  submod
 
 
 .. image:: _static/gfx/logo_long.png
-  :width: 300px
-  :alt: fastmat
-  :align: center
-  :class: pixelated
+ :width: 300px
+ :alt: fastmat
+ :align: center
+ :class: pixelated
 
+---------
+
+Introduction
+------------
 
 .. automodule:: fastmat
 
-.. automodule:: fastmat.algorithms
-
-Auxiliary Submodules
---------------------
-
-To dig into the docu of our internals, have a look at :ref:`submod`.
-
-
-Scipy Interface
----------------
-
-We have a very neat and simple interface to the linear Operators offered by SciPy, which also allow the same lazy evaluation as the fast mat classes. See :ref:`scipy` for further information.
 
 Publications
 ------------
