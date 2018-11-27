@@ -18,13 +18,6 @@
 r"""
 We provide some algorithms, which make use of the speedups provided by fastmat
 to allow easy production use out of the box.
-
- * :py:class:`fastmat.algorithms.Algorithm`
- * :py:class:`fastmat.algorithms.ISTA`
- * :py:class:`fastmat.algorithms.FISTA`
- * :py:class:`fastmat.algorithms.OMP`
- * :py:class:`fastmat.algorithms.STELA`
-
 """
 # algorithms for sparse recovery
 
