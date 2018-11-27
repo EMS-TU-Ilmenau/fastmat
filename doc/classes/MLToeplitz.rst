@@ -15,8 +15,8 @@
 
 .. _MLToeplitz:
 
-MLToeplitz Class
-================
+Multilevel Toeplitz Matrix
+==========================
 
 .. autoclass:: fastmat.MLToeplitz
     :members:

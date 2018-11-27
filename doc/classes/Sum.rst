@@ -15,8 +15,8 @@
 
 .. _Sum:
 
-Sum Class
-=========
+Matrix Sum
+==========
 
 .. autoclass:: fastmat.Sum
     :members:

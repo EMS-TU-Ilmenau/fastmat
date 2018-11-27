@@ -18,8 +18,8 @@
 .. _BlockDiag:
 
 
-BlockDiag Class
-===============
+Block Diagonal Matrix
+=====================
 
 .. autoclass:: fastmat.BlockDiag
     :members:

@@ -15,8 +15,8 @@
 
 .. _MLCirculant:
 
-MLCirculant Class
-=================
+Multilevel Circulant Matrix
+===========================
 
 .. autoclass:: fastmat.MLCirculant
     :members:
