@@ -15,8 +15,8 @@
 
 .. _Permutation:
 
-Permutation Class
-=================
+Permutation Matrix
+==================
 
 .. autoclass:: fastmat.Permutation
     :members:

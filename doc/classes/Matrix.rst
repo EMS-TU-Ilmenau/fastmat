@@ -15,8 +15,8 @@
 
 .. _Matrix:
 
-Matrix Class and Tightly Related Classes
-========================================
+Matrix Base Class and Tightly Related Classes
+=============================================
 
 .. autoclass:: fastmat.Matrix
     :members:

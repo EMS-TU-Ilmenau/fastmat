@@ -15,8 +15,8 @@
 
 .. _LowRank:
 
-LowRank Class
-=============
+Low Rank Matrix
+===============
 
 .. autoclass:: fastmat.LowRank
     :members:

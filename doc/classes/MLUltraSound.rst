@@ -15,8 +15,8 @@
 
 .. _MLUltraSound:
 
-MLUltraSound Class
-==================
+Multilevel Ultrasound Matrix
+============================
 
 .. autoclass:: fastmat.MLUltraSound
     :members:

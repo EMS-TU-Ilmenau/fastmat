@@ -15,8 +15,8 @@
 
 .. _Diag:
 
-Diag Class
-==========
+Diagonal Matrix
+===============
 
 .. autoclass:: fastmat.Diag
     :members:
