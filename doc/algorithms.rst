@@ -25,7 +25,10 @@
 
    algorithms/*
 
-
-Here we list the classes in the package for easy referencing and access.
+Here we list the specialized algorithms in the package for easy referencing and access.
 
  * :py:class:`fastmat.algorithms.Algorithm` base class, the mother of all algorithms.
+ * :py:class:`fastmat.algorithms.FISTA`
+ * :py:class:`fastmat.algorithms.ISTA`
+ * :py:class:`fastmat.algorithms.OMP`
+ * :py:class:`fastmat.algorithms.STELA`

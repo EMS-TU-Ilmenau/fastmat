@@ -17,11 +17,6 @@
    :maxdepth: -1
    :hidden:
 
-
-.. toctree::
-   :maxdepth: -1
-   :hidden:
-
    algorithms
 
 .. toctree::
