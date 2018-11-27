@@ -31,11 +31,17 @@
    classes
 
 .. toctree::
-  :maxdepth: -1
-  :hidden:
+   :maxdepth: -1
+   :hidden:
 
-  scipy
-  submod
+   releases
+
+.. toctree::
+   :maxdepth: -1
+   :hidden:
+
+   scipy
+   submod
 
 
 .. image:: _static/gfx/logo_long.png
