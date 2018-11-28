@@ -85,7 +85,6 @@ from .Zero import Zero
 # new stuff
 from .DiagBlocks import DiagBlocks
 from .LFSRCirculant import LFSRCirculant
-from .MLCirculant import MLCirculant
 from .MLToeplitz import MLToeplitz
 from .MLUltraSound import MLUltraSound
 

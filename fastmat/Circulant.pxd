@@ -26,10 +26,11 @@ from .core.types cimport *
 cdef class Circulant(Partial):
 
     ############################################## class variables
-    cdef public np.ndarray _vecC                 # matrix diagonal entry vector
-
-    ############################################## class internals
-    cdef void _roll(self, np.ndarray, intsize)
+    cdef public np.ndarray _tenC                 # matrix diagonal-entry tensor
+    cdef public np.ndarray _arrDim               # dimensions per level
 
     ############################################## class methods
+    cpdef np.ndarray _preProcSlice(
+        self, np.ndarray, int, np.ndarray, np.ndarray)
+    cpdef np.ndarray _genArrS(self, np.ndarray, np.ndarray, bint verbose=?)
     cpdef np.ndarray _reference(self)
