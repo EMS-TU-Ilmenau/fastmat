@@ -224,6 +224,16 @@ if __name__ == '__main__':
     longDescription = f.read()
     f.close()
 
+    pypiName = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        'pypi.md'
+    )
+
+    f = (open(fileName, 'r') if sys.version_info < (3, 0)
+         else open(fileName, 'r', encoding='utf-8'))
+    pypiDescription = f.read()
+    f.close()
+
     # Build for generic (legacy) architectures when enviroment variable
     # (FASTMAT_GENERIC) is defined
     if 'FASTMAT_GENERIC' in os.environ:
@@ -288,7 +298,7 @@ if __name__ == '__main__':
         name=packageName,
         version=packageVersion,
         description='fast linear transforms in Python',
-        long_description=longDescription,
+        long_description=pypiDescription,
         long_description_content_type='text/markdown',
         author='Christoph Wagner, Sebastian Semper, EMS group TU Ilmenau',
         author_email='christoph.wagner@tu-ilmenau.de',
