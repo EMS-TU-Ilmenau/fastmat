@@ -86,7 +86,6 @@ from .Zero import Zero
 from .DiagBlocks import DiagBlocks
 from .LFSRCirculant import LFSRCirculant
 from .MLToeplitz import MLToeplitz
-from .MLUltraSound import MLUltraSound
 
 # define package version (gets overwritten by setup script)
 from .version import __version__
