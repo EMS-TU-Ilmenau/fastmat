@@ -468,11 +468,9 @@ cdef class MLToeplitz(Partial):
                 #
                 arrNorms[
                     (ii + 1) * numSizeCols2 : (ii + 2) * numSizeCols2
-                ] = (
-                    arrNorms[ii * numSizeCols2 : (ii + 1) * numSizeCols2] +
-                    arrT[addInd] -
-                    arrT[subInd]
-                )
+                ] = arrNorms[
+                    ii * numSizeCols2 : (ii + 1) * numSizeCols2
+                ] + arrT[addInd] - arrT[subInd]
 
             # in case we have more blocks in column direction than in row
             # direction, we have to keep on
@@ -496,11 +494,10 @@ cdef class MLToeplitz(Partial):
                         ) * numSizeCols2 : (
                             numRows + ii + 1
                         ) * numSizeCols2
-                    ] = (
-                        arrNorms[ii * numSizeCols2 : (ii + 1) * numSizeCols2] -
-                        arrT[subInd] +
-                        arrT[addInd]
-                    )
+                    ] = arrNorms[
+                        (numRows + ii - 1) * numSizeCols2 :
+                        (numRows + ii) * numSizeCols2
+                    ] - arrT[subInd] + arrT[addInd]
 
         return arrNorms
 
@@ -764,12 +761,12 @@ cdef class MLToeplitz(Partial):
                         # print("Row", rr)
                         # print("Col", cc)
                         # print("Ind", nn_)
-                        print(T[
-                            rr * arrDimRowProd[1] :
-                                (rr + 1) * arrDimRowProd[1],
-                            cc * arrDimColProd[1] :
-                                (cc + 1) * arrDimColProd[1]
-                        ].shape)
+                        # print(T[
+                        #     rr * arrDimRowProd[1] :
+                        #         (rr + 1) * arrDimRowProd[1],
+                        #     cc * arrDimColProd[1] :
+                        #         (cc + 1) * arrDimColProd[1]
+                        # ].shape)
                         T[
                             rr * arrDimRowProd[1] :
                                 (rr + 1) * arrDimRowProd[1],
@@ -790,21 +787,24 @@ cdef class MLToeplitz(Partial):
             TEST.COMMON: {
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
-                TEST.NUM_ROWS   : 27,
-                TEST.NUM_COLS   : TEST.NUM_ROWS,
+                TEST.NUM_ROWS   : 24,
+                TEST.NUM_COLS   : 24,
                 'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
                 'optimize'      : True,
                 TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
-                'vecC'          : TEST.ArrayGenerator({
+                'tenT'          : TEST.ArrayGenerator({
                     TEST.DTYPE  : 'mTypeC',
                     TEST.SHAPE  : (5, 5, 5),
                     TEST.ALIGN  : TEST.PARAMALIGN
                 }),
-                TEST.INITARGS   : (lambda param : [param['vecC']()]),
+                'arrB'          : np.array([3, 2, 4]),
+                TEST.INITARGS   : (lambda param : [
+                    param['tenT'](), param['arrB']
+                ]),
                 TEST.INITKWARGS : {'optimize' : 'optimize'},
                 TEST.OBJECT     : MLToeplitz,
                 TEST.NAMINGARGS : dynFormat("%s,optimize=%s",
-                                            'vecC', str('optimize')),
+                                            'tenT', str('optimize')),
                 TEST.TOL_POWER  : 2.,
                 TEST.TOL_MINEPS : getTypeEps(np.float64)
             },
