@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,13 +32,8 @@ def getMemoryFootprint(obj, **options):
 
     Automatically finds the contents of the following builtin containers and
     their subclasses:  tuple, list, deque, dict, set and frozenset.
-    To search other containers, add handlers to iterate over their contents:
-
-        handlers = {SomeContainerClass: iter,
-            OtherContainerClass: OtherContainerClass.get_elements}
     '''
     # extract options
-    handlers = options.get('handlers', {})
     verbose = options.get('verbose', False)
 
     # keep track of object ids already seen
@@ -48,18 +43,15 @@ def getMemoryFootprint(obj, **options):
     default_size = sys.getsizeof(0)
 
     # setup handlers for various data types
-    def dict_handler(d):
-        return chain.from_iterable(d.items())
-
+    from ..algorithms.Algorithm import Algorithm
     all_handlers = {
         tuple: iter,
         list: iter,
         deque: iter,
-        dict: dict_handler,
+        dict: lambda d: chain.from_iterable(d.items()),
         set: iter,
         frozenset: iter,
     }
-    all_handlers.update(handlers)
 
     # walker for getting size of object considering corner and special cases
     def sizeof(obj):
@@ -81,7 +73,7 @@ def getMemoryFootprint(obj, **options):
                         s += sizeof(item)
 
         # check for ndarrays (have special properties holding data)
-        if isinstance(obj, np.ndarray):
+        elif isinstance(obj, np.ndarray):
             if obj.base is not None:
                 # add memory size of base (if not yet added)
                 # some numpy versions don't report properly to getsizeof()
@@ -92,20 +84,33 @@ def getMemoryFootprint(obj, **options):
             added = obj.nbytes
             s += added if added > s else 0
 
+        # check fastmat algorithm:
+        # only cdefs with explicit `public` tag will be seen here !
+        elif isinstance(obj, Algorithm):
+            for key in dir(obj):
+                if not key.startswith('_') and key != 'nbytes':
+                    item = getattr(obj, key)
+                    if not callable(item) and (item is not None):
+                        s += sizeof(item)
+
         # check for sparse arrays (have special properties holding data)
-        if isinstance(obj, spmatrix):
+        elif isinstance(obj, spmatrix):
             s += sizeof(obj.__dict__)
+        else:
+            # check for other known container types
+            for typ, handler in all_handlers.items():
+                if isinstance(obj, typ):
+                    s += sum(map(sizeof, handler(obj)))
+                    break
 
         if verbose:
-            print("==%d, [%s@%x]" %(s, type(obj), id(obj)))
-
-        # check for known container types
-        for typ, handler in all_handlers.items():
-            if isinstance(obj, typ):
-                size = sum(map(sizeof, handler(obj)))
-                s += size
-                break
+            print("..%d, [%s@%x]" %(s, type(obj), id(obj)))
 
         return s
 
-    return sizeof(obj)
+    size = sizeof(obj)
+    if verbose:
+        print('Total: %d bytes in %d objects referenced by %s' %(
+            size, len(seen), repr(obj)))
+
+    return size

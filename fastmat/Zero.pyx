@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -92,8 +92,11 @@ cdef class Zero(Matrix):
     cpdef Matrix _getGram(self):
         return Zero(self.numCols, self.numCols)
 
-    cpdef Matrix _getNormalized(self):
-        raise ValueError("A Zero Matrix cannot be normalized.")
+    cpdef np.ndarray _getColNorms(self):
+        return np.zeros((self.numCols, ), dtype=self.dtype)
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.zeros((self.numRows, ), dtype=self.dtype)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

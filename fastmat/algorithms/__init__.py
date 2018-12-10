@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,30 +16,17 @@
 # limitations under the License.
 
 r"""
-fastmat.algorithms
-============
+Algorithms
+^^^^^^^^^^
 
 We provide some algorithms, which make use of the speedups provided by fastmat
 to allow easy production use out of the box.
 
-Algorithms
-----------
-
-.. automodule:: fastmat.algorithms.ISTA
-    :members:
-    :undoc-members:
-
-.. automodule:: fastmat.algorithms.FISTA
-    :members:
-    :undoc-members:
-
-.. automodule:: fastmat.algorithms.OMP
-    :members:
-    :undoc-members:
-
-.. automodule:: fastmat.algorithms.STELA
-    :members:
-    :undoc-members:
+ * :py:class:`fastmat.algorithms.Algorithm`
+ * :py:class:`fastmat.algorithms.ISTA`
+ * :py:class:`fastmat.algorithms.FISTA`
+ * :py:class:`fastmat.algorithms.OMP`
+ * :py:class:`fastmat.algorithms.STELA`
 
 """
 # algorithms for sparse recovery

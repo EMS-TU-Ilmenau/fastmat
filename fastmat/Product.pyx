@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -195,6 +195,8 @@ cdef class Product(Matrix):
 
         # don't forget to return the conjugate as we use the backward
         return _conjugate(arrRes)
+
+    # TODO: Implement column and row norms
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

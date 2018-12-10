@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,8 +25,8 @@ cimport numpy as np
 from .core.types cimport ntype
 from .core.strides cimport *
 from .core.cmath cimport _arrEmpty
-from .Matrix cimport Matrix
 from .Eye cimport Eye
+from .Matrix cimport Matrix
 
 # have a very lazy import to avoid initialization of scipy.linalg during import
 # of main module
@@ -139,8 +139,17 @@ cdef class Hadamard(Matrix):
     cpdef object _getLargestSingularValue(self):
         return np.sqrt(self.numRows)
 
-    cpdef Matrix _getNormalized(self):
-        return Hadamard(self.order) * np.float32(1. / np.sqrt(self.numRows))
+    cpdef np.ndarray _getColNorms(self):
+        return np.full((self.numCols, ), np.sqrt(self.numCols))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.full((self.numRows, ), np.sqrt(self.numRows))
+
+    cpdef Matrix _getColNormalized(self):
+        return self * (1. / np.sqrt(self.numCols))
+
+    cpdef Matrix _getRowNormalized(self):
+        return self * (1. / np.sqrt(self.numRows))
 
     cpdef Matrix _getGram(self):
         return Eye(self.numRows) * np.float32(self.numRows)

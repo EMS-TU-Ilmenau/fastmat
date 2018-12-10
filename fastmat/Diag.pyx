@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -122,11 +122,20 @@ cdef class Diag(Matrix):
     cpdef Matrix _getGram(self):
         return Diag(np.abs(self._vecD) ** 2)
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
+        return np.abs(self._vecD)
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.abs(self._vecD)
+
+    cpdef Matrix _getColNormalized(self):
         if typeInfo[self.fusedType].isComplex:
-            return Diag((self._vecD / abs(self._vecD)).astype(self.dtype))
+            return Diag((self._vecD / np.abs(self._vecD)).astype(self.dtype))
         else:
             return Diag(np.sign(self._vecD).astype(self.dtype))
+
+    cpdef Matrix _getRowNormalized(self):
+        return self.colNormalized
 
     cpdef Matrix _getT(self):
         return self

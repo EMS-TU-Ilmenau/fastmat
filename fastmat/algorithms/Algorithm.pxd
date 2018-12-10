@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +20,17 @@ import cython
 import numpy as np
 cimport numpy as np
 
+from ..Matrix cimport Matrix
+
 ################################################## class Algorithm
 cdef class Algorithm(object):
-    cpdef _process(self, np.ndarray)
+    cpdef np.ndarray _process(self, np.ndarray)
     cpdef handleCallback(self, object)
     cpdef snapshot(self)
+
+    cdef dict __dict__
+
+    cdef list _trace
+
+    cdef object _cbTrace
+    cdef object _cbResult

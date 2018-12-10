@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -234,7 +234,7 @@ cdef class Toeplitz(Partial):
     cpdef np.ndarray _getArray(self):
         return self._reference()
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
         # NOTE: This method suffers accuracy losses when elements with lower
         # indices are large in magnitude compared to ones with higher index!
         cdef intsize iiMax = ((self.numRows + 1) if self.numCols > self.numRows
@@ -264,7 +264,7 @@ cdef class Toeplitz(Partial):
             arrNorms[ii] = (arrNorms[ii - 1] +
                             vecRSqr[ii - 1] - vecRSqr[ii - iiMax])
 
-        return self * Diag(1. / np.sqrt(arrNorms))
+        return np.sqrt(arrNorms)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
@@ -329,8 +329,8 @@ cdef class Toeplitz(Partial):
                 'num_M'         : TEST.Permutation([2, 3, 4, 5, 6]),
             },
             TEST.TRANSFORMS: {
-                # test differences in padding only for the transforms
-                'padding'       : TEST.Permutation([True, False]),
+                # during class tests we do not need to verify bluestein again
+                TEST.NUM_ROWS   : TEST.Permutation([7]),
             }
         }
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -356,26 +356,24 @@ def testGetRowsMultiple(test):
     return compareResults(test, query)
 
 
-################################################## test: normalized (property)
-def testNormalized(test):
-    instance, reference=test[TEST.INSTANCE], test[TEST.REFERENCE]
+################################################## test: column,rowNorms
+###                                            ### test: column,rowNormalized
+def _testNorms(test, funcTestcase, expectedType):
+    instance, reference = test[TEST.INSTANCE], test[TEST.REFERENCE]
 
     # usually expect the normalized matrix to be promoted in type complexity
     # due to division by column-norm during the process. However there exist
     # matrices that treat the problem differently. Exclude the expected pro-
     # motion for them.
     query=({} if isinstance(instance, (Diag, Eye, Zero))
-           else {TEST.TYPE_PROMOTION: np.float32})
+           else {TEST.TYPE_EXPECTED: expectedType})
 
     # ignore actual type of generated gram:
     query[TEST.CHECK_DATATYPE] = False
     query[TEST.TOL_MINEPS] = getTypeEps(safeTypeExpansion(instance.dtype))
 
     try:
-        query[TEST.RESULT_OUTPUT] = instance.normalized.array
-        query[TEST.RESULT_REF] = np.einsum(
-            'ij,j->ij', reference,
-            1. / np.apply_along_axis(np.linalg.norm, 0, reference))
+        funcTestcase(query, instance, reference)
         return compareResults(test, query)
     except ValueError:
         if isinstance(instance, Zero):
@@ -392,10 +390,54 @@ def testNormalized(test):
         return query
 
 
-######################################### test: largestSingularValue (property)
-def testLargestSingularValue(test):
-    instance = test[TEST.INSTANCE]
-    query = {TEST.TYPE_EXPECTED: np.float64}
+def testcolNorms(test):
+    def columnTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.colNorms
+        query[TEST.RESULT_REF] = np.apply_along_axis(
+            np.linalg.norm, 0, reference
+        )
+
+    return _testNorms(test, columnTestcase, np.float64)
+
+
+def testRowNorms(test):
+    def rowTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.rowNorms
+        query[TEST.RESULT_REF] = np.apply_along_axis(
+            np.linalg.norm, 1, reference
+        )
+
+    return _testNorms(test, rowTestcase, np.float64)
+
+
+def testcolNormsColNormalized(test):
+    def columnTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.colNormalized.array
+        query[TEST.RESULT_REF] = np.einsum(
+            'ij,j->ij',
+            reference,
+            1. / np.apply_along_axis(np.linalg.norm, 0, reference))
+
+    return _testNorms(test, columnTestcase,
+                      np.promote_types(test[TEST.INSTANCE].dtype, np.float64))
+
+
+def testRowNormalized(test):
+    def rowTestcase(query, instance, reference):
+        query[TEST.RESULT_OUTPUT] = instance.rowNormalized.array
+        query[TEST.RESULT_REF] = np.einsum(
+            'i,ij->ij',
+            1. / np.apply_along_axis(np.linalg.norm, 1, reference),
+            reference)
+
+    return _testNorms(test, rowTestcase,
+                      np.promote_types(test[TEST.INSTANCE].dtype, np.float64))
+
+
+################################################## test: largestSV (property)
+def testLargestSV(test):
+    query={TEST.TYPE_EXPECTED: np.float64}
+    instance=test[TEST.INSTANCE]
 
     # account for "extra computation stage" (gram) in largestSingularValue
     query[TEST.TOL_POWER] = test.get(TEST.TOL_POWER, 1.) * 2
@@ -539,8 +581,11 @@ class Test(Worker):
                     'gCm'   : testGetColsMultiple,
                     'gRs'   : testGetRowsSingle,
                     'gRm'   : testGetRowsMultiple,
-                    'nor'   : testNormalized,
-                    'lSV'   : testLargestSingularValue,
+                    'CnVec' : testcolNorms,
+                    'RnVec' : testRowNorms,
+                    'CnMat' : testcolNormsColNormalized,
+                    'RnMat' : testRowNormalized,
+                    'lSV'   : testLargestSV,
                     'gram'  : testGram,
                     'T'     : testTranspose,
                     'H'     : testHermitian,

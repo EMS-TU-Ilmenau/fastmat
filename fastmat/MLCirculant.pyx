@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -255,11 +255,17 @@ cdef class MLCirculant(Partial):
         if self.dtype != self._tenC.dtype:
             self._tenC = self._tenC.astype(self.dtype)
 
-    cpdef Matrix _getNormalized(self):
-        # As in the single level Circulant case, we simply calculate the
-        # frobenius norm of the whole tensor
-        norm = np.linalg.norm(self._tenC.reshape((-1)))
-        return self * (1. / norm)
+    cpdef np.ndarray _getColNorms(self):
+        return np.full((self._tenC.size, ), np.linalg.norm(self._tenC))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.full((self._tenC.size, ), np.linalg.norm(self._tenC))
+
+    cpdef Matrix _getColNormalized(self):
+        return self * (1. / np.linalg.norm(self._tenC))
+
+    cpdef Matrix _getRowNormalized(self):
+        return self * (1. / np.linalg.norm(self._tenC))
 
     cpdef np.ndarray _getArray(self):
         return self._reference()

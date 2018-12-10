@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=True
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -332,10 +332,8 @@ cdef class MLToeplitz(Partial):
 
         return arrS
 
-    cpdef Matrix _getNormalized(self):
-        arrDimorms = self._normalizeCore(self._tenT)
-
-        return self * Diag(1. / np.sqrt(arrDimorms))
+    cpdef np.ndarray _getColNorms(self):
+        return np.sqrt(self._normalizeCore(self._tenT))
 
     cpdef np.ndarray _normalizeCore(self, np.ndarray tenT):
         cdef intsize ii, numS1, numS2, numS3
@@ -383,6 +381,8 @@ cdef class MLToeplitz(Partial):
                     - arrT[numL - ii - 1]
 
         return arrDimorms
+
+    # TODO: Implement _getRowNorms
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):

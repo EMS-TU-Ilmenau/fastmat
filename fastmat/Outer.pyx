@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -135,6 +135,14 @@ cdef class Outer(Matrix):
 
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         return self._vecVRav[idxRow] * self._vecHRav[idxCol]
+
+    cpdef np.ndarray _getColNorms(self):
+        return (np.abs(self.vecH.reshape((-1, ))).astype(np.float64) *
+                np.linalg.norm(self.vecV))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return (np.abs(self.vecV.reshape((-1, ))).astype(np.float64) *
+                np.linalg.norm(self.vecH))
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

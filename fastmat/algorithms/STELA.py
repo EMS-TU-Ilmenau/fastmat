@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ from ..Matrix import Matrix
 class STELA(Algorithm):
     r"""Soft-Thresholding with simplified Exact Line search Algorithm (STELA)
 
-    The algorithm is presented in [4]_ with derivation and convergence results.
+    The algorithm is presented in [1]_ with derivation and convergence results.
 
     **Definition and Interface**:
     For a given matrix :math:`A \in \mathbb{C}^{m \times N}` with
@@ -69,12 +69,13 @@ class STELA(Algorithm):
         The proper choice of :math:`\lambda` is crucial for good perfomance
         of this algorithm, but this is not an easy task. Unfortunately we are
         not in the place here to give you a rule of thumb what to do, since it
-        highly depends on the application at hand. Again, consult [4]_ for any
+        highly depends on the application at hand. Again, consult [1]_ for any
         further considerations of this matter.
 
-    .. todo::
-        - Todos for STELA
-        - Check if its working
+    .. [1]  Y. Yang, M. Pesavento, "A Unified Successive Pseudoconvex
+            Approximation Framework", IEEE Transactions on Signal Processing,
+            vol. 65, no. 13, pp. 3313-3327, Dec 2017
+
 
     Parameters
     ----------
@@ -106,6 +107,9 @@ class STELA(Algorithm):
         self.numLambda = 0.1
         self.numMaxSteps = 100
         self.numMaxError = 1e-6
+
+        # initialize callbacks
+        self.cbStep = None
 
         # Update with extra arguments
         self.updateParameters(**kwargs)
@@ -156,7 +160,7 @@ class STELA(Algorithm):
 
         # squared norms of the system matrix
         self.arrD = (
-            1. / self.fmatA.normalized._content[-1]._vecD ** 2
+            1. / self.fmatA.colNormalized._content[-1]._vecD ** 2
         ).reshape((-1, 1))
 
         # vector for the stopping criterion
@@ -244,6 +248,9 @@ class STELA(Algorithm):
                 self.arrGamma[self.arrActive] * self.arrABxx[:, self.arrActive]
             self.arrZ[:, self.arrActive] = \
                 self.fmatA.backward(self.arrRes[:, self.arrActive])
+
+            self.handleCallback(self.cbStep)
+            self.handleCallback(self.cbTrace)
 
         # return the unthresholded values for all non-zero support elements
         # if we did not converge in the given number of steps

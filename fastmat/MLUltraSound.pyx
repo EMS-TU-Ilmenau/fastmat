@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -179,7 +179,7 @@ cdef class MLUltraSound(Partial):
     cpdef np.ndarray _getArray(self):
         return self._reference()
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
         cdef intsize ii, jj, numDim0 = self._arrDim[0]
 
         cdef intsize stride = np.prod(self._arrDim[1:])
@@ -192,9 +192,7 @@ cdef class MLUltraSound(Partial):
                     self._tenT[ii, jj, :, :]
                 )
 
-        #print(np.sqrt(arrNorms))
-
-        return self * Diag(1 / np.sqrt(arrNorms))
+        return np.sqrt(arrNorms)
 
     def _normalizeCore(self, tenT):
         cdef intsize ii, numS1, numS2, numS3
@@ -238,6 +236,8 @@ cdef class MLUltraSound(Partial):
                     + arrT[2 * numL - 2 - ii] \
                     - arrT[numL - ii - 1]
         return arrNorms
+
+    # TODO: Implement _getRowNorms
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):

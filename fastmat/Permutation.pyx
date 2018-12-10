@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,7 +94,16 @@ cdef class Permutation(Matrix):
     cpdef object _getLargestEigenValue(self):
         return 1.
 
-    cpdef Matrix _getNormalized(self):
+    cpdef np.ndarray _getColNorms(self):
+        return np.ones((self.numCols, ), dtype=self.dtype)
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.ones((self.numRows, ), dtype=self.dtype)
+
+    cpdef Matrix _getColNormalized(self):
+        return self
+
+    cpdef Matrix _getRowNormalized(self):
         return self
 
     ############################################## class property override

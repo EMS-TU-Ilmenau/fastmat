@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #cython: boundscheck=False, wraparound=False
 
-# Copyright 2016 Sebastian Semper, Christoph Wagner
+# Copyright 2018 Sebastian Semper, Christoph Wagner
 #     https://www.tu-ilmenau.de/it-ems/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -238,8 +238,17 @@ cdef class LFSRCirculant(Matrix):
         self._roll(arrRes[::-1], self.numRows - idx - 1)
         return arrRes
 
-    cpdef Matrix _getNormalized(self):
-        return self * np.float32(1. / np.sqrt(self.numRows))
+    cpdef np.ndarray _getColNorms(self):
+        return np.full((self.numCols, ), np.sqrt(self.numCols))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.full((self.numRows, ), np.sqrt(self.numRows))
+
+    cpdef Matrix _getColNormalized(self):
+        return self * (1. / np.sqrt(self.numCols))
+
+    cpdef Matrix _getRowNormalized(self):
+        return self * (1. / np.sqrt(self.numRows))
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
