@@ -46,5 +46,10 @@ cdef class MLToeplitz(Partial):
         bint verbose=?
     )
 
-    cpdef np.ndarray _normalizeColCore(self, np.ndarray tenT)
+    cpdef np.ndarray _normalizeColCore(
+        self, np.ndarray, np.ndarray, np.ndarray
+    )
+    cpdef np.ndarray _normalizeRowCore(
+        self, np.ndarray, np.ndarray, np.ndarray
+    )
     cpdef np.ndarray _reference(self)

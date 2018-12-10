@@ -72,7 +72,6 @@ cdef class MLToeplitz(Partial):
         # moreover we exploit the fact that some dimension allow zero padding
         # in order to speed up the fft calculations
 
-
         self._tenT = _arrSqueezedCopy(tenT)
         if self._tenT.ndim < 1:
             raise ValueError("Column-definition tensor must be at least 1D")
@@ -305,8 +304,9 @@ cdef class MLToeplitz(Partial):
                 ))
                 print("inequ Rows",
                       arrBP[ii] * np.prod(arrDimOut[ii + 1:]))
-                print("inequ Cols",
-                      (arrDimOut[ii] - arrBP[ii] + 1) * np.prod(arrDimOut[ii + 1:]))
+                print("inequ Cols", (
+                    arrDimOut[ii] - arrBP[ii] + 1
+                ) * np.prod(arrDimOut[ii + 1:]))
                 print("res Rows", np.mod(
                     np.arange(numRowsOut),
                     np.prod(arrDimOut[ii:])
@@ -314,7 +314,10 @@ cdef class MLToeplitz(Partial):
                 print("res Cols", np.mod(
                     np.arange(numColsOut),
                     np.prod(arrDimOut[ii:])
-                ) < (arrDimOut[ii] - arrBP[ii] + 1) * np.prod(arrDimOut[ii + 1:]))
+                ) < (
+                    arrDimOut[ii] - arrBP[ii] + 1
+                ) * np.prod(arrDimOut[ii + 1:]))
+
             # iteratively subselect more and more indices in arrSRows
             np.logical_and(
                 arrSRows,
@@ -330,71 +333,341 @@ cdef class MLToeplitz(Partial):
                 np.mod(
                     np.arange(numColsOut),
                     np.prod(arrDimOut[ii:])
-                ) < (arrDimOut[ii] - arrBP[ii] + 1) * np.prod(arrDimOut[ii + 1:]),
+                ) < (
+                    arrDimOut[ii] - arrBP[ii] + 1
+                ) * np.prod(arrDimOut[ii + 1:]),
                 arrSCols
             )
         return (arrSRows, arrSCols)
 
     cpdef np.ndarray _getColNorms(self):
-        return np.sqrt(self._normalizeColCore(self._tenT))
+        return np.sqrt(
+            self._normalizeColCore(
+                self._tenT,
+                self._arrDimRows,
+                self._arrDimCols
+            )
+        )
 
-    cpdef np.ndarray _normalizeColCore(self, np.ndarray tenT):
-        cdef intsize ii, numS1, numS2, numS3
+    cpdef np.ndarray _getRowNorms(self):
+        return np.sqrt(
+            self._normalizeRowCore(
+                self._tenT,
+                self._arrDimRows,
+                self._arrDimCols
+            )
+        )
 
-        cdef intsize numL = int((tenT.shape[0] + 1) /2)
+    cpdef np.ndarray _normalizeColCore(
+        self,
+        np.ndarray tenT,
+        np.ndarray arrDimRows,
+        np.ndarray arrDimCols
+    ):
+        cdef intsize ii
+        cdef numSizeRows1, numSizeRows2, numSizeCols1, numSizeCols2
+
+        # number of blocks in current level in direction of columns and rows
+        cdef intsize numRows = arrDimRows[0]
+        cdef intsize numCols = arrDimCols[0]
+
+        # number of defining elements in the current level
         cdef intsize numEll = tenT.shape[0]
 
+        # number of dimensions left in this current level
         cdef intsize numD = tenT.ndim
 
-        cdef np.ndarray arrT, arrDimorms
+        # data structures for the defining elements and the array
+        # of the norms in the current level
+        cdef np.ndarray arrT, arrNorms
         if numD == 1:
-            # if we are deep enough we do the normal toeplitz stuff
+            # if we are in the last level we do the normal toeplitz stuff
             arrT = tenT
 
-            arrDimorms = np.zeros(numL)
+            arrNorms = np.zeros(numCols)
 
-            arrDimorms[0] = np.linalg.norm(arrT[:numL]) **2
+            # the first element of the norms is the sum over the
+            # absolute values squared, where we use the first numRows elements
+            # in the (now) vector of defining elements
+            arrNorms[0] = np.sum(np.abs(arrT[:numRows]) ** 2)
 
-            for ii in range(numL - 1):
+            # first we go over the leftmost part of the matrix, which in the
+            # maximal case is the leftmost square part of the matrix
+            # it is only square iff numCols >= numRows
+            for ii in range(
+                min(numRows - 1, numCols - 1)
+            ):
+                addInd = numCols + numRows - 2 - ii
+                subInd = numRows - ii - 1
 
-                arrDimorms[ii + 1] = arrDimorms[ii] \
-                    + np.abs(arrT[2 * numL - 2 - ii]) ** 2 \
-                    - np.abs(arrT[numL - ii - 1]) ** 2
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                arrNorms[ii + 1] = (
+                    arrNorms[ii] + np.abs(arrT[addInd]) ** 2 -
+                    np.abs(arrT[subInd]) ** 2
+                )
 
+            # in case we have more columns than rows, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numCols > numRows:
+
+                for ii in range(numCols - numRows):
+
+                    addInd = numCols - 1 - ii
+                    subInd = (
+                        numRows + numCols - 1 - ii
+                    ) % (
+                        numRows + numCols - 1
+                    )
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    arrNorms[numRows + ii] = (
+                        arrNorms[numRows + ii - 1] +
+                        np.abs(arrT[addInd]) ** 2 -
+                        np.abs(arrT[subInd]) ** 2
+                    )
         else:
-            numS1 = np.prod(self._arrDim[-numD :])
-            numS2 = np.prod(self._arrDim[-(numD - 1) :])
-            arrDimorms = np.zeros(numS1)
-            arrT = np.zeros((numEll, numS2))
+            numSizeRows1 = np.prod(self._arrDimRows[-numD :])
+            numSizeRows2 = np.prod(self._arrDimRows[-(numD - 1) :])
+            numSizeCols1 = np.prod(self._arrDimCols[-numD :])
+            numSizeCols2 = np.prod(self._arrDimCols[-(numD - 1) :])
+            arrNorms = np.zeros(numSizeCols1)
+            arrT = np.zeros((numEll, numSizeCols2))
 
-            # go deeper in recursion and get norms of blocks
+            # go deeper in recursion and get column norms of blocks
+            # this will result in a 2D ndarray, where the first index ii
+            # corresponds to the block defined by tenT[ii,...]
+            # and it contains the squared column norms of these possibly
+            # multilevel toeplitz block.
             for ii in range(numEll):
-                arrT[ii, :] = self._normalizeCore(tenT[ii, :])
+                arrT[ii, :] = self._normalizeColCore(
+                    tenT[ii],
+                    arrDimRows[1:],
+                    arrDimCols[1:],
+                )
 
-            numS3 = arrT.shape[1]
-            arrDimorms[:numS3] = np.sum(arrT[:numL, :], axis=0)
+            # now again the first norm entry is the sum over the norms
+            # of the first numRows norms of the blocks a level deeper
+            arrNorms[:numSizeCols2] = np.sum(arrT[:numRows, :], axis=0)
 
-            # now do blockwise subtraction and addition
-            for ii in range(numL - 1):
+            # first we go over the leftmost blocks of the matrix, which in the
+            # maximal case is the leftmost part of the matrix
+            # here, the matrices are not square anymore, since the subblocks
+            # must not be square if numRows = numCols.
+            for ii in range(
+                min(numRows - 1, numCols - 1)
+            ):
 
-                arrDimorms[
-                    (ii +1) *numS2 : (ii +2) *numS2
-                ] = arrDimorms[ii *numS2 : (ii +1) *numS2] + \
-                    + arrT[2 * numL - 2 - ii] \
-                    - arrT[numL - ii - 1]
+                addInd = numCols + numRows - 2 - ii
+                subInd = numRows - ii - 1
 
-        return arrDimorms
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                #
+                arrNorms[
+                    (ii + 1) * numSizeCols2 : (ii + 2) * numSizeCols2
+                ] = (
+                    arrNorms[ii * numSizeCols2 : (ii + 1) * numSizeCols2] +
+                    arrT[addInd] -
+                    arrT[subInd]
+                )
 
-    # TODO: Implement _getRowNorms
+            # in case we have more blocks in column direction than in row
+            # direction, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numCols > numRows:
+
+                for ii in range(numCols - numRows):
+
+                    addInd = numCols - 1 - ii
+                    subInd = (
+                        numRows + numCols - 1 - ii
+                    ) % (numRows + numCols - 1)
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    # it basically is the same as in the single level case
+                    arrNorms[
+                        (
+                            numRows + ii
+                        ) * numSizeCols2 : (
+                            numRows + ii + 1
+                        ) * numSizeCols2
+                    ] = (
+                        arrNorms[ii * numSizeCols2 : (ii + 1) * numSizeCols2] -
+                        arrT[subInd] +
+                        arrT[addInd]
+                    )
+
+        return arrNorms
+
+    cpdef np.ndarray _normalizeRowCore(
+        self,
+        np.ndarray tenT,
+        np.ndarray arrDimRows,
+        np.ndarray arrDimCols
+    ):
+        cdef intsize ii
+        cdef numSizeRows1, numSizeRows2, numSizeCols1, numSizeCols2
+
+        # number of blocks in current level in direction of columns and rows
+        cdef intsize numRows = arrDimRows[0]
+        cdef intsize numCols = arrDimCols[0]
+
+        # number of defining elements in the current level
+        cdef intsize numEll = tenT.shape[0]
+
+        # number of dimensions left in this current level
+        cdef intsize numD = tenT.ndim
+
+        # data structures for the defining elements and the array
+        # of the norms in the current level
+        cdef np.ndarray arrT, arrNorms
+
+        if numD == 1:
+            # if we are in the last level we do the normal toeplitz stuff
+            arrT = tenT
+
+            arrNorms = np.zeros(numRows)
+
+            # the first element of the norms is the sum over the
+            # absolute values squared, where we use the first numRows elements
+            # in the (now) vector of defining elements
+            arrNorms[0] = (
+                np.sum(np.abs(arrT[numRows:]) ** 2) + np.abs(arrT[0]) ** 2
+            )
+
+            # first we go over the leftmost part of the matrix, which in the
+            # maximal case is the leftmost square part of the matrix
+            # it is only square iff numCols >= numRows
+            for ii in range(
+                min(numRows - 1, numCols - 1)
+            ):
+
+                subInd = numRows + ii
+                addInd = ii + 1
+
+                # print("#", ii + 1)
+                # print("-", subInd)
+                # print("+", addInd)
+
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                arrNorms[ii + 1] = (
+                    arrNorms[ii] +
+                    np.abs(arrT[addInd]) ** 2 -
+                    np.abs(arrT[subInd]) ** 2
+                )
+
+            # in case we have more columns than rows, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numRows > numCols:
+
+                for ii in range(numRows - numCols):
+
+                    subInd = ii
+                    addInd = numCols + ii
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    arrNorms[numCols + ii] = (
+                        arrNorms[numCols + ii - 1] +
+                        np.abs(arrT[addInd]) ** 2 -
+                        np.abs(arrT[subInd]) ** 2
+                    )
+        else:
+            numSizeRows1 = np.prod(self._arrDimRows[-numD :])
+            numSizeRows2 = np.prod(self._arrDimRows[-(numD - 1) :])
+            numSizeCols1 = np.prod(self._arrDimCols[-numD :])
+            numSizeCols2 = np.prod(self._arrDimCols[-(numD - 1) :])
+            arrNorms = np.zeros(numSizeRows1)
+            arrT = np.zeros((numEll, numSizeRows2))
+
+            # go deeper in recursion and get column norms of blocks
+            # this will result in a 2D ndarray, where the first index ii
+            # corresponds to the block defined by tenT[ii,...]
+            # and it contains the squared column norms of these possibly
+            # multilevel toeplitz block.
+            for ii in range(numEll):
+                arrT[ii, :] = self._normalizeRowCore(
+                    tenT[ii],
+                    arrDimRows[1:],
+                    arrDimCols[1:],
+                )
+
+            # now again the first norm entry is the sum over the norms
+            # of the first numRows norms of the blocks a level deeper
+            arrNorms[:numSizeRows2] = (
+                np.sum(arrT[numRows:, :], axis=0) +
+                arrT[0, :]
+            )
+
+            # first we go over the leftmost blocks of the matrix, which in the
+            # maximal case is the leftmost part of the matrix
+            # here, the matrices are not square anymore, since the subblocks
+            # must not be square if numRows = numCols.
+            for ii in range(
+                min(numRows - 1, numCols - 1)
+            ):
+
+                addInd = ii + 1
+                subInd = numRows + ii
+
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                arrNorms[
+                    (ii + 1) * numSizeRows2 : (ii + 2) * numSizeRows2
+                ] = arrNorms[
+                    ii * numSizeRows2 : (ii + 1) * numSizeRows2
+                ] + arrT[addInd] - arrT[subInd]
+
+            # in case we have more blocks in column direction than in row
+            # direction, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numRows > numCols:
+                for ii in range(numRows - numCols):
+                    addInd = numCols + ii
+                    subInd = ii
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    # it basically is the same as in the single level case
+                    arrNorms[
+                        (
+                            numCols + ii
+                        ) * numSizeRows2 : (
+                            numCols + ii + 1
+                        ) * numSizeRows2
+                    ] = (
+                        arrNorms[
+                            (numCols + ii - 1) * numSizeRows2
+                            :(numCols + ii) * numSizeRows2
+                        ] - arrT[subInd] + arrT[addInd]
+                    )
+
+        return arrNorms
 
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        return self._refRecursion(self._arrDim, self._tenT, False)
+        return self._refRecursion(
+            self._arrDimT,
+            self._arrDimRows,
+            self._arrDimCols,
+            self._tenT,
+            False
+        )
 
     def _refRecursion(
         self,
         np.ndarray arrDim,
-        np.ndarray tenU,
+        np.ndarray arrDimRows,
+        np.ndarray arrDimCols,
+        np.ndarray tenT,
         bint verbose=False
     ):
         '''
@@ -409,7 +682,7 @@ cdef class MLToeplitz(Partial):
         arrDim : :py:class:`numpy.ndarray`
             The dimensions in each level.
 
-        tenC : :py:class:`numpy.ndarray`
+        tenT : :py:class:`numpy.ndarray`
             The defining elements.
 
         verbose : bool
@@ -423,72 +696,92 @@ cdef class MLToeplitz(Partial):
         cdef intsize numD = arrDim.shape[0]
 
         # get size of resulting block toeplitz matrix
-        cdef intsize numRows = np.prod(arrDim)
+        cdef intsize numRows = np.prod(arrDimRows)
+        cdef intsize numCols = np.prod(arrDimCols)
 
         # get an array of all partial sequential products
         # starting at the front
-        cdef np.ndarray arrDimprod = np.array(
-            list(map(lambda ii : np.prod(arrDim[ii:]), range(numRows - 1)))
+        cdef np.ndarray arrDimRowProd = np.array(
+            list(map(lambda ii : np.prod(
+                arrDimRows[ii:]
+            ), range(numRows - 1)))
+        )
+        cdef np.ndarray arrDimColProd = np.array(
+            list(map(lambda ii : np.prod(
+                arrDimCols[ii:]
+            ), range(numCols - 1)))
         )
 
-        # permutation array for block placement, since we need to place the
-        # blocks in the same fashion, we arrange the elements in the blocks,
-        # such that the preprocessing does the right thing
-        cdef np.ndarray arrP = np.arange(2 * arrDim[0] - 1)
-        arrP = np.concatenate((arrP[:arrDim[0]][::-1], arrP[arrDim[0]:][::-1]))
-        arrP = np.argsort(arrP)
-
         # allocate memory for the result
-        cdef np.ndarray T = np.zeros((numRows, numRows), dtype=self.dtype)
+        cdef np.ndarray T = np.zeros((numRows, numCols), dtype=self.dtype)
         cdef np.ndarray subT
 
         # check if we can go a least a level deeper
         if numD > 1:
-
             # iterate over size of the first dimension
-            for nn_ in range(2 * arrDim[0] - 1):
-
-                # select the right block position with the permutation array
-                nn       = arrP[nn_]
-                tmp      = nn - arrDim[0] + 1
-                countAbs = arrDim[0] - abs(tmp)
-                countSig = 0 if tmp == 0 else tmp / abs(tmp)
+            for nn_ in range(arrDimRows[0] + arrDimCols[0] - 1):
 
                 # now calculate the block recursively
-                subT     = self._refRecursion(arrDim[1 :], tenU[nn_])
+                subT = self._refRecursion(
+                    arrDim[1:],
+                    arrDimRows[1:],
+                    arrDimCols[1:],
+                    tenT[nn_]
+                )
 
-                # decide whether it is below or above the diagonal or on it
-                # and the act accordingly
-                if countSig == 0:
-                    # we are on the diagonal
-                    for mm in range(countAbs):
+                # print(subT[:].shape)
+
+                # check if we are on or below the diagonal
+                if nn_ < arrDimRows[0]:
+                    # pass
+                    # print("bef")
+                    # if yes, we have it easy
+                    for mm in range(
+                        min(arrDimRows[0] - nn_, arrDimCols[0])
+                    ):
+                        mm_ = mm + nn_
+                        # print(nn_, mm, mm_)
+                        # print(T[
+                        #     mm_ * arrDimRowProd[1] :
+                        #         (mm_ + 1) * arrDimRowProd[1],
+                        #     mm * arrDimColProd[1] :
+                        #         (mm + 1) * arrDimColProd[1]
+                        # ].shape)
                         T[
-                            mm * arrDimprod[1] : (mm + 1) * arrDimprod[1],
-                            mm * arrDimprod[1] : (mm + 1) * arrDimprod[1]
-                        ] = subT
-                elif countSig < 0:
-                    # we are below the diagonal
-                    for mm in range(countAbs):
-                        T[
-                            (mm + abs(tmp))     * arrDimprod[1] :
-                            (mm + 1 + abs(tmp)) * arrDimprod[1],
-                            mm       * arrDimprod[1]            :
-                            (mm + 1) * arrDimprod[1]
+                            mm_ * arrDimRowProd[1] :
+                                (mm_ + 1) * arrDimRowProd[1],
+                            mm * arrDimColProd[1] :
+                                (mm + 1) * arrDimColProd[1]
                         ] = subT
                 else:
-                    # we are above the diagonal
-                    for mm in range(countAbs):
+                    # if not as well!
+                    # print("next")
+                    for mm in range(
+                        min(nn_ - arrDimRows[0] + 1, arrDimRows[0])
+                    ):
+                        rr = mm
+                        cc = arrDimCols[0] - nn_ + arrDimRows[0] + mm - 1
+                        # print("Row", rr)
+                        # print("Col", cc)
+                        # print("Ind", nn_)
+                        print(T[
+                            rr * arrDimRowProd[1] :
+                                (rr + 1) * arrDimRowProd[1],
+                            cc * arrDimColProd[1] :
+                                (cc + 1) * arrDimColProd[1]
+                        ].shape)
                         T[
-                            mm * arrDimprod[1] : (mm + 1) * arrDimprod[1],
-                            (mm + abs(tmp))     * arrDimprod[1] :
-                            (mm + 1 + abs(tmp)) * arrDimprod[1],
+                            rr * arrDimRowProd[1] :
+                                (rr + 1) * arrDimRowProd[1],
+                            cc * arrDimColProd[1] :
+                                (cc + 1) * arrDimColProd[1]
                         ] = subT
 
             return T
         else:
             # if we are in a lowest level, we just construct the right
             # single level toeplitz block
-            return Toeplitz(tenU[:numRows], tenU[numRows:][::-1]).array
+            return Toeplitz(tenT[:numRows], tenT[numRows:][::-1]).array
 
     ############################################## class inspection, QM
     def _getTest(self):
