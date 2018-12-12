@@ -27,6 +27,19 @@ CALL_BACKWARD = 'backward'
 ################################################################################
 ################################################## calibration storage
 def saveCalibration(filename):
+    """Short summary.
+
+    Parameters
+    ----------
+    filename : type
+        Description of parameter `filename`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     import json
     import os
     outData = {target.__name__: cal for target, cal in calData.items()}
@@ -42,6 +55,19 @@ def saveCalibration(filename):
 
 
 def loadCalibration(filename):
+    """Short summary.
+
+    Parameters
+    ----------
+    filename : type
+        Description of parameter `filename`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     import json
     from .. import classes
     classNames = {item.__name__: item for item in classes}
@@ -71,12 +97,40 @@ calData = {}
 
 
 def getMatrixCalibration(target):
+    """Short summary.
+
+    Parameters
+    ----------
+    target : type
+        Description of parameter `target`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     return calData.get(target, None)
 
 
 ################################################################################
 ################################################## calibration routines
 def calibrateClass(target, **options):
+    """Short summary.
+
+    Parameters
+    ----------
+    target : type
+        Description of parameter `target`.
+    **options : type
+        Description of parameter `**options`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     from fastmat.inspect import Benchmark, BENCH
     from .. import flags
 
@@ -174,6 +228,19 @@ def calibrateClass(target, **options):
 
 
 def calibrateAll(**options):
+    """Short summary.
+
+    Parameters
+    ----------
+    **options : type
+        Description of parameter `**options`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     from .. import classes
     verbose = options.pop('verbose', False)
     for cc in classes:

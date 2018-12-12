@@ -26,6 +26,21 @@ from ..Matrix import Matrix
 
 
 def getMemoryFootprint(obj, **options):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : type
+        Description of parameter `obj`.
+    **options : type
+        Description of parameter `**options`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Return the approximate memory footprint of an object with all of its
     contents.

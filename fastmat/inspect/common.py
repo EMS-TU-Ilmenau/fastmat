@@ -39,6 +39,7 @@ currentOS = pfSystem()
 ################################################################################
 ################################################## CONSTANT definition classes
 class ALIGNMENT(object):
+    """Short summary."""
     DONTCARE        = '-'
     FCONT           = 'F'
     CCONT           = 'C'
@@ -49,6 +50,7 @@ class ALIGNMENT(object):
 ################################################## Permutation funcs and classes
 
 class AccessDict(dict):
+    """Short summary."""
     def __getattr__(self, key):
         if key in self:
             return self[key]
@@ -64,6 +66,19 @@ class AccessDict(dict):
 
 
 def convertToAccessDicts(level):
+    """Short summary.
+
+    Parameters
+    ----------
+    level : type
+        Description of parameter `level`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     for key, value in level.items():
         if isinstance(value, dict) and (value is not value):
             level[key] = convertToAccessDicts(value)
@@ -73,6 +88,7 @@ def convertToAccessDicts(level):
 
 ################################################## class uniqueNameDict
 class uniqueNameDict(dict):
+    """Short summary."""
     '''
     Modified dictionary: suffixes key names with integer to maintain uniqueness.
     '''
@@ -94,6 +110,7 @@ reFormatString = re.compile(r'%\(.+\)')
 
 
 class paramDict(dict):
+    """Short summary."""
 
     def __getattr__(self, key):
         # evaluate nested format-string parameters, update format results
@@ -117,6 +134,7 @@ class paramDict(dict):
 
 ################################################## class Permutation
 class Permutation(list):
+    """Short summary."""
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__,
@@ -154,6 +172,25 @@ def paramApplyDefaults(
     templateKey=None,
     extraArgs=None
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    params : type
+        Description of parameter `params`.
+    templates : type
+        Description of parameter `templates`.
+    templateKey : type
+        Description of parameter `templateKey`.
+    extraArgs : type
+        Description of parameter `extraArgs`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
 
     # have some defaults from templates
     # first, fetch the template as defaults, then update with target,
@@ -192,6 +229,23 @@ def paramApplyDefaults(
 
 ################################################## paramPermute()
 def paramPermute(dictionary, copy=True, PermutationClass=Permutation):
+    """Short summary.
+
+    Parameters
+    ----------
+    dictionary : type
+        Description of parameter `dictionary`.
+    copy : type
+        Description of parameter `copy`.
+    PermutationClass : type
+        Description of parameter `PermutationClass`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Return a list of cartesian-product combination of all dictionary values
     holding a Permutation list object. If copy is True, the resulting list will
@@ -222,6 +276,21 @@ def paramPermute(dictionary, copy=True, PermutationClass=Permutation):
 
 ################################################## paramDereferentiate()
 def paramDereferentiate(currentLevel, paramDict=None):
+    """Short summary.
+
+    Parameters
+    ----------
+    currentLevel : type
+        Description of parameter `currentLevel`.
+    paramDict : type
+        Description of parameter `paramDict`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Replace all text value identifyers matching a target key name with the
     key values it's pointing to allowing parameter links. Then, recurse through
@@ -277,6 +346,21 @@ def paramDereferentiate(currentLevel, paramDict=None):
 
 ################################################## paramEvaluate()
 def paramEvaluate(currentLevel, paramDict=None):
+    """Short summary.
+
+    Parameters
+    ----------
+    currentLevel : type
+        Description of parameter `currentLevel`.
+    paramDict : type
+        Description of parameter `paramDict`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Evaluate all functions found in currentLevel with paramDict as argument.
     Repeat the process for nested containers.
@@ -316,6 +400,21 @@ def paramEvaluate(currentLevel, paramDict=None):
 ################################################## mergeDicts()
 # a little helper to safely merge two dictionaries
 def mergeDicts(a, b):
+    """Short summary.
+
+    Parameters
+    ----------
+    a : type
+        Description of parameter `a`.
+    b : type
+        Description of parameter `b`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Merge the dictionaries a and b such that entries in b have priority and the
     input Dictionary a remains unchanged.
@@ -330,6 +429,23 @@ def mergeDicts(a, b):
 
 ################################################## arrTestDist()
 def arrTestDist(shape, dtype, center=0):
+    """Short summary.
+
+    Parameters
+    ----------
+    shape : type
+        Description of parameter `shape`.
+    dtype : type
+        Description of parameter `dtype`.
+    center : type
+        Description of parameter `center`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     def _draw(shape):
         '''
         Draw a random floating-point number from a test distribution.
@@ -372,6 +488,27 @@ def arrTestDist(shape, dtype, center=0):
 
 def arrSparseTestDist(shape, dtype,
                       density=0.1, center=0, compactFullyOccupied=False):
+    """Short summary.
+
+    Parameters
+    ----------
+    shape : type
+        Description of parameter `shape`.
+    dtype : type
+        Description of parameter `dtype`.
+    density : type
+        Description of parameter `density`.
+    center : type
+        Description of parameter `center`.
+    compactFullyOccupied : type
+        Description of parameter `compactFullyOccupied`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     numSize = np.prod(shape)
     if compactFullyOccupied:
         # draw just enough samples randomly such that every row and column is
@@ -401,6 +538,21 @@ def arrSparseTestDist(shape, dtype,
 
 ################################################## arrAlign()
 def arrAlign(arr, alignment=ALIGNMENT.DONTCARE):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : type
+        Description of parameter `arr`.
+    alignment : type
+        Description of parameter `alignment`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     if alignment == ALIGNMENT.DONTCARE:
         return np.asanyarray(arr)
     elif alignment == ALIGNMENT.FCONT:
@@ -500,6 +652,23 @@ class ArrayGenerator(dict):
 
 
 def showContent(instance, seen=None, prefix=""):
+    """Short summary.
+
+    Parameters
+    ----------
+    instance : type
+        Description of parameter `instance`.
+    seen : type
+        Description of parameter `seen`.
+    prefix : type
+        Description of parameter `prefix`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Print a readable dependency tree of fastmat class instances
 
@@ -560,6 +729,21 @@ class COLOR():
 
 
 def fmtStr(string, color):
+    """Short summary.
+
+    Parameters
+    ----------
+    string : type
+        Description of parameter `string`.
+    color : type
+        Description of parameter `color`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Print a string quoted by some format specifiers.'''
     # colored output only supported with linux
     return ("%s%s%s" %(color, string, COLOR.END)
@@ -568,21 +752,73 @@ def fmtStr(string, color):
 
 
 def fmtGreen(string):
+    """Short summary.
+
+    Parameters
+    ----------
+    string : type
+        Description of parameter `string`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Print string in green.'''
     return fmtStr(string, COLOR.GREEN)
 
 
 def fmtRed(string):
+    """Short summary.
+
+    Parameters
+    ----------
+    string : type
+        Description of parameter `string`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Print string in red.'''
     return fmtStr(string, COLOR.RED)
 
 
 def fmtYellow(string):
+    """Short summary.
+
+    Parameters
+    ----------
+    string : type
+        Description of parameter `string`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Print string in yellow.'''
     return fmtStr(string, COLOR.YELLOW)
 
 
 def fmtBold(string):
+    """Short summary.
+
+    Parameters
+    ----------
+    string : type
+        Description of parameter `string`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Print string in bold face.'''
     return fmtStr(string, COLOR.BOLD)
 
@@ -591,6 +827,19 @@ reAnsiEscape = None
 
 
 def fmtEscape(string):
+    """Short summary.
+
+    Parameters
+    ----------
+    string : type
+        Description of parameter `string`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Return a string with all ASCII escape sequences removed.'''
     global reAnsiEscape
     if reAnsiEscape is None:
@@ -600,6 +849,21 @@ def fmtEscape(string):
 
 
 def dynFormat(s, *keys):
+    """Short summary.
+
+    Parameters
+    ----------
+    s : type
+        Description of parameter `s`.
+    *keys : type
+        Description of parameter `*keys`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     return s.replace('%', '%%(%s)') % keys
 
 
@@ -717,6 +981,7 @@ class NAME(object):
 ################################################################################
 ################################################## class Runner
 class Worker(object):
+    """Short summary."""
     '''
     options - dictionary structure containing options for multiple targets.
     {   'nameOfTarget': {'parameter': 123,
@@ -733,6 +998,21 @@ class Worker(object):
     target=None
 
     def __init__(self, targetClass, **options):
+        """Short summary.
+
+        Parameters
+        ----------
+        targetClass : type
+            Description of parameter `targetClass`.
+        **options : type
+            Description of parameter `**options`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         '''
         Setup an inspection environment on a fastmat class specified in target.
         Along the way an empty instance of target will be created and aside
@@ -805,14 +1085,55 @@ class Worker(object):
         self.results=AccessDict({})
 
     def emitStatus(self, *args):
+        """Short summary.
+
+        Parameters
+        ----------
+        *args : type
+            Description of parameter `*args`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         if self.cbStatus is not None:
             self.cbStatus(*args)
 
     def emitResult(self, *args):
+        """Short summary.
+
+        Parameters
+        ----------
+        *args : type
+            Description of parameter `*args`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         if self.cbResult is not None:
             self.cbResult(*args)
 
     def run(self, *targetNames, **extraArgs):
+        """Short summary.
+
+        Parameters
+        ----------
+        *targetNames : type
+            Description of parameter `*targetNames`.
+        **extraArgs : type
+            Description of parameter `**extraArgs`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         '''
         Execute all selected targets by a list of targetNames.
         If *targetNames is empty all targets will be run.
