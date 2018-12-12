@@ -34,6 +34,25 @@ np.import_array()
 ################################################################################
 cdef int _findFFTFactors(int targetLength, int maxFactor,
                          int state, int bestState):
+    """Short summary.
+
+    Parameters
+    ----------
+    targetLength : int
+        Description of parameter `targetLength`.
+    maxFactor : int
+        Description of parameter `maxFactor`.
+    state : int
+        Description of parameter `state`.
+    bestState : int
+        Description of parameter `bestState`.
+
+    Returns
+    -------
+    int
+        Description of returned object.
+
+    """
     cdef int ff, length, complexity, newState
     for ff in range(maxFactor, 0, -1):
         length = (state & 0xFFFF) * ff
@@ -54,6 +73,21 @@ cdef int _findFFTFactors(int targetLength, int maxFactor,
 
 
 cpdef intsize _findOptimalFFTSize(intsize order, int maxStage):
+    """Short summary.
+
+    Parameters
+    ----------
+    order : intsize
+        Description of parameter `order`.
+    maxStage : int
+        Description of parameter `maxStage`.
+
+    Returns
+    -------
+    intsize
+        Description of returned object.
+
+    """
     cdef intsize paddedSize = 1, minimalSize = order
     cdef float remaining = minimalSize
     cdef int x, complexity, length
@@ -81,6 +115,19 @@ cpdef intsize _findOptimalFFTSize(intsize order, int maxStage):
 
 
 cpdef float _getFFTComplexity(intsize N):
+    """Short summary.
+
+    Parameters
+    ----------
+    N : intsize
+        Description of parameter `N`.
+
+    Returns
+    -------
+    float
+        Description of returned object.
+
+    """
     '''
     Return an estimate on the complexity of a typical FFT algorithm.
 
@@ -137,6 +184,23 @@ cpdef float _getFFTComplexity(intsize N):
 
 
 def profileCall(reps, call, *args):
+    """Short summary.
+
+    Parameters
+    ----------
+    reps : type
+        Description of parameter `reps`.
+    call : type
+        Description of parameter `call`.
+    *args : type
+        Description of parameter `*args`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     wrapper for measuring the runtime of 'call' by averaging the runtime
     of many repeated calls.
@@ -197,6 +261,27 @@ cpdef np.ndarray _arrZero(
     ntype dtype,
     bint fortranStyle=True
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    dims : int
+        Description of parameter `dims`.
+    numRows : intsize
+        Description of parameter `numRows`.
+    numCols : intsize
+        Description of parameter `numCols`.
+    dtype : ntype
+        Description of parameter `dtype`.
+    fortranStyle : bint
+        Description of parameter `fortranStyle`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     '''
     Create and zero-init new ndarray of specified shape and data type
     (up to two dimensions).
@@ -221,6 +306,27 @@ cpdef np.ndarray _arrEmpty(
     ntype dtype,
     bint fortranStyle=True
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    dims : int
+        Description of parameter `dims`.
+    numRows : intsize
+        Description of parameter `numRows`.
+    numCols : intsize
+        Description of parameter `numCols`.
+    dtype : ntype
+        Description of parameter `dtype`.
+    fortranStyle : bint
+        Description of parameter `fortranStyle`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     '''
     Create an empty ndarray of specified shape and data type
     (up to two dimensions)
@@ -241,6 +347,21 @@ cdef np.ndarray _arrSqueeze1D(
     object data,
     int flags
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    data : object
+        Description of parameter `data`.
+    flags : int
+        Description of parameter `flags`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     '''
     Return a squeezed, at least 1D version of the given data structure and
     consider special flags for the initial object conversion.
@@ -257,6 +378,19 @@ cdef np.ndarray _arrSqueeze1D(
 cpdef np.ndarray _arrSqueeze(
     object data
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    data : object
+        Description of parameter `data`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     '''
     Return a squeezed, at least 1D version of the given data structure.
     '''
@@ -267,6 +401,19 @@ cpdef np.ndarray _arrSqueeze(
 cpdef np.ndarray _arrSqueezedCopy(
     object data
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    data : object
+        Description of parameter `data`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     '''
     Return a squeezed, at least 1D copy of the given data structure.
     '''
@@ -281,6 +428,27 @@ cpdef np.ndarray _arrReshape(
     intsize numCols,
     np.NPY_ORDER order
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+    dims : int
+        Description of parameter `dims`.
+    numRows : intsize
+        Description of parameter `numRows`.
+    numCols : intsize
+        Description of parameter `numCols`.
+    order : np.NPY_ORDER
+        Description of parameter `order`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     cdef np.PyArray_Dims shape2D
     cdef np.npy_intp shape[2]
     shape2D.ptr = &shape[0]
@@ -299,6 +467,27 @@ cpdef bint _arrResize(
     intsize numCols,
     np.NPY_ORDER order
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+    dims : int
+        Description of parameter `dims`.
+    numRows : intsize
+        Description of parameter `numRows`.
+    numCols : intsize
+        Description of parameter `numCols`.
+    order : np.NPY_ORDER
+        Description of parameter `order`.
+
+    Returns
+    -------
+    bint
+        Description of returned object.
+
+    """
     cdef np.PyArray_Dims shape2D
     cdef np.npy_intp shape[2]
     shape2D.ptr = &shape[0]
@@ -315,6 +504,23 @@ cpdef np.ndarray _arrCopyExt(
     ntype dtype,
     int flags
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+    dtype : ntype
+        Description of parameter `dtype`.
+    flags : int
+        Description of parameter `flags`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     return np.PyArray_FROM_OTF(arr, dtype, flags)
 
 
@@ -323,6 +529,21 @@ cpdef np.ndarray _arrForceType(
     np.ndarray arr,
     ntype typeArr
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+    typeArr : ntype
+        Description of parameter `typeArr`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     return arr if (np.PyArray_TYPE(arr) == typeArr) \
         else np.PyArray_FROM_OT(arr, typeArr)
 
@@ -333,6 +554,23 @@ cpdef np.ndarray _arrForceAlignment(
     int flags,
     bint fortranStyle=True
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+    flags : int
+        Description of parameter `flags`.
+    fortranStyle : bint
+        Description of parameter `fortranStyle`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     if np.PyArray_ISONESEGMENT(arr) and \
        (np.PyArray_ISFORTRAN(arr) == fortranStyle) and \
        np.PyArray_ISCONTIGUOUS(arr):
@@ -353,6 +591,25 @@ cpdef np.ndarray _arrForceTypeAlignment(
     int flags,
     bint fortranStyle=True
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+    typeArr : ntype
+        Description of parameter `typeArr`.
+    flags : int
+        Description of parameter `flags`.
+    fortranStyle : bint
+        Description of parameter `fortranStyle`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     if (np.PyArray_TYPE(arr) == typeArr) and \
             np.PyArray_ISONESEGMENT(arr) and \
             (np.PyArray_ISFORTRAN(arr) == fortranStyle) and \
@@ -373,6 +630,21 @@ cdef void _conjugateMV1(
     TYPE_COMPLEX[:] input,
     TYPE_COMPLEX[:] output
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    TYPE_COMPLEX[ : ] input
+        Description of parameter `TYPE_COMPLEX[`.
+    TYPE_COMPLEX[ : ] output
+        Description of parameter `TYPE_COMPLEX[`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''
     Conjugate contents of memoryview in input and write to output.
     If the memoryview data type is not complex return False, indicating
@@ -389,6 +661,21 @@ cdef void _conjugateMV2(
     TYPE_COMPLEX[:, :] input,
     TYPE_COMPLEX[:, :] output
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    TYPE_COMPLEX[ : , :] input
+        Description of parameter `TYPE_COMPLEX[`.
+    TYPE_COMPLEX[ : , :] output
+        Description of parameter `TYPE_COMPLEX[`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''
     Conjugate contents of memoryview in input and write to output.
     If the memoryview data type is not complex return False, indicating
@@ -403,6 +690,19 @@ cdef void _conjugateMV2(
 
 
 cpdef np.ndarray _conjugate(np.ndarray arr):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+
+    Returns
+    -------
+    np.ndarray
+        Description of returned object.
+
+    """
     '''
     Conjugate numpy ndarray non-destructively.
     Return a conjugated copy if complex input or original data view if real.
@@ -450,6 +750,21 @@ cdef void _conjInplaceCore(
     np.ndarray arr,
     TYPE_COMPLEX typeArr
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+    typeArr : TYPE_COMPLEX
+        Description of parameter `typeArr`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''
     Conjugate a raw data buffer of type TYPE_COMPLEX and cnt elements,
     assuming to be consecutive in memory
@@ -463,6 +778,19 @@ cdef void _conjInplaceCore(
 
 
 cpdef bint _conjugateInplace(np.ndarray arr):
+    """Short summary.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Description of parameter `arr`.
+
+    Returns
+    -------
+    bint
+        Description of returned object.
+
+    """
     '''
     Conjugate numpy ndarray in input and write to output.
     Performs as a wrapper for ndarrays
@@ -488,6 +816,21 @@ cdef np.float64_t _norm(
     TYPE_ALL *vec,
     intsize N
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    *vec : TYPE_ALL
+        Description of parameter `*vec`.
+    N : intsize
+        Description of parameter `N`.
+
+    Returns
+    -------
+    np.float64_t
+        Description of returned object.
+
+    """
     '''Compute the norm of the vector `vec`.'''
     cdef intsize nn
     cdef TYPE_ALL val
@@ -505,6 +848,19 @@ cdef np.float64_t _norm(
 
 
 cdef np.float64_t _normMV(TYPE_ALL[:] vec):
+    """Short summary.
+
+    Parameters
+    ----------
+    TYPE_ALL[ : ] vec
+        Description of parameter `TYPE_ALL[`.
+
+    Returns
+    -------
+    np.float64_t
+        Description of returned object.
+
+    """
     '''Compute the norm of the vector `vec`.'''
     cdef intsize nn, N = vec.shape[0]
     cdef TYPE_ALL val
@@ -524,6 +880,21 @@ cdef TYPE_ALL _corrMV(
     TYPE_ALL[:] vec1,
     TYPE_ALL[:] vec2
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    TYPE_ALL[ : ] vec1
+        Description of parameter `TYPE_ALL[`.
+    TYPE_ALL[ : ] vec2
+        Description of parameter `TYPE_ALL[`.
+
+    Returns
+    -------
+    TYPE_ALL
+        Description of returned object.
+
+    """
     '''Compute the correlation of the vectors `vec1` and `vec2`.'''
     cdef intsize nn, N = vec1.shape[0]
     cdef TYPE_ALL corr = 0
@@ -545,6 +916,33 @@ cdef void _opCoreI(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : TYPE_IN_I
+        Description of parameter `tIn`.
+    tOp : TYPE_OP_I
+        Description of parameter `tOp`.
+    tOut : TYPE_INT
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''
     '''
     # never use arrIn.shape[1] without checking dimension count of arrIn !
@@ -601,6 +999,33 @@ cdef void _opCoreF(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : TYPE_IN_R
+        Description of parameter `tIn`.
+    tOp : TYPE_OP_R
+        Description of parameter `tOp`.
+    tOut : TYPE_REAL
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''
     '''
     # never use arrIn.shape[1] without checking dimension count of arrIn !
@@ -657,6 +1082,33 @@ cdef void _opCoreC(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : TYPE_IN
+        Description of parameter `tIn`.
+    tOp : TYPE_OP
+        Description of parameter `tOp`.
+    tOut : TYPE_COMPLEX
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''
     '''
     # never use arrIn.shape[1] without checking dimension count of arrIn !
@@ -714,6 +1166,33 @@ cdef void _opI(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : ftype
+        Description of parameter `tOp`.
+    tOut : TYPE_INT
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''    '''
     # dispatch specialization of core routine according tOptor
     if tIn == TYPE_INT8:
@@ -781,6 +1260,33 @@ cdef void _opRIn(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : TYPE_OP_R
+        Description of parameter `tOp`.
+    tOut : TYPE_REAL
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''     '''
     # dispatch specialization of core routine according tOptor
     if tIn == TYPE_INT8:
@@ -813,6 +1319,33 @@ cdef void _opR(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : ftype
+        Description of parameter `tOp`.
+    tOut : TYPE_REAL
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''    '''
     # dispatch specialization of core routine according tOptor
     if tOp == TYPE_INT8:
@@ -846,6 +1379,33 @@ cdef void _opCIn(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : TYPE_OP
+        Description of parameter `tOp`.
+    tOut : TYPE_COMPLEX
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''    '''
     # dispatch specialization of core routine according tOptor
     if tIn == TYPE_INT8:
@@ -884,6 +1444,33 @@ cdef void _opC(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : ftype
+        Description of parameter `tOp`.
+    tOut : TYPE_COMPLEX
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     '''    '''
     # dispatch specialization of core routine according tOptor
     if tOp == TYPE_INT8:
@@ -922,6 +1509,33 @@ cdef void _op(
     OP_MODE mode,
     intsize param
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : ftype
+        Description of parameter `tOp`.
+    tOut : ftype
+        Description of parameter `tOut`.
+    mode : OP_MODE
+        Description of parameter `mode`.
+    param : intsize
+        Description of parameter `param`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     # dispatch specialization of core routines according typeData
     if tOut == TYPE_INT8:
         _opI[np.int8_t](arrIn, arrOp, arrOut, tIn, tOp, tOut, mode, param)
@@ -950,6 +1564,29 @@ cpdef _multiply(
     ftype tOp,
     ftype tOut
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : ftype
+        Description of parameter `tOp`.
+    tOut : ftype
+        Description of parameter `tOut`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     '''
     _op(arrIn, arrOp, arrOut, tIn, tOp, tOut, MODE_MUL, 0)
@@ -966,4 +1603,29 @@ cpdef _dotSingleRow(
     ftype tOut,
     intsize iRow
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    arrIn : np.ndarray
+        Description of parameter `arrIn`.
+    arrOp : np.ndarray
+        Description of parameter `arrOp`.
+    arrOut : np.ndarray
+        Description of parameter `arrOut`.
+    tIn : ftype
+        Description of parameter `tIn`.
+    tOp : ftype
+        Description of parameter `tOp`.
+    tOut : ftype
+        Description of parameter `tOut`.
+    iRow : intsize
+        Description of parameter `iRow`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     _op(arrIn, arrOp, arrOut, tIn, tOp, tOut, MODE_DOTROW, iRow)

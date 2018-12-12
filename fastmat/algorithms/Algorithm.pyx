@@ -28,8 +28,6 @@ from ..core.resource import getMemoryFootprint
 cdef class Algorithm(object):
     r"""Algorithm Base Class
 
-
-    **Description:**
     The baseclass of all algorithms that operate on Matrices. This abstract
     baseclass introduces general framework concepts such as interfaces for
     parameter specification, algorithm execution, logging and callbacks.
