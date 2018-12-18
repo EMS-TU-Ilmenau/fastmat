@@ -156,7 +156,7 @@ cdef class Circulant(Partial):
         self._tenC = _tenC
 
         # extract the level dimensions from the defining tensor
-        self._arrDim = np.array((<object> self._tenC).shape)
+        cdef np.ndarray arrDim = np.array((<object> self._tenC).shape)
 
         # distinguish between dimension of circulant
         cdef np.ndarray arrIndices, arrNopt, arrNpad, arrOptSize, arrDoOpt
@@ -206,15 +206,15 @@ cdef class Circulant(Partial):
             # multi-level circulant matrix
 
             # minimum numbers to pad to during FFT optimization
-            arrNpad = 2 * self._arrDim - 1
+            arrNpad = 2 * arrDim - 1
 
             # array that will hold the calculated optimal FFT sizes
-            arrOptSize = np.zeros_like(self._arrDim)
+            arrOptSize = np.zeros_like(arrDim)
 
             # array that will hold 0 if we don't do an expansion of the
             # FFT size into this dimension and 1 if we do.
             # the dimensions are sorted like in arrDim
-            arrDoOpt = np.zeros_like(self._arrDim)
+            arrDoOpt = np.zeros_like(arrDim)
 
             if optimize:
                 # go through all level dimensions and get optimal FFT size
@@ -223,12 +223,12 @@ cdef class Circulant(Partial):
 
                     # use this size, if we get better in that level
                     if (_getFFTComplexity(arrOptSize[inn]) <
-                            _getFFTComplexity(self._arrDim[inn])):
+                            _getFFTComplexity(arrDim[inn])):
                         arrDoOpt[inn] = 1
 
             # convert the array to a boolean array
             arrDoOpt = arrDoOpt == 1
-            arrNopt = np.copy(self._arrDim)
+            arrNopt = np.copy(arrDim)
 
             # set the optimization size to the calculated one by replacing
             # the original sizes by the calculated better FFT sizes
@@ -247,14 +247,14 @@ cdef class Circulant(Partial):
             # algorithm in every direction
             # this cannot be done without the for loop, since
             # manipulations always influence the data for the next dimension
-            for ii in range(self._arrDim.size):
+            for ii in range(arrDim.size):
                 tenChat = np.apply_along_axis(
                     self._preProcSlice,
                     ii,
                     tenChat,
                     ii,
                     arrNopt,
-                    self._arrDim
+                    arrDim
                 )
 
             # after correct zeropadding, go into fourier domain by calculating
@@ -264,7 +264,7 @@ cdef class Circulant(Partial):
             # subselection array to remember the parts of the inflated matrix,
             # where the original d-level circulant matrix has its entries
             arrIndices = np.arange(numRowsopt)[
-                self._genArrS(self._arrDim, arrNopt)
+                self._genArrS(arrDim, arrNopt)
             ]
 
             # create the decomposing kronecker product, which realizes
@@ -279,7 +279,7 @@ cdef class Circulant(Partial):
 
             # initialize Partial of Product. Only use Partial when
             # inflating the size of the matrix
-            truncate = not np.allclose(self._arrDim, arrNopt)
+            truncate = not np.allclose(arrDim, arrNopt)
 
         # instantiate the matrix
         cdef dict kwargs = options.copy()
@@ -427,7 +427,11 @@ cdef class Circulant(Partial):
         return arrS
 
     cpdef np.ndarray _reference(self):
-        return self._refRecursion(self._arrDim, self._tenC, False)
+        return self._refRecursion(
+            np.array((<object> self._tenC).shape),
+            self._tenC,
+            False
+        )
 
     def _refRecursion(
         self,

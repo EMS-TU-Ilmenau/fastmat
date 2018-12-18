@@ -80,14 +80,9 @@ cdef class MLToeplitz(Partial):
 
         # extract the level dimensions from the defining tensor
         # and the breaking points
-        self._arrDimT = np.array(self._tenT[:].shape)
+        cdef np.ndarray arrDim = np.array((<object> self._tenT).shape)
         self._arrDimRows = arrBreakingPoints
-        self._arrDimCols = self._arrDimT - self._arrDimRows + 1
-
-        # array of the shape of the defining elements
-        cdef np.ndarray arrTenTSize = np.array(
-            self._tenT[:].shape
-        ).astype('int')
+        self._arrDimCols = arrDim - self._arrDimRows + 1
 
         # stages during optimization for calculating the optimal fft size
         cdef int maxStage = options.get('maxStage', 4)
@@ -95,16 +90,16 @@ cdef class MLToeplitz(Partial):
         # minimum number to pad to during optimization and helper arrays
         # these will describe the size of the resulting multilevel
         # circulant matrix where we embed everything in to
-        cdef np.ndarray arrDimPad = np.copy(arrTenTSize)
-        cdef np.ndarray arrOptSize = np.zeros_like(arrTenTSize)
-        cdef np.ndarray arrDoOpt = np.zeros_like(arrTenTSize)
+        cdef np.ndarray arrDimTPad = np.copy(arrDim)
+        cdef np.ndarray arrOptSize = np.zeros_like(arrDim)
+        cdef np.ndarray arrDoOpt = np.zeros_like(arrDim)
 
         cdef bint optimize = options.get('optimize', True)
 
         cdef intsize idd, dd
         if optimize:
             # go through all level dimensions and get optimal FFT size
-            for idd, dd in enumerate(arrDimPad):
+            for idd, dd in enumerate(arrDimTPad):
                 arrOptSize[idd] = _findOptimalFFTSize(dd, maxStage)
 
                 # use this size, if we get better in that level
@@ -113,7 +108,7 @@ cdef class MLToeplitz(Partial):
 
         # register in which level we will ultimately do zero padding
         arrDoOpt = arrDoOpt == 1
-        cdef np.ndarray arrDimOpt = np.copy(arrTenTSize)
+        cdef np.ndarray arrDimOpt = np.copy(arrDim)
 
         # set the optimization size to the calculated one, but only if we
         # decided for that level to do an optimization
@@ -141,7 +136,7 @@ cdef class MLToeplitz(Partial):
                 tenThat,
                 ii,
                 arrDimOpt,
-                self._arrDimT,
+                arrDim,
                 arrBreakingPoints
             )
 
@@ -154,7 +149,7 @@ cdef class MLToeplitz(Partial):
             self._arrDimCols,
             arrBreakingPoints,
             arrDimOpt,
-            self._arrDimT,
+            arrDim,
             False
         )
 
@@ -246,7 +241,7 @@ cdef class MLToeplitz(Partial):
         np.ndarray arrDimCols,
         np.ndarray arrBP,
         np.ndarray arrDimOut,
-        np.ndarray arrDimT,
+        np.ndarray arrDim,
         bint verbose=False
     ):
         '''
@@ -652,7 +647,7 @@ cdef class MLToeplitz(Partial):
     ############################################## class reference
     cpdef np.ndarray _reference(self):
         return self._refRecursion(
-            self._arrDimT,
+            np.array((<object> self._tenT).shape),
             self._arrDimRows,
             self._arrDimCols,
             self._tenT,

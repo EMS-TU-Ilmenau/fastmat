@@ -27,9 +27,8 @@ cdef class MLToeplitz(Partial):
 
     ############################################## class variables
     cdef public np.ndarray _tenT                 # matrix diagonal-entry tensor
-    cdef public np.ndarray _arrDimT           # dimensions per level
-    cdef public np.ndarray _arrDimRows           # dimensions per level
-    cdef public np.ndarray _arrDimCols           # dimensions per level
+    cdef public np.ndarray _arrDimRows           # Rows per level
+    cdef public np.ndarray _arrDimCols           # Columns per level
 
     ############################################## class methods
     cpdef np.ndarray _preProcSlice(
