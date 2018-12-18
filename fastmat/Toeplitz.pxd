@@ -25,8 +25,9 @@ from .Partial cimport Partial
 cdef class Toeplitz(Partial):
 
     ############################################## class variables
-    cdef public np.ndarray _vecC                 # Column-defining vector
-    cdef public np.ndarray _vecR                 # Row-defining vector
+    cdef public np.ndarray _tenT                 # matrix diagonal-entry tensor
+    cdef public np.ndarray _arrDimRows           # Rows per level
+    cdef public np.ndarray _arrDimCols           # Columns per level
 
     ############################################## class methods
     cpdef np.ndarray _reference(self)

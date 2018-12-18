@@ -102,24 +102,34 @@ cdef class Toeplitz(Partial):
     ``Partial``.
     """
 
+    property tenT:
+        r"""Return the defining Tensor of Toeplitz matrix."""
+
+        def __get__(self):
+            return self._tenT
+
     property vecC:
         r"""Return the column-defining vector of Toeplitz matrix."""
 
         def __get__(self):
-            return self._vecC
+            import warnings
+            warnings.warn('vecC is deprecated.', FutureWarning)
+            return self._tenT[:self._arrDimCols[0]]
 
     property vecR:
         r"""Return the row-defining vector of Toeplitz matrix."""
 
         def __get__(self):
-            return self._vecR
+            import warnings
+            warnings.warn('vecR is deprecated.', FutureWarning)
+            return self._tenT[self._arrDimCols[0]:]
 
-    def __init__(self, vecC, vecR, **options):
+    def __init__(self, *args, **options):
         '''
-        Initialize Circulant matrix instance.
+        Initialize Toeplitz matrix instance.
 
-        Parameters
-        ----------
+        Parameter for one-dimensional case
+        ----------------------------------
         vecC : :py:class:`numpy.ndarray`
             The generating column vector of the toeplitz matrix describing the
             first column of the matrix.
@@ -130,23 +140,118 @@ cdef class Toeplitz(Partial):
             in `vecC`.
 
         **options:
+            See below.
+
+        Parameter for one-or-multi-dimensional case
+        -------------------------------------------
+        tenT : :py:class:`numpy.ndarray`
+            The generating nd-array defining the toeplitz tensor. The matrix
+            data type is determined by the data type of this array. In this
+            parameter variant the column- and row-defining vectors are given
+            in one single vector. The intersection point between these two
+            vectors is given in the `splitpoint` option.
+
         **options:
-            See the special options of :py:class:`fastmat.Fourier`, which are
-            also supported by this matrix and the general options offered by
-            :py:meth:`fastmat.Matrix.__init__`.
+            See below.
+
+        Options
+        -------
+        splitpoint : :py:class:`numpy.ndarray`
+            A 1d vector specifying the split-point for row/column definition
+            of each vector. If this option is not specified each level
+            :math:`i` of `tenT` is assumed to have a square shape of size
+            :math:`T \in \mathbb{C}^{d_i \times d_i}` with the corresponding
+            dimension of `tenT` having :math:`d_i * 2 - 1` entries.
+
+            Defaults to a splitpoint vetor corresponding to all-square levels.
+
+
+        Also see the special options of :py:class:`fastmat.Fourier`, which are
+        also supported by this matrix and the general options offered by
+        :py:meth:`fastmat.Matrix.__init__`.
+
+
         '''
 
+        # multiplex different parameter variants during initialization
+        cdef np.ndarray vecC, vecR
+        cdef np.ndarray arrSplit = np.array(options.pop('splitpoint', []))
+        if len(args) == 1:
+            # define the Matrix by a tensor defining its levels over axes
+            self._arrT = args[0]
+        elif len(args) == 2:
+            if not all(isinstance(aa, np.ndarray) for aa in args):
+                raise ValueError(
+                    "You must specify two 1D-ndarrays containing the " +
+                    "column- and row-definition vectors or one ndarray tensor"
+                )
+
+            if arrSplit.size != 0:
+                raise ValueError(
+                    "You must not define split points when supplying " +
+                    "column- and row-definition vectors."
+                )
+
+            dataType = np.promote_types(args[0].dtype, args[1].dtype)
+            vecC = _arrSqueeze(args[0].astype(dataType))
+            vecR = _arrSqueeze(args[1].astype(dataType))
+            if (vecC.ndim != 1) or (vecR.ndim != 1):
+                raise ValueError(
+                    "Column- and row-definition vectors must be 1D."
+                )
+
+            arrSplit = np.array(vecC.size)
+            self._arrT = np.hstack(vecC, vecR)
+        else:
+            raise ValueError(
+                "Invalid number of arguments to Toeplitz: Expecting exactly " +
+                "one or two fixed arguments"
+            )
+
+        cdef np.ndarray tplShape = (<object> self._arrT).shape
+
+        # If no splitpoint vector was either given in options or generated from
+        # column- and row-definition vectors, assume square levels such that
+        # each dimension must obey the axis size relation (2 * n - 1)
+        if arrSplit.size == 0:
+            if not all(((ll + 1) % 2 == 0)
+                       for ll in tplShape):
+                raise ValueError(
+                    "Defining a tensor with non-square levels requires " +
+                    "explicit split points."
+                )
+
+            arrSplit = (np.ndarray(tplShape) + 1) // 2
+        if arrSplit.size != self._arrT.ndim:
+            raise ValueError(
+                "The split point vector must have one entry for each " +
+                "dimension of the defining tensor"
+            )
+        elif arrSplit.ndim != 1:
+            raise ValueError(
+                "The split point vector must be 1D"
+            )
+        elif any(ll < 1 or ll >= tplShape[ii]
+                 for ii, ll in enumerate(arrSplit)):
+            raise ValueError(
+                "Entry in splitpoint vector out of defining tensor bounds"
+            )
+
+
         # save generating vectors. Matrix sizes will be set by Product
-        dataType = np.promote_types(vecC.dtype, vecR.dtype)
-        self._vecC = vecC = _arrSqueeze(vecC.astype(dataType, copy=True))
-        self._vecR = vecR = _arrSqueeze(vecR.astype(dataType, copy=True))
+        dataType = self._arrT.dtype
+        vecC = _arrSqueeze(vecC.astype(dataType, copy=True))
+        vecR = _arrSqueeze(vecR.astype(dataType, copy=True))
+        self._arrDimCols = np.array(vecC.size)
+        self._arrDimRows = np.array(vecR.size + 1)
+        self._tenT = np.hstack((vecC, vecR))
 
         # evaluate options passed to class
         cdef bint optimize = options.get('optimize', True)
         cdef int maxStage = options.get('maxStage', 4)
 
         # perform padding (if enabled) and generate vector
-        cdef intsize size = len(vecC) + len(vecR)
+        cdef intsize size = self._tenT.size
         cdef intsize vecSize = size
 
         # determine if zero-padding of the convolution to achieve a better FFT
@@ -161,12 +266,12 @@ cdef class Toeplitz(Partial):
 
         if vecSize > size:
             # zero-padding pays off, so do it!
-            vec = np.concatenate([self._vecC,
+            vec = np.concatenate([vecC,
                                   np.zeros((vecSize - size,),
                                            dtype=dataType),
-                                  np.flipud(self._vecR)])
+                                  np.flipud(vecR)])
         else:
-            vec = np.concatenate([self._vecC, np.flipud(self._vecR)])
+            vec = np.concatenate([vecC, np.flipud(vecR)])
 
         # Describe as circulant matrix with product of data and vector
         # in fourier domain. Both fourier matrices cause scaling of the
@@ -183,53 +288,54 @@ cdef class Toeplitz(Partial):
 
         # initialize Partial of Product
         cdef dict kwargs = options.copy()
-        kwargs['rows'] = (np.arange(len(self._vecC))
-                          if size != len(self._vecC) else None)
-        kwargs['cols'] = (np.arange(len(self._vecR) + 1)
-                          if size != len(self._vecR) + 1 else None)
+        kwargs['rows'] = (np.arange(self._arrDimCols[0])
+                          if size != self._arrDimCols[0] else None)
+        kwargs['cols'] = (np.arange(self._arrDimRows[0])
+                          if size != self._arrDimRows[0] else None)
 
         super(Toeplitz, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
         # precision, therefore make sure vecC and vecR matches the precision of
         # the matrix itself
-        if self.dtype != self._vecC.dtype:
-            self._vecC = self._vecC.astype(self.dtype)
-
-        if self.dtype != self._vecR.dtype:
-            self._vecR = self._vecR.astype(self.dtype)
+        if self.dtype != self._tenT.dtype:
+            self._tenT = self._tenT.astype(self.dtype)
 
     ############################################## class property override
     cpdef np.ndarray _getCol(self, intsize idx):
         cdef np.ndarray arrRes
+        cdef intsize numCols = self._arrDimCols[0]
 
         if idx == 0:
-            return self._vecC
+            return self._tenT[:numCols]
         elif idx >= self.numRows:
             # double slicing needed, otherwise fail when numCols = numRows + 1
-            return self._vecR[idx - self.numRows:idx][::-1]
+            return self._tenT[numCols + idx - self.numRows:numCols + idx][::-1]
         else:
             arrRes = _arrEmpty(1, self.numRows, 0, self.numpyType)
-            arrRes[:idx] = self._vecR[idx - 1::-1]
-            arrRes[idx:] = self._vecC[:self.numRows - idx]
+            arrRes[:idx] = self._tenT[numCols + idx - 1::-1]
+            arrRes[idx:] = self._tenT[:self.numRows - idx]
             return arrRes
 
     cpdef np.ndarray _getRow(self, intsize idx):
         cdef np.ndarray arrRes
+        cdef intsize numCols = self._arrDimCols[0]
 
         if idx >= self.numCols - 1:
             # double slicing needed, otherwise fail when numRows = numCols + 1
-            return self._vecC[idx - self.numCols + 1:idx + 1][::-1]
+            return self._tenT[idx - self.numCols + 1:idx + 1][::-1]
         else:
             arrRes = _arrEmpty(1, self.numCols, 0, self.numpyType)
-            arrRes[:idx + 1] = self._vecC[idx::-1]
-            arrRes[idx + 1:] = self._vecR[:self.numCols - 1 - idx]
+            arrRes[:idx + 1] = self._tenT[idx::-1]
+            arrRes[idx + 1:] = self._tenT[
+                numCols:numCols + self.numCols - 1 - idx
+            ]
             return arrRes
 
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         cdef intsize distance = idxRow - idxCol
-        return (self._vecR[-distance - 1] if distance < 0
-                else self._vecC[distance])
+        return (self._tenT[-distance - 1] if distance < 0
+                else self._tenT[distance])
 
     cpdef np.ndarray _getArray(self):
         return self._reference()
@@ -245,8 +351,9 @@ cdef class Toeplitz(Partial):
 
         # compute the absolute value of the squared elements in the defining
         # vectors
-        cdef np.ndarray vecCSqr = np.square(np.abs(self._vecC))
-        cdef np.ndarray vecRSqr = np.square(np.abs(self._vecR))
+        cdef intsize numCols = self._arrDimCols[0]
+        cdef np.ndarray vecCSqr = np.square(np.abs(self._tenT[:numCols]))
+        cdef np.ndarray vecRSqr = np.square(np.abs(self._tenT[numCols:]))
 
         # the first column is easy
         arrNorms[0] = vecCSqr.sum()
@@ -274,19 +381,21 @@ cdef class Toeplitz(Partial):
     cpdef np.ndarray _reference(self):
         # _reference overloading from Partial is too slow. Therefore, construct
         # a reference directly from the vectors.
-        cdef intsize ii
+        cdef intsize ii, numCols = self._arrDimCols[0]
         cdef np.ndarray arrRes = np.empty(
             (self.numRows, self.numCols), dtype=self.dtype
         )
 
         # put columns in lower-triangular part of matrix
         for ii in range(0, min(self.numRows, self.numCols)):
-            arrRes[ii:self.numRows, ii] = self._vecC[0:(self.numRows - ii)]
+            arrRes[ii:self.numRows, ii] = self._tenT[
+                :(self.numRows - ii)
+            ]
 
         # put rows in upper-triangular part of matrix
         for ii in range(0, min(self.numRows, self.numCols - 1)):
-            arrRes[ii, (ii + 1):self.numCols] = self._vecR[
-                0:(self.numCols - ii - 1)
+            arrRes[ii, (ii + 1):self.numCols] = self._tenT[
+                numCols:numCols + (self.numCols - ii - 1)
             ]
 
         return arrRes
@@ -331,6 +440,16 @@ cdef class Toeplitz(Partial):
             TEST.TRANSFORMS: {
                 # during class tests we do not need to verify bluestein again
                 TEST.NUM_ROWS   : TEST.Permutation([7]),
+            },
+            'interface': {
+                TEST.TEMPLATE   : TEST.TRANSFORMS,
+                TEST.INITKWARGS : {
+                    'optimize'      : 'optimize',
+                    'splitpoint'    : 'splitpoint'
+                },
+                # during class tests we do not need to verify bluestein again
+                TEST.NUM_ROWS   : TEST.Permutation([7]),
+                'splitpoint'    :
             }
         }
 
