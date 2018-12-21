@@ -332,6 +332,7 @@ def testGetRowsSingle(test):
     arrOutput = np.empty((instance.numRows, instance.numCols), instance.dtype)
     for nn in range(instance.numRows):
         vecRow = instance.getRows(nn)
+        import sys
         if vecRow.ndim != 1:
             print('testGetRowsSingle', vecRow.shape, vecRow)
             result, ignored = False, False
@@ -753,7 +754,7 @@ class Test(Worker):
         # skip printing.
         if not self._verboseFull:
             if all(all((query.get(TEST.RESULT, True) or
-                        query.get(TEST.IGNORE, True))
+                        query.get(TEST.IGNORE, False))
                        for query in variant.values())
                    for variant in resultTest.values()):
                 return
