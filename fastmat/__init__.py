@@ -67,10 +67,12 @@ from .BlockDiag import BlockDiag
 from .Blocks import Blocks
 from .Circulant import Circulant
 from .Diag import Diag
+from .DiagBlocks import DiagBlocks
 from .Eye import Eye
 from .Fourier import Fourier
 from .Hadamard import Hadamard
 from .Kron import Kron
+from .LFSRCirculant import LFSRCirculant
 from .LowRank import LowRank
 from .Outer import Outer
 from .Parametric import Parametric
@@ -81,11 +83,6 @@ from .Sparse import Sparse
 from .Sum import Sum
 from .Toeplitz import Toeplitz
 from .Zero import Zero
-
-# new stuff
-from .DiagBlocks import DiagBlocks
-from .LFSRCirculant import LFSRCirculant
-from .MLToeplitz import MLToeplitz
 
 # define package version (gets overwritten by setup script)
 from .version import __version__
