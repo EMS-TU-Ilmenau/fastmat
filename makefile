@@ -93,7 +93,7 @@ STYLE_FILES=*.py fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
 	fastmat/*/*.py fastmat/*/*.pyx fastmat/*/*.pxd
 
 # STYLE_IGNORES lists the errors to be skipped during style check
-STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,E731,W504
+STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,E731,W504,W605
 
 # TEST_OPTIONS allows passing extra options to tests during `testCode`target
 TEST_OPTIONS=-i
