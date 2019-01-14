@@ -56,15 +56,8 @@ def importMatplotlib():
 colors = ['#003366', '#FF6600', '#CC0000', '#FCE1E1']
 
 ################################################## import fastmat
-try:
-    import fastmat
-    import fastmat.algorithms as fmAlgs
-except ImportError:
-    sys.path.append('..')
-    sys.path.append('.')
-    import fastmat
-    import fastmat.algorithms as fmAlgs
-
+import fastmat
+import fastmat.algorithms as fmAlgs
 from fastmat.inspect import Test, Benchmark, TEST, BENCH
 from fastmat.inspect.common import AccessDict, \
     fmtBold, fmtGreen, fmtYellow, fmtRed

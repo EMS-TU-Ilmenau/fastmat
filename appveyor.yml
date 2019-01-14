@@ -76,7 +76,7 @@ build_script:
   - pip install .
 
 test_script:
-  - python util/bee.py test -v
+  - python bee.py test -v
   - cibuildwheel --output-dir wheelhouse
   - twine upload "wheelhouse\\*.whl"
 
