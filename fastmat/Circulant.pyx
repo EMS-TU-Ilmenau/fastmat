@@ -560,11 +560,17 @@ cdef class Circulant(Partial):
                     TEST.SHAPE  : 'dimshape',
                     TEST.ALIGN  : TEST.PARAMALIGN
                 }),
-                TEST.INITARGS   : (lambda param : [param['tenC']()]),
-                TEST.INITKWARGS : {'optimize' : 'optimize'},
+                TEST.INITARGS   : (lambda param : [
+                    param['tenC']()
+                ]),
+                TEST.INITKWARGS : {
+                    'optimize'  : 'optimize'
+                },
                 TEST.OBJECT     : Circulant,
-                TEST.NAMINGARGS : dynFormat("%s,optimize=%s",
-                                            'tenC', str('optimize')),
+                TEST.NAMINGARGS : dynFormat(
+                    "%s,optimize=%s",
+                    'tenC', 'optimize'
+                ),
                 TEST.TOL_POWER  : 2.,
                 TEST.TOL_MINEPS : getTypeEps(np.float64)
             },

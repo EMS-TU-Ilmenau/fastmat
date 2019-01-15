@@ -1032,31 +1032,13 @@ cdef class Toeplitz(Partial):
                 # 35 is just any number that causes no padding
                 # 41 is the first size for which bluestein is faster
                 TEST.NUM_ROWS   : TEST.Permutation([5, 41]),
-                'num_cols'      : TEST.Permutation([4, 6]),
-                TEST.NUM_COLS   : (lambda param: param['num_cols'] + 1),
-                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
-                'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
-                'optimize'      : True,
+                TEST.NUM_COLS   : TEST.Permutation([4, 6]),
+                'optimize'      : TEST.Permutation([False, True]),
                 TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
-                'vecH'          : TEST.ArrayGenerator({
-                    TEST.DTYPE  : 'mTypeH',
-                    TEST.SHAPE  : (TEST.NUM_ROWS, ),
-                    TEST.ALIGN  : TEST.PARAMALIGN
-                }),
-                'vecV'          : TEST.ArrayGenerator({
-                    TEST.DTYPE  : 'mTypeV',
-                    TEST.SHAPE  : ('num_cols', ),
-                    TEST.ALIGN  : TEST.PARAMALIGN
-                }),
-                'split'         : TEST.Permutation([
-                    None,
-                ]),
-                TEST.INITARGS   : (lambda param : [param['vecH'](),
-                                                   param['vecV']()]),
-                TEST.INITKWARGS : (lambda param : {
-                    'optimize'      : param['optimize'],
-                    'split'         : param['split']
-                }),
+                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
+                TEST.INITKWARGS : {
+                    'optimize'      : 'optimize'
+                },
                 TEST.OBJECT     : Toeplitz,
                 TEST.TOL_POWER  : 2,
                 TEST.TOL_MINEPS : getTypeEps(np.float64)
@@ -1066,17 +1048,50 @@ cdef class Toeplitz(Partial):
                 # therefore, aside the symmetric shape case also test shapes
                 # that differ by +1/-1 and +x/-x in row and col size
                 TEST.NUM_ROWS   : 4,
-                'num_M'         : TEST.Permutation([2, 3, 4, 5, 6]),
-                TEST.NAMINGARGS : dynFormat("%s,%s,optimize=%s,split=%s",
-                                            'vecH', 'vecV', str('optimize'),
-                                            str('split')),
+                TEST.NUM_COLS   : TEST.Permutation([2, 3, 4, 5, 6]),
+                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
+                'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
+                'vecH'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeH',
+                    TEST.SHAPE  : (TEST.NUM_ROWS, ),
+                    TEST.ALIGN  : TEST.PARAMALIGN
+                }),
+                'vecV'          : (lambda param: TEST.ArrayGenerator({
+                    TEST.DTYPE  : param['mTypeV'],
+                    TEST.SHAPE  : (param[TEST.NUM_COLS] - 1, ),
+                    TEST.ALIGN  : param[TEST.PARAMALIGN]
+                })),
+                TEST.INITARGS   : (lambda param : [
+                    param.vecH(),
+                    param.vecV()
+                ]),
+                TEST.NAMINGARGS : dynFormat(
+                    "%s,%s,optimize=%s", 'vecH', 'vecV', 'optimize'
+                ),
             },
             TEST.TRANSFORMS: {
                 # during class tests we do not need to verify bluestein again
                 TEST.NUM_ROWS   : TEST.Permutation([7]),
-                TEST.NAMINGARGS : dynFormat("%s,%s,optimize=%s,split=%s",
-                                            'vecH', 'vecV', str('optimize'),
-                                            str('split')),
+                'vecVwidth'     : (lambda param: param[TEST.NUM_COLS] - 1),
+                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
+                'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
+                'vecH'          : TEST.ArrayGenerator({
+                    TEST.DTYPE  : 'mTypeH',
+                    TEST.SHAPE  : (TEST.NUM_ROWS, ),
+                    TEST.ALIGN  : TEST.PARAMALIGN
+                }),
+                'vecV'          : (lambda param: TEST.ArrayGenerator({
+                    TEST.DTYPE  : param['mTypeV'],
+                    TEST.SHAPE  : (param[TEST.NUM_COLS] - 1, ),
+                    TEST.ALIGN  : param[TEST.PARAMALIGN]
+                })),
+                TEST.INITARGS   : (lambda param : [
+                    param.vecH(),
+                    param.vecV()
+                ]),
+                TEST.NAMINGARGS : dynFormat(
+                    "%s,%s,optimize=%s", 'vecH', 'vecV', 'optimize'
+                ),
             },
             'classML': {
                 NAME.TEMPLATE   : TEST.CLASS,
@@ -1085,18 +1100,23 @@ cdef class Toeplitz(Partial):
                 TEST.NUM_ROWS   : 24,
                 TEST.NUM_COLS   : 24,
                 'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
-                'tenT'          : TEST.ArrayGenerator({
-                    TEST.DTYPE  : 'mTypeC',
+                'tenT'          : (lambda param: TEST.ArrayGenerator({
+                    TEST.DTYPE  : param['mTypeC'],
                     TEST.SHAPE  : (5, 5, 5),
-                    TEST.ALIGN  : TEST.PARAMALIGN
-                }),
-                'arrB'          : np.array([3, 2, 4]),
+                    TEST.ALIGN  : param[TEST.PARAMALIGN]
+                })),
+                'split'         : np.array([3, 2, 4]),
                 TEST.INITARGS   : (lambda param : [
-                    param['tenT']()
-                ])
-                TEST.NAMINGARGS : dynFormat("%s,optimize=%s,split=%s",
-                                            'tenT', str('optimize'),
-                                            str('split')),
+                    param.tenT()
+                ]),
+                TEST.INITKWARGS : {
+                    'optimize'      : 'optimize',
+                    'split'         : 'split'
+                },
+                TEST.NAMINGARGS : dynFormat(
+                    "%s,optimize=%s,split=%s",
+                    'tenT', 'optimize', 'split'
+                ),
             },
             'transformML': {
                 NAME.TEMPLATE   : TEST.TRANSFORMS,
@@ -1105,18 +1125,23 @@ cdef class Toeplitz(Partial):
                 TEST.NUM_ROWS   : 24,
                 TEST.NUM_COLS   : 24,
                 'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
-                'tenT'          : TEST.ArrayGenerator({
-                    TEST.DTYPE  : 'mTypeC',
+                'tenT'          : (lambda param: TEST.ArrayGenerator({
+                    TEST.DTYPE  : param['mTypeC'],
                     TEST.SHAPE  : (5, 5, 5),
-                    TEST.ALIGN  : TEST.PARAMALIGN
-                }),
-                'arrB'          : np.array([3, 2, 4]),
+                    TEST.ALIGN  : param[TEST.PARAMALIGN]
+                })),
+                'split'         : np.array([3, 2, 4]),
                 TEST.INITARGS   : (lambda param : [
-                    param['tenT']()
-                ])
-                TEST.NAMINGARGS : dynFormat("%s,optimize=%s,split=%s",
-                                            'tenT', str('optimize'),
-                                            str('split')),
+                    param.tenT()
+                ]),
+                TEST.INITKWARGS : {
+                    'optimize'      : 'optimize',
+                    'split'         : 'split'
+                },
+                TEST.NAMINGARGS : dynFormat(
+                    "%s,optimize=%s,split=%s",
+                    'tenT', 'optimize', 'split'
+                ),
             }
         }
 
