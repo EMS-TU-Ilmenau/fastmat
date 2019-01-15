@@ -86,7 +86,19 @@ class TEST(NAME):
 ##################################################  test implementations
 
 
-################################################## _compareResults
+################################################## tryQuery
+def tryQuery(nameTest, query, argument):
+    try:
+        return query(argument)
+    except Exception as e:
+        print("Exception %s in %s: %s" %(
+            repr(e), nameTest, query,
+        ))
+        pprint(argument)
+        raise e
+
+
+################################################## compareResults
 def compareResults(test, query):
 
     def getOption(option, default):
@@ -697,7 +709,7 @@ class Test(Worker):
         # iterate through tests
         for nameTest, test in sorted(tests.items()):
             # initialize instances and required stuff for each test
-            initTest(test)
+            tryQuery(nameTest, initTest, test)
 
             # get a pointer to the test result dictionary
             resultTest=resultTarget[nameTest]
@@ -719,7 +731,7 @@ class Test(Worker):
                 # execute test queries, collect results as [query-name] level
                 # and store in [variant-name] level into test result structure.
                 resultTest[variant[NAME.VARIANT]]={
-                    name: query(variant)
+                    name: tryQuery(nameTest, query, variant)
                     for name, query in test[TEST.QUERY].items()
                 }
 
