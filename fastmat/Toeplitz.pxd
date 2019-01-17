@@ -33,10 +33,6 @@ cdef class Toeplitz(Partial):
     cpdef np.ndarray _preProcSlice(
         self, np.ndarray, int, np.ndarray, np.ndarray, np.ndarray
     )
-    cpdef tuple _genArrS(
-        self, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-        bint verbose=?
-    )
     cpdef np.ndarray _normalizeColCore(
         self, np.ndarray, np.ndarray, np.ndarray
     )
