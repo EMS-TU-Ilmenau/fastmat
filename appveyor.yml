@@ -74,7 +74,7 @@ install:
 
 build_script:
   - pip install cibuildwheel==0.9.4 twine
-  - make compile
+  - python setup.py build_ext --inplace
   - pip install .
 
 test_script:
