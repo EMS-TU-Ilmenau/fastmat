@@ -66,7 +66,7 @@ author = 'Sebastian Semper, Christoph Wagner'
 # built documents.
 #
 # The short X.Y version.
-version = '1.0'
+version = str(fmv.__version__)
 # The full version, including alpha/beta/rc tags.
 release = str(fmv.__version__)
 
