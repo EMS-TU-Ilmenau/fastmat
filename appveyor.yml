@@ -102,8 +102,9 @@ install:
      print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
 build_script:
-  - pip install cibuildwheel==0.9.4 twine
-  - pip install .
+  - python -m pip install cibuildwheel==0.9.4 twine
+  - python setup.py build_ext --inplace
+  - python -m pip install .
 
 test_script:
   - python bee.py test -v
