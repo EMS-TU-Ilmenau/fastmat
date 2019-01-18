@@ -795,7 +795,7 @@ cdef class Matrix(object):
             if self._largestSingularValue is None:
                 return self.getLargestSingularValue()
             else:
-                self._largestSingularValue
+                return self._largestSingularValue
 
     def getLargestSingularValue(self):
         r"""Largest Singular Value
@@ -900,7 +900,7 @@ cdef class Matrix(object):
             if self._largestSingularVectors is None:
                 return self.getLargestSingularVectors()
             else:
-                self._largestSingularVectors
+                return self._largestSingularVectors
 
     def getLargestSingularVectors(self):
         result = self._getLargestSingularVectors()
