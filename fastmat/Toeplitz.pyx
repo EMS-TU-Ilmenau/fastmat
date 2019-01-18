@@ -23,6 +23,7 @@ from .core.cmath cimport *
 from .Matrix cimport Matrix
 from .Partial cimport Partial
 from .Product cimport Product
+from .Kron cimport Kron
 from .Fourier cimport Fourier
 from .Diag cimport Diag
 
@@ -102,24 +103,34 @@ cdef class Toeplitz(Partial):
     ``Partial``.
     """
 
+    property tenT:
+        r"""Return the defining Tensor of Toeplitz matrix."""
+
+        def __get__(self):
+            return self._tenT
+
     property vecC:
         r"""Return the column-defining vector of Toeplitz matrix."""
 
         def __get__(self):
-            return self._vecC
+            import warnings
+            warnings.warn('vecC is deprecated.', FutureWarning)
+            return self._tenT[:self._arrDimCols[0]]
 
     property vecR:
         r"""Return the row-defining vector of Toeplitz matrix."""
 
         def __get__(self):
-            return self._vecR
+            import warnings
+            warnings.warn('vecR is deprecated.', FutureWarning)
+            return self._tenT[self._arrDimCols[0]:]
 
-    def __init__(self, vecC, vecR, **options):
+    def __init__(self, *args, **options):
         '''
-        Initialize Circulant matrix instance.
+        Initialize Toeplitz matrix instance.
 
-        Parameters
-        ----------
+        Parameter for one-dimensional case
+        ----------------------------------
         vecC : :py:class:`numpy.ndarray`
             The generating column vector of the toeplitz matrix describing the
             first column of the matrix.
@@ -130,208 +141,712 @@ cdef class Toeplitz(Partial):
             in `vecC`.
 
         **options:
+            See below.
+
+        Parameter for one-or-multi-dimensional case
+        -------------------------------------------
+        tenT : :py:class:`numpy.ndarray`
+            The generating nd-array defining the toeplitz tensor. The matrix
+            data type is determined by the data type of this array. In this
+            parameter variant the column- and row-defining vectors are given
+            in one single vector. The intersection point between these two
+            vectors is given in the `split` option.
+
         **options:
-            See the special options of :py:class:`fastmat.Fourier`, which are
-            also supported by this matrix and the general options offered by
-            :py:meth:`fastmat.Matrix.__init__`.
+            See below.
+
+        Options
+        -------
+        split : :py:class:`numpy.ndarray`
+            A 1d vector specifying the split-point for row/column definition
+            of each vector. If this option is not specified each level
+            :math:`T \in \mathbb{C}^{d_i \times d_i}` with the corresponding
+            :math:`i` of `tenT` is assumed to have a square shape of size
+            dimension of `tenT` having :math:`d_i * 2 - 1` entries.
+
+            Defaults to a splitpoint vetor corresponding to all-square levels.
+
+
+        Also see the special options of :py:class:`fastmat.Fourier`, which are
+        also supported by this matrix and the general options offered by
+        :py:meth:`fastmat.Matrix.__init__`.
         '''
 
-        # save generating vectors. Matrix sizes will be set by Product
-        dataType = np.promote_types(vecC.dtype, vecR.dtype)
-        self._vecC = vecC = _arrSqueeze(vecC.astype(dataType, copy=True))
-        self._vecR = vecR = _arrSqueeze(vecR.astype(dataType, copy=True))
+        # The multidimensional implementation of this class exploits the fact
+        # that one can embed a multilevel toeplitz matrix into a multilevel
+        # circulant matrix so this initialization takes care of determining the
+        # size of the resulting circulant matrix and the pattern how we embed
+        # the toeplitz matrix into the circulant one moreover we exploit the
+        # fact that some dimension allow zero padding in order to speed up the
+        # fft calculations
 
-        # evaluate options passed to class
-        cdef bint optimize = options.get('optimize', True)
-        cdef int maxStage = options.get('maxStage', 4)
+        cdef np.ndarray vecC, vecR, arrDim, arrSplit
+        cdef int maxStage
+        cdef bint optimize
 
-        # perform padding (if enabled) and generate vector
-        cdef intsize size = len(vecC) + len(vecR)
-        cdef intsize vecSize = size
+        # multiplex different parameter variants during initialization
+        split = options.pop('split', None)
+        arrSplit = np.array([] if split is None else split)
 
-        # determine if zero-padding of the convolution to achieve a better FFT
-        # size is beneficial or not
-        if optimize:
-            vecSize = _findOptimalFFTSize(size, maxStage)
+        # pop FFT parameters
+        maxStage = options.get('maxStage', 4)    # max butterfly size per stage
+        optimize = options.get('optimize', True) # enable bluestein FFT variant
 
-            assert vecSize >= size
+        if len(args) == 1:
+            # define the Matrix by a tensor defining its levels over axes
+            self._tenT = args[0]
+        elif len(args) == 2:
+            if not all(isinstance(aa, np.ndarray) for aa in args):
+                raise ValueError(
+                    "You must specify two 1D-ndarrays containing the " +
+                    "column- and row-definition vectors or one ndarray tensor"
+                )
 
-            if _getFFTComplexity(size) <= _getFFTComplexity(vecSize):
-                vecSize = size
+            if arrSplit.size != 0:
+                raise ValueError(
+                    "You must not define split points when supplying " +
+                    "column- and row-definition vectors."
+                )
 
-        if vecSize > size:
-            # zero-padding pays off, so do it!
-            vec = np.concatenate([self._vecC,
-                                  np.zeros((vecSize - size,),
-                                           dtype=dataType),
-                                  np.flipud(self._vecR)])
+            dataType = np.promote_types(args[0].dtype, args[1].dtype)
+            vecC = _arrSqueeze(args[0].astype(dataType))
+            vecR = _arrSqueeze(args[1].astype(dataType))
+            if (vecC.ndim != 1) or (vecR.ndim != 1):
+                raise ValueError(
+                    "Column- and row-definition vectors must be 1D."
+                )
+
+            arrSplit = np.array(vecC.size)
+            self._tenT = np.hstack((vecC, vecR))
         else:
-            vec = np.concatenate([self._vecC, np.flipud(self._vecR)])
+            raise ValueError(
+                "Invalid number of arguments to Toeplitz: Expecting exactly " +
+                "one or two fixed arguments"
+            )
 
-        # Describe as circulant matrix with product of data and vector
-        # in fourier domain. Both fourier matrices cause scaling of the
-        # data vector by N, which will be compensated in Diag().
+        arrDim = np.array((<object> self._tenT).shape)
 
-        # Create inner product
-        cdef Fourier FN = Fourier(vecSize, **options)
-        cdef Product P = Product(
-            FN.H,
-            Diag(np.fft.fft(vec, axis=0) / vecSize, **options),
-            FN,
-            **options
-        )
+        # If no splitpoint vector was either given in options or generated from
+        # column- and row-definition vectors, assume square levels such that
+        # each dimension must obey the axis size relation (2 * n - 1)
+        arrSplit = np.atleast_1d(arrSplit)
+        if arrSplit.size == 0:
+            if not all(((ll + 1) % 2 == 0)
+                       for ll in arrDim):
+                raise ValueError(
+                    "Defining a tensor with non-square levels requires " +
+                    "explicit split points."
+                )
 
-        # initialize Partial of Product
+            arrSplit = (arrDim + 1) // 2
+
+        if arrSplit.size != self._tenT.ndim:
+            raise ValueError(
+                "The split point vector must have one entry for each " +
+                "dimension of the defining tensor"
+            )
+        elif arrSplit.ndim != 1:
+            raise ValueError(
+                "The split point vector must be 1D"
+            )
+        elif any(ll < 1 or ll > arrDim[ii]
+                 for ii, ll in enumerate(arrSplit)):
+            print(arrDim, arrSplit, (<object> self._tenT).shape)
+            raise ValueError(
+                "Entry in split vector outside of defining tensor bounds"
+            )
+
+        # determine row- and column- as well as definition vector size for
+        # each level
+        self._arrDimRows = arrSplit
+        self._arrDimCols = arrDim - self._arrDimRows + 1
+
+        cdef np.ndarray arrDimOpt, tenThat
+        cdef intsize size, sizeOpt, ii, dd
+        cdef Matrix FN
+        cdef Product P
         cdef dict kwargs = options.copy()
-        kwargs['rows'] = (np.arange(len(self._vecC))
-                          if size != len(self._vecC) else None)
-        kwargs['cols'] = (np.arange(len(self._vecR) + 1)
-                          if size != len(self._vecR) + 1 else None)
+        cdef dict Foptions = options.copy()
+        Foptions['optimize'] = False            # don't optimize fouriers again
 
+        # minimum number to pad to during optimization and helper arrays
+        # these will describe the size of the resulting multilevel
+        # circulant matrix where we embed everything in to
+        arrDimOpt = np.copy(arrDim)
+        if optimize:
+            # go through all level dimensions and get optimal FFT size
+            for ii, dd in enumerate(arrDim):
+                # use optimal size, if we can get better in that level
+                sizeOpt = _findOptimalFFTSize(dd, maxStage)
+                arrDimOpt[ii] = (sizeOpt if (_getFFTComplexity(sizeOpt) <
+                                             _getFFTComplexity(dd))
+                                 else dd)
+
+        # size is the size of the original tensor, sizeOpt with optimized sizes
+        size = np.prod(arrDim)
+        sizeOpt = np.prod(arrDimOpt)
+
+        # allocate memory for the tensor in MD fourier domain
+        tenThat = np.copy(self._tenT).astype('complex')
+
+        # go through the array and apply the preprocessing in direction
+        # of each axis. this cannot be done without the for loop, since
+        # manipulations always influence the data for the next dimension
+        # this preprocessing takes the defining elements and inserts zeros
+        # where we specified the breaking point in the defining elements to
+        # be
+        for ii in range(self._tenT.ndim):
+            tenThat = np.apply_along_axis(
+                self._preProcSlice, ii, tenThat, ii, arrDimOpt, arrDim, arrSplit
+            )
+
+        if self._tenT.ndim == 1:
+            # after correct zeropadding, go into fourier domain
+            tenThat = np.fft.fft(tenThat, axis=0)
+
+            # Describe as circulant matrix with product of data and vector
+            # in fourier domain. Both fourier matrices cause scaling of the
+            # data vector by N, which will be compensated in Diag().
+            F = Fourier(sizeOpt, **Foptions)
+        else:
+            # get the size of the zero padded circulant matrix
+            # it will be square but we still need to figure out, how the
+            # defining element look like and how the embedding pattern looks
+            # like
+
+            # after correct zeropadding, go into fourier domain
+            tenThat = np.fft.fftn(tenThat).reshape(sizeOpt)
+
+            # create the decomposing kronecker product, which just is a
+            # kronecker profuct of fourier matrices, since we now have a nice
+            # and simple circulant matrix
+            F = Kron(
+                *list(map(lambda ii : Fourier(ii, **Foptions), arrDimOpt)),
+                **options
+            )
+
+        # now decompose the toeplitz matrix as a product
+        P = Product(F.H, Diag(tenThat / sizeOpt, **options), F, **options)
+
+        # determine selection array of Partial to result in the correct Matrix
+        # subselected from the whole multi-level Circulant matrix
+        # begin with a basic indexing array of the inner level circulant's size
+        cdef np.ndarray arrS = np.arange(np.prod(arrDimOpt))
+
+        # initialize the result as all ones
+        cdef np.ndarray arrSRows = arrS >= 0
+        cdef np.ndarray arrSCols = arrS >= 0
+
+        cdef np.ndarray modCols, modRows
+        cdef intsize limRows, limCols, sizeLevelsBelow
+
+        for ii in range(self._tenT.ndim):
+            sizeLevelsBelow = np.prod(arrDimOpt[ii + 1:])
+            modRows = np.mod(arrS, arrDimOpt[ii] * sizeLevelsBelow)
+            modCols = np.mod(arrS, arrDimOpt[ii] * sizeLevelsBelow)
+            limRows = self._arrDimRows[ii] * sizeLevelsBelow
+            limCols = self._arrDimCols[ii] * sizeLevelsBelow
+            # print("State Rows", arrSRows)
+            # print("State Cols", arrSCols)
+            # print("modulus Rows", modRows)
+            # print("modulus Cols", modCols)
+            # print("lim Rows", limRows)
+            # print("lim Cols", limCols)
+            # print("res Rows", modRows < limRows)
+            # print("res Cols", modCols < limCols)
+
+            # iteratively subselect more and more indices in arrSRows
+            np.logical_and(arrSRows, modRows < limRows, arrSRows)
+            # iteratively subselect more and more indices in arrSCols
+            np.logical_and(arrSCols, modCols < limCols, arrSCols)
+
+        kwargs.update({'rows': arrSRows, 'cols': arrSCols})
+
+        # Finally, construct the multilevel Toeplitz matrix!
         super(Toeplitz, self).__init__(P, **kwargs)
 
         # Currently Fourier matrices bloat everything up to complex double
-        # precision, therefore make sure vecC and vecR matches the precision of
-        # the matrix itself
-        if self.dtype != self._vecC.dtype:
-            self._vecC = self._vecC.astype(self.dtype)
-
-        if self.dtype != self._vecR.dtype:
-            self._vecR = self._vecR.astype(self.dtype)
-
-    ############################################## class property override
-    cpdef np.ndarray _getCol(self, intsize idx):
-        cdef np.ndarray arrRes
-
-        if idx == 0:
-            return self._vecC
-        elif idx >= self.numRows:
-            # double slicing needed, otherwise fail when numCols = numRows + 1
-            return self._vecR[idx - self.numRows:idx][::-1]
-        else:
-            arrRes = _arrEmpty(1, self.numRows, 0, self.numpyType)
-            arrRes[:idx] = self._vecR[idx - 1::-1]
-            arrRes[idx:] = self._vecC[:self.numRows - idx]
-            return arrRes
-
-    cpdef np.ndarray _getRow(self, intsize idx):
-        cdef np.ndarray arrRes
-
-        if idx >= self.numCols - 1:
-            # double slicing needed, otherwise fail when numRows = numCols + 1
-            return self._vecC[idx - self.numCols + 1:idx + 1][::-1]
-        else:
-            arrRes = _arrEmpty(1, self.numCols, 0, self.numpyType)
-            arrRes[:idx + 1] = self._vecC[idx::-1]
-            arrRes[idx + 1:] = self._vecR[:self.numCols - 1 - idx]
-            return arrRes
-
-    cpdef object _getItem(self, intsize idxRow, intsize idxCol):
-        cdef intsize distance = idxRow - idxCol
-        return (self._vecR[-distance - 1] if distance < 0
-                else self._vecC[distance])
+        # precision, therefore make sure vecC and vecR matches the
+        # precision of the matrix itself
+        if self.dtype != self._tenT.dtype:
+            self._tenT = self._tenT.astype(self.dtype)
 
     cpdef np.ndarray _getArray(self):
         return self._reference()
-
-    cpdef np.ndarray _getColNorms(self):
-        # NOTE: This method suffers accuracy losses when elements with lower
-        # indices are large in magnitude compared to ones with higher index!
-        cdef intsize iiMax = ((self.numRows + 1) if self.numCols > self.numRows
-                              else self.numCols)
-
-        # fill in a placeholder array
-        cdef np.ndarray arrNorms = _arrZero(1, self.numCols, 1, np.NPY_FLOAT64)
-
-        # compute the absolute value of the squared elements in the defining
-        # vectors
-        cdef np.ndarray vecCSqr = np.square(np.abs(self._vecC))
-        cdef np.ndarray vecRSqr = np.square(np.abs(self._vecR))
-
-        # the first column is easy
-        arrNorms[0] = vecCSqr.sum()
-
-        # then follow the iterative approach. Every subsequent column features
-        # one more element of vecR and one less of vecC. Continue until vecC is
-        # eaten up completely
-        for ii in range(1, iiMax):
-            arrNorms[ii] = (arrNorms[ii - 1] + vecRSqr[ii - 1] -
-                            vecCSqr[self.numRows - ii])
-
-        # then (as vecC is eaten up), proceed with rolling the remaining
-        # elements of vecR until they are represented fully in arrNorms
-        for ii in range(iiMax, self.numCols):
-            arrNorms[ii] = (arrNorms[ii - 1] +
-                            vecRSqr[ii - 1] - vecRSqr[ii - iiMax])
-
-        return np.sqrt(arrNorms)
 
     ############################################## class property override
     cpdef tuple _getComplexity(self):
         return (0., 0.)
 
+    cpdef np.ndarray _preProcSlice(
+        self,
+        np.ndarray theSlice,
+        int numSliceInd,
+        np.ndarray arrDimOpt,
+        np.ndarray arrDim,
+        np.ndarray arrBP
+    ):
+        '''
+        Preprocess one axis of the tensor by zero-padding the center of the
+        axis according to bluestein's methos.
+
+        Parameters
+        ----------
+        theSlice : :py:class:`numpy.ndarray`
+            ?
+
+        numSliceInd : int
+            Axis to process.
+
+        arrDimOpt : :py:class:`numpy.ndarray`
+            Target shape of tensor after zero padding.
+
+        arrDim : :py:class:`numpy.ndarray`
+            Shape of the tensor befor zero padding.
+        '''
+        if arrDimOpt[numSliceInd] > arrDim[numSliceInd]:
+            # if the optimal size is larger than the tensor in this dimension
+            # we generate the needed amount of zeros and fiddle it into
+            # the defining elements at the breaking points
+            return np.concatenate((
+                np.copy(theSlice[:arrBP[numSliceInd]]),
+                np.zeros(arrDimOpt[numSliceInd] - arrDim[numSliceInd],
+                         dtype=theSlice.dtype),
+                np.copy(theSlice[arrBP[numSliceInd]:])
+            ))
+        else:
+            # we are lucky and we cannot do anything
+            return theSlice
+
+    cpdef np.ndarray _getColNorms(self):
+        return np.sqrt(self._normalizeColCore(
+            self._tenT, self._arrDimRows, self._arrDimCols
+        ))
+
+    cpdef np.ndarray _getRowNorms(self):
+        return np.sqrt(self._normalizeRowCore(
+            self._tenT, self._arrDimRows,   self._arrDimCols
+        ))
+
+    cpdef np.ndarray _normalizeColCore(
+        self,
+        np.ndarray tenT,
+        np.ndarray arrDimRows,
+        np.ndarray arrDimCols
+    ):
+        cdef intsize ii
+        cdef numSizeRows1, numSizeRows2, numSizeCols1, numSizeCols2
+
+        # number of blocks in current level in direction of columns and rows
+        cdef intsize numRows = arrDimRows[0]
+        cdef intsize numCols = arrDimCols[0]
+
+        # number of defining elements in the current level
+        cdef intsize numEll = tenT.shape[0]
+
+        # number of dimensions left in this current level
+        cdef intsize numD = tenT.ndim
+
+        # data structures for the defining elements and the array
+        # of the norms in the current level
+        cdef np.ndarray arrT, arrNorms
+        if numD == 1:
+            # if we are in the last level we do the normal toeplitz stuff
+            arrT = tenT
+            arrNorms = np.zeros(numCols)
+
+            # the first element of the norms is the sum over the
+            # absolute values squared, where we use the first numRows elements
+            # in the (now) vector of defining elements
+            arrNorms[0] = np.sum(np.abs(arrT[:numRows]) ** 2)
+
+            # first we go over the leftmost part of the matrix, which in the
+            # maximal case is the leftmost square part of the matrix
+            # it is only square iff numCols >= numRows
+            for ii in range(min(numRows - 1, numCols - 1)):
+                addInd = numCols + numRows - 2 - ii
+                subInd = numRows - ii - 1
+
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                arrNorms[ii + 1] = (
+                    arrNorms[ii] + np.abs(arrT[addInd]) ** 2 -
+                    np.abs(arrT[subInd]) ** 2
+                )
+
+            # in case we have more columns than rows, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numCols > numRows:
+                for ii in range(numCols - numRows):
+                    addInd = numCols - 1 - ii
+                    subInd = ((numRows + numCols - 1 - ii) %
+                              (numRows + numCols - 1))
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    arrNorms[numRows + ii] = (arrNorms[numRows + ii - 1] +
+                                              np.abs(arrT[addInd]) ** 2 -
+                                              np.abs(arrT[subInd]) ** 2)
+        else:
+            numSizeRows1 = np.prod(self._arrDimRows[-numD :])
+            numSizeRows2 = np.prod(self._arrDimRows[-(numD - 1) :])
+            numSizeCols1 = np.prod(self._arrDimCols[-numD :])
+            numSizeCols2 = np.prod(self._arrDimCols[-(numD - 1) :])
+            arrNorms = np.zeros(numSizeCols1)
+            arrT = np.zeros((numEll, numSizeCols2))
+
+            # go deeper in recursion and get column norms of blocks
+            # this will result in a 2D ndarray, where the first index ii
+            # corresponds to the block defined by tenT[ii,...]
+            # and it contains the squared column norms of these possibly
+            # multilevel toeplitz block.
+            for ii in range(numEll):
+                arrT[ii, :] = self._normalizeColCore(
+                    tenT[ii], arrDimRows[1:], arrDimCols[1:],
+                )
+
+            # now again the first norm entry is the sum over the norms
+            # of the first numRows norms of the blocks a level deeper
+            arrNorms[:numSizeCols2] = np.sum(arrT[:numRows, :], axis=0)
+
+            # first we go over the leftmost blocks of the matrix, which in the
+            # maximal case is the leftmost part of the matrix
+            # here, the matrices are not square anymore, since the subblocks
+            # must not be square if numRows = numCols.
+            for ii in range(min(numRows - 1, numCols - 1)):
+                addInd = numCols + numRows - 2 - ii
+                subInd = numRows - ii - 1
+
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                arrNorms[
+                    (ii + 1) * numSizeCols2:(ii + 2) * numSizeCols2
+                ] = arrNorms[
+                    ii * numSizeCols2:(ii + 1) * numSizeCols2
+                ] + arrT[addInd] - arrT[subInd]
+
+            # in case we have more blocks in column direction than in row
+            # direction, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numCols > numRows:
+                for ii in range(numCols - numRows):
+                    addInd = numCols - 1 - ii
+                    subInd = ((numRows + numCols - 1 - ii) %
+                              (numRows + numCols - 1))
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    # it basically is the same as in the single level case
+                    arrNorms[
+                        (numRows + ii) * numSizeCols2:
+                        (numRows + ii + 1) * numSizeCols2
+                    ] = arrNorms[
+                        (numRows + ii - 1) * numSizeCols2:
+                        (numRows + ii) * numSizeCols2
+                    ] - arrT[subInd] + arrT[addInd]
+
+        return arrNorms
+
+    cpdef np.ndarray _normalizeRowCore(
+        self,
+        np.ndarray tenT,
+        np.ndarray arrDimRows,
+        np.ndarray arrDimCols
+    ):
+        cdef intsize ii
+        cdef numSizeRows1, numSizeRows2, numSizeCols1, numSizeCols2
+
+        # number of blocks in current level in direction of columns and rows
+        cdef intsize numRows = arrDimRows[0]
+        cdef intsize numCols = arrDimCols[0]
+
+        # number of defining elements in the current level
+        cdef intsize numEll = tenT.shape[0]
+
+        # number of dimensions left in this current level
+        cdef intsize numD = tenT.ndim
+
+        # data structures for the defining elements and the array
+        # of the norms in the current level
+        cdef np.ndarray arrT, arrNorms
+
+        if numD == 1:
+            # if we are in the last level we do the normal toeplitz stuff
+            arrT = tenT
+            arrNorms = np.zeros(numRows)
+
+            # the first element of the norms is the sum over the
+            # absolute values squared, where we use the first numRows elements
+            # in the (now) vector of defining elements
+            arrNorms[0] = (
+                np.sum(np.abs(arrT[numRows:]) ** 2) + np.abs(arrT[0]) ** 2
+            )
+
+            # first we go over the leftmost part of the matrix, which in the
+            # maximal case is the leftmost square part of the matrix
+            # it is only square iff numCols >= numRows
+            for ii in range(min(numRows - 1, numCols - 1)):
+                subInd = numRows + ii
+                addInd = ii + 1
+                # print("#%d - %d + %d" %(ii + 1, subInd, addInd))
+
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                arrNorms[ii + 1] = (arrNorms[ii] +
+                                    np.abs(arrT[addInd]) ** 2 -
+                                    np.abs(arrT[subInd]) ** 2)
+
+            # in case we have more columns than rows, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numRows > numCols:
+                for ii in range(numRows - numCols):
+                    subInd = ii
+                    addInd = numCols + ii
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    arrNorms[numCols + ii] = (arrNorms[numCols + ii - 1] +
+                                              np.abs(arrT[addInd]) ** 2 -
+                                              np.abs(arrT[subInd]) ** 2)
+        else:
+            numSizeRows1 = np.prod(self._arrDimRows[-numD :])
+            numSizeRows2 = np.prod(self._arrDimRows[-(numD - 1) :])
+            numSizeCols1 = np.prod(self._arrDimCols[-numD :])
+            numSizeCols2 = np.prod(self._arrDimCols[-(numD - 1) :])
+            arrNorms = np.zeros(numSizeRows1)
+            arrT = np.zeros((numEll, numSizeRows2))
+
+            # go deeper in recursion and get column norms of blocks
+            # this will result in a 2D ndarray, where the first index ii
+            # corresponds to the block defined by tenT[ii,...]
+            # and it contains the squared column norms of these possibly
+            # multilevel toeplitz block.
+            for ii in range(numEll):
+                arrT[ii, :] = self._normalizeRowCore(
+                    tenT[ii], arrDimRows[1:], arrDimCols[1:],
+                )
+
+            # now again the first norm entry is the sum over the norms
+            # of the first numRows norms of the blocks a level deeper
+            arrNorms[:numSizeRows2] = (
+                np.sum(arrT[numRows:, :], axis=0) + arrT[0, :]
+            )
+
+            # first we go over the leftmost blocks of the matrix, which in the
+            # maximal case is the leftmost part of the matrix
+            # here, the matrices are not square anymore, since the subblocks
+            # must not be square if numRows = numCols.
+            for ii in range(min(numRows - 1, numCols - 1)):
+
+                addInd = ii + 1
+                subInd = numRows + ii
+
+                # here we subtract the element which has left the current
+                # column and add the one, which enters it
+                arrNorms[
+                    (ii + 1) * numSizeRows2:(ii + 2) * numSizeRows2
+                ] = arrNorms[
+                    ii * numSizeRows2:(ii + 1) * numSizeRows2
+                ] + arrT[addInd] - arrT[subInd]
+
+            # in case we have more blocks in column direction than in row
+            # direction, we have to keep on
+            # iterating. here we have to subtract different indices and add
+            # different ones
+            if numRows > numCols:
+                for ii in range(numRows - numCols):
+                    addInd = numCols + ii
+                    subInd = ii
+
+                    # here we subtract the element which has left the current
+                    # column and add the one, which enters it
+                    # it basically is the same as in the single level case
+                    arrNorms[
+                        (numCols + ii) * numSizeRows2:
+                        (numCols + ii + 1) * numSizeRows2
+                    ] = arrNorms[
+                        (numCols + ii - 1) * numSizeRows2:
+                        (numCols + ii) * numSizeRows2
+                    ] - arrT[subInd] + arrT[addInd]
+
+        return arrNorms
+
     ############################################## class reference
     cpdef np.ndarray _reference(self):
-        # _reference overloading from Partial is too slow. Therefore, construct
-        # a reference directly from the vectors.
-        cdef intsize ii
-        cdef np.ndarray arrRes = np.empty(
-            (self.numRows, self.numCols), dtype=self.dtype
+        return self._refRecursion(
+            np.array((<object> self._tenT).shape),
+            self._arrDimRows,
+            self._arrDimCols,
+            self._tenT,
+            False
         )
 
-        # put columns in lower-triangular part of matrix
-        for ii in range(0, min(self.numRows, self.numCols)):
-            arrRes[ii:self.numRows, ii] = self._vecC[0:(self.numRows - ii)]
+    def _refRecursion(
+        self,
+        np.ndarray arrDim,
+        np.ndarray arrDimRows,
+        np.ndarray arrDimCols,
+        np.ndarray tenT,
+        bint verbose=False
+    ):
+        '''
+        Build the d-level toeplitz matrix recursively from a d-dimensional
+        tensor.
 
-        # put rows in upper-triangular part of matrix
-        for ii in range(0, min(self.numRows, self.numCols - 1)):
-            arrRes[ii, (ii + 1):self.numCols] = self._vecR[
-                0:(self.numCols - ii - 1)
-            ]
+        Build the (d-1) level matrices first and put them to the correct
+        locations for d=1.
 
-        return arrRes
+        Parameters
+        ----------
+        arrDim : :py:class:`numpy.ndarray`
+            The dimensions in each level.
+
+        tenT : :py:class:`numpy.ndarray`
+            The defining elements.
+
+        verbose : bool
+            Output verbose information.
+
+            Defaults to False.
+        '''
+        cdef intsize ii, nn_, mm, countAbs
+
+        # number of dimensions
+        cdef intsize numD = arrDim.shape[0]
+
+        # get size of resulting block toeplitz matrix
+        cdef intsize numRows = np.prod(arrDimRows)
+        cdef intsize numCols = np.prod(arrDimCols)
+
+        # get an array of all partial sequential products, starting at the front
+        cdef np.ndarray arrDimRowProd = np.array(
+            list(map(lambda ii : np.prod(arrDimRows[ii:]), range(numRows - 1)))
+        )
+        cdef np.ndarray arrDimColProd = np.array(
+            list(map(lambda ii : np.prod(arrDimCols[ii:]), range(numCols - 1)))
+        )
+
+        # allocate memory for the result
+        cdef np.ndarray T = np.zeros((numRows, numCols), dtype=self.dtype)
+        cdef np.ndarray subT, vecR
+
+        # check if we can go a least a level deeper
+        if numD > 1:
+            # iterate over size of the first dimension
+            for nn_ in range(arrDimRows[0] + arrDimCols[0] - 1):
+                # now calculate the block recursively
+                subT = self._refRecursion(
+                    arrDim[1:],
+                    arrDimRows[1:],
+                    arrDimCols[1:],
+                    tenT[nn_]
+                )
+                # check if we are on or below the diagonal
+                if nn_ < arrDimRows[0]:
+                    # if yes, we have it easy
+                    for mm in range(min(arrDimRows[0] - nn_, arrDimCols[0])):
+                        mm_ = mm + nn_
+                        T[
+                            mm_ * arrDimRowProd[1]:(mm_ + 1) * arrDimRowProd[1],
+                            mm * arrDimColProd[1]:(mm + 1) * arrDimColProd[1]
+                        ] = subT
+                else:
+                    # if not as well!
+                    for mm in range(
+                        min(nn_ - arrDimRows[0] + 1, arrDimRows[0])
+                    ):
+                        rr = mm
+                        cc = arrDimCols[0] - nn_ + arrDimRows[0] + mm - 1
+                        T[
+                            rr * arrDimRowProd[1]:(rr + 1) * arrDimRowProd[1],
+                            cc * arrDimColProd[1]:(cc + 1) * arrDimColProd[1]
+                        ] = subT
+
+            return T
+        else:
+            # if we are in a lowest level, we just construct the right
+            # single level toeplitz block. As _reference overloading from
+            # Partial is too slow we rather construct a reference directly
+            # from the defining tensor.
+
+            # put columns in lower-triangular part of matrix
+            for ii in range(0, min(numRows, numCols)):
+                T[ii:numRows, ii] = tenT[:(numRows - ii)]
+
+            # put rows in upper-triangular part of matrix
+            vecR = tenT[numRows:][::-1]
+            for ii in range(0, min(numRows, numCols - 1)):
+                T[ii, (ii + 1):numCols] = vecR[:(numCols - ii - 1)]
+
+            return T
 
     ############################################## class inspection, QM
     def _getTest(self):
-        from .inspect import TEST, dynFormat
+        from .inspect import TEST, NAME, dynFormat, mergeDicts
+        test1D = {
+            TEST.NUM_ROWS   : 4,
+            TEST.NUM_COLS   : TEST.Permutation([3, 5, 41]),
+            'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
+            'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
+            'vecH'          : TEST.ArrayGenerator({
+                TEST.DTYPE  : 'mTypeH',
+                TEST.SHAPE  : (TEST.NUM_ROWS, ),
+                TEST.ALIGN  : TEST.PARAMALIGN
+            }),
+            'vecV'          : (lambda param: TEST.ArrayGenerator({
+                TEST.DTYPE  : param['mTypeV'],
+                TEST.SHAPE  : (param[TEST.NUM_COLS] - 1, ),
+                TEST.ALIGN  : param[TEST.PARAMALIGN]
+            })),
+            TEST.INITARGS   : (lambda param : [param.vecH(), param.vecV()]),
+            TEST.INITKWARGS : {'optimize': 'optimize'},
+            TEST.NAMINGARGS : dynFormat(
+                "%s,%s,optimize=%s", 'vecH', 'vecV', 'optimize'
+            ),
+        }
+        testND = {
+            'optimize': True,
+            'shape'         : np.array([3, 3, 41]),
+            'split'         : np.array([2, 1, 4]),
+            'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
+            'tenT'          : (lambda param: TEST.ArrayGenerator({
+                TEST.DTYPE  : param['mTypeC'],
+                TEST.SHAPE  : param['shape'],
+                TEST.ALIGN  : param[TEST.PARAMALIGN]
+            })),
+            TEST.NUM_ROWS   : (lambda param: np.prod(param['split'])),
+            TEST.NUM_COLS   : (
+                lambda param: np.prod(param['shape'] - param['split'] + 1)
+            ),
+            TEST.INITARGS   : (lambda param : [param.tenT()]),
+            TEST.INITKWARGS : {'optimize': 'optimize', 'split': 'split'},
+            TEST.NAMINGARGS : dynFormat(
+                "%s,optimize=%s,split=%s",
+                'tenT', 'optimize', 'split'
+            ),
+        }
         return {
+            # 41 is the first size for which bluestein is faster
             TEST.COMMON: {
+                'optimize'      : TEST.Permutation([False, True]),
+                TEST.PARAMALIGN : TEST.ALIGNMENT.DONTCARE,
                 TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
-                # 35 is just any number that causes no padding
-                # 41 is the first size for which bluestein is faster
-                TEST.NUM_ROWS   : TEST.Permutation([5, 41]),
-                'num_cols'      : TEST.Permutation([4, 6]),
-                TEST.NUM_COLS   : (lambda param: param['num_cols'] + 1),
-                'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
-                'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
-                'optimize'      : True,
-                'vecH'          : TEST.ArrayGenerator({
-                    TEST.DTYPE  : 'mTypeH',
-                    TEST.SHAPE  : (TEST.NUM_ROWS, )
-                }),
-                'vecV'          : TEST.ArrayGenerator({
-                    TEST.DTYPE  : 'mTypeV',
-                    TEST.SHAPE  : ('num_cols', )
-                }),
-                TEST.INITARGS   : (lambda param : [param['vecH'](),
-                                                   param['vecV']()]),
-                TEST.INITKWARGS : {'optimize' : 'optimize'},
                 TEST.OBJECT     : Toeplitz,
-                TEST.NAMINGARGS : dynFormat("%s,%s,optimize=%s",
-                                            'vecH', 'vecV', str('optimize')),
-                TEST.TOL_POWER  : 2
+                TEST.TOL_POWER  : 2,
+                TEST.TOL_MINEPS : getTypeEps(np.float64)
             },
-            TEST.CLASS: {
+            TEST.CLASS: mergeDicts(test1D, {
                 # perform thorough testing of slicing during array construction
                 # therefore, aside the symmetric shape case also test shapes
                 # that differ by +1/-1 and +x/-x in row and col size
-                TEST.NUM_ROWS      : 4,
-                'num_M'         : TEST.Permutation([2, 3, 4, 5, 6]),
-            },
-            TEST.TRANSFORMS: {
-                # during class tests we do not need to verify bluestein again
-                TEST.NUM_ROWS   : TEST.Permutation([7]),
-            }
+                TEST.NUM_COLS   : TEST.Permutation([2, 3, 4, 5, 6, 41]),
+            }),
+            TEST.TRANSFORMS: test1D,
+            'classML': mergeDicts(testND, {NAME.TEMPLATE: TEST.CLASS}),
+            'transformML': mergeDicts(testND, {NAME.TEMPLATE: TEST.TRANSFORMS})
         }
 
     def _getBenchmark(self):

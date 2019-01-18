@@ -172,7 +172,7 @@ def extensions():
 
     extensionArguments = {
         'include_dirs':
-        lstIncludes + ['fastmat/core', 'fastmat/inspect', 'util'],
+        lstIncludes + ['fastmat/core', 'fastmat/inspect'],
         'extra_compile_args': compilerArguments,
         'extra_link_args': linkerArguments,
         'define_macros': defineMacros
