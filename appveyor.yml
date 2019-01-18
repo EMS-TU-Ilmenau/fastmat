@@ -1,6 +1,7 @@
 branches:
   only:
     - stable
+    - cisetup
 
 environment:
   global:
@@ -73,6 +74,7 @@ install:
 
 build_script:
   - pip install cibuildwheel==0.9.4 twine
+  - make compile
   - pip install .
 
 test_script:
