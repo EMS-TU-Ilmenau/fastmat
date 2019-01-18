@@ -75,7 +75,7 @@ environment:
       CONDA_PY: "37"
       CIBW_SKIP: 'cp[!3]?-* cp3[!7]-*'
 
-     - PYTHON: "C:\\Python37-x64"
+    - PYTHON: "C:\\Python37-x64"
       PYTHON_VERSION: "3.7"
       PYTHON_ARCH: "64"
       CONDA_PY: "37"
