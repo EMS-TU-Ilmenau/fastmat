@@ -249,10 +249,11 @@ cdef class Toeplitz(Partial):
             raise ValueError(
                 "The split point vector must be 1D"
             )
-        elif any(ll < 1 or ll >= arrDim[ii]
+        elif any(ll < 1 or ll > arrDim[ii]
                  for ii, ll in enumerate(arrSplit)):
+            print(arrDim, arrSplit, (<object> self._tenT).shape)
             raise ValueError(
-                "Entry in split vector out of defining tensor bounds"
+                "Entry in split vector outside of defining tensor bounds"
             )
 
         # determine row- and column- as well as definition vector size for
@@ -337,23 +338,22 @@ cdef class Toeplitz(Partial):
         cdef np.ndarray arrSCols = arrS >= 0
 
         cdef np.ndarray modCols, modRows
-        cdef intsize limRows, limCols
+        cdef intsize limRows, limCols, sizeLevelsBelow
 
-        for ii in range(arrDimOpt.shape[0]):
-            modRows = np.mod(arrS, np.prod(arrDimOpt[ii:]))
-            modCols = np.mod(arrS, np.prod(arrDimOpt[ii:]))
-            limRows = arrSplit[ii] * np.prod(arrDimOpt[ii + 1:])
-            limCols = (
-                (arrDimOpt[ii] - arrSplit[ii] + 1) * np.prod(arrDimOpt[ii + 1:])
-            )
-#            print("State Rows", arrSRows)
-#            print("State Cols", arrSCols)
-#            print("modulus Rows", modRows)
-#            print("modulus Cols", modCols)
-#            print("lim Rows", limRows)
-#            print("lim Cols", limCols)
-#            print("res Rows", modRows < limRows)
-#            print("res Cols", modCols < limCols)
+        for ii in range(self._tenT.ndim):
+            sizeLevelsBelow = np.prod(arrDimOpt[ii + 1:])
+            modRows = np.mod(arrS, arrDimOpt[ii] * sizeLevelsBelow)
+            modCols = np.mod(arrS, arrDimOpt[ii] * sizeLevelsBelow)
+            limRows = self._arrDimRows[ii] * sizeLevelsBelow
+            limCols = self._arrDimCols[ii] * sizeLevelsBelow
+            # print("State Rows", arrSRows)
+            # print("State Cols", arrSCols)
+            # print("modulus Rows", modRows)
+            # print("modulus Cols", modCols)
+            # print("lim Rows", limRows)
+            # print("lim Cols", limCols)
+            # print("res Rows", modRows < limRows)
+            # print("res Cols", modCols < limCols)
 
             # iteratively subselect more and more indices in arrSRows
             np.logical_and(arrSRows, modRows < limRows, arrSRows)
@@ -787,8 +787,8 @@ cdef class Toeplitz(Partial):
     def _getTest(self):
         from .inspect import TEST, NAME, dynFormat, mergeDicts
         test1D = {
-            TEST.NUM_ROWS   : 5,
-            TEST.NUM_COLS   : TEST.Permutation([4, 6, 41]),
+            TEST.NUM_ROWS   : 4,
+            TEST.NUM_COLS   : TEST.Permutation([3, 5, 41]),
             'mTypeH'        : TEST.Permutation(TEST.FEWTYPES),
             'mTypeV'        : TEST.Permutation(TEST.FEWTYPES),
             'vecH'          : TEST.ArrayGenerator({
@@ -808,8 +808,9 @@ cdef class Toeplitz(Partial):
             ),
         }
         testND = {
-            'shape'         : np.array([5, 5, 41]),
-            'split'         : np.array([3, 2, 4]),
+            'optimize': True,
+            'shape'         : np.array([3, 3, 41]),
+            'split'         : np.array([2, 1, 4]),
             'mTypeC'        : TEST.Permutation(TEST.FEWTYPES),
             'tenT'          : (lambda param: TEST.ArrayGenerator({
                 TEST.DTYPE  : param['mTypeC'],
