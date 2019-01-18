@@ -127,13 +127,13 @@ script:
         if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
             make compile-coverage
             echo "Running coverage analysis..."
-            coverage run --source=fastmat util/bee.py list makedump
-            coverage run -a --source=fastmat util/bee.py test -v -s .class
-            coverage run -a --source=fastmat util/bee.py test -v -s .transform
-            coverage run -a --source=fastmat util/bee.py test -v -s .algorithm
-            coverage run -a --source=fastmat util/bee.py calibrate Circulant
-            coverage run -a --source=fastmat util/bee.py test -vf -s Matrix.class Circulant.class
-            coverage run -a --source=fastmat util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
+            coverage run --source=fastmat bee.py list makedump
+            coverage run -a --source=fastmat bee.py test -v -s .class
+            coverage run -a --source=fastmat bee.py test -v -s .transform
+            coverage run -a --source=fastmat bee.py test -v -s .algorithm
+            coverage run -a --source=fastmat bee.py calibrate Circulant
+            coverage run -a --source=fastmat bee.py test -vf -s Matrix.class Circulant.class
+            coverage run -a --source=fastmat bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
         else
             make test
         fi

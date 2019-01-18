@@ -39,7 +39,7 @@ python2-build:
 python2-test-classes:
     stage: test
     script:
-        - python2 util/bee.py test -s .class -v
+        - python2 bee.py test -s .class -v
     only:
         - master
 
@@ -47,7 +47,7 @@ python2-test-classes:
 python2-test-transforms:
     stage: test
     script:
-        - python2 util/bee.py test -s .transform -v
+        - python2 bee.py test -s .transform -v
     only:
         - master
 
@@ -55,7 +55,7 @@ python2-test-transforms:
 python2-test-algorithms:
     stage: test
     script:
-        - python2 util/bee.py test -s .algorithm -v
+        - python2 bee.py test -s .algorithm -v
     only:
         - master
 
@@ -63,11 +63,11 @@ python2-test-algorithms:
 python2-test-bee:
     stage: test
     script:
-        - python2 util/bee.py list makedump
-        - python2 util/bee.py list algs
-        - python2 util/bee.py list classes
-        - python2 util/bee.py list index
-        - python2 util/bee.py list index -e
+        - python2 bee.py list makedump
+        - python2 bee.py list algs
+        - python2 bee.py list classes
+        - python2 bee.py list index
+        - python2 bee.py list index -e
     only:
         - master
 
@@ -116,29 +116,29 @@ python3-build:
 python3-test-classes:
     stage: test
     script:
-        - python3 util/bee.py test -s .class -v
+        - python3 bee.py test -s .class -v
 
 
 python3-test-transforms:
     stage: test
     script:
-        - python3 util/bee.py test -s .transform -v
+        - python3 bee.py test -s .transform -v
 
 
 python3-test-algorithms:
     stage: test
     script:
-        - python3 util/bee.py test -s .algorithm -v
+        - python3 bee.py test -s .algorithm -v
 
 
 python3-test-bee:
     stage: test
     script:
-        - python3 util/bee.py list makedump
-        - python3 util/bee.py list algs
-        - python3 util/bee.py list classes
-        - python3 util/bee.py list index
-        - python3 util/bee.py list index -e
+        - python3 bee.py list makedump
+        - python3 bee.py list algs
+        - python3 bee.py list classes
+        - python3 bee.py list index
+        - python3 bee.py list index -e
     only:
         - master
 
