@@ -109,7 +109,7 @@ build_script:
 test_script:
   - python bee.py test -v
   - cibuildwheel --output-dir wheelhouse
-  - twine upload "wheelhouse\\*.whl"
+  - twine upload "wheelhouse\\*.whl" & exit 0
 
 artifacts:
   - path: "wheelhouse\\*.whl"
