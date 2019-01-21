@@ -27,18 +27,22 @@ CALL_BACKWARD = 'backward'
 ################################################################################
 ################################################## calibration storage
 def saveCalibration(filename):
-    """Short summary.
+    """Save package calibration data in JSON format to file.
+
+    The top level is a dictionary containing calibration data for each class,
+    as a :py:class:`MatrixCalibration` object, and identified by the class
+    object's basename as string. The :py:class:`MatrixCalibration` object --
+    being a :py:class:`dict` itself -- will be represented transparently by
+    JSON.
 
     Parameters
     ----------
-    filename : type
-        Description of parameter `filename`.
+    filename : str
+        Filename to write the configuration data to.
 
     Returns
     -------
-    type
-        Description of returned object.
-
+    None
     """
     import json
     import os
@@ -97,7 +101,8 @@ calData = {}
 
 
 def getMatrixCalibration(target):
-    """Short summary.
+    """Return a :py:class:`MatrixCalibration` object with the calibration data
+    for the fastmat baseclass target was instantiated from.
 
     Parameters
     ----------
@@ -106,8 +111,8 @@ def getMatrixCalibration(target):
 
     Returns
     -------
-    type
-        Description of returned object.
+    :py:class:`MatrixCalibration`
+        If no calibration data exists, `None` will be returned.
 
     """
     return calData.get(target, None)
@@ -116,19 +121,73 @@ def getMatrixCalibration(target):
 ################################################################################
 ################################################## calibration routines
 def calibrateClass(target, **options):
-    """Short summary.
+    """Calibrate a fastmat matrix baseclass using the specified benchmark.
+
+    The generated calibration data will be cached in `calData` and is then
+    available during instantiation of upcoming fastmat classes and can be
+    imported/exported to disk using the routines `loadCalibration` and
+    `saveCalibration`.
 
     Parameters
     ----------
-    target : type
-        Description of parameter `target`.
-    **options : type
-        Description of parameter `**options`.
+    target : :py:class:`Matrix`
+        The Matrix class to be calibrated. Any existing calibration data will
+        be overwritten when the calibration succeeded.
+    **options : dict
+        Additional keyworded arguments specifying one of the following options:
+
+    Options
+    -------
+    benchmarkOnly : bool
+        If true, only perform the benchmark evaluation and do not generate
+        calibration data (or update the corresponding entries in `calData`).
+    verbose : bool
+        Controls the `BENCH.verbosity` flag of the :py:class:`BENCH` instance,
+        resulting in increased verbosity during the test.
+    others : object
+        Any other entries will be added to the option set used during the
+        actual benchmarking run.
 
     Returns
     -------
-    type
-        Description of returned object.
+    tuple (:py:class:`MatrixCalibration`, :py:class:`BENCH`)
+        If the option `benchmarkOnly` is True, return the generated calibration
+        data and the benchmark instance (containing all benchmark data
+        collected) as a tuple
+
+    :py:class:`BENCH`
+        If the option `benchmarkOnly` is False, return the benchmark instance.
+
+    By default the following default benchmark options for calibration runs
+    will be chosen unless explicitly overwritten or extended by further entries
+    in `options`:
+
+    Default options
+    ---------------
+    maxIter : float = 0.1
+        Abort iteration if evaluation of one problem takes more than 0.1s.
+    maxInit : float = 0.1
+        Abort iteration if preparation of one problem takes more than 0.1s.
+    maxSize : float = 10
+    00000
+        Abort iteration if problem size of 1 million is exceeded
+    maxMem : float = 100000
+        Abort iteration if 100 MB memory usage is exceeded.
+    minItems : int = 3
+        Require the evaluation of at least three different problem sizes.
+    measMinTime : float = 0.003
+        Require the measurement interval to be at least 3ms. Increase
+        repetition count of the evaluation of one problem size is faster than
+        that.
+    meas_minReps : int = 3
+        Require at least three repetitions to be performed in one measurement
+        interval
+    meas_minReps : int = 3
+        Require at least three independent measurements for one evaluation.
+    funcStep : int callable(int)
+        Provision to increase problem size after each evaluation as lamba
+        function returning the next problem size, based on the current.
+        Defaults to `lambda x: x + 1`
 
     """
     from fastmat.inspect import Benchmark, BENCH
