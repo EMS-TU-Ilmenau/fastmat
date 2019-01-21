@@ -287,17 +287,19 @@ def calibrateClass(target, **options):
 
 
 def calibrateAll(**options):
-    """Short summary.
+    """Calibrate all classes present in fastmat.
 
     Parameters
     ----------
-    **options : type
-        Description of parameter `**options`.
+    **options : dict
+        Additional keyworded arguments that will be passed on to
+        :py:method:`calibrateClass` calls.
+        Note: The `verbose` option will be digested by this function and not
+        passed on to :py:method:`calibrateClass`.
 
     Returns
     -------
-    type
-        Description of returned object.
+    None
 
     """
     from .. import classes
