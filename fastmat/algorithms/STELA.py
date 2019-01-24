@@ -126,13 +126,16 @@ class STELA(Algorithm):
         return np.multiply((arrM / (arrM + numAlpha)), arrX)
 
     def _process(self, arrB):
-        if arrB.ndim > 2:
+        if arrB.ndim > 2 or arrB.ndim < 1:
             raise ValueError("Only n x m arrays are supported for STELA")
 
         if arrB.ndim == 1:
             self.arrB = arrB.reshape((-1, 1))
         else:
             self.arrB = arrB
+
+        if self.numMaxSteps <= 0:
+            raise ValueError("STELA would like to do at least one step for you")
 
         dtypeType = np.promote_types(np.float32, self.arrB.dtype)
 

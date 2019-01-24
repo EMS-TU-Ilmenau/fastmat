@@ -129,13 +129,16 @@ class ISTA(Algorithm):
         #                 between data fidelity and sparsity
         # numMaxSteps   - maximum number of steps to run
         # numL          - step size during the conjugate gradient step
-        if arrB.ndim > 2:
+        if arrB.ndim > 2 or arrB.ndim < 1:
             raise ValueError("Only n x m arrays are supported for ISTA")
 
         if arrB.ndim == 1:
             self.arrB = arrB.reshape((-1, 1))
         else:
             self.arrB = arrB
+
+        if self.numMaxSteps <= 0:
+            raise ValueError("ISTA would like to do at least one step for you")
 
         # calculate the largest singular value to get the right step size
         self.numL = 1.0 / (self.fmatA.largestSingularValue ** 2)
