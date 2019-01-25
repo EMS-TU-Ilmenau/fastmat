@@ -132,13 +132,16 @@ cdef class OMP(Algorithm):
         #                       strides
         #
 
-        if arrB.ndim > 2:
+        if arrB.ndim > 2 or arrB.ndim < 1:
             raise ValueError("Only n x m arrays are supported for OMP")
 
         if arrB.ndim == 1:
             self.arrB = arrB.reshape((-1, 1))
         else:
             self.arrB = arrB
+
+        if self.numMaxSteps <= 0:
+            raise ValueError("OMP would wish to do at least one step for you")
 
         # get the number of vectors to operate on
         self.numN, self.numM, self.numL = \
