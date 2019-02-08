@@ -31,97 +31,27 @@ from .Kron cimport Kron
 
 cdef class Circulant(Partial):
     r"""
-    Multilevel Circulant Matrices are not circulant by themselves, but consist
-    of multiply nested levels of circulant structures. To this end, let
-    :math:`d \geqslant 2`, :math:`n = [n_1, \dots, n_d]`,
-    :math:`n_{1-} = [n_1,\dots, n_{d-1}]` and :math:`m = [n_2,\dots, n_d]`.
-    Then, given a :math:`d`-dimensional complex sequence
-    :math:`c = [c_{k}]` for :math:`k \in \mathbb{N}^d`
-    a :math:`d`-level circulant matrix :math:`C_{n,d}` is recursively defined as
+    This class provides a very general implementation of circulant matrices,
+    which essentially realize a (possibly multidimensional) circular
+    convolution.
 
-    .. math::C_{n,d} =
-        \begin{bmatrix}
-        {C}_{[1,{m}],\ell}        & {C}_{[n_1,{m}],\ell}
-        & \dots     & {C}_{[2,{m}],\ell}  \\
-        {C}_{[2,{m}],\ell}        & {C}_{[1,{m}],\ell}
-        & \dots     & {C}_{[3,{m}],\ell}  \\
-        \vdots                              & \vdots
-        & \ddots    & \vdots                        \\
-        {C}_{[n_1,{m}],\ell}      & {C}_{[n_1 - 1,{m}],\ell}
-        & \dots     & {C}_{[1,{m}],\ell}  \\
-        \end{bmatrix}.
+    This type of matrix is highly structured. A two-level circulant
+    Matrix looks like:
 
-    So for :math:`n = (2,2)` and :math:`c \in \mathbb{C}^{2 \times 2}` we get
+    >>> c_00 c_02 c_01   c_20 c_22 c_21   c_10 c_12 c_11
+    >>> c_01 c_00 c_02   c_21 c_20 c_22   c_11 c_10 c_12
+    >>> c_02 c_01 c_00   c_22 c_21 c_20   c_12 c_11 c_10
+    >>>
+    >>> c_10 c_12 c_11   c_00 c_02 c_01   c_20 c_22 c_21
+    >>> c_11 c_10 c_12   c_01 c_00 c_02   c_21 c_20 c_22
+    >>> c_12 c_11 c_10   c_02 c_01 c_00   c_22 c_21 c_20
+    >>>
+    >>> c_20 c_22 c_21   c_10 c_12 c_11   c_00 c_02 c_01
+    >>> c_21 c_20 c_22   c_11 c_10 c_12   c_01 c_00 c_02
+    >>> c_22 c_21 c_20   c_12 c_11 c_10   c_02 c_01 c_00
 
-    .. math::
-        C_{[2,2],2} =
-        \begin{bmatrix}
-        C_{[1,2],1} & C_{[2,2],1} \\
-        C_{[2,2],1} & C_{[1,2],1}
-        \end{bmatrix}
-        =
-        \begin{bmatrix}
-        c_{1,1} & c_{1,2} & c_{2,1} & c_{2,2} \\
-        c_{1,2} & c_{1,1} & c_{2,2} & c_{2,1} \\
-        c_{2,1} & c_{2,2} & c_{1,1} & c_{1,2} \\
-        c_{2,2} & c_{2,1} & c_{1,2} & c_{1,1}
-        \end{bmatrix}.
-
-    The approach we follow here is similar to the Circulant matrix case. But
-    here, we have matrix, which is defined by a tensor of order d because of
-    its d-level nature. The remarkable thing is, that a very analogue thing as
-    to the Circulant case holds. We only have to calculate an d-dimensional
-    fourier transform on the defining tensor. then its vectorized version is
-    the spectrum of the d-level circulant matrix it defines. Another way to
-    view this, is that a kronecker product of fourier matrices diagonalizes
-    this d-level matrix. So, we have that
-
-            C = (F_n1 kron ... kron F_nd)^H
-                 * diag((F_n1 kron ... kron F_nd) * tenC)
-                 * (F_n1 kron ... kron F_nd)
-
-    As another performance improvement, we do not simply calculate the fourier
-    transform of tenC in every dimension, but instead we make use of the
-    bluestein algorithm in each dimension independently. as such the d-level
-    circulant matrix gets embedded into a larger d-level circulant matrix,
-    which is then more efficient in reducing the bottleneck of the FFTs. this
-    is why this matrix class is derived from Partial.
-
-    >>> # import the package
-    >>> import fastmat as fm
-    >>> import numpy as np
-    >>> # construct the
-    >>> # parameters
-    >>> n = 2
-    >>> l = 2
-    >>> c = np.arange(n ** l).reshape((n,n))
-    >>> # construct the matrix
-    >>> C = fm.MLCirculant(c)
-
-    This then yields
-
-    .. math::
-        c = \begin{bmatrix}
-            0 & 1 \\
-            2 & 3
-            \end{bmatrix}
-
-    and thus
-
-    .. math::
-        C = \begin{bmatrix}
-            0 & 1 & 2 & 3 \\
-            1 & 0 & 3 & 2 \\
-            2 & 3 & 0 & 1 \\
-            3 & 2 & 1 & 0
-            \end{bmatrix},
-
-    This class depends on ``fm.Fourier``, ``fm.Diag``, ``fm.Kron``,
-    ``fm.Product`` and ``fm.Partial``.
-
-    .. todo::
-        - save memory by not storing tenC but only its fourier transform
-
+    This shows that one can define an L-level Circulant matrix by a tensor
+    of order L. By design circulant matrices are always square matrices.
     """
 
     property tenC:
@@ -131,14 +61,17 @@ cdef class Circulant(Partial):
             return self._tenC
 
     def __init__(self, tenC, **options):
-        '''
-        Initialize Multilevel Circulant matrix instance.
+        '''Initialize Multilevel Circulant matrix instance.
+
+        Also see the special options of ``fastmat.Fourier``, which are
+        also supported by this matrix and the general options offered by
+        ``fastmat.Matrix.__init__``.
 
         Parameters
         ----------
         tenC : :py:class:`numpy.ndarray`
-            The generating nd-array defining the circulant tensor. The matrix
-            data type is determined by the data type of this array.
+            The generating nd-array tensor defining the circulant matrix. The
+            matrix data type is determined by the data type of this array.
 
         **options:
             See the special options of :py:class:`fastmat.Fourier`, which are
