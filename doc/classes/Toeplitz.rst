@@ -15,8 +15,8 @@
 
 .. _Toeplitz:
 
-Toeplitz Matrix
-===============
+(Multilevel) Toeplitz Class
+===========================
 
 .. autoclass:: fastmat.Toeplitz
     :members:

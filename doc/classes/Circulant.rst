@@ -15,8 +15,8 @@
 
 .. _Circulant:
 
-Circulant Matrix
-================
+(Multilevel) Circulant Class
+============================
 
 .. autoclass:: fastmat.Circulant
     :members:
