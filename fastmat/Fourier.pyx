@@ -45,7 +45,7 @@ cdef class Fourier(Matrix):
 
     This yields a Fourier :math:`{\mathcal{F}}_4` matrix of size :math:`4`.
     As a library to provide the Fast Fourier Transform we used the one provided
-    by NumPy [1]_.
+    by NumPy.
 
     .. todo::
         - real valued transforms
