@@ -148,13 +148,8 @@ compile-coverage:
 # target 'doc': Compile documentation
 .PHONY: doc
 doc: | compile
-<<<<<<< HEAD
-	$(info * building documentation: redirecting to './doc/make doc')
-	@$(PYTHON) setup.py build_doc
-=======
 	$(info * building documentation)
 	@$(PYTHON) setup.py build_doc $(OPTIONS)
->>>>>>> Update `make doc`target
 
 # targer 'debug': Debug package
 .PHONY: debug
