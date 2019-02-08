@@ -37,22 +37,17 @@ Here we list the classes in the package for easy referencing and access.
  * :py:class:`fastmat.DiagBlocks`
  * :py:class:`fastmat.Eye`
  * :py:class:`fastmat.Fourier`
- * :py:class:`fastmat.Inverse`
  * :py:class:`fastmat.Hadamard`
  * :py:class:`fastmat.Hermitian`
  * :py:class:`fastmat.Kron`
  * :py:class:`fastmat.LFSRCirculant`
  * :py:class:`fastmat.LowRank`
- * :py:class:`fastmat.MLCirculant`
- * :py:class:`fastmat.MLToeplitz`
- * :py:class:`fastmat.MLUltraSound`
  * :py:class:`fastmat.Outer`
  * :py:class:`fastmat.Parametric`
  * :py:class:`fastmat.Partial`
  * :py:class:`fastmat.Permutation`
  * :py:class:`fastmat.Polynomial`
  * :py:class:`fastmat.Product`
- * :py:class:`fastmat.PseudoInverse`
  * :py:class:`fastmat.Sparse`
  * :py:class:`fastmat.Sum`
  * :py:class:`fastmat.Toeplitz`
