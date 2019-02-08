@@ -419,7 +419,7 @@ def mergeDicts(a, b):
     Merge the dictionaries a and b such that entries in b have priority and the
     input Dictionary a remains unchanged.
     '''
-    c=a.copy()
+    c = a.copy()
     c.update(b)
     return c
 

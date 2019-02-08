@@ -89,11 +89,11 @@ ifeq ($(OS),Windows_NT)
 else
 
 # STYLE_FILES specifies the files touched during coding style operations
-STYLE_FILES=util/*.py *.py fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
+STYLE_FILES=*.py fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
 	fastmat/*/*.py fastmat/*/*.pyx fastmat/*/*.pxd
 
 # STYLE_IGNORES lists the errors to be skipped during style check
-STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,E731,W504
+STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,E731,W504,W605
 
 # TEST_OPTIONS allows passing extra options to tests during `testCode`target
 TEST_OPTIONS=-i
@@ -167,11 +167,11 @@ debug: | compile
 .PHONY: testBee
 testBee:
 	$(info * running bee 'list makedump', 'benchmark' and 'calibrate' code)
-	$(PYTHON) util/bee.py list makedump\
+	$(PYTHON) bee.py list makedump\
 		> test.makedump.log
-	$(PYTHON) util/bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1\
+	$(PYTHON) bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1\
 		> test.benchmark.log
-	$(PYTHON) util/bee.py calibrate Circulant\
+	$(PYTHON) bee.py calibrate Circulant\
 		> test.calibrate.log
 
 
@@ -179,7 +179,7 @@ testBee:
 .PHONY: testCode
 testCode: compile
 	$(info * running unit tests)
-	$(PYTHON) util/bee.py test -v $(TEST_OPTIONS)
+	$(PYTHON) bee.py test -v $(TEST_OPTIONS)
 
 
 # target 'test': Run unit tests for package

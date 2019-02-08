@@ -39,6 +39,11 @@ def WARNING(string):
     print("\033[91mWARNING:\033[0m %s" % (string))
 
 
+def ERROR(string, e):
+    print("\033[91mERROR:\033[0m %s" % (string))
+    raise e
+
+
 def INFO(string):
     print("\033[96mINFO:\033[0m %s" % (string))
 
@@ -52,8 +57,7 @@ except ImportError:
 
 # global package constants
 packageName     = 'fastmat'
-packageVersion  = '0.2.a3'           # provide a version tag as fallback
-fullVersion     = packageVersion
+packageVersion  = '<INVALID>'
 strVersionFile  = "%s/version.py" %(packageName)
 
 VERSION_PY = """
@@ -68,61 +72,6 @@ __version__ = '%s'
 ##############################################################################
 ### function and class declaration section. DO NOT PUT SCRIPT CODE IN BETWEEN
 ##############################################################################
-
-
-def getCurrentVersion():
-    '''
-    Determine package version and put it in the signatures.
-    '''
-    global packageVersion
-    global fullVersion
-
-    # check if there is a manual version override
-    if os.path.isfile(".version"):
-        with open(".version", "r") as f:
-            stdout = f.read().split('\n')[0]
-        print("Override of version string to '%s' (from .version file )" % (
-            stdout))
-
-        fullVersion = stdout
-
-    else:
-        # check if source directory is a git repository
-        if not os.path.exists(".git"):
-            print(("Installing from something other than a Git repository; " +
-                   "Version file '%s' untouched.") % (strVersionFile))
-            return
-
-        # fetch current tag and commit description from git
-        try:
-            p = subprocess.Popen(
-                ["git", "describe", "--tags", "--dirty", "--always"],
-                stdout=subprocess.PIPE
-            )
-        except EnvironmentError:
-            print("Not a git repository; Version file '%s' not touched." % (
-                strVersionFile))
-            return
-
-        stdout = p.communicate()[0].strip()
-        if stdout is not str:
-            stdout = stdout.decode()
-
-        if p.returncode != 0:
-            print(("Unable to fetch version from git repository; " +
-                   "leaving version file '%s' untouched.") % (strVersionFile))
-            return
-
-        fullVersion = stdout
-
-    # output results to version string, extract package version number from
-    # `fullVersion` as this string might also contain additional tags (e.g.
-    # commit hashes or `-dirty` flags from git tags)
-    versionMatch = re.match(r"[.+\d+]+\d*[abr]\d*", fullVersion)
-    if versionMatch:
-        packageVersion = versionMatch.group(0)
-        print("Fetched package version number from git tag (%s)." % (
-            packageVersion))
 
 
 # Enable flexible dependency handling by installing missing base components
@@ -172,7 +121,7 @@ def extensions():
 
     extensionArguments = {
         'include_dirs':
-        lstIncludes + ['fastmat/core', 'fastmat/inspect', 'util'],
+        lstIncludes + ['fastmat/core', 'fastmat/inspect'],
         'extra_compile_args': compilerArguments,
         'extra_link_args': linkerArguments,
         'define_macros': defineMacros
@@ -249,12 +198,19 @@ def doc_opts():
 
 if __name__ == '__main__':
     # get version from git and update fastmat/__init__.py accordingly
-    getCurrentVersion()
+    try:
+        with open(".version", "r") as f:
+            lines = [str(s) for s in [ln.strip() for ln in f] if len(s)]
+        packageVersion = lines[0]
+    except IOError as e:
+        Error("Setting package version", e)
+    except IndexError as e:
+        Error("Version file is empty", e)
 
     # make sure there exists a version.py file in the project
     with open(strVersionFile, "w") as f:
-        f.write(VERSION_PY % (fullVersion))
-    print("Set %s to '%s'" % (strVersionFile, fullVersion))
+        f.write(VERSION_PY % (packageVersion))
+    print("Set %s to '%s'" % (strVersionFile, packageVersion))
 
     # get the long description from the README file.
     # CAUTION: Python2/3 utf encoding shit calls needs some adjustments
@@ -384,7 +340,7 @@ if __name__ == '__main__':
             'build_doc': {
                 'project': ('setup.py', packageName),
                 'version': ('setup.py', packageVersion),
-                'release': ('setup.py', fullVersion),
+                'release': ('setup.py', packageVersion),
                 'copyright': ('setup.py', '2017, ' + packageName)
             }},
         ext_modules=lazyCythonize(extensions)

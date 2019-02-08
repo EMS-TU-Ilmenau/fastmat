@@ -1,4 +1,0 @@
-fastmat
-fastmat/algs
-fastmat/core
-fastmat/inspect
