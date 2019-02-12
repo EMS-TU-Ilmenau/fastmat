@@ -55,8 +55,9 @@ cdef class Zero(Matrix):
         numCols : int
             Width (column count) of the desired zero matrix.
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         # set properties of matrix
         self._initProperties(numRows, numCols, np.int8, **options)

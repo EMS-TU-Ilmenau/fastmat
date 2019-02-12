@@ -69,19 +69,13 @@ cdef class Fourier(Matrix):
         order : int
             The order of the DFT matrix represented by this matrix instance.
 
-        **options:
-            See the list of special options below and
-            :py:meth:`fastmat.Matrix.__init__` for general options.
-
-        Options
-        -------
-        optimize : bool
+        optimize : bool, optional
             Allow application of the Bluestein algorithm for badly conditioned
             fourier transform orders.
 
             Defaults to True.
 
-        maxStage : int
+        maxStage : int, optional
             Specify the maximum butterfly element size for the FFT. Larger
             values can reduce the required order for the FFTs computed in the
             Bluestein case. However, increasing only makes sense as long as an
@@ -91,6 +85,10 @@ cdef class Fourier(Matrix):
             Defaults to 4, which is safe to assume on all architectures.
             However, most implementations support sizes of 5 and on some cpu
             architectures, also 7.
+
+        **options : optional
+            Additional optional keyworded arguments. Supports all optional
+            arguments supported by :py:class:`fastmat.Matrix`.
         '''
 
         cdef intsize paddedSize

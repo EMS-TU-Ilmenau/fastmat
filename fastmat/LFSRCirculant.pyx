@@ -166,8 +166,13 @@ cdef class LFSRCirculant(Matrix):
         start : int
             The initial value of the storage elements of the register.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
+
+            All optional arguments will be passed on to all
+            :py:class:`fastmat.Matrix` instances that are generated during
+            initialization.
         '''
 
         cdef lfsrReg_t mask = 1 << regSize

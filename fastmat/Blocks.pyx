@@ -77,8 +77,9 @@ cdef class Blocks(Matrix):
             a row must have equal height and all instances in a column must
             have equal width.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         if not isinstance(arrMatrices, list):
             raise ValueError("Blocks: Not a nested list of fastmat matrices.")

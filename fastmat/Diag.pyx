@@ -79,8 +79,9 @@ cdef class Diag(Matrix):
         vecD : :py:class:`numpy.ndarray`
             The generating vector of the diagonal entries of this matrix.
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         # numRows is size of matrix (and of diagonal vector)
         numRows = len(vecD)

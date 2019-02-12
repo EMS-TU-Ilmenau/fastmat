@@ -119,8 +119,9 @@ cdef class Sparse(Matrix):
         matSparse : :py:class:`scipy.sparse.spmatrix`
             A 2d scipy sparse matrix to be cast as a fastmat matrix.
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional optional keyworded arguments. Supports all optional
+            arguments supported by :py:class:`fastmat.Matrix`.
         '''
         if not isinstance(matSparse, spmatrix):
             raise TypeError("Sparse: Use Matrix() for numpy ndarrays."

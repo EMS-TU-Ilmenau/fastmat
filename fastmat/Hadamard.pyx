@@ -109,8 +109,9 @@ cdef class Hadamard(Matrix):
             The order of the Hadamard matrix to generate. The matrix data type
             is :py:class:`numpy.int8`
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Optional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         if order < 1:
             raise ValueError("Hadamard: Order must be larger than 0.")

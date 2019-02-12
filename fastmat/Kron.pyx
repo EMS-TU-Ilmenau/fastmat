@@ -86,8 +86,9 @@ cdef class Kron(Matrix):
             The matrix instances to form a kronecker product of. Currently only
             square matrices are supported as kronecker product terms.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
 
         cdef int ff, factorCount = len(matrices)

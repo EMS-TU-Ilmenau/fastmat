@@ -73,10 +73,10 @@ cdef class Circulant(Partial):
             The generating nd-array tensor defining the circulant matrix. The
             matrix data type is determined by the data type of this array.
 
-        **options:
-            See the special options of :py:class:`fastmat.Fourier`, which are
-            also supported by this matrix and the general options offered by
-            :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix` and
+            :py:class:`fastmat.Fourier`.
         '''
         cdef intsize ii, nn, numRowsopt, size, minimalSize, paddedSize
 
