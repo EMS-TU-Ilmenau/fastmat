@@ -105,13 +105,7 @@ cdef class Partial(Matrix):
         mat : :py:class:`fastmat.Matrix`
             A fastmat matrix instance subject to partial access.
 
-        **options:
-            See the list of special options below and
-            :py:meth:`fastmat.Matrix.__init__` for general options.
-
-        Options
-        -------
-        N : :py:class:`numpy.ndarray`
+        rows : :py:class:`numpy.ndarray`, optional
             A 1d vector selecting rows of mat.
 
             If `N` is of type bool it's size must match the height of mat and
@@ -124,11 +118,15 @@ cdef class Partial(Matrix):
 
             Defaults to selecting all rows.
 
-        M : :py:class:`numpy.ndarray`
+        cols : :py:class:`numpy.ndarray`, optional
             A 1d vector selecting columns of mat. The behaviour is identical to
             `N`.
 
             Defaults to selecting all columns.
+
+        **options : optional
+            Additional optional keyworded arguments. Supports all optional
+            arguments supported by :py:class:`fastmat.Matrix`.
         '''
 
         # initialize matrix for full support (used anyway for checking)

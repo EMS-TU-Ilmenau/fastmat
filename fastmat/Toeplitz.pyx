@@ -80,38 +80,47 @@ cdef class Toeplitz(Partial):
         '''
         Initialize Toeplitz matrix instance.
 
-        One either has to specify ``(vecC, vecR)`` or ``tenT`` with optinal ``split`` argument.
-
-        Also see the special options of ``fastmat.Fourier``, which are
-        also supported by this matrix and the general options offered by
-        ``fastmat.Matrix.__init__``.
+        One either has to specify ``(vecC, vecR)`` or ``tenT`` with optinal
+        ``split`` argument.
 
         Parameters
         ----------
-
-        vecC : :py:class:`numpy.ndarray`, optional
-            The generating column vector of the toeplitz matrix describing the
-            first column of the matrix.
-
-        vecR : :py:class:`numpy.ndarray`, optional
-            The generating row vector of the toeplitz matrix excluding the
-            element corresponding to the first column, which is already defined
-            in `vecC`. Note that this vector is indexed backwards in the sense
-            that its first element is the last element in the defined
-            Toeplitz matrix.
-
-        tenT : :py:class:`numpy.ndarray`, optional
+        tenT : :py:class:`numpy.ndarray`
             This is the most general way to define a (multilevel) Toeplitz
             Matrix. The number of dimensions (length of .shape) determines
             the number of levels. If `split` is not defined then tenT needs
             to have odd size in each dimension, so that this results in a
-            square matrix. The handling of the indexing in direction of columns follows the same reversed fashion as in the one-dimensional case with `vecR`, but here naturally for each level.
+            square matrix. The handling of the indexing in direction of columns
+            follows the same reversed fashion as in the one-dimensional case
+            with `vecR`, but here naturally for each level.
 
         split : :py:class:`numpy.ndarray`, optional
-            This vector needs to have as many elements as the number of elements of `tenT.shape`. If it is specified it defines the number
+            This vector needs to have as many elements as the number of elements
+            of `tenT.shape`. If it is specified it defines the number
             of elements which are used to determine the number of rows of
             each level. The rest of the elements are indexed in reverse order
             in the same fashion as without split.
+
+
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix` and
+            :py:class:`fastmat.Fourier`.
+
+            All optional arguments will be passed on to all
+            :py:class:`fastmat.Matrix` instances that are generated during
+            initialization.
+
+        Note:
+            For backward compatibility reasons it is still possible to
+            substitute the `tenT` argument by two 1D :py:class:`numpy.ndarray`
+            arrays `vecC` and `vecR` that describe the column- and row-defining
+            vectors in the single-level case respectively. The column-defining
+            vector describes the forst column of the resulting matrix and the
+            row-defining vector the first row except the (0,0) element (which
+            is already specified by the column-defining vector). Note that this
+            vector is indexed backwards in the sense that its first element is
+            the last element in the defined Toeplitz matrix.
         '''
 
         # The multidimensional implementation of this class exploits the fact

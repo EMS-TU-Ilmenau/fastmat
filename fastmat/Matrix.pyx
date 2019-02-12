@@ -106,15 +106,15 @@ cdef class MatrixCallProfile(object):
             for.
 
         targetCall : callable
-            ?
+            TODO: Needs to be specified.
 
-        cplxAlg : int
+        cplxAlg : int, optional
             The complexity estimate for the transforms implemented in the
             matrix class of `targetInstance`.
 
             Defaults to 0.
 
-        cplxBypass : int
+        cplxBypass : int, optional
             The complexity estimate for the (bypass) transforms implemented in
             the :py:class:`fastmat.Matrix` base class.
 
@@ -1391,37 +1391,30 @@ cdef class Matrix(object):
             A 2d array representing a dense matrix to be cast as a fastmat
             matrix.
 
-        **options:
-            See the list of general options below, that also apply to all other
-            fastmat matrix types.
-
-
-        options in `**options`
-        ----------------------
-        forceContiguousInput : bool
+        forceContiguousInput : bool, optional
             If set, the input array is forced to be contiguous in the style as
             specified by `fortranStyle`. If the input array already fulfils the
             requirement nothing is done.
 
-            Defaults to False
+            Defaults to False.
 
-        widenInputDatatype : bool
+        widenInputDatatype : bool, optional
             If set, the data type of the input array is promoted to at least
             match the output data type of the operation. Just like the
             `minType` option this parameter controls the accumulator width,
             however dynamically according to the output data type in this case.
 
-            Defaults to False
+            Defaults to False.
 
-        fortranStyle : bool
+        fortranStyle : bool, optional
             Control the style of contiguousity to be enforced by
             forceConfiguousInput. If this option is set to True, Fortran-style
             ordering (contiguous along columns) is enforced, if False C-Style
-            (contiguous along rows)
+            (contiguous along rows).
 
-            Defaults to True
+            Defaults to True.
 
-        minType : bool
+        minType : bool, optional
             Specify a minimum data type for the input array to a transform. The
             input array data type will be promoted to at least the data type
             specified in this option before performing the actual transforms.
@@ -1430,9 +1423,9 @@ cdef class Matrix(object):
             otherwise, as the output data type promotion rules do not consider
             avoiding accumulator overflows due to performance reasons.
 
-            Defaults to :py:`numpy.int8`
+            Defaults to :py:`numpy.int8`.
 
-        bypassAllow : bool
+        bypassAllow : bool, optional
             Allow bypassing the implemented :py:meth:`fastmat.Matrix.forward`
             and :py:meth:`fastmat.Matrix.backward` transforms with dense
             matrix-vector products if runtime estimates suggest this is faster
@@ -1446,7 +1439,7 @@ cdef class Matrix(object):
             Defaults to the value set in the package-wide
             :py:class:`fastmat.flags` options.
 
-        bypassAutoArray : bool
+        bypassAutoArray : bool, optional
             Prevents the automatic generation of a dense matrix representation
             that would be used for bypassing the implemented transforms in case
             the performance profiles suggest this would be faster, if set to

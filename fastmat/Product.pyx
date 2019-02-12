@@ -60,18 +60,16 @@ cdef class Product(Matrix):
             The matrix instances to form a matrix-matrix product of. You may
             also specify scalar values.
 
-        **options:
-            See the list of special options below and
-            :py:meth:`fastmat.Matrix.__init__` for general options.
-
-        Options
-        -------
-        typeExpansion : bool
+        typeExpansion : bool, optional
             Expand the data type of input data to the data type specified with
             this paramter.
 
             Defaults to a floating-point expansion of the promoted type of all
             nested matrices' (and scalar values') data types.
+
+        **options : optional
+            Additional optional keyworded arguments. Supports all optional
+            arguments supported by :py:class:`fastmat.Matrix`.
         '''
 
         # evaluate options passed to Product

@@ -75,8 +75,9 @@ cdef class Polynomial(Matrix):
         coeff : :py:class:`numpy.ndarray`
             A 1d vector defining the polynomial coefficients.
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
 
         if mat.numRows != mat.numCols:

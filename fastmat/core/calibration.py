@@ -133,20 +133,83 @@ def calibrateClass(target, **options):
     target : :py:class:`Matrix`
         The Matrix class to be calibrated. Any existing calibration data will
         be overwritten when the calibration succeeded.
-    **options : dict
-        Additional keyworded arguments specifying one of the following options:
 
-    Options
-    -------
-    benchmarkOnly : bool
+    benchmarkOnly : bool, optional
         If true, only perform the benchmark evaluation and do not generate
         calibration data (or update the corresponding entries in `calData`).
-    verbose : bool
+
+        Defaults to False.
+
+    verbose : bool, optional
         Controls the `BENCH.verbosity` flag of the :py:class:`BENCH` instance,
         resulting in increased verbosity during the test.
-    others : object
-        Any other entries will be added to the option set used during the
-        actual benchmarking run.
+
+        Defaults to False.
+
+    maxIter : float, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Abort iteration if evaluation of one problem takes more than this
+        amount of seconds.
+
+        Defaults to 0.1.
+
+    maxInit : float, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Abort iteration if preparation of one problem takes more than this
+        amount of seconds.
+
+        Defaults to 0.1.
+
+    maxSize : float, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Abort iteration if this problem size is exceeded.
+
+        Defaults to 1000000 (one million).
+
+    maxMem : float, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Abort iteration if memory usage exceeds this amount of kiB.
+
+        Defaults to 100000 (100 MB).
+
+    minItems : int, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Require the evaluation of at least this number of different problem
+        sizes.
+
+        Defaults to 3.
+
+    measMinTime : float, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Require the measurement interval to be at least this amount of seconds.
+        Increase repetition count of the evaluation of one problem size is
+        faster than that.
+
+        Defaults to 0.003.
+
+    meas_minReps : int, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Require at least this number of repetitions to be performed in one
+        measurement interval.
+
+        Defaults to 3.
+
+    meas_minReps : int, optional
+        Additional benchmark option that will be passed on to the evaluation.
+        Require at least this number of independent measurements for one
+        evaluation.
+
+        Defaults to 3.
+
+    funcStep : int callable(int)
+        Additional benchmark option that will be passed on to the evaluation.
+        Provision to increase problem size after each evaluation as lamba
+        function returning the next problem size, based on the current.
+
+        Defaults to `lambda x: x + 1`.
+
+    **options : optional
+        Additional benchmark options that will be passed on to the evaluation.
 
     Returns
     -------
@@ -157,38 +220,6 @@ def calibrateClass(target, **options):
 
     :py:class:`BENCH`
         If the option `benchmarkOnly` is False, return the benchmark instance.
-
-    By default the following default benchmark options for calibration runs
-    will be chosen unless explicitly overwritten or extended by further entries
-    in `options`:
-
-    Default options
-    ---------------
-    maxIter : float = 0.1
-        Abort iteration if evaluation of one problem takes more than 0.1s.
-    maxInit : float = 0.1
-        Abort iteration if preparation of one problem takes more than 0.1s.
-    maxSize : float = 10
-    00000
-        Abort iteration if problem size of 1 million is exceeded
-    maxMem : float = 100000
-        Abort iteration if 100 MB memory usage is exceeded.
-    minItems : int = 3
-        Require the evaluation of at least three different problem sizes.
-    measMinTime : float = 0.003
-        Require the measurement interval to be at least 3ms. Increase
-        repetition count of the evaluation of one problem size is faster than
-        that.
-    meas_minReps : int = 3
-        Require at least three repetitions to be performed in one measurement
-        interval
-    meas_minReps : int = 3
-        Require at least three independent measurements for one evaluation.
-    funcStep : int callable(int)
-        Provision to increase problem size after each evaluation as lamba
-        function returning the next problem size, based on the current.
-        Defaults to `lambda x: x + 1`
-
     """
     from fastmat.inspect import Benchmark, BENCH
     from .. import flags

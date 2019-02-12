@@ -56,8 +56,9 @@ cdef class Eye(Matrix):
         order : int
             Size of the desired identity matrix [order x order].
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         self._initProperties(order, order, np.int8, **options)
 

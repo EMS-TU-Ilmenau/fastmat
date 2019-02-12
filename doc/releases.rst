@@ -26,21 +26,21 @@
 Rolling Stable Branch
 ---------------------
 
- * Github `Link <https://github.com/EMS-TU-Ilmenau/fastmat/tree/stable>`_
+ * Github `Link <https://github.com/EMS-TU-Ilmenau/fastmat/tree/stable>`__
 
 Version 0.1.2
 -------------
 
- * Download `Link <https://github.com/EMS-TU-Ilmenau/fastmat/archive/0.1.2.zip>`_
+ * Download `Link <https://github.com/EMS-TU-Ilmenau/fastmat/archive/0.1.2.zip>`__
 
 Version 0.1.1
 -------------
 
- * Download `Link <https://github.com/EMS-TU-Ilmenau/fastmat/archive/0.1.1.zip>`_
- * Documentation `Link <https://github.com/EMS-TU-Ilmenau/fastmat/releases/download/0.1.1/Documentation.pdf>`_
+ * Download `Link <https://github.com/EMS-TU-Ilmenau/fastmat/archive/0.1.1.zip>`__
+ * Documentation `Link <https://github.com/EMS-TU-Ilmenau/fastmat/releases/download/0.1.1/Documentation.pdf>`__
 
 Version 0.1
 -----------
 
- * Download `Link <https://github.com/EMS-TU-Ilmenau/fastmat/archive/0.1.zip>`_
- * Documentation `Link <https://github.com/EMS-TU-Ilmenau/fastmat/releases/download/0.1/fastmatDoc.pdf>`_
+ * Download `Link <https://github.com/EMS-TU-Ilmenau/fastmat/archive/0.1.zip>`__
+ * Documentation `Link <https://github.com/EMS-TU-Ilmenau/fastmat/releases/download/0.1/fastmatDoc.pdf>`__

@@ -128,23 +128,21 @@ cdef class Parametric(Matrix):
         funF : callable with arguments (x, y)
             A function returning the element at index (x, y).
 
-        **options:
-            See the list of special options below and
-            :py:meth:`fastmat.Matrix.__init__` for general options.
-
-        Options
-        -------
-        funDtype : :py:class:`numpy.dtype`
+        funDtype : :py:class:`numpy.dtype`, optional
             Data type of the values returned by funF
 
             Not specified by default (determine the datatype from the element
             at the first index funF(vecX[0], vecY[0]).
 
-        rangeAccess : bool
+        rangeAccess : bool, optional
             Allow passing row- and column vectors directly to funF. This can
             lead to significant speed-ups compared to single-element access.
 
             Defaults to True.
+
+        **options : optional
+            Additional optional keyworded arguments. Supports all optional
+            arguments supported by :py:class:`fastmat.Matrix`.
         '''
 
         # retrieve options
