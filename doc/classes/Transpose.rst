@@ -13,12 +13,22 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.. _Matrix:
+.. _Transpose:
 
-Matrix Base Class
-=================
+Transposition and Related Classes
+=================================
 
-.. autoclass:: fastmat.Matrix
+.. autoclass:: fastmat.Transpose
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: fastmat.Hermitian
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: fastmat.Conjugate
     :members:
     :undoc-members:
     :show-inheritance:
