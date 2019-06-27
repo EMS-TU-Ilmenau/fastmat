@@ -149,7 +149,7 @@ compile-coverage:
 .PHONY: doc
 doc: | compile
 	$(info * building documentation)
-	@$(PYTHON) setup.py build_doc $(OPTIONS)
+	@$(PYTHON) setup.py build_doc $(OPTIONS) -E
 
 # targer 'debug': Debug package
 .PHONY: debug
