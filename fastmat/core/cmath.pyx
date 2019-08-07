@@ -220,7 +220,8 @@ cpdef float _getFFTComplexity(intsize N):
 
 
 def profileCall(reps, call, *args):
-    """Measure the runtime of a function call with arguments by averaging the
+    """
+    Measure the runtime of a function call with arguments by averaging the
     cumulated runtime of multiple calls.
 
     To avoid unpacking arguments each time the function is called calls with
@@ -230,22 +231,22 @@ def profileCall(reps, call, *args):
     Parameters
     ----------
     reps : int
-        The number of repetitions of `call`() in one runtime measurement.
+        The number of repetitions of ``call()`` in one runtime measurement.
     call : callable
         The function to be called
-    *args : iterable
+    args : iterable
         The positional arguments to be passed to call
 
     Returns
     -------
     dict
-        The dictionary contains the following key:value pairs:
+        The dictionary contains the following key:value pairs: \
         avg : float
-            The average runtime of a single call to `call(*args)`
+            The average runtime of a single call to ``call(*args)``
         time : float
-            The accumulated runtime of `reps` calls to `call(*args)`
+            The accumulated runtime of `reps` calls to ``call(*args)``
         cnt : int
-            The total count of calls to `call(*args)`
+            The total count of calls to ``call(*args)``
     """
     cdef object arg1
     cdef object arg2

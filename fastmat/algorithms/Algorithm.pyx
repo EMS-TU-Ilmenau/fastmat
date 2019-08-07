@@ -95,7 +95,8 @@ cdef class Algorithm(object):
 
     def updateParameters(self, **kwargs):
         r"""
-        Update the parameters of the algorithm instance with **kwargs.
+        Update the parameters of the algorithm instance with the supllied
+        keyworded arguments.
 
         Apply the set of parameters specified in kwargs by iteratively passing
         them to setattr(self, ...). Specifying an parameter which does not have

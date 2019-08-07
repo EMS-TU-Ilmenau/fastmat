@@ -324,14 +324,13 @@ def calibrateAll(**options):
     ----------
     **options : dict
         Additional keyworded arguments that will be passed on to
-        :py:method:`calibrateClass` calls.
+        :py:meth:`calibrateClass` calls.
         Note: The `verbose` option will be digested by this function and not
-        passed on to :py:method:`calibrateClass`.
+        passed on to :py:meth:`calibrateClass`.
 
     Returns
     -------
     None
-
     """
     from .. import classes
     verbose = options.pop('verbose', False)

@@ -291,7 +291,7 @@ cdef class Matrix(object):
 
     **Description:**
     The baseclass of all matrix classes in fastmat. It also serves as wrapper
-    around the standard Numpy Array [1]_.
+    around the standard Numpy Array :ref:`[1]<ref1>`.
     """
 
     ############################################## basic class properties
@@ -812,8 +812,8 @@ cdef class Matrix(object):
         dimensions. This is done via the so called power iteration of
         :math:`A^{\rm H} \cdot  A`.
 
-        - Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as a
-        stopping criterion
+        - Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as \
+          a stopping criterion
         - Output largest singular value :math:`\sigma_{\rm max}( A)`
 
         .. note::
@@ -1423,7 +1423,7 @@ cdef class Matrix(object):
             otherwise, as the output data type promotion rules do not consider
             avoiding accumulator overflows due to performance reasons.
 
-            Defaults to :py:`numpy.int8`.
+            Defaults to :py:class:`numpy.int8`.
 
         bypassAllow : bool, optional
             Allow bypassing the implemented :py:meth:`fastmat.Matrix.forward`
