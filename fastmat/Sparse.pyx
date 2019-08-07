@@ -86,8 +86,8 @@ cdef class Sparse(Matrix):
         best in these cases.
 
     For this matrix class we used the already tried and tested routines of
-    SciPy [1]_, so we merely provide a convenient wrapper to integrate nicely
-    into ``fastmat``.
+    SciPy :ref:`[1]<ref1>`, so we merely provide a convenient wrapper to
+    integrate nicely into ``fastmat``.
     """
 
     property spArray:

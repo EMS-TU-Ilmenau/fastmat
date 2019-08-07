@@ -26,8 +26,6 @@ SciPy offers a large zoo of algorithms which exploit the possibility to pass a s
 This allows to combine fastmat and SciPy in the most efficient manner possible. Here, fastmat provides the simple and efficient description of a huge variety of linear operators, which can then be used neatly and trouble free in SciPy.
 
 
-.. _`Examples`:
-
 Examples
 --------
 

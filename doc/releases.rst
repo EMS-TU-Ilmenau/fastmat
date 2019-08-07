@@ -13,8 +13,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.. _releases:
-
 #################
   Releases
 #################
@@ -27,6 +25,11 @@ Rolling Stable Branch
 ---------------------
 
  * Github `Link <https://github.com/EMS-TU-Ilmenau/fastmat/tree/stable>`__
+
+Version 0.2
+-------------
+
+* Download `Link <https://github.com/EMS-TU-Ilmenau/fastmat/archive/0.2.zip>`__
 
 Version 0.1.2
 -------------

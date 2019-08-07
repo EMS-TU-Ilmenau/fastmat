@@ -78,11 +78,11 @@ cdef class Parametric(Matrix):
         -15 & -12 & -7 &  0
         \end{bmatrix}
 
-    We used Cython [3]_ to get an efficient implementation in order to reduce
-    computation time. Moreover, it is generally assumed the the defined
-    function is able to use row and column broadcasting during evaluation.
-    If this is not the case, one has to set the flag ``rangeAccess`` to
-    ``False``.
+    We used Cython :ref:`[3]<ref3>` to get an efficient implementation in order
+    to reduce computation time. Moreover, it is generally assumed the the
+    defined function is able to use row and column broadcasting during
+    evaluation. If this is not the case, one has to set the flag
+    ``rangeAccess`` to ``False``.
     """
 
     property vecY:

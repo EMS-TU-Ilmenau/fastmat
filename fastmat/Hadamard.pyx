@@ -89,8 +89,8 @@ cdef class Hadamard(Matrix):
     This yields a Hadamard matrix :math:`{\mathcal{H}}_4` of order :math:`4`,
     i.e. with :math:`16` rows and columns.
 
-    The algorithm we used is described in [2]_ and was implemented in
-    Cython [3]_.
+    The algorithm we used is described in :ref:`[2]<ref2>` and was implemented
+    in Cython :ref:`[3]<ref3>`.
     """
 
     property order:

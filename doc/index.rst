@@ -29,6 +29,12 @@
    :maxdepth: -1
    :hidden:
 
+   references
+
+.. toctree::
+   :maxdepth: -1
+   :hidden:
+
    releases
 
 .. toctree::
