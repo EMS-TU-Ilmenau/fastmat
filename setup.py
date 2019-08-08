@@ -41,7 +41,10 @@ def WARNING(string):
 
 def ERROR(string, e):
     print("\033[91mERROR:\033[0m %s" % (string))
-    raise e
+    if isinstance(e, int):
+        sys.exit(e)
+    else:
+        raise e
 
 
 def INFO(string):
@@ -182,11 +185,24 @@ def doc_opts():
     try:
         from sphinx.setup_command import BuildDoc
     except ImportError:
-        return {}
+        ERROR("Unable to import Sphinx for building the docs", 1)
 
-    class OwnDoc(BuildDoc):
+    class OwnDoc(BuildDoc, object):
 
         def __init__(self, *args, **kwargs):
+            # check if we have the necessary sphinx add-ons installed
+            import pip
+            global sphinxRequires
+            failed = []
+            for requirement in sphinxRequires:
+                try:
+                    __import__(requirement)
+                except ImportError:
+                    failed.append(requirement)
+
+            if len(failed) > 0:
+                ERROR("Following pypi packages are missing: %s" %(failed, ), 1)
+
             super(OwnDoc, self).__init__(*args, **kwargs)
 
     return OwnDoc
@@ -284,6 +300,7 @@ if __name__ == '__main__':
     # check if all requirements are met prior to actually calling setup()
     setupRequires = []
     installRequires = []
+    sphinxRequires = ['sphinx', 'sphinx_rtd_theme', 'numpydoc']
     checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
     checkRequirement(setupRequires, 'Cython', 'cython>=0.29')
     checkRequirement(setupRequires, 'numpy', 'numpy>=1.7')
