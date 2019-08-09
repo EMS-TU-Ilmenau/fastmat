@@ -300,10 +300,14 @@ if __name__ == '__main__':
     # check if all requirements are met prior to actually calling setup()
     setupRequires = []
     installRequires = []
-    sphinxRequires = ['sphinx', 'sphinx_rtd_theme', 'numpydoc']
+    sphinxRequires = ['sphinx', 'sphinx_rtd_theme', 'numpydoc', 'matplotlib']
     checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
     checkRequirement(setupRequires, 'Cython', 'cython>=0.29')
-    checkRequirement(setupRequires, 'numpy', 'numpy>=1.7')
+    if sys.version_info < (3, 5):
+        checkRequirement(setupRequires, 'numpy', 'numpy<1.17')
+    else:
+        checkRequirement(setupRequires, 'numpy', 'numpy>=1.7')
+
     checkRequirement(installRequires, 'six', 'six')
     checkRequirement(installRequires, 'scipy', 'scipy>=1.0')
 
