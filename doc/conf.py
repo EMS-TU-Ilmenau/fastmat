@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
     'sphinx.ext.autosummary',
+	'matplotlib.sphinxext.plot_directive',
     'numpydoc'
     ]
 
