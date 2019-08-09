@@ -29,6 +29,18 @@
    :maxdepth: -1
    :hidden:
 
+   architecture
+
+.. toctree::
+   :maxdepth: -1
+   :hidden:
+
+   examples
+
+.. toctree::
+   :maxdepth: -1
+   :hidden:
+
    references
 
 .. toctree::

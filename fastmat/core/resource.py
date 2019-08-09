@@ -26,28 +26,45 @@ from ..Matrix import Matrix
 
 
 def getMemoryFootprint(obj, **options):
-    """Short summary.
+    """Return the total memory consumption of a python object including objects
+    nested withing that object.
+
+    If one nested object is referenced multiple times within the object
+    hierarchy of `obj`, it is inspected and accounted for only once.
+
+    The contents of the following builtin containers and their subclasses are
+    analyzed:
+      * :py:class:`object` (publicly accessible python-properties only)
+      * :py:class:`tuple`
+      * :py:class:`list`
+      * :py:class:`dict`
+      * :py:class:`deque`
+      * :py:class:`set`
+      * :py:class:`frozenset`.
+
+    Note: Only onjects represented in the python namespace the object spans can
+          be inspected and accounted for in the memory consumption figure
+          returned by this call. This explicitly does exclude low-level fields,
+          fixed- and variable sized arrays, pointers and other constructs that
+          may be compiled into an Extension-Type object but cannot be inspected
+          by python at runtime.
 
     Parameters
     ----------
-    obj : type
-        Description of parameter `obj`.
-    **options : type
-        Description of parameter `**options`.
+    obj : object
+        The python object for which the total memory consumption shall be
+        determined.
+
+    verbose : bool, optional
+        Be verbose while inspecting `obj`. This results in size and hierarchy
+        information about objects inspected being printed out to STDOUT.
 
     Returns
     -------
-    type
-        Description of returned object.
+    int
+        Total memory consumption in bytes of `obj`, including nested objects.
 
     """
-    '''
-    Return the approximate memory footprint of an object with all of its
-    contents.
-
-    Automatically finds the contents of the following builtin containers and
-    their subclasses:  tuple, list, deque, dict, set and frozenset.
-    '''
     # extract options
     verbose = options.get('verbose', False)
 

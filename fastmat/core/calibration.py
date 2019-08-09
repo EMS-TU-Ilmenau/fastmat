@@ -106,8 +106,9 @@ def getMatrixCalibration(target):
 
     Parameters
     ----------
-    target : type
-        Description of parameter `target`.
+    target : :py:class:`Matrix`
+        The fastmat Matrix class for which a :py:class:`MatrixCalibration`
+        object shall be returned.
 
     Returns
     -------
