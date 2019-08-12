@@ -13,15 +13,20 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.. _submod:
+.. highlight:: py
 
-Submodules
-==========
+.. role:: python(code)
+   :language: py
 
-.. automodule:: fastmat.core
-    :members:
-    :undoc-members:
+.. _example-compressed-sensing:
 
-.. automodule:: fastmat.inspect
-    :members:
-    :undoc-members:
+
+Compressed Sensing example
+==========================
+
+We set up a linear forward model using a Fourier matrix as dictionary and
+reconstruct the underlying sparse vector from linear projections using a matrix
+with elements drawn randomly from a Gaussian distribution.
+
+.. plot:: examples/compressed-sensing.py
+  :include-source:

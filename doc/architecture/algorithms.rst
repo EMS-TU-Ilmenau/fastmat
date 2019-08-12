@@ -13,18 +13,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-#################
-  Architecture
-#################
+.. _algorithms:
 
-.. toctree::
-   :glob:
-   :hidden:
-
-   architecture/classes
-   architecture/algorithms
-   architecture/scipy
-   architecture/types
-   architecture/capi
-   architecture/strides
-   architecture/calibration
+Algorithm Class Model
+=====================

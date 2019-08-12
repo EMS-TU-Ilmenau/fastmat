@@ -13,18 +13,20 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-#################
-  Architecture
-#################
+.. _testing:
 
-.. toctree::
-   :glob:
-   :hidden:
+Testing fastmat Classes and Unit Tests
+======================================
 
-   architecture/classes
-   architecture/algorithms
-   architecture/scipy
-   architecture/types
-   architecture/capi
-   architecture/strides
-   architecture/calibration
+.. _ftype:
+
+Fastmat type identifiers
+------------------------
+
+``fastmat.inspect.test``
+------------------------
+
+.. automodule:: fastmat.inspect.test
+    :members:
+    :undoc-members:
+    :show-inheritance:

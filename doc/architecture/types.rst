@@ -15,14 +15,13 @@
 
 .. _types:
 
-The Type System of fastmat
-==========================
+Type Handling in fastmat
+========================
 
+``fastmat.core.types``
+------------------------
 
-.. _ftype:
-
-ftype - The fastmat Type Identifier
------------------------------------
-
-Type propagation
-----------------
+.. automodule:: fastmat.core.strides
+    :members:
+    :undoc-members:
+    :show-inheritance:
