@@ -13,18 +13,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-#################
-  Architecture
-#################
+.. _optimization:
 
-.. toctree::
-   :glob:
-   :hidden:
+Optimizing fastmat Class Implementations
+========================================
 
-   architecture/classes
-   architecture/algorithms
-   architecture/scipy
-   architecture/types
-   architecture/capi
-   architecture/strides
-   architecture/calibration
+To be delivered (somewhere in time).

@@ -13,18 +13,22 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-#################
-  Architecture
-#################
+.. _user-defined-classes:
+
+########################
+  User Defined Classes
+########################
 
 .. toctree::
    :glob:
    :hidden:
 
-   architecture/classes
-   architecture/algorithms
-   architecture/scipy
-   architecture/types
-   architecture/capi
-   architecture/strides
-   architecture/calibration
+   expansion/*
+
+In this section we will show what needs to be done in order to
+:ref:`implement<implementation>` a new fastmat class and detail on how to
+:ref:`test<testing>` it properly once it is implemented using the built-in
+class test system. Further, we show how to evaluate the performance of your
+implementation by using the also-built-in :ref:`benchmarking<benchmarking>`
+system and give examples on how to :ref:`optimize<optimization>` a given
+implementation to improve its performance.

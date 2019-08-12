@@ -17,44 +17,14 @@
    :maxdepth: -1
    :hidden:
 
-   algorithms
-
-.. toctree::
-   :maxdepth: -1
-   :hidden:
-
    classes
-
-.. toctree::
-   :maxdepth: -1
-   :hidden:
-
+   algorithms
    architecture
-
-.. toctree::
-   :maxdepth: -1
-   :hidden:
-
+   expansion
+   inspection
    examples
-
-.. toctree::
-   :maxdepth: -1
-   :hidden:
-
    references
-
-.. toctree::
-   :maxdepth: -1
-   :hidden:
-
    releases
-
-.. toctree::
-   :maxdepth: -1
-   :hidden:
-
-   scipy
-   submod
 
 
 .. image:: _static/gfx/logo_long.png

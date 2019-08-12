@@ -15,8 +15,8 @@
 
 .. _strides:
 
-Striding interface
-==================
+Array Striding Interface
+========================
 
 Fastmat offers a special C-level interface allowing the creation, processing
 and manipulation of views into the underlying data of :py:class:`numpy.ndarray`
@@ -48,3 +48,11 @@ The striding interface supports:
   * Two-dimensional :py:class:`numpy.ndarray` objects
   * Non-contiguous (striding) access into the data
   * Modifying views (substriding
+
+``fastmat.core.strides``
+------------------------
+
+.. automodule:: fastmat.core.strides
+    :members:
+    :undoc-members:
+    :show-inheritance:

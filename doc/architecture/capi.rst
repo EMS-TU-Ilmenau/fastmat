@@ -13,18 +13,16 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-#################
-  Architecture
-#################
+.. _capi:
 
-.. toctree::
-   :glob:
-   :hidden:
+Performance Interface to numpy C-API
+====================================
 
-   architecture/classes
-   architecture/algorithms
-   architecture/scipy
-   architecture/types
-   architecture/capi
-   architecture/strides
-   architecture/calibration
+
+``fastmat.core.cmath``
+------------------------
+
+.. automodule:: fastmat.core.cmath
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -13,18 +13,15 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-#################
-  Architecture
-#################
+.. _calibration:
 
-.. toctree::
-   :glob:
-   :hidden:
+Calibration and Runtime Optimization
+====================================
 
-   architecture/classes
-   architecture/algorithms
-   architecture/scipy
-   architecture/types
-   architecture/capi
-   architecture/strides
-   architecture/calibration
+``fastmat.core.calibration``
+----------------------------
+
+.. automodule:: fastmat.core.calibration
+    :members:
+    :undoc-members:
+    :show-inheritance:
