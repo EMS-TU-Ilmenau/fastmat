@@ -33,4 +33,13 @@ This allows to combine fastmat and SciPy in the most efficient manner possible.
 Here, fastmat provides the simple and efficient description of a huge variety
 of linear operators, which can then be used neatly and trouble free in SciPy.
 
-For an example see :ref:`example-scipy-linear-operator`
+Usage
+-----
+
+The interface is provided by the factory
+:py:meth:`fastmat.Matrix.scipyLinearOperator`, which returns an instance of
+:py:class:`scipy.sparse.linalg.LinearOperator`. All fastmat matrices can be
+used from `scipy` methods supporting this interface, offering a wide range of
+functionality -- by combining both worlds -- to the user.
+
+For a code example, see :ref:`example-scipy-linear-operator`.

@@ -15,7 +15,7 @@
 
 .. _strides:
 
-Array Striding Interface
+Low-Overhead Array Striding Interface
 ========================
 
 Fastmat offers a special C-level interface allowing the creation, processing

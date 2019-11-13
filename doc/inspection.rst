@@ -31,6 +31,7 @@ cornerstone to writing your own user defined matrix class implementation.
 
 The scope of the implemented testing system expands to these areas
 (not complete):
+
   * Testing of mathematical correctness
   * Testing of computational accuracy
   * Testing of various data types (and combinations thereof)
