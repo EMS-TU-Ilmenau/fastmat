@@ -26,8 +26,8 @@ ctypedef np.uint32_t lfsrReg_t
 ################################################## class LfsrConv
 cdef class LFSRCirculant(Matrix):
 
-    cdef readonly int       size
-    cdef readonly lfsrReg_t taps
+    cdef readonly int       order
+    cdef readonly lfsrReg_t polynomial
     cdef readonly lfsrReg_t start
     cdef readonly lfsrReg_t period
 

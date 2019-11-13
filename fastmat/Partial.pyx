@@ -167,6 +167,22 @@ cdef class Partial(Matrix):
             else:
                 return None
 
+        if 'N' in options:
+            import warnings
+            warnings.warn(
+                'N=~ is deprecated in Partial.__init__(). Use rows=~.',
+                FutureWarning
+            )
+            options['rows'] = options['N']
+
+        if 'M' in options:
+            import warnings
+            warnings.warn(
+                'M=~ is deprecated in Partial.__init__() Use cols=~.',
+                FutureWarning
+            )
+            options['cols'] = options['M']
+
         self._rowSelection = checkSelection(
             options.get('rows', None), mat.numRows, 'row'
         )
