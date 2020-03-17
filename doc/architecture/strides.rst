@@ -16,7 +16,7 @@
 .. _strides:
 
 Low-Overhead Array Striding Interface
-========================
+=====================================
 
 Fastmat offers a special C-level interface allowing the creation, processing
 and manipulation of views into the underlying data of :py:class:`numpy.ndarray`
