@@ -2108,9 +2108,9 @@ cdef class Matrix(object):
                     TEST.OBJECT     : self.__class__,
                     TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
                     TEST.NAMINGARGS : dynFormat("%s", 'arrM'),
-                    TEST.TOL_POWER  : 5.0,
-                    TEST.TOL_EPS    : 1e-2,
-                    TEST.CHECK_DATATYPE: True
+                    TEST.TOL_POWER  : 10.0,
+                    TEST.TOL_MINEPS    : 1e-2,
+                    TEST.CHECK_DATATYPE: False
                 },
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
@@ -2454,9 +2454,9 @@ cdef class Inverse(Matrix):
         self._content = (matrix, )
         self._cythonCall = False
         self._initProperties(
-            matrix.shape[1],
             matrix.shape[0],
-            np.promote_types(matrix.dtype, np.float64),
+            matrix.shape[0],
+            np.promote_types(matrix.dtype, np.float32),
             **matrix._getProperties()
         )
         self._linearOperator = matrix.scipyLinearOperator
@@ -2503,7 +2503,7 @@ cdef class PseudoInverse(Matrix):
         matrix : :py:class:`fastmat.Matrix`
             The matrix instance that we want the pseudo inverse of.
         '''
-        from scipy.sparse.linalg import lsmr
+        from scipy.sparse.linalg import lsqr
 
         if not isinstance(matrix, Matrix):
             raise TypeError("Inverse: Not a fastmat Matrix")
@@ -2514,11 +2514,11 @@ cdef class PseudoInverse(Matrix):
         self._initProperties(
             matrix.shape[1],
             matrix.shape[0],
-            np.promote_types(matrix.dtype, np.float64),
+            np.promote_types(matrix.dtype, np.float32),
             **matrix._getProperties()
         )
         self._linearOperator = matrix.scipyLinearOperator
-        self._solver = lsmr
+        self._solver = lsqr
 
     cpdef np.ndarray _solveForward(self, np.ndarray arrX):
         return self._solver(self._linearOperator, arrX, atol=1e-12)[0]
