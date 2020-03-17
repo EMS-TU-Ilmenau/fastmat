@@ -141,7 +141,7 @@ cdef class OMP(Algorithm):
             self.arrB = arrB
 
         if self.numMaxSteps <= 0:
-            raise ValueError("OMP would wish to do at least one step for you")
+            raise ValueError("OMP would like to do at least one step for you")
 
         # get the number of vectors to operate on
         self.numN, self.numM, self.numL = \
