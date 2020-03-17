@@ -1,0 +1,216 @@
+%%
+%% Copyright 2007, 2008, 2009 Elsevier Ltd
+%%
+%% This file is part of the 'Elsarticle Bundle'.
+%% ---------------------------------------------
+%%
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%%
+%% The list of all files belonging to the 'Elsarticle Bundle' is
+%% given in the file `manifest.txt'.
+%%
+
+%% Template article for Elsevier's document class `elsarticle'
+%% with numbered style bibliographic references
+%% SP 2008/03/01
+
+\documentclass[preprint, review, 12pt, a4paper]{elsarticle}
+
+%% Use the option review to obtain double line spacing
+%% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
+
+%% For including figures, graphicx.sty has been loaded in
+%% elsarticle.cls. If you prefer to use the old commands
+%% please give \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{amssymb}
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers.
+\usepackage{lineno}
+\usepackage{float}
+\restylefloat{table}
+
+
+\usepackage{hyperref}
+\journal{SoftwareX}
+
+\begin{document}
+
+\begin{frontmatter}
+
+%% Title, authors and addresses
+
+%% use the tnoteref command within \title for footnotes;
+%% use the tnotetext command for theassociated footnote;
+%% use the fnref command within \author or \address for footnotes;
+%% use the fntext command for theassociated footnote;
+%% use the corref command within \author for corresponding author footnotes;
+%% use the cortext command for theassociated footnote;
+%% use the ead command for the email address,
+%% and the form \ead[url] for the home page:
+%% \title{Title\tnoteref{label1}}
+%% \tnotetext[label1]{}
+%% \author{Name\corref{cor1}\fnref{label2}}
+%% \ead{email address}
+%% \ead[url]{home page}
+%% \fntext[label2]{}
+%% \cortext[cor1]{}
+%% \address{Address\fnref{label3}}
+%% \fntext[label3]{}
+
+\title{fastmat: Efficient Linear Transforms in Python}
+
+%% use optional labels to link authors explicitly to addresses:
+%% \author[label1,label2]{}
+%% \address[label1]{}
+%% \address[label2]{}
+
+\author{S. Semper, C. W. Wagner}
+
+\address{EMS Group, TU Ilmenau, some address}
+
+\begin{abstract}
+%% Text of abstract
+We describe a new Python package that allows to define and work with linear transformations very intuitively and efficiently.
+
+\end{abstract}
+
+\begin{keyword}
+%% keywords here, in the form: keyword \sep keyword
+linear transforms \sep linear algebra \sep compressed sensing
+
+%% PACS codes here, in the form: \PACS code \sep code
+
+%% MSC codes here, in the form: \MSC code \sep code
+%% or \MSC[2008] code \sep code (2000 is the default)
+
+\end{keyword}
+
+\end{frontmatter}
+
+\section*{Required Metadata}
+\label{}
+
+\section*{Current code version}
+\label{}
+
+Ancillary data table required for subversion of the codebase. Kindly replace examples in right column with the correct information about your current code, and leave the left column as it is.
+
+\begin{table}[H]
+\begin{tabular}{|l|p{6.5cm}|p{6.5cm}|}
+\hline
+\textbf{Nr.} & \textbf{Code metadata description} & \textbf{Please fill in this column} \\
+\hline
+C1 & Current code version & v0.2 \\
+\hline
+C2 & Permanent link to code/repository used for this code version & For example: \url{https://github.com/EMS-TU-Ilmenau/fastmat} \\
+\hline
+C3 & Code Ocean compute capsule &
+\hline
+C4 & Legal Code License   & Apache License Version 2.0 \\
+\hline
+C5 & Code versioning system used & git \\
+\hline
+C6 & Software code languages, tools, and services used & Python, Cython \\
+\hline
+C7 & Compilation requirements, operating environments \& dependencies & \\
+\hline
+C8 & If available Link to developer documentation/manual & \url{https://fastmat.readthedocs.io/en/latest/} \\
+\hline
+C9 & Support email for questions & \url{sebastian.semper@tu-ilmenau.de}\\
+\hline
+\end{tabular}
+\caption{Code metadata (mandatory)}
+\label{mand_metadata}
+\end{table}
+
+
+\linenumbers
+
+
+\section{Motivation and significance}\label{motivation}
+\input{sections/motivation.tex}
+
+
+
+\section{Software description}\label{description}
+\input{sections/description.tex}
+
+
+\section{Illustrative Examples}\label{examples}
+\input{sections/examples.tex}
+
+\section{Impact}\label{impact}
+\input{sections/impact.tex}
+
+
+\section{Conclusions}\label{conclusion}
+\input{sections/conclusion.tex}
+
+
+\section{Conflict of Interest}
+We wish to confirm that there are no known conflicts of interest associated with this publication and there has been no significant financial support for this work that could have influenced its outcome.
+
+
+\section*{Acknowledgements}\label{ack}
+
+% Optionally thank people and institutes you need to acknowledge.
+
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+%% \appendix
+
+%% \section{}
+%% \label{}
+
+%% References:
+%% If you have bibdatabase file and want bibtex to generate the
+%% bibitems, please use
+%%
+% Please add the reference to the software repository if DOI for software  is available.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{bib.bib}
+
+
+\section*{Current executable software version}\label{current}
+
+Ancillary data table required for sub version of the executable software: (x.1, x.2 etc.) kindly replace examples in right column with the correct information about your executables, and leave the left column as it is.
+
+\begin{table}[!h]
+\begin{tabular}{|l|p{6.5cm}|p{6.5cm}|}
+\hline
+\textbf{Nr.} & \textbf{(Executable) software metadata description} & \textbf{Please fill in this column} \\
+\hline
+S1 & Current software version & For example 1.1, 2.4 etc. \\
+\hline
+S2 & Permanent link to executables of this version  & For example: $https://github.com/combogenomics/$ $DuctApe/releases/tag/DuctApe-0.16.4$ \\
+\hline
+S3 & Legal Software License & List one of the approved licenses \\
+\hline
+S4 & Computing platforms/Operating Systems & For example Android, BSD, iOS, Linux, OS X, Microsoft Windows, Unix-like , IBM z/OS, distributed/web based etc. \\
+\hline
+S5 & Installation requirements \& dependencies & \\
+\hline
+S6 & If available, link to user manual - if formally published include a reference to the publication in the reference list & For example: $http://mozart.github.io/documentation/$ \\
+\hline
+S7 & Support email for questions & \\
+\hline
+\end{tabular}
+\caption{Software metadata (optional)}\label{meta_optional}
+\end{table}
+
+\end{document}
+\endinput
+%%
+%% End of file `SoftwareX_article_template.tex'.
