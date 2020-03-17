@@ -2109,7 +2109,8 @@ cdef class Matrix(object):
                     TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
                     TEST.NAMINGARGS : dynFormat("%s", 'arrM'),
                     TEST.TOL_POWER  : 5.0,
-                    TEST.CHECK_DATATYPE: False
+                    TEST.TOL_EPS    : 1e-2,
+                    TEST.CHECK_DATATYPE: True
                 },
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
@@ -2455,7 +2456,7 @@ cdef class Inverse(Matrix):
         self._initProperties(
             matrix.shape[1],
             matrix.shape[0],
-            np.promote_types(matrix.dtype, np.float32),
+            np.promote_types(matrix.dtype, np.float64),
             **matrix._getProperties()
         )
         self._linearOperator = matrix.scipyLinearOperator
@@ -2495,12 +2496,12 @@ cdef class PseudoInverse(Matrix):
 
     def __init__(self, Matrix matrix):
         '''
-        Initialize an instance of an inverted matrix.
+        Initialize an instance of a pseudo inverse matrix.
 
         Parameters
         ----------
         matrix : :py:class:`fastmat.Matrix`
-            The matrix instance to be inverse.
+            The matrix instance that we want the pseudo inverse of.
         '''
         from scipy.sparse.linalg import lsmr
 
@@ -2511,9 +2512,9 @@ cdef class PseudoInverse(Matrix):
         self._content = (matrix, )
         self._cythonCall = False
         self._initProperties(
+            matrix.shape[1],
             matrix.shape[0],
-            matrix.shape[0],
-            np.promote_types(matrix.dtype, np.float32),
+            np.promote_types(matrix.dtype, np.float64),
             **matrix._getProperties()
         )
         self._linearOperator = matrix.scipyLinearOperator
