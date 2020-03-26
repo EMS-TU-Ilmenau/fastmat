@@ -133,7 +133,7 @@ else
 endif
 
 
-# target 'compile': Comile fastmat package locally.
+# target 'compile': Compile fastmat package locally.
 .PHONY: compile
 compile:
 	$(info * compiling fastmat package locally)
