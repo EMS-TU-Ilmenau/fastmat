@@ -1,3 +1,8 @@
+fastmat
+util
+build
+doc
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof

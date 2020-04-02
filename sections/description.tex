@@ -6,8 +6,31 @@
 
 % Give a short overview of the overall software architecture; provide a pictorial component overview or similar (if possible). If necessary provide implementation details.
 
+\begin{itemize}
+\item cython, numpy, scipy
+\item zoo of matrices
+  \begin{itemize}
+    \item derived from (unstructured) base class
+    \item combination to create new classes: partial(product(fourier.H, diag, fourier)) $\rightarrow$ toeplitz/circulant
+  \end{itemize}
+\item zoo of algorithms: class based, logging, inspection
+\item cmath for high performance
+\item inspecting: testing and benchmarking
+\item conversion to scipy linear operator $\rightarrow$ unlock their algorithms
+\end{itemize}
+
 \subsection{Software Functionalities}\label{features}
 
 % Present the major functionalities of the software.
+\begin{itemize}
+  \item zoo of matrices
+  \begin{itemize}
+    \item derived from (unstructured) base class
+    \item interoperability between all derived classes, structure is preserved and known
+    \item combination to create new classes: partial(product(fourier.H, diag, fourier)) $\rightarrow$ toeplitz/circulant
+  \end{itemize}
+  \item zoo of algorithms: sparse recovery
+  \item conversion to scipy linear operator $\rightarrow$ unlock their algorithms
+\end{itemize}
 
 \subsection{Sample code snippets analysis (optional)}\label{snippets}
