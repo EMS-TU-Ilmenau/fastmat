@@ -12,12 +12,13 @@
 
 \begin{itemize}
 \item linear mappings are present in applied math, physics, engineering, signal processing and data science
-\item represented as matrices in finite dimensional spaces
-\item many mappings are not arbitrary but follow a certain regularity, logic or physics
-\item so they have far fewer degrees of freedom and have a meaning -- they are \textbf{structured}
-\item this structure is also present in our minds, our notation, or thinking
-\item but a mere rectangle of numbers itself is not able to capture this
-\item carrying out the mapping is not a matrix-vector product anymore, but an algorithm on its own, specifically tailored to the mapping
-\item we should not describe a rectangle of numbers, but rather the effect of the mapping itself
-\item many algorithms only need the mapping and not the whole matrix
+\item represented as matrices when acting between finite dimensional spaces
+\item many mappings are not arbitrary but follow a certain regularity, logic or physics: convolution, differentiation, integration
+\item they are structured: fewer degrees of freedom
+\item naturally: this structure is also present in our minds, our notation, our thinking
+\item so the represenation as a matrix becomes wasteful and cumbersome
+\item also: applying the mapping is not a matrix-vector product anymore, but an algorithm on its own, specifically tailored to the mapping
+\item we have to drop the represenation as a matrix
+\item we want to combine the rectangle of numbers and the specifically tailored algorithm into one concept
+\item many algorithms only need the mapping and not the whole matrix (cg, bicgstab, lancosz iteration, ista, omp)
 \end{itemize}
