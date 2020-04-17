@@ -13,12 +13,14 @@
 \begin{itemize}
 \item linear mappings are present in applied math, physics, engineering, signal processing and data science
 \item represented as matrices when acting between finite dimensional spaces
-\item many mappings are not arbitrary but follow a certain regularity, logic or physics: convolution, differentiation, integration
+\item many mappings are not arbitrary but follow a certain regularity, logic or physics.
+\item Example: DFT Matrix (write down formula for elements)
 \item they are structured: fewer degrees of freedom
-\item naturally: this structure is also present in our minds, our notation, our thinking
-\item so the represenation as a matrix becomes wasteful and cumbersome
-\item also: applying the mapping is not a matrix-vector product anymore, but an algorithm on its own, specifically tailored to the mapping
-\item we have to drop the represenation as a matrix
-\item we want to combine the rectangle of numbers and the specifically tailored algorithm into one concept
-\item many algorithms only need the mapping and not the whole matrix (cg, bicgstab, lancosz iteration, ista, omp)
+\item Example: DFT Matrix only needs it's size
+\item multiplication with matrix or it's transpose (forward-, backward-transform): formulas, complexity
+\item Example: FFT and iFFT as algorithmic shortcuts, no matrix, less memory, more speed
+\item so: applying the mapping is not a matrix-vector product anymore, but an algorithm on its own, specifically tailored to the mapping
+\item Two representations: the rectangle of numbers, the efficient algorithmic formulation
+\item algorithm prototyping: code works with the efficient algorithm, paper writes the mathematical equation. Conceptually they represent the same thing, but code and math diverge
+\item on the software side we want to provide an architecture that unifies these two perspectives
 \end{itemize}
