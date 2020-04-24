@@ -14,13 +14,15 @@
 \item linear mappings are present in applied math, physics, engineering, signal processing and data science
 \item represented as matrices when acting between finite dimensional spaces
 \item many mappings are not arbitrary but follow a certain regularity, logic or physics.
-\item Example: DFT Matrix (write down formula for elements)
+\item Example: DFT Matrix (write down formula for elements), applications: spectral analysis, ...?
 \item they are structured: fewer degrees of freedom
-\item Example: DFT Matrix only needs it's size
-\item multiplication with matrix or it's transpose (forward-, backward-transform): formulas, complexity
-\item Example: FFT and iFFT as algorithmic shortcuts, no matrix, less memory, more speed
+\item Example: DFT Matrix only needs it's size to be defined completely
+\item multiplication with matrix or it's transpose (forward-, backward-transform): general multiplication formula, complexity (memory, time)
+\item Example: FFT and iFFT as algorithmic shortcuts by exploiting the structural knowledge about the transform/matrix -> no matrix, less memory, more speed
 \item so: applying the mapping is not a matrix-vector product anymore, but an algorithm on its own, specifically tailored to the mapping
 \item Two representations: the rectangle of numbers, the efficient algorithmic formulation
-\item algorithm prototyping: code works with the efficient algorithm, paper writes the mathematical equation. Conceptually they represent the same thing, but code and math diverge
+\item Exmaple: the DFT matrix, the FFT
+\item In Science: algorithm prototyping: code works with the efficient algorithm, paper writes matrix vector product. Conceptually they represent the same thing, but code and math diverge
+\item Example: filtering in Frequency domain: y = ifft(fft(c) $\cdot$ fft(x)), $y = c \ast x = F^H \cdot diag(F \cdot c) \cdot F \cdot x$
 \item on the software side we want to provide an architecture that unifies these two perspectives
 \end{itemize}

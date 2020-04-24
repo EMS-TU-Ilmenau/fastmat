@@ -1,19 +1,18 @@
 % !TEX root = ../fastmat.tex
 
-
 % Provide at least one illustrative example to demonstrate the major functions.
 %
-% Optional: you may include one explanatory video that will appear next to your article, in the right hand side panel. (Please upload any video as a single supplementary file with your article. Only one MP4 formatted, with 50MB maximum size, video is possible per article. Recommended video dimensions are 640 x 480 at a maximum of 30 frames/second. Prior to submission please test and validate your .mp4 file at $ http://elsevier-apps.sciverse.com/GadgetVideoPodcastPlayerWeb/verification$. This tool will display your video exactly in the same way as it will appear on ScienceDirect.).
 
 \begin{itemize}
   \item Ultrasonic NDT
   \begin{itemize}
-    \item goal: detect defects
-    \item ultrasound with transducer to create a synthetic aperture
-    \item write down the model: matrix(kronecker, fourier, toeplitz), observation, sparse vectors (encodes defect positions)
-    \item kronecker: multidimensional data, fourier: compression, toeplitz: geometry of sampling
+    \item goal: detect defects non destructively (production, medicine, maintenance)
+    \item move around an ultrasound transducer to create a synthetic aperture
+    \item discrete data model: matrix(kronecker, fourier, toeplitz, partial, diagonal)
+    \item sparsity: few defects, positions non zeros in vector encode defect position
+    \item origin: kronecker: multidimensional data, fourier: compression, toeplitz: geometry of sampling and physics
     \item write down sparse recovery problem
-    \item OMP: calculation of $c = A^H r$, rest is easy
+    \item OMP: model dependent calculation $c = A^H r$, time/memory complexity depends on complexity of $A$, rest of linear time/memory-complexity
   \end{itemize}
   \item Goldcodes
   \begin{itemize}
