@@ -179,15 +179,19 @@ class STELA(Algorithm):
             self.arrGrad = self.arrD * self.arrX - self.arrZ
 
             # calculate the stopping criterion
-            self.arrStop = np.linalg.norm(
-                self.arrZ
-                - np.maximum(
-                    np.minimum(self.arrZ - self.arrX, +self.numLambda),
+            arrDiff = np.maximum(
+                   np.minimum(self.arrZ.real - self.arrX.real, +self.numLambda),
                     -self.numLambda,
-                ),
+                )
+            if dtypeType == complex:
+                arrDiff = arrDiff + 1j*np.maximum(
+                   np.minimum(self.arrZ.imag - self.arrX.imag, +self.numLambda),
+                    -self.numLambda,
+                )
+            self.arrStop = np.linalg.norm(
+                self.arrZ - arrDiff,
                 axis=0,
             )
-
             # now check if we converged for any snapshot
             self.arrActive = self.arrStop > self.numMaxError
 
@@ -214,12 +218,14 @@ class STELA(Algorithm):
             self.arrGamma[self.arrActive] = np.maximum(
                 np.minimum(
                     -(
+                        np.real(
                         np.sum(
                             np.multiply(
                                 np.conj(self.arrRes[:, self.arrActive]),
                                 self.arrABxx[:, self.arrActive],
                             ),
                             axis=0,
+                        )
                         )
                         + self.numLambda
                         * (
