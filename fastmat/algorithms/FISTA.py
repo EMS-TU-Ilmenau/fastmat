@@ -80,10 +80,15 @@ class FISTA(Algorithm):
         the system matrix
     arrB : np.ndarray
         the measurement vector
+    backtracking : bool, optional
+        if true, backtracking is used, if false, the step size is computed using
+        the largest singular value
     numLambda : float, optional
         the thresholding parameter; default is 0.1
     numMaxSteps : int, optional
         maximum number of steps; default is 100
+    numEta : float, optional
+        scaling factor for the backtracking
 
     Returns
     -------
@@ -91,7 +96,7 @@ class FISTA(Algorithm):
         solution array
     """
 
-    def __init__(self, fmatA, **kwargs):
+    def __init__(self, fmatA, backtracking=False, **kwargs):
 
         # check the must-have parameters
         if not isinstance(fmatA, Matrix):
@@ -101,9 +106,11 @@ class FISTA(Algorithm):
         # set default parameters (and create attributes)
         self.numLambda = 0.1
         self.numMaxSteps = 100
+        self.numEta = 1.1
 
         # initialize callbacks
         self.cbStep = None
+        self.backtracking = backtracking
 
         # Update with extra arguments
         self.updateParameters(**kwargs)
@@ -119,6 +126,21 @@ class FISTA(Algorithm):
 
         self.arrM = np.maximum(np.abs(arrX) - numAlpha, 0)
         return np.multiply((self.arrM / (self.arrM + numAlpha)), arrX)
+    
+    def _evaluate_quadratic_approx(self, f_y, grad_f_y, x, y, L):
+        r""" Evaluate the quadratic approximation function for the backtracking 
+        step. 
+
+        It is defined in (2.5) of
+            Beck et al. "A fast iterative shrinkage-thresholding algorithm for
+            linear inverse problems", 2009.
+        
+        L - current estimate of the Lipschitz-constant
+        """
+        arrDiff = x - y
+        numProj = np.vdot(arrDiff, grad_f_y)
+        return f_y + numProj +\
+                L/2 * np.linalg.norm(arrDiff)**2
 
     def _process(self, arrB):
         # Wrapper around the FISTA algrithm to allow processing of arrays of
@@ -141,7 +163,16 @@ class FISTA(Algorithm):
             raise ValueError("FISTA would like to do at least one step for you")
 
         # calculate the largest singular value to get the right step size
-        self.numL = 1.0 / (self.fmatA.largestSingularValue ** 2)
+        # or use backtracking
+        if not self.backtracking:
+            self.numL = 1.0 / (self.fmatA.largestSingularValue ** 2)
+        else:
+            largestSVest = np.sqrt(np.sum(self.fmatA.colNorms**2))/\
+                np.sqrt(np.maximum(self.fmatA.numCols, self.fmatA.numRows))
+            currL = largestSVest**2
+            print("estimate: %f" % largestSVest)
+            print("exact: %f" % largestSV)
+ 
         self.t = 1
 
         self.arrX = np.zeros(
@@ -153,11 +184,43 @@ class FISTA(Algorithm):
         # start iterating
         for self.numStep in range(self.numMaxSteps):
             self.arrXold = np.copy(self.arrX)
+            self.residual = self.fmatA.forward(self.arrY) - self.arrB
+            self.gradient = self.fmatA.backward(self.residual)
+            if self.backtracking:
+                backtracking_converged = False
+                counter = 0
+                f_y = np.linalg.norm(self.residual)**2
+                while not backtracking_converged:
+                    currArrStep = self.arrY - 2/currL * self.gradient
+                    self.currArrX =\
+                        self.softThreshold(currArrStep, 
+                            1/currL*self.numLambda
+                        )
+                    
+                    
+                    F_l = np.linalg.norm(
+                            self.fmatA.forward(self.currArrX) - self.arrB
+                        )**2 
+                    Q_l = self._evaluate_quadratic_approx(
+                        f_y, self.gradient, self.currArrX, self.arrY, currL
+                    )
+                    
+                    # This is implementing inequality (2.7) in the paper by
+                    #  Beck et al.
+                    if F_l <= Q_l:
+                        backtracking_converged=True
+                        self.numL = 2/currL
+                        print(
+                            "converged after %d steps. F_l = %f, Q_l = %f. " 
+                            % (counter, F_l, Q_l)
+                        )
+                        print("Chosen L: %f" % self.numL)
+                    else:
+                        currL = self.numEta * currL
+                        counter +=1
 
             # do the gradient step and threshold
-            self.arrStep = self.arrY - self.numL * self.fmatA.backward(
-                self.fmatA.forward(self.arrY) - self.arrB
-            )
+            self.arrStep = self.arrY - self.numL * self.gradient
             self.arrX = self.softThreshold(
                 self.arrStep, self.numL * self.numLambda * 0.5
             )
