@@ -32,7 +32,7 @@ import time
 
 # import numpy functionality
 import numpy as np
-from scipy import ndimage
+import imageio
 
 ################################################## import modules
 try:
@@ -52,7 +52,8 @@ print("fastmat demo: Edge detection using fast correlation")
 print("---------------------------------------------------")
 
 # read the image
-arrHead = ndimage.imread("head.png", flatten=True)
+# http://imageio.readthedocs.io/en/stable/scipy.html
+arrHead = imageio.imread("head.png", as_gray=True)
 
 # extract the dimensions
 numN, numM = arrHead.shape
