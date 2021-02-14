@@ -92,7 +92,7 @@ cdef class Fourier(Matrix):
         '''
 
         cdef intsize paddedSize
-        cdef np.ndarray arrSamples, vecConv
+        cdef np.ndarray arrSamples, vecConv, arrArgument, arrBuffer
 
         cdef bint optimize = options.get('optimize', True)
         cdef int maxStage = options.get('maxStage', 4)
@@ -129,20 +129,28 @@ cdef class Fourier(Matrix):
             # create the sampling grid
             arrSamples = np.linspace(0, self.order - 1, self.order)
 
-            # evaluate at these samples for the first numL elements
-            # of the vector
-            vecConv = _arrZero(1, self._numL, 1, np.NPY_COMPLEX128)
-            vecConv[: self.order] = np.exp(
-                +1j * (arrSamples ** 2) * np.pi / self.order)
+            # evaluate at these sample points for the first numL elements
+            # of the vector, also compose a premultiplication array for
+            # preprocessing input data prior to the convolution.
+            # Make use of trigonometric funtion symmetry for much faster
+            # compututation of the complex exponentials (compared to using
+            # np.exp(...) twice).
+            vecConv = _arrEmpty(1, self._numL, 1, np.NPY_COMPLEX128)
+            self._preMult = _arrEmpty(1, self.order, 0, np.NPY_COMPLEX128)
+            arrArgument = (arrSamples ** 2) * np.pi / self.order
+            arrBuffer = np.cos(arrArgument)
+            vecConv.real[:self.order] = arrBuffer
+            self._preMult[:] = arrBuffer
+            np.sin(arrArgument, out=arrBuffer)
+            vecConv.imag[:self.order] = arrBuffer
+            self._preMult[:] = -arrBuffer
 
             # now put a flipped version of the above at the very end to get
             # a circular convolution
             vecConv[self._numL - self.order + 1:] = vecConv[1:self.order][::-1]
 
-            # get a premultiplication array for preprocessing before the
-            # convolution
-            self._preMult = np.exp(
-                -1j * (arrSamples ** 2) * np.pi / self.order)
+            # ... and fill the remainder (in the middle of vecConv) with zeros
+            vecConv[self.order:self._numL - self.order + 1] = 0
 
             # transfer function of convolution
             self._vecConvHat = np.fft.fft(vecConv)
