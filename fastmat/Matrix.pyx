@@ -1020,7 +1020,13 @@ cdef class Matrix(object):
         cdef np.ndarray arrNorms = np.empty(self.numCols, dtype=diagType)
 
         # number of elements we consider at once during normalization
-        cdef intsize numStrideSize = 256
+        # Scale chunk size to fit a memory buffer of at most 16M
+        cdef intsize numStrideSize = max(
+            1, min(
+                1024,
+                (16777216 // typeInfo[self.fusedType].dsize) // self.numRows
+            )
+        )
 
         cdef np.ndarray arrSelector = np.zeros(
             (self.numCols, min(numStrideSize, self.numCols)),
@@ -1074,7 +1080,13 @@ cdef class Matrix(object):
         cdef np.ndarray arrNorms = np.empty(self.numRows, dtype=diagType)
 
         # number of elements we consider at once during normalization
-        cdef intsize numStrideSize = 256
+        # Scale chunk size to fit a memory buffer of at most 16M
+        cdef intsize numStrideSize = max(
+            1, min(
+                1024,
+                (16777216 // typeInfo[self.fusedType].dsize) // self.numCols
+            )
+        )
 
         cdef np.ndarray arrSelector = np.zeros(
             (self.numRows, min(numStrideSize, self.numRows)),
