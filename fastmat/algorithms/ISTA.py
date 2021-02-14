@@ -51,7 +51,7 @@ class ISTA(Algorithm):
     >>> C = fm.Circulant(c)
     >>> # create the ground truth
     >>> x = np.zeros(n)
-    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> x[np.random.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
     >>> ista = fma.ISTA(C, numLambda=0.005, numMaxSteps=100)

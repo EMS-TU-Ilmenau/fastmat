@@ -59,7 +59,7 @@ cdef class OMP(Algorithm):
     >>> C = fm.Circulant(c)
     >>> # create the ground truth
     >>> x = np.zeros(n)
-    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> x[np.random.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
     >>> omp = fma.OMP(C, numMaxSteps=100)
