@@ -83,7 +83,7 @@ FILE_LIST=setup.files
 # MODE may be specified from command line for choosing install mode.
 
 # python version
-PYTHON=python
+PYTHON=python3
 
 ifeq ($(OS),Windows_NT)
 else

@@ -180,12 +180,14 @@ class STELA(Algorithm):
 
             # calculate the stopping criterion
             arrDiff = np.maximum(
-                   np.minimum(self.arrZ.real - self.arrX.real, +self.numLambda),
-                    -self.numLambda,
-                )
+                np.minimum(self.arrZ.real - self.arrX.real, +self.numLambda),
+                -self.numLambda,
+            )
             if dtypeType == complex:
-                arrDiff = arrDiff + 1j*np.maximum(
-                   np.minimum(self.arrZ.imag - self.arrX.imag, +self.numLambda),
+                arrDiff = arrDiff + 1j * np.maximum(
+                    np.minimum(
+                        self.arrZ.imag - self.arrX.imag, +self.numLambda
+                    ),
                     -self.numLambda,
                 )
             self.arrStop = np.linalg.norm(
@@ -219,13 +221,13 @@ class STELA(Algorithm):
                 np.minimum(
                     -(
                         np.real(
-                        np.sum(
-                            np.multiply(
-                                np.conj(self.arrRes[:, self.arrActive]),
-                                self.arrABxx[:, self.arrActive],
-                            ),
-                            axis=0,
-                        )
+                            np.sum(
+                                np.multiply(
+                                    np.conj(self.arrRes[:, self.arrActive]),
+                                    self.arrABxx[:, self.arrActive],
+                                ),
+                                axis=0,
+                            )
                         )
                         + self.numLambda
                         * (
@@ -332,7 +334,7 @@ class STELA(Algorithm):
                     "strTypeA",
                 ),
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION: np.float32,
+                TEST.TYPE_PROMOTION: np.float64,
                 TEST.CHECK_PROXIMITY: False,
             },
         }
