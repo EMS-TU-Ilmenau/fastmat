@@ -2343,13 +2343,13 @@ cdef class Conjugate(Matrix):
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,
                     ftype typeX, ftype typeRes):
         cdef np.ndarray arrInput = _conjugate(arrX)
-        self._nested.forwardC(arrInput, arrRes, typeX, typeRes)
+        self._nested._forwardC(arrInput, arrRes, typeX, typeRes)
         _conjugateInplace(arrRes)
 
     cpdef _backwardC(self, np.ndarray arrX, np.ndarray arrRes,
                      ftype typeX, ftype typeRes):
         cdef np.ndarray arrInput = _conjugate(arrX)
-        self._nested.backwardC(arrInput, arrRes, typeX, typeRes)
+        self._nested._backwardC(arrInput, arrRes, typeX, typeRes)
         _conjugateInplace(arrRes)
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
