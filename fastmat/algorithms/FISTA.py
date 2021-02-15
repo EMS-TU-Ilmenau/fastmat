@@ -46,11 +46,11 @@ class FISTA(Algorithm):
     >>> # define the sampling positions
     >>> t = np.linspace(0, 20 * np.pi, n)
     >>> # construct the convolution matrix
-    >>> c = np.cos(2 * t)
+    >>> c = np.cos(2 * t) * np.exp(-t ** 2)
     >>> C = fm.Circulant(c)
     >>> # create the ground truth
     >>> x = np.zeros(n)
-    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> x[np.random.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
     >>> fista = fma.FISTA(C, numLambda=0.005, numMaxSteps=100)
@@ -129,13 +129,16 @@ class FISTA(Algorithm):
         #                     between data fidelity and sparsity
         #     numMaxSteps   - maximum number of steps to run
         #     numL          - step size during the conjugate gradient step
-        if arrB.ndim > 2:
+        if arrB.ndim > 2 or arrB.ndim < 1:
             raise ValueError("Only n x m arrays are supported for FISTA")
 
         if arrB.ndim == 1:
             self.arrB = arrB.reshape((-1, 1))
         else:
             self.arrB = arrB
+
+        if self.numMaxSteps <= 0:
+            raise ValueError("FISTA would like to do at least one step for you")
 
         # calculate the largest singular value to get the right step size
         self.numL = 1.0 / (self.fmatA.largestSingularValue ** 2)

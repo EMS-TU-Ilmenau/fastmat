@@ -15,8 +15,8 @@
 
 .. _LFSRCirculant:
 
-LFSRCirculant Class
-===================
+LFSR Circulant Matrix
+=====================
 
 .. autoclass:: fastmat.LFSRCirculant
     :members:

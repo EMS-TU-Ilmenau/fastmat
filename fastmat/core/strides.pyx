@@ -28,6 +28,23 @@ from .types cimport *
 ###  Basic stride operations
 ################################################################################
 cdef void strideInit(STRIDE_s *stride, np.ndarray arr, np.uint8_t axis):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+    arr : np.ndarray
+        Description of parameter `arr`.
+    axis : np.uint8_t
+        Description of parameter `axis`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     if axis > 1:
         raise ValueError("Striding operations support 2D-arrays only.")
 
@@ -44,11 +61,45 @@ cdef void strideInit(STRIDE_s *stride, np.ndarray arr, np.uint8_t axis):
 
 
 cdef void strideCopy(STRIDE_s *strideDst, STRIDE_s *strideSrc):
+    """Short summary.
+
+    Parameters
+    ----------
+    *strideDst : STRIDE_s
+        Description of parameter `*strideDst`.
+    *strideSrc : STRIDE_s
+        Description of parameter `*strideSrc`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     memcpy(strideDst, strideSrc, sizeof(STRIDE_s))
 
 
 cdef void strideSliceVectors(STRIDE_s *stride,
                              intsize start, intsize stop, intsize step):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+    start : intsize
+        Description of parameter `start`.
+    stop : intsize
+        Description of parameter `stop`.
+    step : intsize
+        Description of parameter `step`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     # CAUTION: NOT VERIFIED YET
     if start < 0:
         start = stride[0].numVectors
@@ -62,6 +113,25 @@ cdef void strideSliceVectors(STRIDE_s *stride,
 
 cdef void strideSliceElements(STRIDE_s *stride,
                               intsize start, intsize stop, intsize step):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+    start : intsize
+        Description of parameter `start`.
+    stop : intsize
+        Description of parameter `stop`.
+    step : intsize
+        Description of parameter `step`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     if start < 0:
         start = stride[0].numElements
 
@@ -76,6 +146,31 @@ cdef void strideSubgridVector(STRIDE_s *stride,
                               intsize idxVector, intsize idxElement,
                               intsize steppingElements, intsize numElements,
                               intsize steppingVectors, intsize numVectors):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+    idxVector : intsize
+        Description of parameter `idxVector`.
+    idxElement : intsize
+        Description of parameter `idxElement`.
+    steppingElements : intsize
+        Description of parameter `steppingElements`.
+    numElements : intsize
+        Description of parameter `numElements`.
+    steppingVectors : intsize
+        Description of parameter `steppingVectors`.
+    numVectors : intsize
+        Description of parameter `numVectors`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     # CAUTION: NOT VERIFIED YET
 
     # compute new base pointer (offset subgrid stride from current one)
@@ -91,14 +186,55 @@ cdef void strideSubgridVector(STRIDE_s *stride,
     stride[0].numVectors = numVectors
 
 cdef void strideFlipVectors(STRIDE_s *stride):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     stride[0].base += (stride[0].numVectors - 1) * stride[0].strideVector
     stride[0].strideVector = -stride[0].strideVector
 
 cdef void strideFlipElements(STRIDE_s *stride):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+
+    Returns
+    -------
+    void
+        Description of returned object.
+
+    """
     stride[0].base += (stride[0].numElements - 1) * stride[0].strideElement
     stride[0].strideElement = -stride[0].strideElement
 
 cdef stridePrint(STRIDE_s *stride, text=''):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+    text : type
+        Description of parameter `text`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     print("[%dx%d,%d] @ 0x%012X + %d * nn + %d * mm (%d Bytes) %s" %(
         stride[0].numElements, stride[0].numVectors, stride[0].dtype,
         <intsize> (stride[0].base),
@@ -110,6 +246,25 @@ cdef stridePrint(STRIDE_s *stride, text=''):
 ################################################################################
 cdef opCopyVector(STRIDE_s *strideDst, intsize idxVectorDst,
                   STRIDE_s *strideSrc, intsize idxVectorSrc):
+    """Short summary.
+
+    Parameters
+    ----------
+    *strideDst : STRIDE_s
+        Description of parameter `*strideDst`.
+    idxVectorDst : intsize
+        Description of parameter `idxVectorDst`.
+    *strideSrc : STRIDE_s
+        Description of parameter `*strideSrc`.
+    idxVectorSrc : intsize
+        Description of parameter `idxVectorSrc`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # CAUTION: NOT VERIFIED YET
 
     cdef intsize nn
@@ -160,6 +315,21 @@ cdef opCopyVector(STRIDE_s *strideDst, intsize idxVectorDst,
 
 
 cdef opZeroVector(STRIDE_s *stride, intsize idxVector):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+    idxVector : intsize
+        Description of parameter `idxVector`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # CAUTION: NOT VERIFIED YET
     cdef intsize nn
     cdef char *ptr = stride[0].base + stride[0].strideVector * idxVector
@@ -197,6 +367,19 @@ cdef opZeroVector(STRIDE_s *stride, intsize idxVector):
             ptr += strideElement
 
 cdef opZeroVectors(STRIDE_s *stride):
+    """Short summary.
+
+    Parameters
+    ----------
+    *stride : STRIDE_s
+        Description of parameter `*stride`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # CAUTION: NOT VERIFIED YET
     cdef intsize nn, mm, sizeChunk
     cdef np.uint8_t sizeItem = stride[0].sizeItem

@@ -1,0 +1,6 @@
+cython>=0.29
+numpy
+scipy>=1.0
+matplotlib
+sphinx
+numpydoc

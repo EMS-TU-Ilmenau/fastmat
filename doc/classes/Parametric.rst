@@ -15,8 +15,8 @@
 
 .. _Parametric:
 
-Parametric Class
-================
+Parametric Matrix
+=================
 
 .. autoclass:: fastmat.Parametric
     :members:

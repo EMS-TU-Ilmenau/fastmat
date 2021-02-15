@@ -59,7 +59,7 @@ cdef class OMP(Algorithm):
     >>> C = fm.Circulant(c)
     >>> # create the ground truth
     >>> x = np.zeros(n)
-    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> x[np.random.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
     >>> omp = fma.OMP(C, numMaxSteps=100)
@@ -132,13 +132,16 @@ cdef class OMP(Algorithm):
         #                       strides
         #
 
-        if arrB.ndim > 2:
+        if arrB.ndim > 2 or arrB.ndim < 1:
             raise ValueError("Only n x m arrays are supported for OMP")
 
         if arrB.ndim == 1:
             self.arrB = arrB.reshape((-1, 1))
         else:
             self.arrB = arrB
+
+        if self.numMaxSteps <= 0:
+            raise ValueError("OMP would like to do at least one step for you")
 
         # get the number of vectors to operate on
         self.numN, self.numM, self.numL = \

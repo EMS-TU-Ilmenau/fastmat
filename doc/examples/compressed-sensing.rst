@@ -1,4 +1,4 @@
-..  Copyright 2018 Sebastian Semper, Christoph Wagner
+..  Copyright 2016 Sebastian Semper, Christoph Wagner
         https://www.tu-ilmenau.de/it-ems/
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +13,20 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.. _MLToeplitz:
+.. highlight:: py
 
-MLToeplitz Class
-================
+.. role:: python(code)
+   :language: py
 
-.. autoclass:: fastmat.MLToeplitz
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. _example-compressed-sensing:
+
+
+Compressed Sensing example
+==========================
+
+We set up a linear forward model using a Fourier matrix as dictionary and
+reconstruct the underlying sparse vector from linear projections using a matrix
+with elements drawn randomly from a Gaussian distribution.
+
+.. plot:: examples/compressed-sensing.py
+  :include-source:

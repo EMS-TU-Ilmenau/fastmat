@@ -15,8 +15,8 @@
 
 .. _Product:
 
-Product Class
-=============
+Matrix-Matrix Product
+=====================
 
 .. autoclass:: fastmat.Product
     :members:

@@ -15,8 +15,8 @@
 
 .. _Outer:
 
-Outer Class
-===========
+Outer Product
+=============
 
 .. autoclass:: fastmat.Outer
     :members:

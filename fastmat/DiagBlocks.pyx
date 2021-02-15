@@ -75,8 +75,9 @@ cdef class DiagBlocks(Matrix):
             matrix describes. The matrix data type is determined by the data
             type of this array.
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
 
         self._numDiagsRows = tenDiags.shape[0]

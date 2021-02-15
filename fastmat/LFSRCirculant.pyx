@@ -28,9 +28,9 @@ from .core.strides cimport *
 cdef inline np.int8_t lfsrOutBit(lfsrReg_t state) nogil:
     return (-1 if state & 1 else 1)
 
-cdef inline lfsrReg_t lfsrGenStep(lfsrReg_t state, lfsrReg_t taps,
+cdef inline lfsrReg_t lfsrGenStep(lfsrReg_t state, lfsrReg_t polynomial,
                                   lfsrReg_t mask) nogil:
-    cdef lfsrReg_t tmp = state & taps
+    cdef lfsrReg_t tmp = state & polynomial
     tmp ^= tmp >> 1
     tmp ^= tmp >> 2
     tmp = (tmp & 0x11111111) * 0x11111111
@@ -39,25 +39,23 @@ cdef inline lfsrReg_t lfsrGenStep(lfsrReg_t state, lfsrReg_t taps,
 
     return state >> 1
 
-cdef inline lfsrReg_t lfsrTapStep(lfsrReg_t state, lfsrReg_t taps,
+cdef inline lfsrReg_t lfsrTapStep(lfsrReg_t state, lfsrReg_t polynomial,
                                   lfsrReg_t mask) nogil:
     state = state << 1
     if (state & mask) != 0:
-        state = state ^ (taps | mask)
+        state = state ^ (polynomial | mask)
 
     return state
 
 cdef class LFSRCirculant(Matrix):
     r"""
 
-
     Linear Feedback Shift Registers (LFSR) as implemented in this class are
     finite state machines generating sequences of symbols from the finite
     field :math:`F=[-1, +1]`. A shift register of size :math:`N` is a cascade
     of :math:`N` storage elements :math:`a_n` for :math:`n = 0,\dots,N-1`,
     each holding one symbol of :math:`F`. The state of the shift register is
-    defined by the states of :math:`a_0,\dots,a_{N-1}`.
-    [5]_
+    defined by the states of :math:`a_0,\dots,a_{N-1}`. :ref:`[5]<ref5>`
 
     The next state of the register is generated from the current state by
     moving the contents of each storage element to the next lower index by
@@ -93,12 +91,11 @@ cdef class LFSRCirculant(Matrix):
     >>> import fastmat as fm
     >>>
     >>> # construct the parameter
-    >>> size = 4
-    >>> taps = 0b1001
-    >>> initial = 0b1010
+    >>> polynomial = 0b11001
+    >>> start = 0b1010
     >>>
     >>> # construct the matrix
-    >>> L = fm.LFSRCirculant(size, taps, initial)
+    >>> L = fm.LFSRCirculant(polynomial, start)
     >>> s = L.vecC
 
     This yields a Circulant matrix where the column-definition vector is the
@@ -121,6 +118,24 @@ cdef class LFSRCirculant(Matrix):
     This class depends on ``Hadamard``.
     """
 
+    property size:
+        '''Deprecated. Will be removed in future releases'''
+        def __get__(self):
+            import warnings
+            warnings.warn(
+                'size is deprecated. WIll be removed in furure releases.',
+                FutureWarning
+            )
+            return self.order
+
+    property taps:
+        '''Deprecated. See .polynomial'''
+        def __get__(self):
+            import warnings
+            warnings.warn('taps is deprecated. Use polynomial.',
+                          FutureWarning)
+            return self.polynomial
+
     property vecC:
         r"""Return the sequence defining the circular convolution.
 
@@ -141,7 +156,7 @@ cdef class LFSRCirculant(Matrix):
             return (self._getStates() if self._states is None
                     else self._states)
 
-    def __init__(self, int regSize, taps, start, **options):
+    def __init__(self, polynomial, start, **options):
         '''
         Initialize a LFSR Circulant matrix instance.
 
@@ -151,61 +166,58 @@ cdef class LFSRCirculant(Matrix):
 
         Parameters
         ----------
-        regSize : int
-            The size of the register, defined as the number of its storage
-            elements. Only positive, non-zero values up to 31 are allowed.
-
-        taps : int
-            The tap configuration word. Every set bit k in this value
-            corresponds to one feedback tap at storage element k of the
-            register or the monome x^k of the generating polynomial that forms
-            a cycle in the galois field GF2 of order `regSize`. The bit
-            corresponding to `regSize` is implicitly assumed to be set and
-            may or may not be contained in the `taps` definition word.
+        polynomial : int
+            The characteristic polynomial corresponding to the shift register
+            sequence. Every set bit k in this value corresponds to one feedback
+            tap at storage element k of the register or the monome x^k of the
+            characterisctic polynomial that forms a cycle in the galois field
+            GF2 of the order corresponding to the highest non-zero monome x^K
+            in the polynomial.
 
         start : int
             The initial value of the storage elements of the register.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
+
+            All optional arguments will be passed on to all
+            :py:class:`fastmat.Matrix` instances that are generated during
+            initialization.
         '''
 
-        cdef lfsrReg_t mask = 1 << regSize
+        self.polynomial = polynomial
+        self.order = 0
+        cdef lfsrReg_t mask = 1
+        while (~mask & polynomial > mask):
+            mask <<=1
+            self.order += 1
+
+        mask = 1 << self.order
 
         # determine register size (determines order of embedded Hadamard)
-        self.taps = taps & (mask - 1)
-        self.size = regSize
         self.start = start & (mask - 1)
 
-        if self.size > 31 or self.size < 1:
-            raise ValueError("Register sizes only supported from 1 to 31.")
-
-        if self.taps > mask:
-            raise ValueError("Tap positions exceeding register size.")
-
-        if self.taps == 0:
-            raise ValueError("Register must feature at least one feedback tap.")
+        if self.order > 31 or self.order < 1:
+            raise ValueError("Only polynomials of order 1 to 31 are supported.")
 
         if self.start == 0:
-            raise ValueError("Register reset state must be non-zero.")
+            raise ValueError("Initial state must be non-zero.")
 
         # generate embedded Hadamard matrix
-        self._content = (Hadamard(self.size), )
+        self._content = (Hadamard(self.order), )
 
         # determine matrix size (square) by determining the period of the
         # sequence generated by the given register configuration
-        cdef lfsrReg_t state = lfsrGenStep(self.start, self.taps, mask)
+        cdef lfsrReg_t state = lfsrGenStep(self.start, self.polynomial, mask)
         cdef intsize period = 1
 
         while state != self.start:
-            state = lfsrGenStep(state, taps, mask)
+            state = lfsrGenStep(state, polynomial, mask)
             period += 1
             if period >= mask or state == 0:
                 raise ValueError(
                     "Register configuration produces invalid sequence.")
-
-        if period <= 1:
-            raise ValueError("Register produces static output.")
 
         self.period = period
 
@@ -269,22 +281,22 @@ cdef class LFSRCirculant(Matrix):
         cdef lfsrReg_t[:] mvStates
 
         cdef ntype typeStates = np.dtype(np.uint32).type_num
-        cdef lfsrReg_t mask = 1 << self.size
-        cdef lfsrReg_t taps = self.taps
+        cdef lfsrReg_t mask = 1 << self.order
+        cdef lfsrReg_t polynomial = self.polynomial
         cdef lfsrReg_t state = self.start
 
         arrStates = _arrEmpty(1, self.numRows, 1, typeStates)
         mvStates = arrStates
         for nn in range(self.numRows):
             mvStates[nn] = state & (mask - 1)
-            state = lfsrGenStep(state, taps, mask)
+            state = lfsrGenStep(state, polynomial, mask)
 
         self._states = arrStates
         return arrStates
 
     cdef np.ndarray _getVecC(self):
-        cdef lfsrReg_t mask = 1 << self.size
-        cdef lfsrReg_t taps = self.taps
+        cdef lfsrReg_t mask = 1 << self.order
+        cdef lfsrReg_t polynomial = self.polynomial
         cdef lfsrReg_t state = self.start
         cdef intsize nn
 
@@ -296,7 +308,7 @@ cdef class LFSRCirculant(Matrix):
         mvRes = arrRes
         for nn in range(self.numRows):
             mvRes[nn] = lfsrOutBit(state)
-            state = lfsrGenStep(state, taps, mask)
+            state = lfsrGenStep(state, polynomial, mask)
 
         self._vecC = arrRes
         return self._vecC
@@ -305,8 +317,8 @@ cdef class LFSRCirculant(Matrix):
                     bint flipIn, bint flipOut):
 
         cdef intsize ii, nn, N = arrIn.shape[0], M = arrIn.shape[1]
-        cdef lfsrReg_t state, mask  = 1 << self.size
-        cdef lfsrReg_t taps         = self.taps
+        cdef lfsrReg_t state, mask  = 1 << self.order
+        cdef lfsrReg_t polynomial   = self.polynomial
         cdef np.ndarray arrData
         cdef STRIDE_s strIn, strData, strOut
 
@@ -354,7 +366,7 @@ cdef class LFSRCirculant(Matrix):
             strideFlipVectors(&strIn)
 
         for nn in range(0, N - 1):
-            state = lfsrGenStep(state, taps, mask)
+            state = lfsrGenStep(state, polynomial, mask)
             opCopyVector(&strData, state, &strIn, nn)
 
         # apply hadamard-walsh transform from arrData to arrData
@@ -379,7 +391,7 @@ cdef class LFSRCirculant(Matrix):
             strideFlipVectors(&strOut)
 
         for nn in range(0, N - 1):
-            state = lfsrTapStep(state, taps, mask)
+            state = lfsrTapStep(state, polynomial, mask)
             opCopyVector(&strOut, nn, &strData, state)
 
     ############################################## class forward / backward
@@ -397,17 +409,17 @@ cdef class LFSRCirculant(Matrix):
     cpdef np.ndarray _reference(self):
         cdef np.ndarray arrRes, vecSequence
         cdef np.int8_t[:] mvSequence
-        cdef int ii, state, taps, mask, tmp, cnt
+        cdef int ii, state, polynomial, mask, tmp, cnt
 
         state = self.start
-        taps = self.taps
-        mask = 1 << self.size
+        polynomial = self.polynomial
+        mask = 1 << self.order
         vecSequence = np.empty((self.numRows, ), dtype=np.int8)
         mvSequence = vecSequence
         for ii in range(self.numRows):
             mvSequence[ii] = (state & 1) * -2 + 1
 
-            tmp = state & taps
+            tmp = state & polynomial
             cnt = 0
             while tmp:
                 cnt ^= 1
@@ -430,18 +442,20 @@ cdef class LFSRCirculant(Matrix):
         return {
             TEST.COMMON: {
                 # define matrix sizes and parameters
-                'size'          : 4,
-                'taps'          : TEST.Permutation([0x9, 0x7]),
-                'start'         : TEST.Permutation([0x5, 0x1]),
-                'length'        : (lambda param: (15 if param['taps'] == 0x9
-                                                  else 7)),
-                TEST.NUM_ROWS   : 'length',
+                'polynomial'    : TEST.Permutation([0x19, 0x17]),
+                'start'         : TEST.Permutation([0xD, 0x1]),
+                'period'        : (
+                    lambda param: (15 if param['polynomial'] == 0x19 else 7)
+                ),
+                TEST.NUM_ROWS   : 'period',
                 TEST.NUM_COLS   : TEST.NUM_ROWS,
 
                 # define constructor for test instances and naming of test
                 TEST.OBJECT     : LFSRCirculant,
-                TEST.INITARGS   : ['size', 'taps', 'start'],
-                TEST.NAMINGARGS : dynFormat("%d:%x=%x", 'size', 'taps', 'start')
+                TEST.INITARGS   : ['polynomial', 'start'],
+                TEST.NAMINGARGS : dynFormat(
+                    "%x,%x", 'polynomial', 'start'
+                )
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {}
@@ -454,17 +468,17 @@ cdef class LFSRCirculant(Matrix):
         # the list contains the tap configurations of registers corresponding
         # to a register size of the list index of the element + 1.
         db = {ll + 1: tt for ll, tt in enumerate([
-            0x1, 0x3, 0x3, 0x9, 0x05, 0x21, 0x09, 0xC3,
-            0x011, 0x081, 0x303, 0xC11, 0x0C41, 0x1803, 0x4001,
-            0xA011, 0x04001, 0x00801, 0x64001, 0x20001, 0x080001,
-            0x200001, 0x040001, 0xC20001, 0x0400001, 0x3100001, 0x6400001,
-            0x2000001, 0x08000001, 0x30000081, 0x10000001
+            0x3, 0x7, 0xB, 0x19, 0x25, 0x61, 0x89, 0x1C3,
+            0x211, 0x481, 0xB03, 0x1C11, 0x2C41, 0x5803, 0xC001,
+            0x1A011, 0x24001, 0x40801, 0xE4001, 0x120001, 0x280001,
+            0x600001, 0x840001, 0x1C20001, 0x2400001, 0x7100001, 0xE400001,
+            0x12000001, 0x28000001, 0x70000081, 0x90000001
         ])}
 
         return {
             BENCH.COMMON: {
                 BENCH.FUNC_GEN  : (
-                    lambda c: LFSRCirculant(c, db[c], 0xFFFFFFFF)
+                    lambda c: LFSRCirculant(db[c], 0xFFFFFFFF)
                 ),
                 BENCH.FUNC_SIZE : (lambda c: (2 ** c) - 1),
                 BENCH.FUNC_STEP : (lambda c: c + 1),
@@ -473,9 +487,7 @@ cdef class LFSRCirculant(Matrix):
             BENCH.OVERHEAD: {},
             BENCH.DTYPES: {
                 BENCH.FUNC_GEN  : (
-                    lambda c, dt: LFSRCirculant(
-                        c, db[c], 0xFFFFFFFF, minType=dt
-                    )
+                    lambda c, dt: LFSRCirculant(db[c], 0xFFFFFFFF, minType=dt)
                 )
             }
         }

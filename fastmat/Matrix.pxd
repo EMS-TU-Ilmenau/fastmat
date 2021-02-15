@@ -81,10 +81,14 @@ cdef class Matrix:
     cdef public Matrix      _rowNormalized
     cdef public object      _largestEigenValue
     cdef public object      _largestSingularValue
-    cdef public object      _scipyLinearOperator
-    cdef public Matrix      _T
-    cdef public Matrix      _H
-    cdef public Matrix      _conj
+    # cache for largestSingularVectors
+    cdef public tuple       _largestSingularVectors
+    cdef public object      _scipyLinearOperator # interface to scipy
+    cdef public Matrix      _T                   # cache for transpose matrix
+    cdef public Matrix      _H                   # cache for adjunct matrix
+    cdef public Matrix      _conj                # cache for conjugate matrix
+    cdef public Matrix      _inverse             # cache for inv. matrix
+    cdef public Matrix      _pseudoInverse       # cache for ps. inv.  matrix
 
     cdef readonly intsize   numRows              # row-count of matrix
     cdef readonly intsize   numCols              # column-count of matrix
@@ -127,6 +131,8 @@ cdef class Matrix:
     cpdef Matrix _getT(self)
     cpdef Matrix _getH(self)
     cpdef Matrix _getConj(self)
+    cpdef Matrix _getInverse(self)
+    cpdef Matrix _getPseudoInverse(self)
 
     ############################################## computation profiling
     cpdef tuple _getComplexity(self)
@@ -159,3 +165,17 @@ cdef class Conjugate(Matrix):
 
 cdef class Transpose(Hermitian):
     cdef public Matrix _nestedConj               # nested fastmat baseclass
+
+cdef class Inverse(Matrix):
+    cdef public Matrix _nested                   # nested fastmat baseclass
+    cdef object _linearOperator                  # nested linear operator
+    cdef object _solver                          # nested linear operator
+    cpdef np.ndarray _solveForward(self, np.ndarray)
+    cpdef np.ndarray _solveBackward(self, np.ndarray)
+
+cdef class PseudoInverse(Matrix):
+    cdef public Matrix _nested                   # nested fastmat baseclass
+    cdef object _linearOperator                  # nested linear operator
+    cdef object _solver                          # nested linear operator
+    cpdef np.ndarray _solveForward(self, np.ndarray)
+    cpdef np.ndarray _solveBackward(self, np.ndarray)

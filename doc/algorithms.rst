@@ -1,4 +1,4 @@
-..  Copyright 2018 Sebastian Semper, Christoph Wagner
+..  Copyright 2016 Sebastian Semper, Christoph Wagner
         https://www.tu-ilmenau.de/it-ems/
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +13,20 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-.. _MLCirculant:
+###################
+  Algorithm Index
+###################
 
-MLCirculant Class
-=================
+.. toctree::
+   :glob:
+   :hidden:
 
-.. autoclass:: fastmat.MLCirculant
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   algorithms/*
+
+Here we list the specialized algorithms in the package for easy referencing and access.
+
+ * :py:class:`fastmat.algorithms.Algorithm` base class, the mother of all algorithms.
+ * :py:class:`fastmat.algorithms.FISTA`
+ * :py:class:`fastmat.algorithms.ISTA`
+ * :py:class:`fastmat.algorithms.OMP`
+ * :py:class:`fastmat.algorithms.STELA`

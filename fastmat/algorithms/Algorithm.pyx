@@ -28,13 +28,10 @@ from ..core.resource import getMemoryFootprint
 cdef class Algorithm(object):
     r"""Algorithm Base Class
 
-
-    **Description:**
     The baseclass of all algorithms that operate on Matrices. This abstract
     baseclass introduces general framework concepts such as interfaces for
     parameter specification, algorithm execution, logging and callbacks.
 
-    DEMO:
     >>> algI = fma.ISTA(Fourier(10))
     >>> algI.cbResult = lambda i: print(i.arrResult)
     >>> algI.cbStep = lambda i: print(i.numStep)
@@ -98,7 +95,8 @@ cdef class Algorithm(object):
 
     def updateParameters(self, **kwargs):
         r"""
-        Update the parameters of the algorithm instance with **kwargs.
+        Update the parameters of the algorithm instance with the supllied
+        keyworded arguments.
 
         Apply the set of parameters specified in kwargs by iteratively passing
         them to setattr(self, ...). Specifying an parameter which does not have

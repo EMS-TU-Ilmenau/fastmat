@@ -106,15 +106,15 @@ cdef class MatrixCallProfile(object):
             for.
 
         targetCall : callable
-            ?
+            TODO: Needs to be specified.
 
-        cplxAlg : int
+        cplxAlg : int, optional
             The complexity estimate for the transforms implemented in the
             matrix class of `targetInstance`.
 
             Defaults to 0.
 
-        cplxBypass : int
+        cplxBypass : int, optional
             The complexity estimate for the (bypass) transforms implemented in
             the :py:class:`fastmat.Matrix` base class.
 
@@ -291,7 +291,7 @@ cdef class Matrix(object):
 
     **Description:**
     The baseclass of all matrix classes in fastmat. It also serves as wrapper
-    around the standard Numpy Array [1]_.
+    around the standard Numpy Array :ref:`[1]<ref1>`.
     """
 
     ############################################## basic class properties
@@ -812,8 +812,8 @@ cdef class Matrix(object):
         dimensions. This is done via the so called power iteration of
         :math:`A^{\rm H} \cdot  A`.
 
-        - Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as a
-        stopping criterion
+        - Input matrix :math:`A`, parameter :math:`0 < \varepsilon \ll 1` as \
+          a stopping criterion
         - Output largest singular value :math:`\sigma_{\rm max}( A)`
 
         .. note::
@@ -1020,7 +1020,13 @@ cdef class Matrix(object):
         cdef np.ndarray arrNorms = np.empty(self.numCols, dtype=diagType)
 
         # number of elements we consider at once during normalization
-        cdef intsize numStrideSize = 256
+        # Scale chunk size to fit a memory buffer of at most 16M
+        cdef intsize numStrideSize = max(
+            1, min(
+                1024,
+                (16777216 // typeInfo[self.fusedType].dsize) // self.numRows
+            )
+        )
 
         cdef np.ndarray arrSelector = np.zeros(
             (self.numCols, min(numStrideSize, self.numCols)),
@@ -1074,7 +1080,13 @@ cdef class Matrix(object):
         cdef np.ndarray arrNorms = np.empty(self.numRows, dtype=diagType)
 
         # number of elements we consider at once during normalization
-        cdef intsize numStrideSize = 256
+        # Scale chunk size to fit a memory buffer of at most 16M
+        cdef intsize numStrideSize = max(
+            1, min(
+                1024,
+                (16777216 // typeInfo[self.fusedType].dsize) // self.numCols
+            )
+        )
 
         cdef np.ndarray arrSelector = np.zeros(
             (self.numRows, min(numStrideSize, self.numRows)),
@@ -1219,7 +1231,53 @@ cdef class Matrix(object):
         '''Internally overloadable method for customizing self.getConj.'''
         return getConjugate(self)
 
-    ############################################## deprecated properties
+    property inverse:
+        r"""Return the inverse
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._inverse is None:
+                return self.getInverse()
+            else:
+                return self._inverse
+
+    def getInverse(self):
+        r"""
+        Return the hermitian transpose of this matrix as fastmat matrix.
+        """
+        self._inverse = self._getInverse()
+        return self._inverse
+
+    cpdef Matrix _getInverse(self):
+        '''Internally overloadable method for self.inverse.'''
+        return Inverse(self)
+
+    property pseudoInverse:
+        r"""Return the moore penrose inverse
+
+        *(read-only)*
+        """
+
+        def __get__(self):
+            if self._pseudoInverse is None:
+                return self.getPseudoInverse()
+            else:
+                return self._pseudoInverse
+
+    def getPseudoInverse(self):
+        r"""
+        Return the hermitian transpose of this matrix as fastmat matrix.
+        """
+        self._pseudoInverse = self._getPseudoInverse()
+        return self._pseudoInverse
+
+    cpdef Matrix _getPseudoInverse(self):
+        '''Internally overloadable method for self.pseudoInverse.'''
+        return PseudoInverse(self)
+
+    ############################################## numN deprecation warning
     property numN:
         def __get__(self):
             import warnings
@@ -1391,37 +1449,30 @@ cdef class Matrix(object):
             A 2d array representing a dense matrix to be cast as a fastmat
             matrix.
 
-        **options:
-            See the list of general options below, that also apply to all other
-            fastmat matrix types.
-
-
-        options in `**options`
-        ----------------------
-        forceContiguousInput : bool
+        forceContiguousInput : bool, optional
             If set, the input array is forced to be contiguous in the style as
             specified by `fortranStyle`. If the input array already fulfils the
             requirement nothing is done.
 
-            Defaults to False
+            Defaults to False.
 
-        widenInputDatatype : bool
+        widenInputDatatype : bool, optional
             If set, the data type of the input array is promoted to at least
             match the output data type of the operation. Just like the
             `minType` option this parameter controls the accumulator width,
             however dynamically according to the output data type in this case.
 
-            Defaults to False
+            Defaults to False.
 
-        fortranStyle : bool
+        fortranStyle : bool, optional
             Control the style of contiguousity to be enforced by
             forceConfiguousInput. If this option is set to True, Fortran-style
             ordering (contiguous along columns) is enforced, if False C-Style
-            (contiguous along rows)
+            (contiguous along rows).
 
-            Defaults to True
+            Defaults to True.
 
-        minType : bool
+        minType : bool, optional
             Specify a minimum data type for the input array to a transform. The
             input array data type will be promoted to at least the data type
             specified in this option before performing the actual transforms.
@@ -1430,9 +1481,9 @@ cdef class Matrix(object):
             otherwise, as the output data type promotion rules do not consider
             avoiding accumulator overflows due to performance reasons.
 
-            Defaults to :py:`numpy.int8`
+            Defaults to :py:class:`numpy.int8`.
 
-        bypassAllow : bool
+        bypassAllow : bool, optional
             Allow bypassing the implemented :py:meth:`fastmat.Matrix.forward`
             and :py:meth:`fastmat.Matrix.backward` transforms with dense
             matrix-vector products if runtime estimates suggest this is faster
@@ -1446,7 +1497,7 @@ cdef class Matrix(object):
             Defaults to the value set in the package-wide
             :py:class:`fastmat.flags` options.
 
-        bypassAutoArray : bool
+        bypassAutoArray : bool, optional
             Prevents the automatic generation of a dense matrix representation
             that would be used for bypassing the implemented transforms in case
             the performance profiles suggest this would be faster, if set to
@@ -2002,7 +2053,9 @@ cdef class Matrix(object):
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
             }
-        elif isinstance(self, (Hermitian, Conjugate, Transpose)):
+        elif isinstance(
+            self, (Hermitian, Conjugate, Transpose)
+        ):
             # Test code for the three Transposition classes that are also
             # defined in this submodule. As the Transpositions are directly
             # derived from the Matrix base class we can put the relevant code
@@ -2014,14 +2067,14 @@ cdef class Matrix(object):
             # uncommon the corresponding fields must be linked in DATASHAPE
             numRows = 35
             numCols = 30
-            swap = isinstance(self, Conjugate)
+            swap = isinstance(self, (Conjugate))
             return {
                 TEST.COMMON: {
                     TEST.NUM_ROWS   : numRows,
-                    TEST.NUM_COLS   : TEST.Permutation([
-                        numCols, TEST.NUM_ROWS
-                    ]),
-                    'mType'         : TEST.Permutation(TEST.FEWTYPES),
+                    TEST.NUM_COLS   : TEST.Permutation(
+                        [numCols, TEST.NUM_ROWS]
+                    ),
+                    'mType'         : TEST.Permutation(TEST.FLOATTYPES),
                     TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                     'arrM'          : TEST.ArrayGenerator({
                         TEST.DTYPE  : 'mType',
@@ -2035,6 +2088,41 @@ cdef class Matrix(object):
                     TEST.OBJECT     : self.__class__,
                     TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
                     TEST.NAMINGARGS : dynFormat("%s", 'arrM')
+                },
+                TEST.CLASS: {},
+                TEST.TRANSFORMS: {}
+            }
+        elif isinstance(
+            self, (Inverse, PseudoInverse)
+        ):
+            # Test code for the two Inversion classes that are also
+            # defined in this submodule.
+            numRows = 10
+            numCols1 = 9
+            numCols2 = 11
+            square = isinstance(self, (Inverse))
+            return {
+                TEST.COMMON: {
+                    TEST.NUM_ROWS   : numRows,
+                    TEST.NUM_COLS   : (TEST.NUM_ROWS if square else
+                                       TEST.Permutation(
+                                           [numCols1, numCols2, TEST.NUM_ROWS]
+                                       )),
+                    'mType'         : TEST.Permutation(TEST.FLOATTYPES),
+                    TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
+                    'arrM'          : TEST.ArrayGenerator({
+                        TEST.DTYPE  : 'mType',
+                        TEST.SHAPE  : (TEST.NUM_ROWS, TEST.NUM_COLS),
+                        TEST.ALIGN  : TEST.PARAMALIGN
+                    }),
+                    TEST.DATASHAPE  : (TEST.NUM_ROWS, TEST.DATACOLS),
+                    TEST.DATASHAPE_T: (TEST.NUM_COLS, TEST.DATACOLS),
+                    TEST.OBJECT     : self.__class__,
+                    TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
+                    TEST.NAMINGARGS : dynFormat("%s", 'arrM'),
+                    TEST.TOL_POWER  : 10.0,
+                    TEST.TOL_MINEPS    : 1e-2,
+                    TEST.CHECK_DATATYPE: False
                 },
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
@@ -2064,7 +2152,9 @@ cdef class Matrix(object):
                                                        dtype=dt)))
                 }
             }
-        elif isinstance(self, (Hermitian, Conjugate, Transpose)):
+        elif isinstance(
+            self, (Hermitian, Conjugate, Transpose, Inverse, PseudoInverse)
+        ):
             # Benchmark code for the three Transposition classes that are also
             # defined in this submodule. As the Transpositions are directly
             # derived from the Matrix base class we can put the relevant code
@@ -2253,13 +2343,13 @@ cdef class Conjugate(Matrix):
     cpdef _forwardC(self, np.ndarray arrX, np.ndarray arrRes,
                     ftype typeX, ftype typeRes):
         cdef np.ndarray arrInput = _conjugate(arrX)
-        self._nested.forwardC(arrInput, arrRes, typeX, typeRes)
+        self._nested._forwardC(arrInput, arrRes, typeX, typeRes)
         _conjugateInplace(arrRes)
 
     cpdef _backwardC(self, np.ndarray arrX, np.ndarray arrRes,
                      ftype typeX, ftype typeRes):
         cdef np.ndarray arrInput = _conjugate(arrX)
-        self._nested.backwardC(arrInput, arrRes, typeX, typeRes)
+        self._nested._backwardC(arrInput, arrRes, typeX, typeRes)
         _conjugateInplace(arrRes)
 
     cpdef np.ndarray _forward(self, np.ndarray arrX):
@@ -2345,3 +2435,122 @@ cdef class Transpose(Hermitian):
     ########################################## references: test / benchmark
     cpdef np.ndarray _reference(self):
         return self._nestedConj._reference().T
+
+
+cdef class Inverse(Matrix):
+    r""" Inverse of a Matrix
+
+    This class is implemented by always solving a system of linear equations
+    in order to act out the forward transform of a given matrix.
+    """
+    ############################################## class methods
+
+    def __init__(self, Matrix matrix):
+        '''
+        Initialize an instance of an inverted matrix.
+
+        Parameters
+        ----------
+        matrix : :py:class:`fastmat.Matrix`
+            The matrix instance to be inverse.
+        '''
+        from scipy.sparse.linalg import lgmres
+
+        if not isinstance(matrix, Matrix):
+            raise TypeError("Inverse: Not a fastmat Matrix")
+
+        if matrix.shape[0] != matrix.shape[1]:
+            raise ValueError("Inverse: Matrix not square, so not invertible.")
+
+        self._nested = matrix
+        self._content = (matrix, )
+        self._cythonCall = False
+        self._initProperties(
+            matrix.shape[0],
+            matrix.shape[0],
+            np.promote_types(matrix.dtype, np.float32),
+            **matrix._getProperties()
+        )
+        self._linearOperator = matrix.scipyLinearOperator
+        self._solver = lgmres
+
+    cpdef np.ndarray _solveForward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator, arrX, atol=1e-12)[0]
+
+    cpdef np.ndarray _solveBackward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator.H, arrX, atol=1e-12)[0]
+
+    def __repr__(self):
+        return "<%s.(^-1)>" %(self._nested.__repr__())
+
+    cpdef np.ndarray _forward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveForward, 0, arrX
+        )
+
+    cpdef np.ndarray _backward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveBackward, 0, arrX
+        )
+
+    cpdef np.ndarray _reference(self):
+        import numpy.linalg as npl
+        return npl.inv(self._nested.reference())
+
+
+cdef class PseudoInverse(Matrix):
+    r""" Inverse of a Matrix
+
+    This class is implemented by always solving a system of linear equations
+    in order to act out the forward transform of a given matrix.
+    """
+    ############################################## class methods
+
+    def __init__(self, Matrix matrix):
+        '''
+        Initialize an instance of a pseudo inverse matrix.
+
+        Parameters
+        ----------
+        matrix : :py:class:`fastmat.Matrix`
+            The matrix instance that we want the pseudo inverse of.
+        '''
+        from scipy.sparse.linalg import lsqr
+
+        if not isinstance(matrix, Matrix):
+            raise TypeError("Inverse: Not a fastmat Matrix")
+
+        self._nested = matrix
+        self._content = (matrix, )
+        self._cythonCall = False
+        self._initProperties(
+            matrix.shape[1],
+            matrix.shape[0],
+            np.promote_types(matrix.dtype, np.float32),
+            **matrix._getProperties()
+        )
+        self._linearOperator = matrix.scipyLinearOperator
+        self._solver = lsqr
+
+    cpdef np.ndarray _solveForward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator, arrX, atol=1e-12)[0]
+
+    cpdef np.ndarray _solveBackward(self, np.ndarray arrX):
+        return self._solver(self._linearOperator.H, arrX, atol=1e-12)[0]
+
+    def __repr__(self):
+        return "<%s.(^+)>" %(self._nested.__repr__())
+
+    cpdef np.ndarray _forward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveForward, 0, arrX
+        )
+
+    cpdef np.ndarray _backward(self, np.ndarray arrX):
+        return np.apply_along_axis(
+            self._solveBackward, 0, arrX
+        )
+
+    cpdef np.ndarray _reference(self):
+        import numpy.linalg as npl
+        return npl.pinv(self._nested.reference())

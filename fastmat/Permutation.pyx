@@ -68,8 +68,9 @@ cdef class Permutation(Matrix):
             A 1d vector of type int mapping the row indices to column indices
             uniquely.
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         numRows = sigma.shape[0]
 
