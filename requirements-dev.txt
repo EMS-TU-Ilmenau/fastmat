@@ -3,4 +3,6 @@ numpy
 scipy>=1.0
 matplotlib
 sphinx
+six
+setuptools
 numpydoc
