@@ -6,6 +6,7 @@ branches:
   only:
     - master
     - stable
+    - cisetup
 
 services:
     - docker
@@ -19,13 +20,23 @@ env:
 
 matrix:
   include:
-    - python: '3.7'
+    - python: '3.9'
       dist: xenial
       sudo: true
       if: type != pull_request
+      env: CIBW_SKIP='cp[!3]?-* cp3[!9]-*'
+    - python: '3.8'
+      dist: xenial
+      sudo: true
+      if: branch = stable OR type = pull_request
+      env: CIBW_SKIP='cp[!3]?-* cp3[!8]-*'
+    - python: '3.7'
+      dist: xenial
+      sudo: true
+      if: branch = stable
       env: CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
     - python: '3.6'
-      if: branch = stable OR type = pull_request
+      if: branch = stable
       env: CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
     - python: '3.5'
       if: branch = stable
@@ -39,6 +50,20 @@ matrix:
     - os: osx
       language: generic
       if: type != pull_request
+      env:
+        - PYTHON=3.9
+        - CIBW_SKIP='cp[!3]?-* cp3[!9]-*'
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
+    - os: osx
+      language: generic
+      if: type != pull_request
+      env:
+        - PYTHON=3.8
+        - CIBW_SKIP='cp[!3]?-* cp3[!8]-*'
+        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
+    - os: osx
+      language: generic
+      if: branch = stable
       env:
         - PYTHON=3.7
         - CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
@@ -99,7 +124,7 @@ before_install: |
 
 install:
   - pip install six
-  - pip install cython numpy scipy --only-binary all
+  - pip install -r requirements-dev.txt --only-binary all
   - pip install pycodestyle
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION $PYTHON"
   - |

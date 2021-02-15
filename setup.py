@@ -334,6 +334,7 @@ if __name__ == '__main__':
             'Natural Language :: English',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX :: Linux',
+            'Operating System :: POSIX :: Other',
             'Operating System :: MacOS :: MacOS X',
             'Programming Language :: Python',
             'Programming Language :: Python :: 2',
@@ -343,6 +344,8 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
+            'Programming Language :: Python :: 3.9',
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Mathematics',
             'Topic :: Software Development :: Libraries'
