@@ -81,7 +81,7 @@ cdef class Blocks(Matrix):
             Additional keyworded arguments. Supports all optional arguments
             supported by :py:class:`fastmat.Matrix`.
         '''
-        if not isinstance(arrMatrices, list):
+        if not isinstance(arrMatrices, (list, tuple)):
             raise ValueError("Blocks: Not a nested list of fastmat matrices.")
 
         if len(arrMatrices) < 1:
@@ -92,8 +92,27 @@ cdef class Blocks(Matrix):
         cdef tuple row, firstRow
         cdef Matrix term
 
-        # initialize sizes and number of rows / cols
+        # initialize number of rows
         self._numRows = len(arrMatrices)
+
+        # check that the there actually are two layers of list containers
+        # and only then fastmat Matrix instances. However, we do not want
+        # to disencourage duck-typing by restricting to particular types
+        # of containers (i.e. lists). Therefore, if we encounter a Matrix
+        # instance directly at the second level, we should notify the user
+        # verbosely what exactly is wrong with that and how to fix it.
+        for rr, item in enumerate(arrMatrices):
+            if isinstance(item, Matrix):
+                raise TypeError(
+                    (
+                        "Blocks.row(%d) is of type %s. Instantiate Blocks " +
+                        "with a 2D structure of iterables (e.g. nested " +
+                        "lists) holding fastmat Matrix instances in their " +
+                        "second level."
+                    ) %(rr, repr(item))
+                )
+
+        # initialize number of columns
         self._numCols = len(arrMatrices[0])
         dataType = np.int8
 
@@ -117,7 +136,10 @@ cdef class Blocks(Matrix):
             # check for presence of enough blocks
             if len(row) != self._numCols:
                 raise ValueError(
-                    "Blocks.row(%d) has incompatible number of entries" %(rr))
+                    "Blocks.row(%d) has incompatible number of entries" %(
+                        rr,
+                    )
+                )
 
             # enumerate columns
             for cc in range(self._numCols):
