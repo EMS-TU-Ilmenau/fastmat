@@ -15,8 +15,8 @@
 
 .. _DiagBlocks:
 
-DiagBlocks Class
-================
+Diagonal Block Matrix
+=====================
 
 .. autoclass:: fastmat.DiagBlocks
     :members:

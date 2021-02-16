@@ -28,79 +28,30 @@ from .Fourier cimport Fourier
 from .Diag cimport Diag
 
 
-################################################################################
-################################################## class Toeplitz
 cdef class Toeplitz(Partial):
     r"""
+    This class provides a very general implementation of Toeplitz matrices,
+    which essentially realize a (possibly multidimensional) non-circular
+    convolution.
 
-    A Toeplitz matrix :math:`T \in \mathbb{C}^{n \times m}` realizes the mapping
+    This type of matrix is highly structured. A two-level Toeplitz
+    Matrix looks like:
 
-    .. math::
-        x \mapsto  T \cdot  x,
-
-    where :math:`x \in C^n` and
-
-    .. math::
-        T = \begin{bmatrix}
-        t_1 & t_{-1} & \dots & t_{-(m-1)} \\
-        t_2 & t_1 & \ddots & t_{-(n-2)} \\
-        \vdots & \vdots & \ddots & \vdots \\
-        t_n & t_{n-1} & \dots & t_1
-        \end{bmatrix}.
-
-    This means that a Toeplitz matrix is uniquely defined by the
-    :math:`n + m - 1` values that are on the diagonals.
-
-    >>> # import the package
-    >>> import fastmat as fm
-    >>> import numpy as np
+    >>> t_00 t_05 t_04 t_03   t_40 t_45 t_44 t_43   t_30 t_35 t_34 t_33
+    >>> t_01 t_00 t_05 t_04   t_41 t_40 t_45 t_44   t_31 t_30 t_35 t_34
+    >>> t_02 t_01 t_00 t_05   t_42 t_41 t_40 t_45   t_32 t_31 t_30 t_35
     >>>
-    >>> # define the parameters
-    >>> d1 = np.array([1,0,3,6])
-    >>> d2 = np.array([5,7,9])
+    >>> t_10 t_15 t_14 t_13   t_00 t_05 t_04 t_03   t_40 t_45 t_44 t_43
+    >>> t_11 t_10 t_15 t_14   t_01 t_00 t_05 t_04   t_41 t_40 t_45 t_44
+    >>> t_12 t_11 t_10 t_15   t_02 t_01 t_00 t_05   t_42 t_41 t_40 t_45
     >>>
-    >>> # construct the transform
-    >>> T = fm.Toeplitz(d1,d2)
+    >>> t_20 t_25 t_24 t_23   t_10 t_15 t_14 t_13   t_00 t_05 t_04 t_03
+    >>> t_21 t_20 t_25 t_24   t_11 t_10 t_15 t_14   t_01 t_00 t_05 t_04
+    >>> t_22 t_21 t_20 t_25   t_12 t_11 t_10 t_15   t_02 t_01 t_00 t_05
 
-    This yields
-
-    .. math::
-        d_1 = (1,0,3,6)^\mathrm{T}
-
-    .. math::
-        d_2 = (5,7,9)^\mathrm{T}
-
-    .. math::
-        T = \begin{bmatrix}
-        1 & 5 & 7 & 9 \\
-        0 & 1 & 5 & 7 \\
-        3 & 0 & 1 & 5 \\
-        6 & 3 & 0 & 1
-        \end{bmatrix}
-
-    Since the multiplication with a Toeplitz matrix makes use of the FFT, it
-    can be very slow, if the sum of the dimensions of :math:`d_1` and
-    :math:`d_2` are far away from a power of :math:`2`, :math:`3` or
-    :math:`4`. This can be alleviated if one applies smart zeropadding during
-    the transformation.
-    This can be activated as follows.
-
-    >>> # import the package
-    >>> import fastmat as fm
-    >>> import numpy as np
-    >>>
-    >>> # define the parameters
-    >>> d1 = np.array([1,0,3,6])
-    >>> d2 = np.array([5,7,9])
-    >>>
-    >>> # construct the transform
-    >>> T = fm.Toeplitz(d1,d2,pad='true')
-
-    This yields the same matrix and transformation as above, but it might be
-    faster depending on the dimensions involved in the problem.
-
-    This class depends on ``Fourier``, ``Diag``, ``Product`` and
-    ``Partial``.
+    This shows that one can define an L-level Toeplitz matrix by a tensor
+    of order L together with means of deciding the sizes ``n_1,...,n_L`` of
+    the individual levels.
     """
 
     property tenT:
@@ -129,47 +80,47 @@ cdef class Toeplitz(Partial):
         '''
         Initialize Toeplitz matrix instance.
 
-        Parameter for one-dimensional case
-        ----------------------------------
-        vecC : :py:class:`numpy.ndarray`
-            The generating column vector of the toeplitz matrix describing the
-            first column of the matrix.
+        One either has to specify ``(vecC, vecR)`` or ``tenT`` with optinal
+        ``split`` argument.
 
-        vecR : :py:class:`numpy.ndarray`
-            The generating row vector of the toeplitz matrix excluding the
-            element corresponding to the first column, which is already defined
-            in `vecC`.
-
-        **options:
-            See below.
-
-        Parameter for one-or-multi-dimensional case
-        -------------------------------------------
+        Parameters
+        ----------
         tenT : :py:class:`numpy.ndarray`
-            The generating nd-array defining the toeplitz tensor. The matrix
-            data type is determined by the data type of this array. In this
-            parameter variant the column- and row-defining vectors are given
-            in one single vector. The intersection point between these two
-            vectors is given in the `split` option.
+            This is the most general way to define a (multilevel) Toeplitz
+            Matrix. The number of dimensions (length of .shape) determines
+            the number of levels. If `split` is not defined then tenT needs
+            to have odd size in each dimension, so that this results in a
+            square matrix. The handling of the indexing in direction of columns
+            follows the same reversed fashion as in the one-dimensional case
+            with `vecR`, but here naturally for each level.
 
-        **options:
-            See below.
-
-        Options
-        -------
-        split : :py:class:`numpy.ndarray`
-            A 1d vector specifying the split-point for row/column definition
-            of each vector. If this option is not specified each level
-            :math:`T \in \mathbb{C}^{d_i \times d_i}` with the corresponding
-            :math:`i` of `tenT` is assumed to have a square shape of size
-            dimension of `tenT` having :math:`d_i * 2 - 1` entries.
-
-            Defaults to a splitpoint vetor corresponding to all-square levels.
+        split : :py:class:`numpy.ndarray`, optional
+            This vector needs to have as many elements as the number of elements
+            of `tenT.shape`. If it is specified it defines the number
+            of elements which are used to determine the number of rows of
+            each level. The rest of the elements are indexed in reverse order
+            in the same fashion as without split.
 
 
-        Also see the special options of :py:class:`fastmat.Fourier`, which are
-        also supported by this matrix and the general options offered by
-        :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix` and
+            :py:class:`fastmat.Fourier`.
+
+            All optional arguments will be passed on to all
+            :py:class:`fastmat.Matrix` instances that are generated during
+            initialization.
+
+        Note:
+            For backward compatibility reasons it is still possible to
+            substitute the `tenT` argument by two 1D :py:class:`numpy.ndarray`
+            arrays `vecC` and `vecR` that describe the column- and row-defining
+            vectors in the single-level case respectively. The column-defining
+            vector describes the forst column of the resulting matrix and the
+            row-defining vector the first row except the (0,0) element (which
+            is already specified by the column-defining vector). Note that this
+            vector is indexed backwards in the sense that its first element is
+            the last element in the defined Toeplitz matrix.
         '''
 
         # The multidimensional implementation of this class exploits the fact

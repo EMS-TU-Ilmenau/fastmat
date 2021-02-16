@@ -15,36 +15,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-fastmat.core
-============
-
-.. automodule:: fastmat.core.calibration
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. automodule:: fastmat.core.cmath
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. automodule:: fastmat.core.resource
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. automodule:: fastmat.core.strides
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. automodule:: fastmat.core.types
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-"""
-
 from .calibration import *
 from .resource import *

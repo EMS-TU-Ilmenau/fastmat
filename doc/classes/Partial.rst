@@ -15,8 +15,8 @@
 
 .. _Partial:
 
-Partial Class
-=============
+Partial Matrix
+==============
 
 .. autoclass:: fastmat.Partial
     :members:

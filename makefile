@@ -83,7 +83,7 @@ FILE_LIST=setup.files
 # MODE may be specified from command line for choosing install mode.
 
 # python version
-PYTHON=python
+PYTHON=python3
 
 ifeq ($(OS),Windows_NT)
 else
@@ -93,7 +93,7 @@ STYLE_FILES=*.py fastmat/*.py fastmat/*.pyx fastmat/*.pxd\
 	fastmat/*/*.py fastmat/*/*.pyx fastmat/*/*.pxd
 
 # STYLE_IGNORES lists the errors to be skipped during style check
-STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,E731,W504,W605
+STYLE_IGNORES=E26,E116,E203,E221,E222,E225,E227,E241,E402,E731,W504,W605,W503
 
 # TEST_OPTIONS allows passing extra options to tests during `testCode`target
 TEST_OPTIONS=-i
@@ -133,7 +133,7 @@ else
 endif
 
 
-# target 'compile': Comile fastmat package locally.
+# target 'compile': Compile fastmat package locally.
 .PHONY: compile
 compile:
 	$(info * compiling fastmat package locally)
@@ -148,8 +148,8 @@ compile-coverage:
 # target 'doc': Compile documentation
 .PHONY: doc
 doc: | compile
-	$(info * building documentation: redirecting to './doc/make doc')
-	@$(PYTHON) setup.py build_doc
+	$(info * building documentation)
+	@$(PYTHON) setup.py build_doc $(OPTIONS) -E
 
 # targer 'debug': Debug package
 .PHONY: debug

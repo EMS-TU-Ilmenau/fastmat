@@ -1,130 +1,91 @@
 language: python
-os: linux
 sudo: required
 
 branches:
   only:
     - master
     - stable
+    - cisetup
 
 services:
     - docker
 
 env:
   global:
-    - CIBW_BEFORE_BUILD="{pip} install cython numpy scipy six --only-binary all"
+    - CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev.txt"
     - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - FASTMAT_GENERIC=1
     - secure: a7Ef8MN7YRctNIe/o+xeJuV6ak5gKM5V9vBPQDcO7MI5ieyNSf0TE6nLGtt8A4gfAqTM1QtZAbAGKIVB4fs2pJXjABwuDwmPR1feB6xVJGqKXhraNWLsP/CV/JIfdJcfjNxGGUn+GYEAGZQ1q6zA3JSTHuFdAVERFUKJjvcE4Wp/DPS0o75nShgpurrwn2cYzzqxB43XaOmjYVyV7mm5DbQ2D2eXtkNJ1vfIscgFEG7B+ClymEjv5XkGWeJ7xKvQCvcyBYYpi/yGAKXAEd99s/r/2T1CDSW/CsgUrWql1MF/1/93MN4bFOriG+QhbOP/zrDXdpOVnmNggtVUw7nxXzuPAZ7GSYa+OzA7zjhpWRQsHvTza86sAHm4FNyPrk3u52EDulrHCbtjc1n4ESOzYqxozi4Nyx+Ga1vVvN5OmpliHr6JoHReF7YnFAYjEGhdEW99Z7dTohqva5lmrEUvU5I3qQ+9sxCv+qXRz/TabIbFSI570KqPMHb8hTT24rpjkL2enSsg2YgMsryavOdY1jnT79lhAH9RVSPJ17Pxl4jNqkLGOJ4HQuX4c8bEsmz6sRa8eMvo3ZEfP9garKjZkraWetulC2HrbTGprtJ1BcO/cfQwxxpjUepA4a2E73b/EBSSuk6xrOsL/FVQZOZN4KtmyQN4W8gexxwgCNhRtok=
 
 matrix:
   include:
-    - python: '3.7'
+    - name: "Linux: Python 3.9"
+      os: linux
+      python: '3.9'
       dist: xenial
-      sudo: true
-      if: type != pull_request
-      env: CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
-    - python: '3.6'
-      if: branch = stable OR type = pull_request
-      env: CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
-    - python: '3.5'
-      if: branch = stable
-      env: CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
-    - python: '3.4'
-      if: branch = stable
-      env: CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
-    - python: '2.7'
-      if: type != pull_request
-      env: CIBW_SKIP='cp[!2]?-* cp2[!7]-*'
-    - os: osx
-      language: generic
-      if: type != pull_request
+    - name: "Linux: Python 3.8"
+      os: linux
+      python: '3.8'
+      if: (type != pull_request) AND (branch = master)
+    - name: "Linux: Python 3.7"
+      os: linux
+      python: '3.7'
+      if: (type != pull_request) AND (branch = master)
+    - name: "Linux: Python 3.6"
+      os: linux
+      python: '3.6'
+      if: (type != pull_request) AND (branch = master)
+    - name: "Linux: Python 3.5"
+      os: linux
+      python: '3.5'
+      if: (type != pull_request) AND (branch = master)
+    - name: "Linux: Python 3.4"
+      os: linux
+      python: '3.4'
+      if: (type != pull_request) AND (branch = master)
+    - name: "Linux: Python 2.7"
+      os: linux
+      python: '2.7'
+      if: (type != pull_request) AND (branch = master)
+
+    - name: "macOS: Python 3.7"
+      os: osx
+      language: shell
+      python: 3.7
+      cache:
+        - directories:
+          - $HOME/Library/Caches/pip
       env:
         - PYTHON=3.7
-        - CIBW_SKIP='cp[!3]?-* cp3[!7]-*'
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
-    - os: osx
-      if: branch = stable
-      language: generic
-      env:
-        - PYTHON=3.6
-        - CIBW_SKIP='cp[!3]?-* cp3[!6]-*'
-        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
-    - os: osx
-      if: branch = stable
-      language: generic
-      env:
-        - PYTHON=3.5
-        - CIBW_SKIP='cp[!3]?-* cp3[!5]-*'
-        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
-    - os: osx
-      if: branch = stable
-      language: generic
-      env:
-        - PYTHON=3.4
-        - CIBW_SKIP='cp[!3]?-* cp3[!4]-*'
-        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
-    - os: osx
-      if: branch = stable
-      language: generic
-      env:
-        - PYTHON=2.7
-        - CIBW_SKIP='cp[!2]?-* cp2[!7]-*'
-        - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
-
-before_install: |
-  # macOSX CI environment configuration: https://pythonhosted.org/CodeChat/.travis.yml.html
-  if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-    brew update
-    # Per the `pyenv homebrew recommendations <https://github.com/yyuu/pyenv/wiki#suggested-build-environment>`_.
-    brew install openssl readline
-    # See https://docs.travis-ci.com/user/osx-ci-environment/#A-note-on-upgrading-packages.
-    # I didn't do this above because it works and I'm lazy.
-    brew outdated pyenv || brew upgrade pyenv
-    # virtualenv doesn't work without pyenv knowledge. venv in Python 3.3
-    # doesn't provide Pip by default. So, use `pyenv-virtualenv <https://github.com/yyuu/pyenv-virtualenv/blob/master/README.md>`_.
-    brew install pyenv-virtualenv
-    pyenv install $PYTHON
-    # I would expect something like ``pyenv init; pyenv local $PYTHON`` or
-    # ``pyenv shell $PYTHON`` would work, but ``pyenv init`` doesn't seem to
-    # modify the Bash environment. ??? So, I hand-set the variables instead.
-    export PYENV_VERSION=$PYTHON
-    export PATH="/Users/travis/.pyenv/shims:${PATH}"
-    pyenv-virtualenv venv
-    source venv/bin/activate
-    # A manual check that the correct version of Python is running.
-    python --version
-  fi
-
 
 install:
-  - pip install six
-  - pip install cython numpy scipy --only-binary all
-  - pip install pycodestyle
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
+        python --version
+        which python
+        mv /usr/local/bin/python /usr/local/bin/pythonxx
+        cp /usr/local/bin/python3 /usr/local/bin/python
+        python --version
+    fi
+  - python --version
   - echo "$TRAVIS_BRANCH $TRAVIS_PYTHON_VERSION $PYTHON"
   - |
-    if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
-        pip install cibuildwheel==0.9.4 twine
-    else
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
-            pip install coverage coveralls
-        fi
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] || [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
+        python -m pip install cibuildwheel==1.9 twine
     fi
+  - python -m pip install six setuptools pycodestyle
+  - python -m pip install coverage coveralls
+  - python -m pip install -r requirements-dev.txt
 
 script:
   - echo "Running code style checks"
   - make styleCheck
   - echo "Running build for $TRAVIS_PYTHON_VERSION"
   - |
-    if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
-        # all version targets: build a wheel!
-        make compile
-        echo "Generating wheel... (skipping $(CIBW_SKIP))"
-        cibuildwheel --output-dir wheelhouse
-        ls -l wheelhouse/*
-    elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
+    if [[ "$TRAVIS_BRANCH" == "master" ]] || [[ "$TRAVIS_BRANCH" == "cisetup" ]] ; then
         # master branch: regular tests and code coverage analysis
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ; then
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] ; then
             make compile-coverage
             echo "Running coverage analysis..."
             coverage run --source=fastmat bee.py list makedump
@@ -136,6 +97,20 @@ script:
             coverage run -a --source=fastmat bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
         else
             make test
+        fi
+    fi
+  - |
+    if [[ "$TRAVIS_BRANCH" == "stable" ]] || [[ "$TRAVIS_BRANCH" == "cisetup" ]] ; then
+        if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
+            # all version targets: build a wheel!
+            echo "Generating wheels..."
+            cibuildwheel --output-dir wheelhouse --platform linux --archs all
+            ls -l wheelhouse/* || true
+        elif [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
+            # all version targets: build a wheel!
+            echo "Generating wheels..."
+            cibuildwheel --output-dir wheelhouse --platform macos --archs all
+            ls -l wheelhouse/* || true
         fi
     fi
 

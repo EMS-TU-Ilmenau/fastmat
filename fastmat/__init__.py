@@ -16,13 +16,10 @@
 # limitations under the License.
 
 r"""
-Introduction
-------------
-
 In many fields of engineering linear transforms play a key role during modeling
 and solving real world problems. Often these linear transforms have an inherent
 structure which reduces the degrees of freedom in their parametrization.
-Moreover this structure allows to describe the action of a linear mapping on a
+Moreover, this structure allows to describe the action of a linear mapping on a
 given vector more efficiently than the general one.
 
 This structure can be exploited twofold. First, the storage of these transforms
@@ -50,16 +47,11 @@ benefits in memory and calculation efficiency without too much overhead.
 
 This way you can worry about really urgent matters to you, like research and
 development of algorithms and leave the internals to fastmat.
-
-Types of Matrices
------------------
-
-If you want to find out, what types of structures we provide, have a look at
-the :ref:`classes`. There is a whole zoo of them!
 """
 
 # import fundamental types and classes first, also behavioural flags
 from .Matrix import Matrix, Hermitian, Conjugate, Transpose, flags
+from .Matrix import Inverse, PseudoInverse
 from .Product import Product
 
 # import all fastmat classes

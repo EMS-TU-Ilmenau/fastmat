@@ -61,8 +61,9 @@ cdef class Sum(Matrix):
         *matrices : :py:class:`fastmat.Matrix`
             The matrix instances to be summed.
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional optional keyworded arguments. Supports all optional
+            arguments supported by :py:class:`fastmat.Matrix`.
         '''
         cpdef Matrix mat
 

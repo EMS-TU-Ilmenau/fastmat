@@ -89,8 +89,8 @@ cdef class Hadamard(Matrix):
     This yields a Hadamard matrix :math:`{\mathcal{H}}_4` of order :math:`4`,
     i.e. with :math:`16` rows and columns.
 
-    The algorithm we used is described in [2]_ and was implemented in
-    Cython [3]_.
+    The algorithm we used is described in :ref:`[2]<ref2>` and was implemented
+    in Cython :ref:`[3]<ref3>`.
     """
 
     property order:
@@ -109,8 +109,9 @@ cdef class Hadamard(Matrix):
             The order of the Hadamard matrix to generate. The matrix data type
             is :py:class:`numpy.int8`
 
-        **options:
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Optional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         if order < 1:
             raise ValueError("Hadamard: Order must be larger than 0.")

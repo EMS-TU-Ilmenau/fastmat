@@ -15,8 +15,8 @@
 
 .. _Polynomial:
 
-Polynomial Class
-================
+Matrix Polynomial
+=================
 
 .. autoclass:: fastmat.Polynomial
     :members:

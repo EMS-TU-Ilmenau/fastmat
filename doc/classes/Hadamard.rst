@@ -15,8 +15,8 @@
 
 .. _Hadamard:
 
-Hadamard Class
-==============
+Hadamard Matrix
+===============
 
 .. autoclass:: fastmat.Hadamard
     :members:

@@ -29,11 +29,6 @@ ctypedef enum OP_MODE:
     MODE_MUL
     MODE_DOTROW
 
-cdef np.float64_t _norm(TYPE_ALL *, intsize)
-cdef np.float64_t _normMV(TYPE_ALL[:])
-cdef TYPE_ALL _corrMV(TYPE_ALL[:], TYPE_ALL[:])
-
-
 ################################################## complexity estimation
 cdef int _findFFTFactors(int, int, int, int)
 cpdef intsize _findOptimalFFTSize(intsize, int)

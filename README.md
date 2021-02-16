@@ -22,12 +22,17 @@ huge savings in computational time and memory requirements compared to using
 dense matrix representations.
 
 ### Dependencies
-- Python >= 2.7 or >=3.4
+- Python 2.7, Python >=3.4
 - Numpy >= 1.7
 - Scipy >= 1.0
 - Cython >= 0.29
 - soft dependencies:
     - matplotlib: for demos and tools that make use of plotting functions
+
+### Distribution
+Binary wheels are provided for Python >=3.5 for linux, windows and mac, as well as for x86 and ARM architectures.
+
+For all systems, for which no wheels are provided, you may still install fastmat from the soruce distribution.
 
 ### Authors & Contact Information
 - Sebastian Semper | sebastian.semper@tu-ilmenau.de
@@ -67,6 +72,10 @@ from the commandline by running one easy and straightforward command:
 When installing with pip all dependencies of the package will be installed
 along. With release 0.1.1 python wheels will be offered for many versions
 greatly improving installation time and effort.
+
+#### Bulding from source
+
+Building binaries has been developed and tested for the use
 
 ### Manually installing from source
 - download the source distribution from our github repository:

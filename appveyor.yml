@@ -6,6 +6,7 @@ branches:
 environment:
   global:
     CIBW_ENVIRONMENT: "FASTMAT_GENERIC=1"
+    CIBW_BEFORE_BUILD: "python -m pip install -r requirements-dev.txt"
     FASTMAT_GENERIC: "1"
 
   TWINE_REPOSITORY:
@@ -21,88 +22,59 @@ environment:
     secure: s5rlS2aZ0pdnIhWQrN0B0LZO5FU6B7CIp1ON4wriejs=
 
   matrix:
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "32"
-      CONDA_PY: "27"
-      CIBW_SKIP: 'cp[!2]?-* cp2[!7]-*'
-
-    - PYTHON: "C:\\Python27-x64"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "64"
-      CONDA_PY: "27"
-      CIBW_SKIP: 'cp[!2]?-* cp2[!7]-*'
-
-    - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4"
-      PYTHON_ARCH: "32"
-      CONDA_PY: "34"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!4]-*'
-
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4"
-      PYTHON_ARCH: "64"
-      CONDA_PY: "34"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!4]-*'
-
-    - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: "32"
-      CONDA_PY: "35"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!5]-*'
-
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "64"
       CONDA_PY: "35"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!5]-*'
-
-    - PYTHON: "C:\\Python36"
-      PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: "32"
-      CONDA_PY: "36"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!6]-*'
+      CIBW_BUILD: 'cp35-win32 cp35-win_amd64'
 
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
       CONDA_PY: "36"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!6]-*'
-
-    - PYTHON: "C:\\Python37"
-      PYTHON_VERSION: "3.7"
-      PYTHON_ARCH: "32"
-      CONDA_PY: "37"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!7]-*'
+      CIBW_BUILD: 'cp36-win32 cp36-win_amd64'
 
     - PYTHON: "C:\\Python37-x64"
       PYTHON_VERSION: "3.7"
       PYTHON_ARCH: "64"
       CONDA_PY: "37"
-      CIBW_SKIP: 'cp[!3]?-* cp3[!7]-*'
+      CIBW_BUILD: 'cp37-win32 cp37-win_amd64'
+
+    - PYTHON: "C:\\Python38-x64"
+      PYTHON_VERSION: "3.8"
+      PYTHON_ARCH: "64"
+      CONDA_PY: "38"
+      CIBW_BUILD: 'cp38-win32 cp38-win_amd64'
+
+    - PYTHON: "C:\\Python39-x64"
+      PYTHON_VERSION: "3.9"
+      PYTHON_ARCH: "64"
+      CONDA_PY: "39"
+      CIBW_BUILD: 'cp39-win32 cp39-win_amd64'
 
     # For Python versions available on Appveyor, see
     # http://www.appveyor.com/docs/installed-software#python
 
 install:
-  # Prepend chosen Python to the PATH of this build
+  - ECHO "Filesystem root:"
+  - ECHO "Installed SDKs:"
+
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
-  - "ECHO %CIBW_SKIP%"
-  - "ECHO %CIBW_ENVIRONMENT%"
-  - "ECHO %PATH%"
+
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
-  - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
-  - >-
-     %CMD_IN_ENV%
-     python -c "import sys,platform,struct;
-     print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
+
+  # Upgrade to the latest version of pip to avoid it displaying warnings
+  # about it being out of date.
+  - "python -m pip install --upgrade pip"
 
 build_script:
-  - python -m pip install cibuildwheel==0.9.4 twine
+  - python -m pip install cibuildwheel==1.9 twine || python -m pip install cibuildwheel==1.4.1 twine
+  - python -m pip install -r requirements-dev.txt
   - python setup.py build_ext --inplace
   - python -m pip install .
 

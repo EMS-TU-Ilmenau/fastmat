@@ -15,8 +15,8 @@
 
 .. _Kron:
 
-Kron Class
-==========
+Kronecker Product
+=================
 
 .. autoclass:: fastmat.Kron
     :members:

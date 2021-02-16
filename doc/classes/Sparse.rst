@@ -15,8 +15,8 @@
 
 .. _Sparse:
 
-Sparse Class
-============
+Sparse Matrix
+=============
 
 .. autoclass:: fastmat.Sparse
     :members:
