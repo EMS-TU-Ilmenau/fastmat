@@ -43,10 +43,10 @@ matrix:
       os: linux
       python: '3.4'
       if: (type != pull_request) AND (branch = master)
+
     - name: "Linux: Python 2.7"
       os: linux
       python: '2.7'
-      if: (type != pull_request) AND (branch = master)
 
     - name: "macOS: Python 3.7"
       os: osx
@@ -96,7 +96,7 @@ script:
             coverage run -a --source=fastmat bee.py test -vf -s Matrix.class Circulant.class
             coverage run -a --source=fastmat bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1
         else
-            make test
+            make test PYTHON=python
         fi
     fi
   - |
