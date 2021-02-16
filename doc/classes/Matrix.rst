@@ -15,35 +15,10 @@
 
 .. _Matrix:
 
-Matrix Class and Tightly Related Classes
-========================================
+Matrix Base Class
+=================
 
 .. autoclass:: fastmat.Matrix
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: fastmat.Transpose
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: fastmat.Hermitian
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: fastmat.Conjugate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: fastmat.Inverse
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: fastmat.PseudoInverse
     :members:
     :undoc-members:
     :show-inheritance:

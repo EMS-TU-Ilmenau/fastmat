@@ -15,8 +15,8 @@
 
 .. _Zero:
 
-Zero Class
-==========
+Zero Matrix
+===========
 
 .. autoclass:: fastmat.Zero
     :members:

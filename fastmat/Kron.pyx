@@ -46,8 +46,8 @@ cdef class Kron(Matrix):
         \end{bmatrix}.
 
     We make use of a decomposition into a standard matrix product to speed up
-    the matrix-vector multiplication which is introduced in [4]_. This then
-    yields multiple benefits:
+    the matrix-vector multiplication which is introduced in :ref:`[4]<ref4>`.
+    This then yields multiple benefits:
 
         - It already brings down the complexity of the forward and backward
           projection if the factors :math:`A_i` have no fast transformations.
@@ -86,8 +86,9 @@ cdef class Kron(Matrix):
             The matrix instances to form a kronecker product of. Currently only
             square matrices are supported as kronecker product terms.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
 
         cdef int ff, factorCount = len(matrices)

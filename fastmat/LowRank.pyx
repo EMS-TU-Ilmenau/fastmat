@@ -116,8 +116,9 @@ cdef class LowRank(Product):
             A 2d array corresponding to V of the singular value decomposition
             of the matrix.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
 
         # complain if dimension does not match

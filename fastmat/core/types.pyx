@@ -28,6 +28,21 @@ np.import_array()
 ################################################## type handling
 
 cdef inline void getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
+    """Short summary.
+
+    Parameters
+    ----------
+    dtype : np.dtype
+        Description of parameter `dtype`.
+    *info : INFO_TYPE_s
+        Description of parameter `*info`.
+
+    Returns
+    -------
+    inline void
+        Description of returned object.
+
+    """
     '''Fill in type descriptor (INTO_TYPE_s) for given a numpy.dtype.'''
     info[0].numpyType   = dtype.type_num
     info[0].fusedType   = typeSelection[info[0].numpyType]
@@ -60,6 +75,19 @@ cdef inline void getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
 
 
 cdef ftype approximateType(INFO_TYPE_s *dtype):
+    """Short summary.
+
+    Parameters
+    ----------
+    *dtype : INFO_TYPE_s
+        Description of parameter `*dtype`.
+
+    Returns
+    -------
+    ftype
+        Description of returned object.
+
+    """
     '''Return most suited fastmat datatype id for given type descriptor.'''
     if dtype[0].isNumber:
         if dtype[0].isInt:
@@ -86,6 +114,19 @@ cdef ftype approximateType(INFO_TYPE_s *dtype):
 
 
 cdef INFO_TYPE_s *getTypeInfo(object dtype):
+    """Short summary.
+
+    Parameters
+    ----------
+    dtype : object
+        Description of parameter `dtype`.
+
+    Returns
+    -------
+    INFO_TYPE_s
+        Description of returned object.
+
+    """
     '''
     Return a pointer to a type descriptor (INFO_TYPE_s) for a given type
     object. Takes any valid type descriptor as input (np.dtype, int, type).
@@ -118,24 +159,76 @@ cdef INFO_TYPE_s *getTypeInfo(object dtype):
 
 
 cdef ntype getNumpyType(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    ntype
+        Description of returned object.
+
+    """
     '''Return numpy type number for a given or a given array's data type.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].numpyType
 
 
 cdef ftype getFusedType(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    ftype
+        Description of returned object.
+
+    """
     '''Return fastmat type number for a given or a given array's data type.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].fusedType
 
 
 cpdef np.float64_t getTypeEps(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    np.float64_t
+        Description of returned object.
+
+    """
     '''Return eps for a given or a given array's data type.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].eps
 
 
 cpdef np.float64_t getTypeMin(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    np.float64_t
+        Description of returned object.
+
+    """
     '''
     Return the minimum representable value for a given or a given array's data
     type.
@@ -145,6 +238,19 @@ cpdef np.float64_t getTypeMin(object obj):
 
 
 cpdef np.float64_t getTypeMax(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    np.float64_t
+        Description of returned object.
+
+    """
     '''
     Return the maximum representable value for a given or a given array's data
     type.
@@ -153,11 +259,37 @@ cpdef np.float64_t getTypeMax(object obj):
     return info[0].max
 
 cpdef isInteger(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Return whether a given data type or an array's data type is integer.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isInt
 
 cpdef isFloat(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Return whether a given data type or an array's data type is floating point.
     '''
@@ -165,6 +297,19 @@ cpdef isFloat(object obj):
     return info[0].isFloat
 
 cpdef isComplex(object obj):
+    """Short summary.
+
+    Parameters
+    ----------
+    obj : object
+        Description of parameter `obj`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Return whether a given data type or an array's data type is complex.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isComplex
@@ -172,6 +317,21 @@ cpdef isComplex(object obj):
 ################################################## type Promotion stuff
 
 cdef ftype promoteFusedTypes(ftype type1, ftype type2):
+    """Short summary.
+
+    Parameters
+    ----------
+    type1 : ftype
+        Description of parameter `type1`.
+    type2 : ftype
+        Description of parameter `type2`.
+
+    Returns
+    -------
+    ftype
+        Description of returned object.
+
+    """
     if (type1 < 0) or (type2 >= NUM_TYPES) or \
        (type2 < 0) or (type2 >= NUM_TYPES):
         raise ValueError("Invalid type numbers for promotion")
@@ -179,6 +339,19 @@ cdef ftype promoteFusedTypes(ftype type1, ftype type2):
     return typeInfo[type1].promote[type2]
 
 cpdef object safeTypeExpansion(object dtype):
+    """Short summary.
+
+    Parameters
+    ----------
+    dtype : object
+        Description of parameter `dtype`.
+
+    Returns
+    -------
+    object
+        Description of returned object.
+
+    """
     return (np.float32 if (dtype == np.int8) or (dtype == np.int16)
             else (np.float64 if (dtype == np.int32) or (dtype == np.int64)
                   else dtype))
@@ -246,6 +419,14 @@ for tt in range(NUM_TYPES):
 
 
 def _typeSelection():
+    """Short summary.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''Print internals to assist debugging.'''
     print("typeSelection =")
     lst = [[] for ii in range(NUM_TYPES)]
@@ -258,6 +439,14 @@ def _typeSelection():
 
 
 def _typeInfo():
+    """Short summary.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     print("typeInfo =")
     for tt in range(NUM_TYPES):
         lst = [typeInfo[tt].promote[ii] for ii in range(NUM_TYPES)]

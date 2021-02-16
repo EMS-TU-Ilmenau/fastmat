@@ -15,8 +15,8 @@
 
 .. _Eye:
 
-Eye Class
-=========
+Identity Matrix
+===============
 
 .. autoclass:: fastmat.Eye
     :members:

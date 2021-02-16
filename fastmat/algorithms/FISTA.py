@@ -46,11 +46,11 @@ class FISTA(Algorithm):
     >>> # define the sampling positions
     >>> t = np.linspace(0, 20 * np.pi, n)
     >>> # construct the convolution matrix
-    >>> c = np.cos(2 * t)
+    >>> c = np.cos(2 * t) * np.exp(-t ** 2)
     >>> C = fm.Circulant(c)
     >>> # create the ground truth
     >>> x = np.zeros(n)
-    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> x[np.random.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
     >>> fista = fma.FISTA(C, numLambda=0.005, numMaxSteps=100)

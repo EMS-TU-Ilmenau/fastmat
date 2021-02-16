@@ -19,9 +19,9 @@
 #
 import os
 import sys
-sys.path.append(os.path.abspath('../'))
-sys.path.append(os.path.abspath('../util'))
-sys.path.append(os.path.abspath('../fastmat'))
+print(sys.version)
+
+sys.path.insert(0, os.path.abspath('..'))
 import fastmat.version as fmv
 
 # -- General configuration ------------------------------------------------
@@ -35,12 +35,14 @@ import fastmat.version as fmv
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosectionlabel',
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
     'sphinx.ext.autosummary',
+	'matplotlib.sphinxext.plot_directive',
     'numpydoc'
     ]
 
@@ -94,7 +96,14 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'bizstyle'
+html_theme = 'sphinx_rtd_theme'
+
+html_theme_options = {
+    "collapse_navigation": False
+}
+
+html_logo = "_static/gfx/logo_short.png"
+html_favicon = "_static/gfx/logo_favicon.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -137,3 +146,4 @@ def skip(app, what, name, obj, skip, options):
 
 def setup(app):
     app.connect("autodoc-skip-member", skip)
+    app.add_stylesheet('custom.css')

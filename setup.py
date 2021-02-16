@@ -41,7 +41,10 @@ def WARNING(string):
 
 def ERROR(string, e):
     print("\033[91mERROR:\033[0m %s" % (string))
-    raise e
+    if isinstance(e, int):
+        sys.exit(e)
+    else:
+        raise e
 
 
 def INFO(string):
@@ -182,11 +185,24 @@ def doc_opts():
     try:
         from sphinx.setup_command import BuildDoc
     except ImportError:
-        return {}
+        ERROR("Unable to import Sphinx for building the docs", 1)
 
-    class OwnDoc(BuildDoc):
+    class OwnDoc(BuildDoc, object):
 
         def __init__(self, *args, **kwargs):
+            # check if we have the necessary sphinx add-ons installed
+            import pip
+            global sphinxRequires
+            failed = []
+            for requirement in sphinxRequires:
+                try:
+                    __import__(requirement)
+                except ImportError:
+                    failed.append(requirement)
+
+            if len(failed) > 0:
+                ERROR("Following pypi packages are missing: %s" %(failed, ), 1)
+
             super(OwnDoc, self).__init__(*args, **kwargs)
 
     return OwnDoc
@@ -222,6 +238,16 @@ if __name__ == '__main__':
     f = (open(fileName, 'r') if sys.version_info < (3, 0)
          else open(fileName, 'r', encoding='utf-8'))
     longDescription = f.read()
+    f.close()
+
+    pypiName = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        'pypi.md'
+    )
+
+    f = (open(fileName, 'r') if sys.version_info < (3, 0)
+         else open(fileName, 'r', encoding='utf-8'))
+    pypiDescription = f.read()
     f.close()
 
     # Build for generic (legacy) architectures when enviroment variable
@@ -274,9 +300,14 @@ if __name__ == '__main__':
     # check if all requirements are met prior to actually calling setup()
     setupRequires = []
     installRequires = []
+    sphinxRequires = ['sphinx', 'sphinx_rtd_theme', 'numpydoc', 'matplotlib']
     checkRequirement(setupRequires, 'setuptools', 'setuptools>=18.0')
     checkRequirement(setupRequires, 'Cython', 'cython>=0.29')
-    checkRequirement(setupRequires, 'numpy', 'numpy>=1.7')
+    if sys.version_info < (3, 5):
+        checkRequirement(setupRequires, 'numpy', 'numpy<1.17')
+    else:
+        checkRequirement(setupRequires, 'numpy', 'numpy>=1.7')
+
     checkRequirement(installRequires, 'six', 'six')
     checkRequirement(installRequires, 'scipy', 'scipy>=1.0')
 
@@ -288,7 +319,8 @@ if __name__ == '__main__':
         name=packageName,
         version=packageVersion,
         description='fast linear transforms in Python',
-        long_description=longDescription,
+        long_description=pypiDescription,
+        long_description_content_type='text/markdown',
         author='Christoph Wagner, Sebastian Semper, EMS group TU Ilmenau',
         author_email='christoph.wagner@tu-ilmenau.de',
         url='https://ems-tu-ilmenau.github.io/fastmat/',
@@ -302,6 +334,7 @@ if __name__ == '__main__':
             'Natural Language :: English',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX :: Linux',
+            'Operating System :: POSIX :: Other',
             'Operating System :: MacOS :: MacOS X',
             'Programming Language :: Python',
             'Programming Language :: Python :: 2',
@@ -311,6 +344,8 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
+            'Programming Language :: Python :: 3.9',
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Mathematics',
             'Topic :: Software Development :: Libraries'

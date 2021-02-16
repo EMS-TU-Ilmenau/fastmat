@@ -102,8 +102,9 @@ cdef class BlockDiag(Matrix):
             The matrix instances to be put along the main diagonal of the block
             diagonal matrix, beginning at index (0, 0) with the first matrix.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
         '''
         cdef intsize numRows = 0, numCols = 0
         cdef Matrix term

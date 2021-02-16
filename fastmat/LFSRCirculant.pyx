@@ -50,14 +50,12 @@ cdef inline lfsrReg_t lfsrTapStep(lfsrReg_t state, lfsrReg_t polynomial,
 cdef class LFSRCirculant(Matrix):
     r"""
 
-
     Linear Feedback Shift Registers (LFSR) as implemented in this class are
     finite state machines generating sequences of symbols from the finite
     field :math:`F=[-1, +1]`. A shift register of size :math:`N` is a cascade
     of :math:`N` storage elements :math:`a_n` for :math:`n = 0,\dots,N-1`,
     each holding one symbol of :math:`F`. The state of the shift register is
-    defined by the states of :math:`a_0,\dots,a_{N-1}`.
-    [5]_
+    defined by the states of :math:`a_0,\dots,a_{N-1}`. :ref:`[5]<ref5>`
 
     The next state of the register is generated from the current state by
     moving the contents of each storage element to the next lower index by
@@ -179,8 +177,13 @@ cdef class LFSRCirculant(Matrix):
         start : int
             The initial value of the storage elements of the register.
 
-        **options :
-            See :py:meth:`fastmat.Matrix.__init__`.
+        **options : optional
+            Additional keyworded arguments. Supports all optional arguments
+            supported by :py:class:`fastmat.Matrix`.
+
+            All optional arguments will be passed on to all
+            :py:class:`fastmat.Matrix` instances that are generated during
+            initialization.
         '''
 
         self.polynomial = polynomial

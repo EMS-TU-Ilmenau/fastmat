@@ -30,6 +30,7 @@ from ..version import __version__
 
 ################################################## BENCH CONSTANT-def class
 class BENCH(NAME):
+    """Short summary."""
     FORWARD         = 'forward'
     OVERHEAD        = 'overhead'
     DTYPES          = 'dtypes'
@@ -75,6 +76,21 @@ class BENCH(NAME):
 
 ################################################## weightedPercentile()
 def weightedPercentile(data, **options):
+    """Short summary.
+
+    Parameters
+    ----------
+    data : type
+        Description of parameter `data`.
+    **options : type
+        Description of parameter `**options`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # """
     # O(nlgn) implementation for weighted_percentile, with linear interpolation
     # #between weights.
@@ -136,6 +152,21 @@ def timingStats(
     stats,
     compactStats=False
 ):
+    """Short summary.
+
+    Parameters
+    ----------
+    stats : type
+        Description of parameter `stats`.
+    compactStats : type
+        Description of parameter `compactStats`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Return the runtime statistics of the given list of measurements.
     Each measurement is stored as such a tuple:
@@ -175,6 +206,23 @@ def timingStats(
 
 ################################################## timeCall()
 def timeCall(call, *args, **options):
+    """Short summary.
+
+    Parameters
+    ----------
+    call : type
+        Description of parameter `call`.
+    *args : type
+        Description of parameter `*args`.
+    **options : type
+        Description of parameter `**options`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     Return runtime statistics for execution of a parameterizable method call
     specified by call(*args).
@@ -209,6 +257,21 @@ def timeCall(call, *args, **options):
 
 ################################################## timeCalls()
 def timeCalls(calls, **options):
+    """Short summary.
+
+    Parameters
+    ----------
+    calls : type
+        Description of parameter `calls`.
+    **options : type
+        Description of parameter `**options`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     '''
     wrapper for running test runtime measurements for a number of calls
 
@@ -233,6 +296,23 @@ def timeCalls(calls, **options):
 
 ################################################## testInitSolve()
 def testInitSolve(funcConstr, numSize, numN):
+    """Short summary.
+
+    Parameters
+    ----------
+    funcConstr : type
+        Description of parameter `funcConstr`.
+    numSize : type
+        Description of parameter `numSize`.
+    numN : type
+        Description of parameter `numN`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
 
     instance = funcConstr(numSize)
     mem1 = instance.nbytes
@@ -268,6 +348,23 @@ def testInitSolve(funcConstr, numSize, numN):
 
 ################################################## testInitForward()
 def testInitForward(funcConstr, numSize, numN):
+    """Short summary.
+
+    Parameters
+    ----------
+    funcConstr : type
+        Description of parameter `funcConstr`.
+    numSize : type
+        Description of parameter `numSize`.
+    numN : type
+        Description of parameter `numN`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     instance = funcConstr(numSize)
     mem1 = instance.nbytes
 
@@ -301,6 +398,23 @@ def testInitForward(funcConstr, numSize, numN):
 
 ################################################## testInitOverhead()
 def testInitOverhead(funcConstr, numSize, numN):
+    """Short summary.
+
+    Parameters
+    ----------
+    funcConstr : type
+        Description of parameter `funcConstr`.
+    numSize : type
+        Description of parameter `numSize`.
+    numN : type
+        Description of parameter `numN`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     instance = funcConstr(numSize)
     mem = instance.nbytes
 
@@ -337,6 +451,23 @@ def testInitOverhead(funcConstr, numSize, numN):
 
 ################################################## testInitDtype()
 def testInitDtype(funcConstr, numSize, numN):
+    """Short summary.
+
+    Parameters
+    ----------
+    funcConstr : type
+        Description of parameter `funcConstr`.
+    numSize : type
+        Description of parameter `numSize`.
+    numN : type
+        Description of parameter `numN`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     def generate(dtype):
         instance=funcConstr(numSize, dtype)
 
@@ -369,6 +500,23 @@ def testInitDtype(funcConstr, numSize, numN):
 
 ################################################## testInitPerformance()
 def testInitPerformance(funcConstr, numSize, numN):
+    """Short summary.
+
+    Parameters
+    ----------
+    funcConstr : type
+        Description of parameter `funcConstr`.
+    numSize : type
+        Description of parameter `numSize`.
+    numN : type
+        Description of parameter `numN`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     func, args=funcConstr(numSize)
     mem=args[0].nbytes
 
@@ -388,6 +536,16 @@ def testInitPerformance(funcConstr, numSize, numN):
 ################################################################################
 ################################################## class BenchmarkRunner
 class Benchmark(Worker):
+    """Short summary.
+
+    Parameters
+    ----------
+    targetClass : type
+        Description of parameter `targetClass`.
+    **options : type
+        Description of parameter `**options`.
+
+    """
 
     def __init__(self, targetClass, **options):
 
@@ -459,6 +617,21 @@ class Benchmark(Worker):
             runnerDefaults=defaults, extraOptions=extraOptions)
 
     def getResult(self, nameResult, *nameParams):
+        """Short summary.
+
+        Parameters
+        ----------
+        nameResult : type
+            Description of parameter `nameResult`.
+        *nameParams : type
+            Description of parameter `*nameParams`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         result=self.results.get(nameResult)
         header=result[BENCH.HEADER]
         indices=[header.index(key)
@@ -466,6 +639,21 @@ class Benchmark(Worker):
         return result[BENCH.RESULT][:, indices]
 
     def _run(self, name, options):
+        """Short summary.
+
+        Parameters
+        ----------
+        name : type
+            Description of parameter `name`.
+        options : type
+            Description of parameter `options`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         '''
         Perform a runtime performance evaluation.
         '''
@@ -621,6 +809,31 @@ class Benchmark(Worker):
 
     def saveResult(self, nameResult, outPath='', addVersionTag=True,
                    strFormat='%.6e', chrDelimiter=',', chrNewline=os.linesep):
+        """Short summary.
+
+        Parameters
+        ----------
+        nameResult : type
+            Description of parameter `nameResult`.
+        outPath : type
+            Description of parameter `outPath`.
+        addVersionTag : type
+            Description of parameter `addVersionTag`.
+        strFormat : type
+            Description of parameter `strFormat`.
+        chrDelimiter : type
+            Description of parameter `chrDelimiter`.
+        ' : type
+            Description of parameter `'`.
+        chrNewline : type
+            Description of parameter `chrNewline`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         '''
         Print data table to csv file. The result is organized as a list of
         dicts containing information in key=value pairs. The header will be
@@ -650,6 +863,31 @@ class Benchmark(Worker):
 
     def plotResult(self, nameResult, outPath='', addVersionTag=True,
                    strFormat='%.6e', chrDelimiter=',', chrNewline=os.linesep):
+        """Short summary.
+
+        Parameters
+        ----------
+        nameResult : type
+            Description of parameter `nameResult`.
+        outPath : type
+            Description of parameter `outPath`.
+        addVersionTag : type
+            Description of parameter `addVersionTag`.
+        strFormat : type
+            Description of parameter `strFormat`.
+        chrDelimiter : type
+            Description of parameter `chrDelimiter`.
+        ' : type
+            Description of parameter `'`.
+        chrNewline : type
+            Description of parameter `chrNewline`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         '''
         Print data table to csv file. The result is organized as a list of
         dicts containing information in key=value pairs. The header will be

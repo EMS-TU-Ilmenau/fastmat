@@ -1,0 +1,12 @@
+.pixelated {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+}
+
+.icon {
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    width: 120px;
+    margin-right: auto;
+    margin-left: auto;
+}

@@ -15,7 +15,7 @@
 
 .. _Blocks:
 
-Blocks Class
+Block Matrix
 ============
 
 .. autoclass:: fastmat.Blocks

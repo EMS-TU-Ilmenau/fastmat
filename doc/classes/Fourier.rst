@@ -15,8 +15,8 @@
 
 .. _Fourier:
 
-Fourier Class
-=============
+Fourier Matrix
+==============
 
 .. autoclass:: fastmat.Fourier
     :members:

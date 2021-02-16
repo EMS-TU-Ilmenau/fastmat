@@ -48,11 +48,11 @@ class STELA(Algorithm):
     >>> # define the sampling positions
     >>> t = np.linspace(0, 20 * np.pi, n)
     >>> # construct the convolution matrix
-    >>> c = np.cos(2 * t)
+    >>> c = np.cos(2 * t) * np.exp(-t ** 2)
     >>> C = fm.Circulant(c)
     >>> # create the ground truth
     >>> x = np.zeros(n)
-    >>> x[npr.choice(range(n), k, replace=0)] = 1
+    >>> x[np.random.choice(range(n), k, replace=0)] = 1
     >>> b = C * x
     >>> # reconstruct it
     >>> stela = fma.STELA(C, numLambda=0.005, numMaxSteps=100)
@@ -135,17 +135,18 @@ class STELA(Algorithm):
             self.arrB = arrB
 
         if self.numMaxSteps <= 0:
-            raise ValueError("STELA would like to do at least one step for you")
+            raise ValueError(
+                "STELA would like to do at least one step for you"
+            )
 
-        dtypeType = np.promote_types(np.float32, self.arrB.dtype)
+        dtypeType = np.promote_types(np.float64, self.arrB.dtype)
 
         # step size
-        self.arrGamma = np.zeros(self.arrB.shape[1])
+        self.arrGamma = np.zeros(self.arrB.shape[1], dtype=dtypeType)
 
         # current state vector
         self.arrX = np.zeros(
-            (self.fmatA.numCols, self.arrB.shape[1]),
-            dtype=dtypeType
+            (self.fmatA.numCols, self.arrB.shape[1]), dtype=dtypeType
         )
 
         # current gradient
@@ -162,16 +163,14 @@ class STELA(Algorithm):
         self.arrZ = self.fmatA.backward(self.arrRes)
 
         # squared norms of the system matrix
-        self.arrD = (
-            1. / self.fmatA.colNormalized._content[-1]._vecD ** 2
-        ).reshape((-1, 1))
+        self.arrD = (1.0 / self.fmatA._getColNorms() ** 2).reshape((-1, 1))
 
         # vector for the stopping criterion
         self.arrStop = np.ones(self.arrX.shape[1])
 
         # this vector keeps track of the still active measurements, where
         # we did not converge yet
-        self.arrActive = (np.ones(self.arrX.shape[1]) == 1)
+        self.arrActive = np.ones(self.arrX.shape[1]) == 1
 
         # start iterating
         for self.numStep in range(self.numMaxSteps):
@@ -180,29 +179,35 @@ class STELA(Algorithm):
             self.arrGrad = self.arrD * self.arrX - self.arrZ
 
             # calculate the stopping criterion
-            self.arrStop = np.linalg.norm(
-                self.arrZ - np.maximum(
-                    np.minimum(
-                        self.arrZ - self.arrX,
-                        +self.numLambda
-                    ),
-                    -self.numLambda
-                ),
-                axis=0
+            arrDiff = np.maximum(
+                np.minimum(self.arrZ.real - self.arrX.real, +self.numLambda),
+                -self.numLambda,
             )
-
+            if dtypeType == complex:
+                arrDiff = arrDiff + 1j * np.maximum(
+                    np.minimum(
+                        self.arrZ.imag - self.arrX.imag, +self.numLambda
+                    ),
+                    -self.numLambda,
+                )
+            self.arrStop = np.linalg.norm(
+                self.arrZ - arrDiff,
+                axis=0,
+            )
             # now check if we converged for any snapshot
             self.arrActive = self.arrStop > self.numMaxError
 
             # if no snapshot is active anymore, we can stop entirely
-            if (np.sum(self.arrActive) == 0):
+            if np.sum(self.arrActive) == 0:
                 return self.arrX
 
             # update of the intermediate vector (16)
-            self.arrBx[:, self.arrActive] = self.softThreshold(
-                self.arrGrad[:, self.arrActive],
-                self.numLambda
-            ) / self.arrD
+            self.arrBx[:, self.arrActive] = (
+                self.softThreshold(
+                    self.arrGrad[:, self.arrActive], self.numLambda
+                )
+                / self.arrD
+            )
 
             # cache some operations
             self.arrABxx[:, self.arrActive] = self.fmatA.forward(
@@ -214,43 +219,45 @@ class STELA(Algorithm):
             # measurements at hand.
             self.arrGamma[self.arrActive] = np.maximum(
                 np.minimum(
-                    -(np.sum(
-                        np.multiply(
-                            self.arrRes[:, self.arrActive],
-                            self.arrABxx[:, self.arrActive]
-                        ),
-                        axis=0
-                    ) + self.numLambda * (
-                        np.sum(
-                            np.abs(
-                                self.arrBx[:, self.arrActive]
-                            ) - np.abs(
-                                self.arrX[:, self.arrActive]
-                            ),
-                            axis=0
+                    -(
+                        np.real(
+                            np.sum(
+                                np.multiply(
+                                    np.conj(self.arrRes[:, self.arrActive]),
+                                    self.arrABxx[:, self.arrActive],
+                                ),
+                                axis=0,
+                            )
                         )
-                    )) / np.sum(
-                        (self.arrABxx[:, self.arrActive] ** 2),
-                        axis=0
+                        + self.numLambda
+                        * (
+                            np.sum(
+                                np.abs(self.arrBx[:, self.arrActive])
+                                - np.abs(self.arrX[:, self.arrActive]),
+                                axis=0,
+                            )
+                        )
+                    )
+                    / np.sum(
+                        np.abs(self.arrABxx[:, self.arrActive]) ** 2, axis=0
                     ),
-                    1
+                    1,
                 ),
-                0
+                0,
             )
 
             # update step (5)
             self.arrX[:, self.arrActive] += (
-                self.arrBx[:, self.arrActive] -
-                self.arrX[:, self.arrActive]
-            ).dot(
-                np.diag(self.arrGamma[self.arrActive])
-            )
+                self.arrBx[:, self.arrActive] - self.arrX[:, self.arrActive]
+            ).dot(np.diag(self.arrGamma[self.arrActive]))
 
             # residual update (20)
-            self.arrRes[:, self.arrActive] += \
+            self.arrRes[:, self.arrActive] += (
                 self.arrGamma[self.arrActive] * self.arrABxx[:, self.arrActive]
-            self.arrZ[:, self.arrActive] = \
-                self.fmatA.backward(self.arrRes[:, self.arrActive])
+            )
+            self.arrZ[:, self.arrActive] = self.fmatA.backward(
+                self.arrRes[:, self.arrActive]
+            )
 
             self.handleCallback(self.cbStep)
             self.handleCallback(self.cbTrace)
@@ -270,14 +277,16 @@ class STELA(Algorithm):
             # prepare vectors
             numCols = test[TEST.NUM_COLS]
             test[TEST.REFERENCE] = test[TEST.ALG_MATRIX].reference()
-            test[TEST.RESULT_REF] = np.hstack([
-                arrSparseTestDist(
-                    (numCols, 1),
-                    dtype=test[TEST.DATATYPE],
-                    density=1. * test['numK'] / numCols
-                ).toarray()
-                for nn in range(test[TEST.DATACOLS])
-            ])
+            test[TEST.RESULT_REF] = np.hstack(
+                [
+                    arrSparseTestDist(
+                        (numCols, 1),
+                        dtype=test[TEST.DATATYPE],
+                        density=1.0 * test["numK"] / numCols,
+                    ).toarray()
+                    for nn in range(test[TEST.DATACOLS])
+                ]
+            )
             test[TEST.RESULT_INPUT] = test[TEST.ALG_MATRIX].array.dot(
                 test[TEST.RESULT_REF]
             )
@@ -287,43 +296,46 @@ class STELA(Algorithm):
 
         return {
             TEST.ALGORITHM: {
-                'order'         : 6,
-                TEST.NUM_ROWS   : (lambda param: 3 * param['order']),
-                TEST.NUM_COLS   : (lambda param: 2 ** param['order']),
-                'numK'          : 'order',
-                'lambda'        : 0.1,
-                'maxSteps'      : 3,
-                TEST.ALG_MATRIX : lambda param:
-                    Product(Matrix(np.random.uniform(
-                        -100, 100, (getattr(param, TEST.NUM_COLS),
-                                    getattr(param, TEST.NUM_COLS))).astype(
-                                        param['typeA'])),
-                            Hadamard(param.order),
-                            typeExpansion=param['typeA']),
-                'typeA'         : TEST.Permutation(TEST.FLOATTYPES),
-
-                TEST.OBJECT     : STELA,
-                TEST.INITARGS   : [TEST.ALG_MATRIX],
-                TEST.INITKWARGS : {
-                    'numLambda'     : 'lambda',
-                    'numMaxSteps'   : 'maxSteps'
+                "order": 6,
+                TEST.NUM_ROWS: (lambda param: 3 * param["order"]),
+                TEST.NUM_COLS: (lambda param: 2 ** param["order"]),
+                "numK": "order",
+                "lambda": 0.1,
+                "maxSteps": 3,
+                TEST.ALG_MATRIX: lambda param: Product(
+                    Matrix(
+                        np.random.uniform(
+                            -100,
+                            100,
+                            (
+                                getattr(param, TEST.NUM_COLS),
+                                getattr(param, TEST.NUM_COLS),
+                            ),
+                        ).astype(param["typeA"])
+                    ),
+                    Hadamard(param.order),
+                    typeExpansion=param["typeA"],
+                ),
+                "typeA": TEST.Permutation(TEST.FLOATTYPES),
+                TEST.OBJECT: STELA,
+                TEST.INITARGS: [TEST.ALG_MATRIX],
+                TEST.INITKWARGS: {
+                    "numLambda": "lambda",
+                    "numMaxSteps": "maxSteps",
                 },
-
-                TEST.DATAALIGN  : TEST.ALIGNMENT.DONTCARE,
+                TEST.DATAALIGN: TEST.ALIGNMENT.DONTCARE,
                 TEST.INIT_VARIANT: TEST.IgnoreFunc(testSTELA),
-
-                'strTypeA'      : (lambda param: TEST.TYPENAME[param['typeA']]),
-                TEST.NAMINGARGS : dynFormat(
+                "strTypeA": (lambda param: TEST.TYPENAME[param["typeA"]]),
+                TEST.NAMINGARGS: dynFormat(
                     "(%dx%d)*Hadamard(%s)[%s]",
                     TEST.NUM_ROWS,
                     TEST.NUM_COLS,
-                    'order',
-                    'strTypeA'
+                    "order",
+                    "strTypeA",
                 ),
-
                 # matrix inversion always expands data type to floating-point
-                TEST.TYPE_PROMOTION: np.float32,
-                TEST.CHECK_PROXIMITY: False
+                TEST.TYPE_PROMOTION: np.float64,
+                TEST.CHECK_PROXIMITY: False,
             },
         }
 
@@ -334,4 +346,5 @@ class STELA(Algorithm):
     @staticmethod
     def _getDocumentation():
         from ..inspect import DOC
+
         return ""

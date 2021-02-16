@@ -100,6 +100,21 @@ def tryQuery(nameTest, query, argument):
 
 ################################################## compareResults
 def compareResults(test, query):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+    query : type
+        Description of parameter `query`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
 
     def getOption(option, default):
         return query.get(option, test.get(option, default))
@@ -187,6 +202,19 @@ def compareResults(test, query):
 
 ################################################## formatResult()
 def formatResult(result):
+    """Short summary.
+
+    Parameters
+    ----------
+    result : type
+        Description of parameter `result`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # if a result info was already generated, return this. Otherwise generate it
     if TEST.RESULT_INFO in result:
         return result[TEST.RESULT_INFO]
@@ -221,6 +249,19 @@ def formatResult(result):
 
 ################################################## initTest()
 def initTest(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # generate test object instance for given parameter set
     test[TEST.INSTANCE] = test[TEST.OBJECT](
         *test.get(TEST.INITARGS, ()),
@@ -233,12 +274,38 @@ def initTest(test):
 
 ################################################## testFailDump()
 def testFailDump(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     print("Test query causing the exception:")
     pprint(test)
 
 
 ################################################## testArrays()
 def testArrays(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={TEST.RESULT_INPUT      : test[TEST.RESULT_INPUT],
            TEST.RESULT_OUTPUT     : test[TEST.RESULT_OUTPUT],
            TEST.RESULT_REF        : test[TEST.RESULT_REF]}
@@ -247,6 +314,19 @@ def testArrays(test):
 
 ################################################## testForward()
 def testForward(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     arrInput=query[TEST.RESULT_INPUT]=test[TEST.DATAARRAY].forwardData
     arrInputCheck = arrInput.copy()
@@ -261,6 +341,19 @@ def testForward(test):
 
 ################################################## testBackward()
 def testBackward(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     arrInput=query[TEST.RESULT_INPUT]=test[TEST.DATAARRAY].backwardData
     arrInputCheck = arrInput.copy()
@@ -275,6 +368,19 @@ def testBackward(test):
 
 ################################################## testArray()
 def testArray(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     instance=test[TEST.INSTANCE]
     query[TEST.RESULT_OUTPUT]=instance.array
@@ -284,6 +390,19 @@ def testArray(test):
 
 ################################################## testInterface()
 def testInterface(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     instance=test[TEST.INSTANCE]
     query[TEST.RESULT_OUTPUT] = (
@@ -296,6 +415,19 @@ def testInterface(test):
 
 ################################################## testGetItem()
 def testGetItem(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     instance=test[TEST.INSTANCE]
     arrOutput=np.zeros(instance.shape, instance.dtype)
@@ -309,6 +441,19 @@ def testGetItem(test):
 
 ################################################## testGetColsSingle()
 def testGetColsSingle(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query = {}
     instance = test[TEST.INSTANCE]
     arrOutput = np.empty(instance.shape, instance.dtype)
@@ -329,6 +474,20 @@ def testGetColsSingle(test):
 
 ################################################## testGetColsMultiple()
 def testGetColsMultiple(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
+
     query={}
     instance=test[TEST.INSTANCE]
     arrOutput=instance.getCols([c for c in range(instance.numCols)])
@@ -339,6 +498,20 @@ def testGetColsMultiple(test):
 
 ################################################## test: getRowsSingle
 def testGetRowsSingle(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
+
     query = {}
     instance = test[TEST.INSTANCE]
     arrOutput = np.empty((instance.numRows, instance.numCols), instance.dtype)
@@ -361,6 +534,19 @@ def testGetRowsSingle(test):
 
 ################################################## test: getRowsMultiple
 def testGetRowsMultiple(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     instance=test[TEST.INSTANCE]
     arrOutput=instance.getRows([r for r in range(instance.numRows)])
@@ -372,6 +558,23 @@ def testGetRowsMultiple(test):
 ################################################## test: column,rowNorms
 ###                                            ### test: column,rowNormalized
 def _testNorms(test, funcTestcase, expectedType):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+    funcTestcase : type
+        Description of parameter `funcTestcase`.
+    expectedType : type
+        Description of parameter `expectedType`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     instance, reference = test[TEST.INSTANCE], test[TEST.REFERENCE]
 
     # usually expect the normalized matrix to be promoted in type complexity
@@ -403,7 +606,20 @@ def _testNorms(test, funcTestcase, expectedType):
         return query
 
 
-def testcolNorms(test):
+def testColNorms(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     def columnTestcase(query, instance, reference):
         query[TEST.RESULT_OUTPUT] = instance.colNorms
         query[TEST.RESULT_REF] = np.apply_along_axis(
@@ -414,6 +630,19 @@ def testcolNorms(test):
 
 
 def testRowNorms(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     def rowTestcase(query, instance, reference):
         query[TEST.RESULT_OUTPUT] = instance.rowNorms
         query[TEST.RESULT_REF] = np.apply_along_axis(
@@ -423,7 +652,20 @@ def testRowNorms(test):
     return _testNorms(test, rowTestcase, np.float64)
 
 
-def testcolNormsColNormalized(test):
+def testColNormsColNormalized(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     def columnTestcase(query, instance, reference):
         query[TEST.RESULT_OUTPUT] = instance.colNormalized.array
         query[TEST.RESULT_REF] = np.einsum(
@@ -436,6 +678,19 @@ def testcolNormsColNormalized(test):
 
 
 def testRowNormalized(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     def rowTestcase(query, instance, reference):
         query[TEST.RESULT_OUTPUT] = instance.rowNormalized.array
         query[TEST.RESULT_REF] = np.einsum(
@@ -449,6 +704,19 @@ def testRowNormalized(test):
 
 ################################################## test: largestSV (property)
 def testLargestSV(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={TEST.TYPE_EXPECTED: np.float64}
     instance=test[TEST.INSTANCE]
 
@@ -482,6 +750,19 @@ def testLargestSV(test):
 
 ################################################## test: gram (property)
 def testGram(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     instance, reference=test[TEST.INSTANCE], test[TEST.REFERENCE]
 
     # usually expect the normalized matrix to be promoted in type complexity
@@ -506,6 +787,19 @@ def testGram(test):
 
 ################################################## test: T (property)
 def testTranspose(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     instance=test[TEST.INSTANCE]
     query[TEST.RESULT_OUTPUT]=instance.T.array
@@ -515,6 +809,19 @@ def testTranspose(test):
 
 ################################################## test: H (property)
 def testHermitian(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     instance=test[TEST.INSTANCE]
     query[TEST.RESULT_OUTPUT]=instance.H.array
@@ -524,6 +831,19 @@ def testHermitian(test):
 
 ################################################## test: conj (property)
 def testConjugate(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     query={}
     instance=test[TEST.INSTANCE]
     query[TEST.RESULT_OUTPUT]=instance.conj.array
@@ -533,6 +853,19 @@ def testConjugate(test):
 
 ################################################## test: Algorithm
 def testAlgorithm(test):
+    """Short summary.
+
+    Parameters
+    ----------
+    test : type
+        Description of parameter `test`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # generate input data vector. As this one is needed for some algs, do one
     # dereferentiation step on a complete dictionary, including test and result
     query=test.copy()
@@ -558,6 +891,21 @@ def testAlgorithm(test):
 ################################################################################
 ################################################## class TestRunner
 class Test(Worker):
+    """Short summary.
+
+    Parameters
+    ----------
+    targetClass : type
+        Description of parameter `targetClass`.
+    **options : type
+        Description of parameter `**options`.
+
+    Attributes
+    ----------
+    _verboseFull : type
+        Description of attribute `_verboseFull`.
+
+    """
 
     _verboseFull=False
 
@@ -594,9 +942,9 @@ class Test(Worker):
                     'gCm'   : testGetColsMultiple,
                     'gRs'   : testGetRowsSingle,
                     'gRm'   : testGetRowsMultiple,
-                    'CnVec' : testcolNorms,
+                    'CnVec' : testColNorms,
                     'RnVec' : testRowNorms,
-                    'CnMat' : testcolNormsColNormalized,
+                    'CnMat' : testColNormsColNormalized,
                     'RnMat' : testRowNormalized,
                     'lSV'   : testLargestSV,
                     'gram'  : testGram,
@@ -666,6 +1014,21 @@ class Test(Worker):
             runnerDefaults=defaults, extraOptions=extraOptions)
 
     def _runTest(self, name, options):
+        """Short summary.
+
+        Parameters
+        ----------
+        name : type
+            Description of parameter `name`.
+        options : type
+            Description of parameter `options`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
 
         # build list of tests as complete permutation of parameter variations
         tests=uniqueNameDict({})
@@ -740,6 +1103,21 @@ class Test(Worker):
         return resultTarget
 
     def _run(self, name, options):
+        """Short summary.
+
+        Parameters
+        ----------
+        name : type
+            Description of parameter `name`.
+        options : type
+            Description of parameter `options`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
 
         maxTries = 3
         for numTry in range(maxTries):
@@ -761,6 +1139,25 @@ class Test(Worker):
         return resultTarget
 
     def printStatus(self, nameTest, resultTest, lenName=-1, descrVariants=""):
+        """Short summary.
+
+        Parameters
+        ----------
+        nameTest : type
+            Description of parameter `nameTest`.
+        resultTest : type
+            Description of parameter `resultTest`.
+        lenName : type
+            Description of parameter `lenName`.
+        descrVariants : type
+            Description of parameter `descrVariants`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         # if full output isn't actually requested, crawl all query results in
         # the hierarchy of this test for negative results. If none are found,
         # skip printing.
@@ -838,6 +1235,21 @@ class Test(Worker):
                 self._verboseFull=value[1]
 
     def findProblems(self, nameTarget, targetResult):
+        """Short summary.
+
+        Parameters
+        ----------
+        nameTarget : type
+            Description of parameter `nameTarget`.
+        targetResult : type
+            Description of parameter `targetResult`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
         # crawl all query results for problems and irregularities. Collect them
         # if found. Also, construct a considerable name.
         problems={}
