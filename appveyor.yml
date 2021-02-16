@@ -19,7 +19,7 @@ environment:
     secure: vmEPVHBcWLBeQoU4t3pl8A==
 
   TWINE_PASSWORD:
-    secure: s5rlS2aZ0pdnIhWQrN0B0LZO5FU6B7CIp1ON4wriejs=
+    secure: B4T7ikd4NORqQxYQ6fO1e6QU7EUNVkRZG7rvNxMMH/E=
 
   matrix:
     - PYTHON: "C:\\Python35-x64"
