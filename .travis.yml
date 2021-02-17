@@ -60,7 +60,7 @@ matrix:
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
 
     - name: Linux | arm64 | Python 3.6
-      if: (type != pull_request) AND (branch = master)
+      if: (type != pull_request) AND (branch != master)
       language: python
       python: 3.6
       services: docker
@@ -68,7 +68,7 @@ matrix:
       env: PYTHON=python
 
     - name: Linux | ppc64le | Python 3.6
-      if: (type != pull_request) AND (branch = master)
+      if: (type != pull_request) AND (branch != master)
       language: python
       python: 3.6
       services: docker
@@ -76,7 +76,7 @@ matrix:
       env: PYTHON=python
 
     - &linux_s390x_36
-      if: (type != pull_request) AND (branch = master)
+      if: (type != pull_request) AND (branch != master)
       name: Linux | s390x | Python 3.6
       language: python
       python: 3.6
@@ -93,7 +93,7 @@ install:
     if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
         python --version
         which python
-        python -m pip install twine
+        python -m pip install cibuildwheel twine
         mv /usr/local/bin/python /usr/local/bin/pythonxx
         cp /usr/local/bin/python3 /usr/local/bin/python
         python --version
