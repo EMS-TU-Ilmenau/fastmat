@@ -103,6 +103,8 @@ install:
   - |
     if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] || [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
         python -m pip install cibuildwheel==1.9 twine
+    elif [[ "$TRAVIS_PYTHON_VERSION == 3.6" ]] ; then
+        python -m pip install cibuildwheel twine
     fi
   - python -m pip install six setuptools pycodestyle
   - python -m pip install coverage coveralls
@@ -132,14 +134,19 @@ script:
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] || [[ "$TRAVIS_BRANCH" == "cisetup" ]] ; then
         if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
-            # all version targets: build a wheel!
+            # all version targets: build wheels for Linux
             echo "Generating wheels..."
             cibuildwheel --output-dir wheelhouse --platform linux --archs all
             ls -l wheelhouse/* || true
         elif [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
-            # all version targets: build a wheel!
+            # all version targets: build wheels for macOS
             echo "Generating wheels..."
             cibuildwheel --output-dir wheelhouse --platform macos --archs all
+            ls -l wheelhouse/* || true
+        elif [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
+            # all version targets: build wheels for other architectures
+            echo "Generating wheels..."
+            cibuildwheel --output-dir wheelhouse --archs all
             ls -l wheelhouse/* || true
         fi
     fi
