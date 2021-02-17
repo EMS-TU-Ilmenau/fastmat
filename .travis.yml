@@ -67,14 +67,15 @@ matrix:
       arch: arm64
       env: PYTHON=python
 
-# Power PC commented out due to missing BLAS (need to fiddle out how to link the build against one)
-#    - name: Linux | ppc64le | Python 3.6
-#      if: (type != pull_request) AND (branch != master)
-#      language: python
-#      python: 3.6
-#      services: docker
-#      arch: ppc64le
-#      env: PYTHON=python
+    - &linux_ppc64le_36
+      name: Linux | ppc64le | Python 3.6
+      if: (type != pull_request) AND (branch != master)
+      language: python
+      python: 3.6
+      services: docker
+      sudo: true
+      arch: ppc64le
+      env: PYTHON=python
 
     - &linux_s390x_36
       if: (type != pull_request) AND (branch != master)
@@ -82,12 +83,15 @@ matrix:
       language: python
       python: 3.6
       services: docker
+      sudo: true
       arch: s390x
       env: PYTHON=python
 
   allow_failures:
     # must repeat the s390x job above exactly to match
     - *linux_s390x_36
+    # Power PC commented out due to missing BLAS (need to fiddle out how to link the build against one)
+    - *linux_ppc64le_36
 
 install:
   - |
