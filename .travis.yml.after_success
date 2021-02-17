@@ -2,7 +2,7 @@
 
 echo "Finished job for $TRAVIS_BRANCH:py$TRAVIS_PYTHON_VERSION successfully. Post processing ..."
 
-if [[ "$TRAVIS_BRANCH" == "stable" ]] ; then
+if [[ "$TRAVIS_BRANCH" == "stable" ]]; then
     echo "Uploading generated wheels..."
     ls -l wheelhouse/*
     twine upload wheelhouse/*.whl
