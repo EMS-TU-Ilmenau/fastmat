@@ -67,13 +67,14 @@ matrix:
       arch: arm64
       env: PYTHON=python
 
-    - name: Linux | ppc64le | Python 3.6
-      if: (type != pull_request) AND (branch != master)
-      language: python
-      python: 3.6
-      services: docker
-      arch: ppc64le
-      env: PYTHON=python
+# Power PC commented out due to missing BLAS (need to fiddle out how to link the build against one)
+#    - name: Linux | ppc64le | Python 3.6
+#      if: (type != pull_request) AND (branch != master)
+#      language: python
+#      python: 3.6
+#      services: docker
+#      arch: ppc64le
+#      env: PYTHON=python
 
     - &linux_s390x_36
       if: (type != pull_request) AND (branch != master)
