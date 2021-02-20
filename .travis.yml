@@ -59,7 +59,8 @@ matrix:
         - PYTHON=3.7
         - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
 
-    - name: Linux | arm64 | Python 3.6
+    - &linux_arm64_36
+      name: Linux | arm64 | Python 3.6
       if: (type != pull_request) AND (branch != master)
       language: python
       python: 3.6
@@ -88,6 +89,7 @@ matrix:
       env: PYTHON=python
 
   allow_failures:
+    - *linux_arm64_36
     # must repeat the s390x job above exactly to match
     - *linux_s390x_36
     # Power PC commented out due to missing BLAS (need to fiddle out how to link the build against one)
