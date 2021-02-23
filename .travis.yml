@@ -145,17 +145,17 @@ script:
         if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
             # all version targets: build wheels for Linux
             echo "Generating wheels..."
-            cibuildwheel --output-dir wheelhouse --platform linux --archs all
+            cibuildwheel --output-dir wheelhouse --platform linux
             ls -l wheelhouse/* || true
         elif [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
             # all version targets: build wheels for macOS
             echo "Generating wheels..."
-            cibuildwheel --output-dir wheelhouse --platform macos --archs all
+            cibuildwheel --output-dir wheelhouse --platform macos
             ls -l wheelhouse/* || true
         elif [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]] ; then
             # all version targets: build wheels for other architectures
             echo "Generating wheels..."
-            cibuildwheel --output-dir wheelhouse --archs all
+            cibuildwheel --output-dir wheelhouse
             ls -l wheelhouse/* || true
         fi
     fi
