@@ -110,7 +110,7 @@ install:
   - |
     if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] || [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
         python -m pip install cibuildwheel==1.9 twine
-    elif [[ "$TRAVIS_PYTHON_VERSION == 3.6" ]] ; then
+    elif [[ "$TRAVIS_PYTHON_VERSION == "3.6" ]] ; then
         python -m pip install cibuildwheel twine
     fi
   - python -m pip install six setuptools pycodestyle
