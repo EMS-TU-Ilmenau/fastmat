@@ -184,28 +184,35 @@ def doc_opts():
     '''
     try:
         from sphinx.setup_command import BuildDoc
+
+        class OwnDoc(BuildDoc, object):
+
+            def __init__(self, *args, **kwargs):
+                # check if we have the necessary sphinx add-ons installed
+                import pip
+                global sphinxRequires
+                failed = []
+                for requirement in sphinxRequires:
+                    try:
+                        __import__(requirement)
+                    except ImportError:
+                        failed.append(requirement)
+
+                if len(failed) > 0:
+                    ERROR(
+                        "Following pypi packages are missing: %s" %(failed, ),
+                        1
+                    )
+
+                super(OwnDoc, self).__init__(*args, **kwargs)
+
+        return OwnDoc
+
     except ImportError:
-        ERROR("Unable to import Sphinx for building the docs", 1)
-
-    class OwnDoc(BuildDoc, object):
-
-        def __init__(self, *args, **kwargs):
-            # check if we have the necessary sphinx add-ons installed
-            import pip
-            global sphinxRequires
-            failed = []
-            for requirement in sphinxRequires:
-                try:
-                    __import__(requirement)
-                except ImportError:
-                    failed.append(requirement)
-
-            if len(failed) > 0:
-                ERROR("Following pypi packages are missing: %s" %(failed, ), 1)
-
-            super(OwnDoc, self).__init__(*args, **kwargs)
-
-    return OwnDoc
+        WARNING(
+            "Unable to import Sphinx. Building docs is currently unavailable."
+        )
+        return None
 
 
 ##############################################################################
