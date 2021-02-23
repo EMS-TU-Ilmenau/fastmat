@@ -23,6 +23,8 @@ matrix:
       os: linux
       python: '3.9'
       dist: xenial
+      env:
+        - CIBW_SKIP=cp39-manylinux_i686
     - name: "Linux: Python 3.8"
       if: (type != pull_request) AND (branch = master)
       os: linux
