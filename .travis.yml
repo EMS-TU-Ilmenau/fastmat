@@ -12,7 +12,6 @@ services:
 
 env:
   global:
-    - CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev.txt"
     - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
     - FASTMAT_GENERIC=1
     - secure: ieBbXDsJLiFdiZCU0jQ+2LQg2lGzcFRKpcynFj41a5q8+WoSkDk5YHDgjf8tX1+b0HBEPwyxIXcWiHCSxrZ0AgDVjCvTW4bTRCSG3QuK7u+fowhQWvK6qe3SKgXw9CZ6yycqle63zIKiQFnvKNTn1CneKCKzqVrb08i7MpQdBX0t7bUqUi45dS9PAEaWAUKhyrtXYKJbkyBan36joJjccShiqYMh7OhlLsCPcUnY9Cb76D9O4JrxHikKn/y59ZEpm/eO3xJNIkl/Rooak8b16gy6CuoIPgXte0LQrgxGmD5KsJcCGLW/cJOmH4965h3LdVpuF3hkC1w+jTpsihpLyWL+4ZFqFyN7P68Pv8MFcn2GmCSopHw09UWErTW/O+ofzgb0afK/MT/5av1zJjXEWq34YR+AeHn1wGRFHbkOnpPughcimpqgtiAMDvzzI2/tbb7jxD4K6pGamqvYSoIIsRnxQQnfNGT+UcnyHCrTv1ZMhUlJ32jY7fS4jlpsyxZYLcAFyW7noMqmkkMZby755NIiwAz5W81dk8XQeSsYjFpEHlT1K/9POUgWPW9Pbw0k7EuaBxmWxBJ3kYhWg1DFNc2jJpedmecnhAGwWv2M1uBguLBDaZ1VEisw0w8Ll3KcucQmaiZsCKY7Bzp6taN54ZGsBRJgQd73QTKsVDASq7k=
@@ -24,13 +23,13 @@ matrix:
       python: '3.9'
       dist: xenial
       env:
-        - CIBW_SKIP=cp39-manylinux_i686 CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev39.txt"
+        - CIBW_BUILD="cp39-*" CIBW_SKIP=cp39-manylinux_i686 CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev39.txt"
+        - CIBW_BUILD="cp38-*" CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev38.txt"
+        - CIBW_SKIP="cp39-* cp38-*" CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev.txt"
     - name: "Linux: Python 3.8"
       if: (type != pull_request) AND (branch = master)
       os: linux
       python: '3.8'
-      env:
-        - CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev38.txt"
     - name: "Linux: Python 3.7"
       if: (type != pull_request) AND (branch = master)
       os: linux
