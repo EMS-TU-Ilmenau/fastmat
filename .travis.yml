@@ -18,14 +18,36 @@ env:
 
 matrix:
   include:
-    - name: "Linux: Python 3.9"
+    - name: "Linux: Python 3.9 Wheels"
+      if: (branch = stable) OR (branch = cisetup)
       os: linux
       python: '3.9'
       dist: xenial
       env:
-        - CIBW_BUILD="cp39-*" CIBW_SKIP=cp39-manylinux_i686 CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev39.txt"
-        - CIBW_BUILD="cp38-*" CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev38.txt"
-        - CIBW_SKIP="cp39-* cp38-*" CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev.txt"
+        - CIBW_BUILD=cp39-*
+        - CIBW_SKIP=cp39-manylinux_i686
+        - CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev39.txt"
+    - name: "Linux: Python 3.8 Wheels"
+      if: (branch = stable) OR (branch = cisetup)
+      os: linux
+      python: '3.8'
+      dist: xenial
+      env:
+        - CIBW_BUILD=cp38-*
+        - CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev38.txt"
+    - name: "Linux: Other Python Wheels"
+      if: (branch = stable) OR (branch = cisetup)
+      os: linux
+      python: '3.7'
+      dist: xenial
+      env:
+        - CIBW_SKIP="cp38-* cp39-*"
+        - CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev.txt"
+    - name: "Linux: Python 3.9"
+      if: (type != pull_request) AND (branch = master)
+      os: linux
+      python: '3.9'
+      dist: xenial
     - name: "Linux: Python 3.8"
       if: (type != pull_request) AND (branch = master)
       os: linux
