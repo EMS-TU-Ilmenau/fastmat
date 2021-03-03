@@ -6,6 +6,6 @@ cython>=0.29
 # also backward-pcompatible with packages that were compiled
 # against later releases.
 # numpy 1.14.6 is the oldest release without a major security flaw
-numpy==1.14.6
+numpy==1.16.3
 
 scipy>=1.0
