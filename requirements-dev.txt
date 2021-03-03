@@ -1,3 +1,4 @@
 cython>=0.29
 oldest-supported-numpy
 scipy>=1.0
+numpy>=1.16.3 # not directly required, pinned by Snyk to avoid a vulnerability
