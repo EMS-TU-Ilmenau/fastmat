@@ -5,8 +5,6 @@ cython>=0.29
 # be forward-compatible with future releases but not necessarily
 # also backward-pcompatible with packages that were compiled
 # against later releases.
-# numpy 1.16.3 is the oldest release without a major security flaw
-# rel: https://snyk.io/vuln/SNYK-PYTHON-NUMPY-73513
-numpy==1.16.3
+numpy==1.14.3
 
-scipy>=1.0
+scipy==1.0
