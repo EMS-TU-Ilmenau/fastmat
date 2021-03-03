@@ -117,7 +117,14 @@ install:
     fi
   - python -m pip install six setuptools pycodestyle
   - python -m pip install coverage coveralls
-  - python -m pip install -r requirements-dev.txt
+  - |
+    if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] ; then
+        python -m pip install -r requirements-dev39.txt
+    elif [[ "$TRAVIS_PYTHON_VERSION" == "3.8" ]] ; then
+        python -m pip install -r requirements-dev38.txt
+    else
+        python -m pip install -r requirements-dev.txt
+    fi
 
 script:
   - echo "Running code style checks"

@@ -313,7 +313,7 @@ if __name__ == '__main__':
     if sys.version_info < (3, 5):
         checkRequirement(setupRequires, 'numpy', 'numpy<1.17')
     else:
-        checkRequirement(setupRequires, 'numpy', 'numpy>=1.7')
+        checkRequirement(setupRequires, 'numpy', 'numpy>=1.16.3')
 
     checkRequirement(installRequires, 'six', 'six')
     checkRequirement(installRequires, 'scipy', 'scipy>=1.0')

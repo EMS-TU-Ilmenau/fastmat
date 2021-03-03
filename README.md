@@ -1,17 +1,18 @@
 # fastmat
 [![Version](https://img.shields.io/pypi/v/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Status](https://img.shields.io/pypi/status/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
+[![fastmat](https://img.shields.io/pypi/dm/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Python wheels](https://img.shields.io/pypi/wheel/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8af2b42d33cc4f5ba5b91566032c44ed)](https://www.codacy.com/app/ChristophWWagner/fastmat-EMS-TU-Ilmenau?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
-[![Documentation Status](https://readthedocs.org/projects/fastmat/badge/?version=latest)](http://fastmat.readthedocs.io/en/latest/?badge=latest)
 
 [![License](https://img.shields.io/pypi/l/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Python versions](https://img.shields.io/pypi/pyversions/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 [![Implementation](https://img.shields.io/pypi/implementation/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 
 [![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8af2b42d33cc4f5ba5b91566032c44ed)](https://www.codacy.com/app/ChristophWWagner/fastmat-EMS-TU-Ilmenau?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
 [![GitHub issues](https://img.shields.io/github/issues/EMS-TU-Ilmenau/fastmat.svg)](https://github.com/EMS-TU-Ilmenau/fastmat/issues)
-**stable:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=stable)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat) **master:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)
+**master:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)
+[![Documentation Status](https://readthedocs.org/projects/fastmat/badge/?version=latest)](http://fastmat.readthedocs.io/en/latest/?badge=latest)
 
 ## Description
 Scientific computing requires handling large composed or structured matrices.
@@ -23,7 +24,7 @@ dense matrix representations.
 
 ### Dependencies
 - Python 2.7, Python >=3.4
-- Numpy >= 1.7
+- Numpy >= 1.14.6
 - Scipy >= 1.0
 - Cython >= 0.29
 - soft dependencies:
