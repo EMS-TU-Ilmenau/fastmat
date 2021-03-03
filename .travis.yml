@@ -172,7 +172,7 @@ script:
     fi
   - |
     if [[ "$TRAVIS_BRANCH" == "stable" ]] || [[ "$TRAVIS_BRANCH" == "cisetup" ]] ; then
-        if [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
+        if [[ [[ "$TRAVIS_PYTHON_VERSION" == "3.9" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.8" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]] ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]] ; then
             # all version targets: build wheels for Linux
             echo "Generating wheels..."
             cibuildwheel --output-dir wheelhouse --platform linux
