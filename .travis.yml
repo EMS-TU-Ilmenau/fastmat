@@ -24,11 +24,13 @@ matrix:
       python: '3.9'
       dist: xenial
       env:
-        - CIBW_SKIP=cp39-manylinux_i686
+        - CIBW_SKIP=cp39-manylinux_i686 CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev39.txt"
     - name: "Linux: Python 3.8"
       if: (type != pull_request) AND (branch = master)
       os: linux
       python: '3.8'
+      env:
+        - CIBW_BEFORE_BUILD="python -m pip install -r requirements-dev38.txt"
     - name: "Linux: Python 3.7"
       if: (type != pull_request) AND (branch = master)
       os: linux
