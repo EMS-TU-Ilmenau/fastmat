@@ -24,7 +24,7 @@ dense matrix representations.
 
 ### Dependencies
 - Python 2.7, Python >=3.4
-- Numpy >= 1.7
+- Numpy >= 1.14.6
 - Scipy >= 1.0
 - Cython >= 0.29
 - soft dependencies:

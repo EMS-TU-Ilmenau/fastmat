@@ -1,3 +1,11 @@
 cython>=0.29
-oldest-supported-numpy
+
+# make sure to use the oldest numpy version that is acceptable
+# for building binaries, since the ABI of numpy is designed to
+# be forward-compatible with future releases but not necessarily
+# also backward-pcompatible with packages that were compiled
+# against later releases.
+# numpy 1.14.6 is the oldest release without a major security flaw
+numpy==1.14.6
+
 scipy>=1.0
