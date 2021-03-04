@@ -6,7 +6,6 @@ branches:
 environment:
   global:
     CIBW_ENVIRONMENT: "FASTMAT_GENERIC=1"
-    CIBW_BEFORE_BUILD: "python -m pip install -r requirements-dev.txt"
     FASTMAT_GENERIC: "1"
 
   TWINE_REPOSITORY:
@@ -27,30 +26,35 @@ environment:
       PYTHON_ARCH: "64"
       CONDA_PY: "35"
       CIBW_BUILD: 'cp35-win32 cp35-win_amd64'
+      CIBW_BEFORE_BUILD: "python -m pip install -r requirements-dev.txt"
 
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
       CONDA_PY: "36"
       CIBW_BUILD: 'cp36-win32 cp36-win_amd64'
+      CIBW_BEFORE_BUILD: "python -m pip install -r requirements-dev.txt"
 
     - PYTHON: "C:\\Python37-x64"
       PYTHON_VERSION: "3.7"
       PYTHON_ARCH: "64"
       CONDA_PY: "37"
       CIBW_BUILD: 'cp37-win32 cp37-win_amd64'
+      CIBW_BEFORE_BUILD: "python -m pip install -r requirements-dev.txt"
 
     - PYTHON: "C:\\Python38-x64"
       PYTHON_VERSION: "3.8"
       PYTHON_ARCH: "64"
       CONDA_PY: "38"
       CIBW_BUILD: 'cp38-win32 cp38-win_amd64'
+      CIBW_BEFORE_BUILD: "python -m pip install -r requirements-dev38.txt"
 
     - PYTHON: "C:\\Python39-x64"
       PYTHON_VERSION: "3.9"
       PYTHON_ARCH: "64"
       CONDA_PY: "39"
       CIBW_BUILD: 'cp39-win32 cp39-win_amd64'
+      CIBW_BEFORE_BUILD: "python -m pip install -r requirements-dev39.txt"
 
     # For Python versions available on Appveyor, see
     # http://www.appveyor.com/docs/installed-software#python
@@ -81,7 +85,7 @@ build_script:
 test_script:
   - python bee.py test -v
   - cibuildwheel --output-dir wheelhouse
-  - twine upload "wheelhouse\\*.whl" & exit 0
+  - twine upload "wheelhouse\\*.whl" --skip-existing & exit 0
 
 artifacts:
   - path: "wheelhouse\\*.whl"
