@@ -10,4 +10,4 @@ cython>=0.29
 # For python 3.9 wheels exist beginning with 1.19.3. So let's take this
 numpy==1.19.3
 
-scipy==1.0
+scipy==1.5.4
