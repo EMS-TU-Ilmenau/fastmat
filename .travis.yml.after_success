@@ -5,11 +5,14 @@ echo "Finished job for $TRAVIS_BRANCH:py$TRAVIS_PYTHON_VERSION successfully. Pos
 if [[ "$TRAVIS_BRANCH" == "stable" ]]; then
     echo "Uploading generated wheels..."
     ls -l wheelhouse/*
-    twine upload wheelhouse/*.whl
+    python -m pip install --upgrade pip
+    python -m pip install --upgrade setuptools
+    python -m pip install twine
+    twine upload wheelhouse/*.whl --skip-existing || true
 
     if [[ ""$TRAVIS_PYTHON_VERSION == "3.9" ]] ; then
         python setup.py sdist
-        twine upload dist/*
+        twine upload dist/* --skip-existing || true
     fi
 
 elif [[ "$TRAVIS_BRANCH" == "master" ]] ; then
