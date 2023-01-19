@@ -257,17 +257,21 @@ if __name__ == '__main__':
     pypiDescription = f.read()
     f.close()
 
-    # Build for generic (legacy) architectures when enviroment variable
-    # (FASTMAT_GENERIC) is defined
-    if 'FASTMAT_GENERIC' in os.environ:
-        marchFlag = '-march=x86-64'
-        mtuneFlag = '-mtune=core2'
-        WARNING("Building package for generic architectures")
+    # Build for Apple Silicon
+    if platform.system() == "Darwin" and platform.machine() == "arm64": 
+        marchFlag = "-mcpu=apple-m1"
+        mtuneFlag = ""
     else:
-        marchFlag = '-march=native'
-        mtuneFlag = '-mtune=native'
-
-    # define different compiler arguments for each platform
+        # Build for generic (legacy) architectures when enviroment variable
+        # (FASTMAT_GENERIC) is defined
+        if 'FASTMAT_GENERIC' in os.environ:
+            marchFlag = '-march=x86-64'
+            mtuneFlag = '-mtune=core2'
+            WARNING("Building package for generic architectures")
+        else:
+            marchFlag = '-march=native'
+            mtuneFlag = '-mtune=native'
+    # Define different compiler arguments for each platform
     strPlatform = platform.system()
     compilerArguments = []
     linkerArguments = []
