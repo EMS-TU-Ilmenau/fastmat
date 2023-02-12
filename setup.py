@@ -30,9 +30,10 @@
 import platform
 import sys
 import os
-import re
-import subprocess
-from distutils import sysconfig
+try:
+    import sysconfig
+except ImportError:
+    from setuptools import sysconfig
 
 
 def WARNING(string):
