@@ -232,7 +232,7 @@ cdef class Partial(Matrix):
                            else self._content[0].getRow(idxRow))
 
     cpdef np.ndarray _getColNorms(self):
-        cpdef np.ndarray arrNorms
+        cdef np.ndarray arrNorms
         if self._rowSelection is not None:
             return super(Partial, self)._getColNorms()
         else:
@@ -241,7 +241,7 @@ cdef class Partial(Matrix):
                     else arrNorms[self._colSelection])
 
     cpdef np.ndarray _getRowNorms(self):
-        cpdef np.ndarray arrNorms
+        cdef np.ndarray arrNorms
         if self._colSelection is not None:
             return super(Partial, self)._getRowNorms()
         else:

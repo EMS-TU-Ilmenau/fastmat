@@ -23,8 +23,8 @@ from .core.types cimport *
 
 ################################################## class FastmatFlags
 cdef class FastmatFlags:
-    cpdef public bint bypassAllow
-    cpdef public bint bypassAutoArray
+    cdef public bint bypassAllow
+    cdef public bint bypassAutoArray
 
 
 ################################################## class MatrixCalibration
