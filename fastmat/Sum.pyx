@@ -65,7 +65,7 @@ cdef class Sum(Matrix):
             Additional optional keyworded arguments. Supports all optional
             arguments supported by :py:class:`fastmat.Matrix`.
         '''
-        cpdef Matrix mat
+        cdef Matrix mat
 
         # Fold multiple levels of sums
         lstTerms = []
