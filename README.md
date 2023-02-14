@@ -9,7 +9,6 @@
 [![Implementation](https://img.shields.io/pypi/implementation/fastmat.svg)](https://pypi.python.org/pypi/fastmat)
 
 [![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8af2b42d33cc4f5ba5b91566032c44ed)](https://www.codacy.com/app/ChristophWWagner/fastmat-EMS-TU-Ilmenau?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
 [![GitHub issues](https://img.shields.io/github/issues/EMS-TU-Ilmenau/fastmat.svg)](https://github.com/EMS-TU-Ilmenau/fastmat/issues)
 [![Documentation Status](https://readthedocs.org/projects/fastmat/badge/?version=latest)](http://fastmat.readthedocs.io/en/latest/?badge=latest)
 
