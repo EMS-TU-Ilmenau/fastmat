@@ -26,7 +26,7 @@ from .core.types cimport *
 cdef class DiagBlocks(Matrix):
 
     ############################################## class variables
-    cpdef np.ndarray _tenDiags
+    cdef np.ndarray _tenDiags
 
     cdef intsize _numDiagsRows
     cdef intsize _numDiagsCols

@@ -24,8 +24,8 @@ from .Matrix cimport Matrix
 ################################################## class Permutation
 cdef class Permutation(Matrix):
 
-    cpdef public np.ndarray _sigma
-    cpdef public np.ndarray _tau
+    cdef public np.ndarray _sigma
+    cdef public np.ndarray _tau
 
     ############################################## class methods
     cpdef np.ndarray _forward(self, np.ndarray)
