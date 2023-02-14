@@ -259,7 +259,7 @@ if __name__ == '__main__':
     f.close()
 
     # Build for Apple Silicon
-    if platform.system() == "Darwin" and platform.machine() == "arm64": 
+    if platform.system() == "Darwin" and platform.machine() == "arm64":
         marchFlag = "-mcpu=apple-m1"
         mtuneFlag = ""
     else:
