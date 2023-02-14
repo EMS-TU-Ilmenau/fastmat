@@ -263,13 +263,16 @@ if __name__ == '__main__':
     if 'FASTMAT_GENERIC' in os.environ:
         marchFlag = '-march=x86-64'
         mtuneFlag = '-mtune=core2'
+        mcpuFlag = '-mcpu=arm'
         WARNING("Building package for generic architectures")
     else:
         marchFlag = '-march=native'
         mtuneFlag = '-mtune=native'
+        mcpuFlag = '-mcpu=native'
 
     # define different compiler arguments for each platform
     strPlatform = platform.system()
+    strMachine = platform.machine()
     compilerArguments = []
     linkerArguments = []
     useGccOverride = False
@@ -281,8 +284,12 @@ if __name__ == '__main__':
         compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
         useGccOverride = True
     elif strPlatform == 'Darwin':
-        # assuming Darwin
-        compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+        if strMachine == "arm64":
+            # assuming Darwin ARM
+            compilerArguments += ['-Ofast', mcpuFlag]
+        else:
+            # assuming Darwin x86
+            compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
     else:
         WARNING("Your platform is currently not supported by %s: %s" % (
             packageName, strPlatform))
