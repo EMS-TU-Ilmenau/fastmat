@@ -11,7 +11,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/EMS-TU-Ilmenau/fastmat/badge.svg?branch=master)](https://coveralls.io/github/EMS-TU-Ilmenau/fastmat?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8af2b42d33cc4f5ba5b91566032c44ed)](https://www.codacy.com/app/ChristophWWagner/fastmat-EMS-TU-Ilmenau?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=EMS-TU-Ilmenau/fastmat&amp;utm_campaign=Badge_Grade)
 [![GitHub issues](https://img.shields.io/github/issues/EMS-TU-Ilmenau/fastmat.svg)](https://github.com/EMS-TU-Ilmenau/fastmat/issues)
-**master:** [![Build Status](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat.svg?branch=master)](https://www.travis-ci.org/EMS-TU-Ilmenau/fastmat)
 [![Documentation Status](https://readthedocs.org/projects/fastmat/badge/?version=latest)](http://fastmat.readthedocs.io/en/latest/?badge=latest)
 
 ## Description
@@ -23,8 +22,8 @@ huge savings in computational time and memory requirements compared to using
 dense matrix representations.
 
 ### Dependencies
-- Python 2.7, Python >=3.4
-- Numpy >= 1.14.6
+- Python 2.7, Python >=3.5
+- Numpy >= 1.16.3
 - Scipy >= 1.0
 - Cython >= 0.29
 - soft dependencies:
@@ -50,10 +49,24 @@ reference to the project and the EMS Group at TU Ilmenau.
 If you use fastmat for your scientific work you are required to mention the
 EMS Group at TU Ilmenau and cite the following publication affiliated with the
 project:
- > C. Wagner and S. Semper, _Fast Linear Transforms in Python_,
- > arXiV:1710.09578, 2017
+ > Christoph W. Wagner and Sebastian Semper and Jan Kirchhof, _fastmat: Efficient linear transforms in Python_,
+ > SoftwareX, 2022, https://doi.org/10.1016/j.softx.2022.101013
  >
- > -- <cite>https://arxiv.org/abs/1710.09578</cite>
+
+```
+    @article{Wagner_2022,
+        doi = {10.1016/j.softx.2022.101013},
+        url = {https://doi.org/10.1016%2Fj.softx.2022.101013},
+        year = {2022},
+        month = {jun},
+        publisher = {Elsevier {BV}},
+        volume = {18},
+        pages = {101013},
+        author = {Christoph W. Wagner and Sebastian Semper and Jan Kirchhof},
+        title = {fastmat: Efficient linear transforms in Python},
+        journal = {{SoftwareX}}
+    } 
+```
 
 - **<https://www.tu-ilmenau.de/it-ems/>**
 
