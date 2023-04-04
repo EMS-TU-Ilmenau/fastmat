@@ -9,11 +9,7 @@ on:
   
   workflow_dispatch:
 
-env:
-  FASTMAT_GENERIC: 1
-  CIBW_BEFORE_BUILD: "python -m pip install -r requirements-${{ matrix.python-version }}.txt"
-  IBW_ENVIRONMENT: "FASTMAT_GENERIC=1"
-  CIBW_TEST_COMMAND: "make test"
+# env:
 #   ARTIFACT: wheelhouse/*
 
 jobs:
@@ -43,4 +39,9 @@ jobs:
         make styleCheck
     - name: Build the wheels
       run: |
+        export CIBW_BEFORE_BUILD="python -m pip install -r requirements-${{ matrix.python-version }}.txt"
+        export FASTMAT_GENERIC=1
+        export CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
+        export CIBW_TEST_COMMAND="make test"
+        set
         cibuildwheel --output-dir wheelhouse
