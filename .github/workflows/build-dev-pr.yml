@@ -14,7 +14,7 @@ on:
 
 env:
   ARTIFACT: wheelhouse/*
-  CIBW_SKIP: pp*
+  CIBW_SKIP: pp* cp2*
 
 jobs:
   build:
@@ -36,12 +36,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install six setuptools pycodestyle
         python -m pip install --only-binary :all: -r requirements-dev.txt
-    - name: Check Code Style Integrity
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        make styleCheck
     - name: Build the wheels
       run: |
         export CIBW_BEFORE_BUILD="python -m pip install --only-binary :all: -r requirements-dev.txt"
