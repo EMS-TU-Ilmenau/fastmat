@@ -1,0 +1,8 @@
+six
+pycodestyle
+
+cython>=0.29
+numpy
+scipy
+cibuildwheel
+twine
