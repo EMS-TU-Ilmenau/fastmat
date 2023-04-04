@@ -7,10 +7,14 @@ on:
   pull_request:
     branches: [ "stable" ]
   
+  push:
+    branches: [ "stable" ]
+  
   workflow_dispatch:
 
 env:
   ARTIFACT: wheelhouse/*
+  CIBW_SKIP: pp*
 
 jobs:
   build:
@@ -20,8 +24,8 @@ jobs:
       fail-fast: false
       matrix:
 #        python-version: ["2.7.18", "3.7", "3.8", "3.9", "3.10", "3.11"]
-#        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
-        os: ["ubuntu-latest"]
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+#        os: ["ubuntu-latest"]
 
     steps:
     - uses: actions/checkout@v3
@@ -44,3 +48,14 @@ jobs:
         export FASTMAT_GENERIC=1
         export CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
         cibuildwheel --output-dir wheelhouse
+      
+    - uses: actions/upload-artifact@v3
+      with:
+        path: ./wheelhouse/*.whl
+
+    - name: Upload the wheels
+      run: |
+        ls -l wheelhouse
+        if [[ ${{ github.event_name }} == "push" ]]; then
+          echo "Uploading to pypi"
+        fi
