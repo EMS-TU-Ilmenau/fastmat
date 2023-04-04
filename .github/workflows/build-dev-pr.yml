@@ -40,7 +40,7 @@ jobs:
         make styleCheck
     - name: Build the wheels
       run: |
-        export CIBW_BEFORE_BUILD="python -m pip install --only-binary :all: -r requirements-dev-${{ matrix.python-version }}.txt"
+        export CIBW_BEFORE_BUILD="python -m pip install --only-binary :all: -r requirements-dev.txt"
         export FASTMAT_GENERIC=1
         export CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
         export CIBW_TEST_COMMAND="make test"
