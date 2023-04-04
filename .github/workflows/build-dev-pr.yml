@@ -11,10 +11,10 @@ on:
 
 env:
   global:
-    - FASTMAT_GENERIC=1
-    - CIBW_BEFORE_BUILD="python -m pip install -r requirements-${{ matrix.python-version }}.txt"
-    - CIBW_ENVIRONMENT="FASTMAT_GENERIC=1"
-    - CIBW_TEST_COMMAND="make test"
+    FASTMAT_GENERIC: 1
+    CIBW_BEFORE_BUILD: "python -m pip install -r requirements-${{ matrix.python-version }}.txt"
+    IBW_ENVIRONMENT: "FASTMAT_GENERIC=1"
+    CIBW_TEST_COMMAND: "make test"
 #   ARTIFACT: wheelhouse/*
 
 jobs:
