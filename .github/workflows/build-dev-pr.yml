@@ -1,0 +1,54 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: test deployment to stable branch
+
+on:
+  pull_request:
+    branches: [ "stable" ]
+  
+  workflow_dispatch:
+
+# env:
+#   ARTIFACT: wheelhouse/*
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["2.7.18", "3.7", "3.8", "3.9", "3.10", "3.11"]
+        os:
+          - windows-latest
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install six setuptools pycodestyle
+        if [ -f requirements-dev-${{ matrix.python-version }}.txt ]; then
+          pip install -r requirements-dev-${{ matrix.python-version }}.txt
+        else
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt;
+          fi
+        fi
+    - name: Check Code Style Integrity
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        make styleCheck
+    - name: Test using the build-in test suite
+      run: |
+        make test PYTHON=python
+    - name: Build the wheels
+      run: |
+        cibuildwheel --output-dir wheelhouse
