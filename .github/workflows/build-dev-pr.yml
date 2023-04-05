@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["2.7.18", "3.7"]
+        python-version: ["3.7", "3.9", "3.10", "3.11"]
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
 #        os: ["ubuntu-latest"]
 
@@ -37,8 +37,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f setup-build-${{ matrix.python-version }}.sh ]; then
+          chmod u+x ./setup-build-${{ matrix.python-version }}
           ./setup-build-${{ matrix.python-version }}.sh
-          export CIBW_BEFORE_BUILD="./setup-build-${{ matrix.python-version }}.sh"
+          export CIBW_BEFORE_BUILD="chmod u+x ./setup-build-${{ matrix.python-version }}; ./setup-build-${{ matrix.python-version }}.sh"
         fi
     - name: Build the wheels
       run: |
