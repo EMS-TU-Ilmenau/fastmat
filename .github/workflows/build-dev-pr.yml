@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.7", "3.9", "3.10", "3.11"]
-        os: ["ubuntu-latest", "macos-latest"]
+        os: ["ubuntu-latest", "windows-latest"]
 
     steps:
     - uses: actions/checkout@v3
@@ -34,11 +34,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies and setup build environment
       run: |
+        alias set=export
         python -m pip install --upgrade pip
-        if [ -f setup-build-${{ matrix.python-version }}.sh ]; then
-          source setup-build-${{ matrix.python-version }}.sh
-          export CIBW_BEFORE_BUILD="source setup-build-${{ matrix.python-version }}.sh"
-        fi
+        source setup-build-${{ matrix.python-version }}.sh
+        export CIBW_BEFORE_BUILD="source setup-build-${{ matrix.python-version }}.sh"
     - name: Build the wheels
       run: |
         export FASTMAT_GENERIC=1
