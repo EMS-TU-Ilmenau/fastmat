@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
 
     steps:
     - uses: actions/checkout@v2
@@ -108,14 +108,12 @@ jobs:
     - name: Install cibuildwheel and build sdist
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -r requirements.txt
-        python -m pip install cibuildwheel
-        pip install --upgrade cython
+        python -m pip install --only-binary :all: cython>=0.29 numpy>=1.16.3 scipy
         python setup.py sdist
 
     - uses: actions/upload-artifact@v3
       with:
-        path: ./wheelhouse/*.whl
+        path: ./dist/*.tar.gz
 
     - name: Upload the wheels
       shell: bash
