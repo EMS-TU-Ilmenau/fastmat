@@ -260,7 +260,10 @@ if __name__ == '__main__':
 
     # Build for generic (legacy) architectures when enviroment variable
     # (FASTMAT_GENERIC) is defined
-    if 'FASTMAT_GENERIC' in os.environ:
+    if platform.machine() == "arm64":
+        marchFlag = "-march=arm64"
+        mtuneFlag = ""
+    elif 'FASTMAT_GENERIC' in os.environ:
         marchFlag = '-march=x86-64'
         mtuneFlag = '-mtune=core2'
         WARNING("Building package for generic architectures")
