@@ -96,32 +96,33 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
-      steps:
-      - uses: actions/checkout@v2
 
-      - uses: actions/setup-python@v2
-        name: Install Python
-        with:
-          python-version: ${{ matrix.python-version }}
+    steps:
+    - uses: actions/checkout@v2
 
-      - name: Install cibuildwheel and build sdist
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install cibuildwheel
-          pip install --upgrade cython
-          python setup.py sdist
+    - uses: actions/setup-python@v2
+      name: Install Python
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl
+    - name: Install cibuildwheel and build sdist
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt
+        python -m pip install cibuildwheel
+        pip install --upgrade cython
+        python setup.py sdist
 
-      - name: Upload the wheels
-        shell: bash
-        run: |
-          ls -l wheelhouse
-          if [[ ${{ github.event_name }} == "push" ]]; then
-            echo "Uploading to pypi"
-          elif [[ ${{ github.event_name }} == "pull_request" ]]; then
-            echo "Testing build"
-          fi
+    - uses: actions/upload-artifact@v3
+      with:
+        path: ./wheelhouse/*.whl
+
+    - name: Upload the wheels
+      shell: bash
+      run: |
+        ls -l wheelhouse
+        if [[ ${{ github.event_name }} == "push" ]]; then
+          echo "Uploading to pypi"
+        elif [[ ${{ github.event_name }} == "pull_request" ]]; then
+          echo "Testing build"
+        fi
