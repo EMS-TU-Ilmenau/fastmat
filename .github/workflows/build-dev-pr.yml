@@ -40,6 +40,7 @@ jobs:
             cibw-archs-linux: "x86_64 i686 aarch64"
             cibw-archs-macos: "x86_64 arm64"
             cibw-archs-windows: "AMD64 x86"
+            fastmat-generic: 1
             pip-requires: "cython>=0.29 numpy==1.19.3 scipy==1.5.4 cibuildwheel==1.9 twine"
           # Numpy C-API 0x14
           - python-version: "3.10"
@@ -47,6 +48,7 @@ jobs:
             cibw-archs-linux: "x86_64 aarch64"
             cibw-archs-macos: "x86_64 arm64"
             cibw-archs-windows: "AMD64"
+            fastmat-generic: 0
             pip-requires: "cython>=0.29 numpy==1.21.6 scipy==1.7.3 cibuildwheel==2.12.1 twine"
           # Numpy C-API 0x16
           - python-version: "3.11"
@@ -54,6 +56,7 @@ jobs:
             cibw-archs-linux: "x86_64 aarch64"
             cibw-archs-macos: "x86_64 arm64"
             cibw-archs-windows: "AMD64"
+            fastmat-generic: 0
             pip-requires: "cython>=0.29 numpy==1.24.2 scipy==1.10.1 cibuildwheel==2.12.1 twine"
 
     steps:
@@ -73,7 +76,7 @@ jobs:
         CIBW_ARCHS_LINUX: ${{ matrix.cibw-archs-linux }}
         CIBW_ARCHS_MACOS: ${{ matrix.cibw-archs-macos }}
         CIBW_ARCHS_WINDOWS: ${{ matrix.cibw-archs-windows }}
-        CIBW_ENVIRONMENT: "FASTMAT_GENERIC=1"
+        CIBW_ENVIRONMENT: "FASTMAT_GENERIC=${{ matrix.fastmat-generic }}"
         CIBW_BEFORE_BUILD: "python -m pip install --only-binary :all: ${{ matrix.pip-requires }}"
         FASTMAT_GENERIC: 1
       run: |
