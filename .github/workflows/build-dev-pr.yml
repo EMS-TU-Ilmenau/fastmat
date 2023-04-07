@@ -14,11 +14,11 @@ on:
 
 env:
   ARTIFACT: wheelhouse/*
-  CIBW_SKIP: pp* cp2*
+  CIBW_SKIP: pp*
 
 jobs:
   build_linux:
-    name: Python ${{ matrix.cibw_python }} on ${{ matrix.os }}
+    name: Python ${{ matrix.cibw-build }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -27,22 +27,22 @@ jobs:
         python-version: ["3.7", "3.9", "3.10", "3.11"]
         include:
           # Numpy C-API 0x12
-          - cibw-python: "cp27* cp35*"
+          - cibw-build: "cp27* cp35*"
             cibw-archs: "x86_64 i686"
             python-version: "3.7"
             pip-requires: "cython>=0.29 numpy==1.16.3 scipy==1.1.0 cibuildwheel==1.9 twine"
           # Numpy C-API 0x13
-          - cibw-python: "cp36* cp37* cp38* cp39*"
+          - cibw-build: "cp36* cp37* cp38* cp39*"
             cibw-archs: "x86_64 i686 aarch64"
             python-version: "3.9"
             pip-requires: "cython>=0.29 numpy==1.19.3 scipy==1.5.4 cibuildwheel==1.9 twine"
           # Numpy C-API 0x14
-          - cibw-python: "cp310*"
+          - cibw-build: "cp310*"
             cibw-archs: "x86_64 i686 aarch64"
             python-version: "3.10"
             pip-requires: "cython>=0.29 numpy==1.21.6 scipy==1.7.3 cibuildwheel==2.12.1 twine"
           # Numpy C-API 0x16
-          - cibw-python: "cp311*"
+          - cibw-build: "cp311*"
             cibw-archs: "x86_64 aarch64"
             python-version: "3.11"
             pip-requires: "cython>=0.29 numpy==1.24.2 scipy==1.10.1 cibuildwheel==2.12.1 twine"
