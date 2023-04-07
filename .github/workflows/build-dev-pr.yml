@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest"]
+        os: [ubuntu-latest]
         python-version: ["3.7", "3.9", "3.10", "3.11"]
         include:
           # Numpy C-API 0x12
@@ -44,7 +44,7 @@ jobs:
           # Numpy C-API 0x16
           - cibw-python: "cp311*"
             cibw-archs: "x86_64 aarch64"
-            python-version: "cp311"
+            python-version: "3.11"
             pip-requires: "cython>=0.29 numpy==1.24.2 scipy==1.10.1 cibuildwheel==2.12.1 twine"
 
     steps:
