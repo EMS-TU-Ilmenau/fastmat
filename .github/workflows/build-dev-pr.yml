@@ -24,6 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
+        python-version: ["3.7", "3.9", "3.10", "3.11"]
         include:
           # Numpy C-API 0x12
           - cibw-python: "cp27* cp35*"
