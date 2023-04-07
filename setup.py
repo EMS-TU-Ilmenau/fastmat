@@ -264,7 +264,10 @@ if __name__ == '__main__':
         marchFlag = os.environ['FASTMAT_COMPILER_OPTIONS']
         mtuneFlag = ''
         WARNING("Passing special build options: " + marchFlag)
-    elif 'FASTMAT_GENERIC' in os.environ and bool(int(os.environ['FASTMAT_GENERIC'])):
+    elif (
+        ('FASTMAT_GENERIC' in os.environ) and
+        (bool(int(os.environ['FASTMAT_GENERIC'])))
+    ):
         marchFlag = '-march=x86-64'
         mtuneFlag = '-mtune=core2'
         WARNING("Building package for generic architectures")
@@ -282,11 +285,16 @@ if __name__ == '__main__':
         compilerArguments += ['/O2', '/fp:precise', marchFlag]
     elif strPlatform == 'Linux':
         # assuming Linux and gcc
-        compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+        compilerArguments.extend(['-Ofast', marchFlag])
+        if len(mtuneFlag):
+            compilerArguments.append(mtuneFlag)
+
         useGccOverride = True
     elif strPlatform == 'Darwin':
         # assuming Darwin
-        compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+        compilerArguments.extend(['-Ofast', marchFlag])
+        if len(mtuneFlag):
+            compilerArguments.append(mtuneFlag)
     else:
         WARNING("Your platform is currently not supported by %s: %s" % (
             packageName, strPlatform))
