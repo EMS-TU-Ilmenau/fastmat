@@ -14,7 +14,7 @@ on:
 
 env:
   ARTIFACT: wheelhouse/* dist/*
-  CIBW_SKIP: pp* cp2*
+  CIBW_SKIP: pp* cp2* *musl* *ppc* *s390x
 
 jobs:
 ###############################################################################
