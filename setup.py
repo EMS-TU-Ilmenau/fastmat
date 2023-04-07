@@ -260,7 +260,11 @@ if __name__ == '__main__':
 
     # Build for generic (legacy) architectures when enviroment variable
     # (FASTMAT_GENERIC) is defined
-    if 'FASTMAT_GENERIC' in os.environ and bool(int(os.environ['FASTMAT_GENERIC'])):
+    if 'FASTMAT_COMPILER_OPTIONS' in os.environ:
+        marchFlag = os.environ['FASTMAT_COMPILER_OPTIONS']
+        mtuneFlag = ''
+        WARNING("Passing special build options: " + marchFlag)
+    elif 'FASTMAT_GENERIC' in os.environ and bool(int(os.environ['FASTMAT_GENERIC'])):
         marchFlag = '-march=x86-64'
         mtuneFlag = '-mtune=core2'
         WARNING("Building package for generic architectures")
