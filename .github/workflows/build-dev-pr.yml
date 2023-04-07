@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 env:
-  ARTIFACT: wheelhouse/*
+  ARTIFACT: wheelhouse/* dist/*
   CIBW_SKIP: pp* cp2*
 
 jobs:
@@ -24,15 +24,16 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
-        python-version: ["3.7", "3.9", "3.10", "3.11"]
+#        python-version: ["3.7", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
         include:
-          # Numpy C-API 0x12
-          - python-version: "3.7"
-            cibw-build: "cp35*"
-            cibw-archs-linux: "x86_64 i686"
-            cibw-archs-macos: "x86_64"
-            cibw-archs-windows: "AMD64 x86"
-            pip-requires: "cython>=0.29 numpy==1.16.3 scipy==1.1.0 cibuildwheel==1.1 twine"
+#          # Numpy C-API 0x12
+#          - python-version: "3.7"
+#            cibw-build: "cp35*"
+#            cibw-archs-linux: "x86_64 i686"
+#            cibw-archs-macos: "x86_64"
+#            cibw-archs-windows: "AMD64 x86"
+#            pip-requires: "cython>=0.29 numpy==1.16.3 scipy==1.1.0 cibuildwheel==1.1 twine"
           # Numpy C-API 0x13
           - python-version: "3.9"
             cibw-build: "cp36* cp37* cp38* cp39*"
@@ -120,7 +121,7 @@ jobs:
     - name: Upload the wheels
       shell: bash
       run: |
-        ls -l wheelhouse
+        ls -l dist
         if [[ ${{ github.event_name }} == "push" ]]; then
           echo "Uploading to pypi"
         elif [[ ${{ github.event_name }} == "pull_request" ]]; then
