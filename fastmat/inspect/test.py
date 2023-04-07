@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import itertools
+import pickle
 import numpy as np
 from pprint import pprint
 
@@ -1091,12 +1092,19 @@ class Test(Worker):
                 if TEST.INIT_VARIANT in variant:
                     variant[TEST.INIT_VARIANT](variant)
 
+                # serialize the variant object and de-serialze into a fresh
+                # deep-copied instance whenever a new query is run.
+                # This ensures that there's really no caching taking place.
+                obj_instance = pickle.dumps(variant[TEST.INSTANCE])
+
                 # execute test queries, collect results as [query-name] level
                 # and store in [variant-name] level into test result structure.
-                resultTest[variant[NAME.VARIANT]]={
-                    name: tryQuery(nameTest, query, variant)
-                    for name, query in test[TEST.QUERY].items()
-                }
+                result_queries = {}
+                for name, query in test[TEST.QUERY].items():
+                    variant[TEST.INSTANCE] = pickle.loads(obj_instance)
+                    result_queries[name] = tryQuery(nameTest, query, variant)
+
+                resultTest[variant[NAME.VARIANT]] = result_queries
 
             self.emitStatus(nameTest, resultTest, lenName, descrVariants)
 

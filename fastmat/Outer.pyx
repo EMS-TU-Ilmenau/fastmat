@@ -165,6 +165,22 @@ cdef class Outer(Matrix):
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST, dynFormat
+
+        def _initArgs(param):
+            return [param['vecH'](), param['vecV']()]
+
+        def _tolMinEps(param):
+            return max(
+                getTypeEps(param['mTypeH']),
+                getTypeEps(param['mTypeV'])
+            )
+
+        def _ignore(param):
+            return (
+                param['mTypeH'] == param['mTypeV'] ==
+                param[TEST.DATATYPE] == np.int8
+            )
+
         return {
             TEST.COMMON: {
                 TEST.NUM_ROWS   : 4,
@@ -179,41 +195,49 @@ cdef class Outer(Matrix):
                     TEST.DTYPE  : 'mTypeV',
                     TEST.SHAPE  : (TEST.NUM_COLS, 1)
                 }),
-                TEST.INITARGS   : (lambda param : [param['vecH'](),
-                                                   param['vecV']()]),
+                TEST.INITARGS   : _initArgs,
                 TEST.OBJECT     : Outer,
                 TEST.NAMINGARGS : dynFormat("%so%s", 'vecH', 'vecV'),
-                TEST.TOL_MINEPS : (lambda param:
-                                   max(getTypeEps(param['mTypeH']),
-                                       getTypeEps(param['mTypeV']))),
+                TEST.TOL_MINEPS : _tolMinEps,
                 TEST.TOL_POWER  : 4.
             },
             TEST.CLASS: {},
             TEST.TRANSFORMS: {
                 # ignore int8 datatype as there will be overflows
-                TEST.IGNORE     : TEST.IgnoreFunc(lambda param: (
-                    param['mTypeH'] == param['mTypeV'] ==
-                    param[TEST.DATATYPE] == np.int8))
+                TEST.IGNORE     : TEST.IgnoreFunc(_ignore)
             }
         }
 
     def _getBenchmark(self):
         from .inspect import BENCH, arrTestDist
+
+        def _func_gen_common(c):
+            return Outer(
+                arrTestDist((c, ), dtype=np.float32),
+                arrTestDist((c, ), dtype=np.float32)
+            )
+
+        def _func_gen_overhead(c):
+            return Outer(
+                arrTestDist((2 ** c, ), dtype=np.float32),
+                arrTestDist((2 ** c, ), dtype=np.float32)
+            )
+
+        def _func_gen_datatype(c, datatype):
+            return Outer(
+                arrTestDist((2 ** c, ), dtype=datatype),
+                arrTestDist((2 ** c, ), dtype=datatype)
+            )
+
         return {
             BENCH.COMMON: {
-                BENCH.FUNC_GEN  : (lambda c: Outer(
-                    arrTestDist((c, ), dtype=np.float32),
-                    arrTestDist((c, ), dtype=np.float32)))
+                BENCH.FUNC_GEN  : _func_gen_common
             },
             BENCH.FORWARD: {},
             BENCH.OVERHEAD: {
-                BENCH.FUNC_GEN  : (lambda c: Outer(
-                    arrTestDist((2 ** c, ), dtype=np.float32),
-                    arrTestDist((2 ** c, ), dtype=np.float32)))
+                BENCH.FUNC_GEN  : _func_gen_overhead
             },
             BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, datatype: Outer(
-                    arrTestDist((2 ** c, ), dtype=datatype),
-                    arrTestDist((2 ** c, ), dtype=datatype)))
+                BENCH.FUNC_GEN  : _func_gen_datatype
             }
         }

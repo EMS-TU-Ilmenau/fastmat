@@ -144,6 +144,16 @@ compile-coverage:
 	$(info * compiling fastmat package locally, with profiling and tracing)
 	$(PYTHON) setup.py build_ext --inplace --enable-cython-tracing
 
+.PHONY: coverage
+coverage: | compile-coverage
+	$(info * running coverage analysis)
+	coverage run --source=fastmat bee.py list makedump
+	coverage run -a --source=fastmat bee.py test -v -s .class
+	coverage run -a --source=fastmat bee.py test -v -s .transform
+	coverage run -a --source=fastmat bee.py test -v -s .algorithm
+	coverage run -a --source=fastmat bee.py calibrate Circulant
+	coverage run -a --source=fastmat bee.py test -vf -s Matrix.class Circulant.class
+	coverage run -a --source=fastmat bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=2
 
 # target 'doc': Compile documentation
 .PHONY: doc
@@ -169,7 +179,7 @@ testBee:
 	$(info * running bee 'list makedump', 'benchmark' and 'calibrate' code)
 	$(PYTHON) bee.py list makedump\
 		> test.makedump.log
-	$(PYTHON) bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=1\
+	$(PYTHON) bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=2\
 		> test.benchmark.log
 	$(PYTHON) bee.py calibrate Circulant\
 		> test.calibrate.log
