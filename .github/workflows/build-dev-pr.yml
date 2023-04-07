@@ -91,13 +91,13 @@ jobs:
         fi
 
 ###############################################################################
-  build_wheel_arm64:
+  build_wheel_macos_arm64:
     name: Build ${{ matrix.cibw-build }} on arm64 ${{ matrix.os }} using Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
+        os: ["macos-latest"]
         python-version: ["3.9", "3.10", "3.11"]
         include:
           # Numpy C-API 0x13
