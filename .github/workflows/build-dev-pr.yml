@@ -69,7 +69,7 @@ jobs:
         CIBW_ARCHS_LINUX: ${{ matrix.cibw-archs-linux }}
         CIBW_ARCHS_MACOS: ${{ matrix.cibw-archs-macos }}
         CIBW_ARCHS_WINDOWS: ${{ matrix.cibw-archs-windows }}
-        CIBW_ENVIRONMENT: "FASTMAT_COMPILER_OPTIONS='-march=x86-64 -mtune=core2'"
+        CIBW_ENVIRONMENT: "FASTMAT_COMPILER_OPTIONS=-march=x86-64 -mtune=core2"
         CIBW_BEFORE_BUILD: "python -m pip install --only-binary :all: ${{ matrix.pip-requires }}"
       run: |
         python -m pip install --upgrade pip
