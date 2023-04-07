@@ -30,9 +30,10 @@
 import platform
 import sys
 import os
-import re
-import subprocess
-from distutils import sysconfig
+try:
+    import sysconfig
+except ImportError:
+    from setuptools import sysconfig
 
 
 def WARNING(string):
@@ -259,7 +260,14 @@ if __name__ == '__main__':
 
     # Build for generic (legacy) architectures when enviroment variable
     # (FASTMAT_GENERIC) is defined
-    if 'FASTMAT_GENERIC' in os.environ:
+    if 'FASTMAT_COMPILER_OPTIONS' in os.environ:
+        marchFlag = os.environ['FASTMAT_COMPILER_OPTIONS']
+        mtuneFlag = ''
+        WARNING("Passing special build options: " + marchFlag)
+    elif (
+        ('FASTMAT_GENERIC' in os.environ) and
+        (bool(int(os.environ['FASTMAT_GENERIC'])))
+    ):
         marchFlag = '-march=x86-64'
         mtuneFlag = '-mtune=core2'
         WARNING("Building package for generic architectures")
@@ -277,11 +285,16 @@ if __name__ == '__main__':
         compilerArguments += ['/O2', '/fp:precise', marchFlag]
     elif strPlatform == 'Linux':
         # assuming Linux and gcc
-        compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+        compilerArguments.extend(['-Ofast', marchFlag])
+        if len(mtuneFlag):
+            compilerArguments.append(mtuneFlag)
+
         useGccOverride = True
     elif strPlatform == 'Darwin':
         # assuming Darwin
-        compilerArguments += ['-Ofast', marchFlag, mtuneFlag]
+        compilerArguments.extend(['-Ofast', marchFlag])
+        if len(mtuneFlag):
+            compilerArguments.append(mtuneFlag)
     else:
         WARNING("Your platform is currently not supported by %s: %s" % (
             packageName, strPlatform))
@@ -353,6 +366,8 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
+            'Programming Language :: Python :: 3.10',
+            'Programming Language :: Python :: 3.11',
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Mathematics',
             'Topic :: Software Development :: Libraries'

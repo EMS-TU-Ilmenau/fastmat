@@ -140,10 +140,10 @@ cdef class Fourier(Matrix):
             arrArgument = (arrSamples ** 2) * np.pi / self.order
             arrBuffer = np.cos(arrArgument)
             vecConv.real[:self.order] = arrBuffer
-            self._preMult[:] = arrBuffer
+            self._preMult.real[:] = arrBuffer
             np.sin(arrArgument, out=arrBuffer)
             vecConv.imag[:self.order] = arrBuffer
-            self._preMult[:] = -arrBuffer
+            self._preMult.imag[:] = -arrBuffer
 
             # now put a flipped version of the above at the very end to get
             # a circular convolution
@@ -251,8 +251,8 @@ cdef class Fourier(Matrix):
             TEST.COMMON: {
                 # define matrix sizes and parameters
                 # 35 is just any number with non-2 and non-4 primes
-                # 89 is the first size for which bluestein is faster
-                TEST.NUM_ROWS   : TEST.Permutation([35, 89]),
+                # 127 is a size for which bluestein is faster
+                TEST.NUM_ROWS   : TEST.Permutation([35, 127]),
                 TEST.NUM_COLS   : TEST.NUM_ROWS,
                 'optimize'      : TEST.Permutation([False, True]),
 

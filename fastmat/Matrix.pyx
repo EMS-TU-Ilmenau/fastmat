@@ -1130,7 +1130,7 @@ cdef class Matrix(object):
 
     cpdef Matrix _getColNormalized(self):
 
-        cpdef np.ndarray arrNorms = self.colNorms
+        cdef np.ndarray arrNorms = self.colNorms
 
         # check if we've found any zero
         if np.any(arrNorms == 0):
@@ -1159,7 +1159,7 @@ cdef class Matrix(object):
 
     cpdef Matrix _getRowNormalized(self):
 
-        cpdef np.ndarray arrNorms = self.rowNorms
+        cdef np.ndarray arrNorms = self.rowNorms
 
         # check if we've found any zero
         if np.any(arrNorms == 0):

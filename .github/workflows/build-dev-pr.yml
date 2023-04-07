@@ -1,0 +1,188 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: test deployment to stable branch
+
+on:
+  pull_request:
+    branches: [ "stable" ]
+  
+  push:
+    branches: [ "stable" ]
+  
+  workflow_dispatch:
+
+env:
+  ARTIFACT: wheelhouse/* dist/*
+  CIBW_SKIP: pp* cp2* *musl* *ppc* *s390x
+
+jobs:
+###############################################################################
+  build_wheel_x86_x64:
+    name: Build ${{ matrix.cibw-build }} on x64_x86 ${{ matrix.os }} using Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+#        python-version: ["3.7", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
+        include:
+#          # Numpy C-API 0x12
+#          - python-version: "3.7"
+#            cibw-build: "cp35*"
+#            cibw-archs-linux: "x86_64 i686"
+#            cibw-archs-macos: "x86_64"
+#            cibw-archs-windows: "AMD64 x86"
+#            pip-requires: "cython>=0.29 numpy==1.16.3 scipy==1.1.0 cibuildwheel==1.1 twine"
+          # Numpy C-API 0x13
+          - python-version: "3.9"
+            cibw-build: "cp36* cp37* cp38* cp39*"
+            cibw-archs-linux: "x86_64 i686"
+            cibw-archs-macos: "x86_64"
+            cibw-archs-windows: "AMD64 x86"
+            pip-requires: "cython>=0.29 numpy==1.19.3 scipy==1.5.4 cibuildwheel==1.9 twine"
+          # Numpy C-API 0x14
+          - python-version: "3.10"
+            cibw-build: "cp310*"
+            cibw-archs-linux: "x86_64"
+            cibw-archs-macos: "x86_64"
+            cibw-archs-windows: "AMD64"
+            pip-requires: "cython>=0.29 numpy==1.21.6 scipy==1.7.3 cibuildwheel==2.12.1 twine"
+          # Numpy C-API 0x16
+          - python-version: "3.11"
+            cibw-build: "cp311*"
+            cibw-archs-linux: "x86_64"
+            cibw-archs-macos: "x86_64"
+            cibw-archs-windows: "AMD64"
+            pip-requires: "cython>=0.29 numpy==1.24.2 scipy==1.10.1 cibuildwheel==2.12.1 twine"
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Build the wheels
+      env:
+        CIBW_BUILD: ${{ matrix.cibw-build }}
+        CIBW_ARCHS_LINUX: ${{ matrix.cibw-archs-linux }}
+        CIBW_ARCHS_MACOS: ${{ matrix.cibw-archs-macos }}
+        CIBW_ARCHS_WINDOWS: ${{ matrix.cibw-archs-windows }}
+        CIBW_ENVIRONMENT: "FASTMAT_COMPILER_OPTIONS=-march=x86-64 -mtune=core2"
+        CIBW_BEFORE_BUILD: "python -m pip install --only-binary :all: ${{ matrix.pip-requires }}"
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --only-binary :all: ${{ matrix.pip-requires }}
+        cibuildwheel --output-dir wheelhouse
+      
+    - uses: actions/upload-artifact@v3
+      with:
+        path: ./wheelhouse/*.whl
+
+    - name: Upload the Results
+      shell: bash
+      run: |
+        ls -l wheelhouse
+        if [[ ${{ github.event_name }} == "push" ]]; then
+          echo "Uploading to pypi"
+        elif [[ ${{ github.event_name }} == "pull_request" ]]; then
+          echo "Testing build"
+        fi
+
+###############################################################################
+  build_wheel_macos_arm64:
+    name: Build ${{ matrix.cibw-build }} on arm64 ${{ matrix.os }} using Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["macos-latest"]
+        python-version: ["3.9", "3.10", "3.11"]
+        include:
+          # Numpy C-API 0x13
+          - python-version: "3.9"
+            cibw-build: "cp36* cp37* cp38* cp39*"
+            cibw-archs-macos: "arm64"
+            pip-requires: "cython>=0.29 numpy==1.19.3 scipy==1.5.4 cibuildwheel==1.9 twine"
+          # Numpy C-API 0x14
+          - python-version: "3.10"
+            cibw-build: "cp310*"
+            cibw-archs-macos: "arm64"
+            pip-requires: "cython>=0.29 numpy==1.21.6 scipy==1.7.3 cibuildwheel==2.12.1 twine"
+          # Numpy C-API 0x16
+          - python-version: "3.11"
+            cibw-build: "cp311*"
+            cibw-archs-macos: "arm64"
+            pip-requires: "cython>=0.29 numpy==1.24.2 scipy==1.10.1 cibuildwheel==2.12.1 twine"
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Build the wheels
+#      shell: bash
+      env:
+        CIBW_BUILD: ${{ matrix.cibw-build }}
+        CIBW_ARCHS_LINUX: ${{ matrix.cibw-archs-linux }}
+        CIBW_ARCHS_MACOS: ${{ matrix.cibw-archs-macos }}
+        CIBW_ARCHS_WINDOWS: ${{ matrix.cibw-archs-windows }}
+        CIBW_ENVIRONMENT: "FASTMAT_COMPILER_OPTIONS=-mcpu=apple-m1"
+        CIBW_BEFORE_BUILD: "python -m pip install --only-binary :all: ${{ matrix.pip-requires }}"
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --only-binary :all: ${{ matrix.pip-requires }}
+        clang -v
+        cibuildwheel --output-dir wheelhouse
+      
+    - uses: actions/upload-artifact@v3
+      with:
+        path: ./wheelhouse/*.whl
+
+    - name: Upload the Results
+      shell: bash
+      run: |
+        ls -l wheelhouse
+        if [[ ${{ github.event_name }} == "push" ]]; then
+          echo "Uploading to pypi"
+        elif [[ ${{ github.event_name }} == "pull_request" ]]; then
+          echo "Testing build"
+        fi
+
+###############################################################################
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-python@v3
+      name: Install Python
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install cibuildwheel and build sdist
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --only-binary :all: cython>=0.29 numpy>=1.16.3 scipy
+        python setup.py sdist
+
+    - uses: actions/upload-artifact@v3
+      with:
+        path: ./dist/*.tar.gz
+
+    - name: Upload the wheels
+      shell: bash
+      run: |
+        ls -l dist
+        if [[ ${{ github.event_name }} == "push" ]]; then
+          echo "Uploading to pypi"
+        elif [[ ${{ github.event_name }} == "pull_request" ]]; then
+          echo "Testing build"
+        fi

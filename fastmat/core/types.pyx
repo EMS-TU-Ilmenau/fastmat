@@ -55,7 +55,7 @@ cdef inline void getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
     info[0].eps         = 0
     info[0].min         = 0
     info[0].max         = 0
-    if dtype != np.bool:
+    if dtype != bool:
         if info[0].isFloat or info[0].isComplex:
             # floating-point types
             dtypeInfo       = np.finfo(dtype)

@@ -141,7 +141,7 @@ cdef class Partial(Matrix):
         def checkSelection(vecSelection, sizeDim, nameDim):
             if vecSelection is not None:
                 vecSelection = np.array(vecSelection)
-                if vecSelection.dtype == np.bool:
+                if vecSelection.dtype == bool:
                     # convert specification of boolean decisions to indices
                     vecSelection = np.arange(sizeDim)[vecSelection]
                 elif isInteger(vecSelection):
@@ -232,7 +232,7 @@ cdef class Partial(Matrix):
                            else self._content[0].getRow(idxRow))
 
     cpdef np.ndarray _getColNorms(self):
-        cpdef np.ndarray arrNorms
+        cdef np.ndarray arrNorms
         if self._rowSelection is not None:
             return super(Partial, self)._getColNorms()
         else:
@@ -241,7 +241,7 @@ cdef class Partial(Matrix):
                     else arrNorms[self._colSelection])
 
     cpdef np.ndarray _getRowNorms(self):
-        cpdef np.ndarray arrNorms
+        cdef np.ndarray arrNorms
         if self._colSelection is not None:
             return super(Partial, self)._getRowNorms()
         else:
@@ -313,12 +313,12 @@ cdef class Partial(Matrix):
                 'num_cols'      : 'num_rows',
                 TEST.NUM_ROWS   : (lambda param: (
                     np.count_nonzero(param['subRows'])
-                    if param['subRows'].dtype == np.bool
+                    if param['subRows'].dtype == bool
                     else len(param['subRows'])
                 )),
                 TEST.NUM_COLS   : (lambda param: (
                     np.count_nonzero(param['subCols'])
-                    if param['subCols'].dtype == np.bool
+                    if param['subCols'].dtype == bool
                     else len(param['subCols'])
                 )),
                 'subCols'       : TEST.Permutation([
@@ -345,10 +345,10 @@ cdef class Partial(Matrix):
                     'cols': param['subCols']
                 }),
                 'strIndexTypeM' : (lambda param: (
-                    'B' if param['subCols'].dtype == np.bool else 'I'
+                    'B' if param['subCols'].dtype == bool else 'I'
                 )),
                 'strIndexTypeN' : (lambda param: (
-                    'B' if param['subRows'].dtype == np.bool else 'I'
+                    'B' if param['subRows'].dtype == bool else 'I'
                 )),
                 TEST.OBJECT     : Partial,
                 TEST.NAMINGARGS : dynFormat(
