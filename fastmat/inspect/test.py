@@ -746,6 +746,7 @@ def testLargestSV(test):
         result=compareResults(test, query)
         if result[TEST.RESULT]:
             break
+
     return result
 
 

@@ -97,5 +97,6 @@ class TestInterface(unittest.TestCase):
         instance, str(instance), repr(instance)
 
 
+
 #    def test_deprecation_warnings(self):
 #        self.
