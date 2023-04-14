@@ -762,11 +762,12 @@ cdef class Matrix(object):
             # now we can do the efficient thing using the linear operator
             from scipy.sparse.linalg import eigs
 
-            S, V = eigs(
+            result = eigs(
                 self.scipyLinearOperator,
                 1,
                 return_eigenvectors=True
-            )[0]
+            )
+            S, V = result[0], result[1][:, 0]
         else:
             from numpy.linalg import eig
             result = eig(self.array)
@@ -927,7 +928,7 @@ cdef class Matrix(object):
                 self.scipyLinearOperator,
                 1,
                 return_singular_vectors=True
-            )[0]
+            )
         else:
             # now we do the stupid thing, but scipy forces us to do so
             from numpy.linalg import svd
