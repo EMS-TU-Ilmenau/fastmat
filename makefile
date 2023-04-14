@@ -193,6 +193,7 @@ testBee:
 		> test.benchmark.log
 	$(PYTHON) bee.py calibrate Circulant\
 		> test.calibrate.log
+	rm *.{dtypes,forward,overhead}.*.csv
 
 
 # target 'testCode': Run unit tests

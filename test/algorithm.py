@@ -54,4 +54,23 @@ class TestAlgorithm(unittest.TestCase):
         # retrieve the memory footprint of the algorithm
         alg.nbytes
 
-        
+
+    def test_OMP(self):
+        numN, numM, numB = 100, 40, 7
+        arrM = np.random.randn(numM, numN)
+        self.assertRaises(TypeError, lambda: fma.OMP(arrM))
+        self.assertRaises(TypeError, lambda: fma.OMP(None))
+
+        alg = fma.OMP(fm.Matrix(arrM), numMaxSteps=7)
+        arrB = np.random.randn(numM, )
+        alg.process(arrB)
+        alg.process(np.random.randn(numM, numB))
+        self.assertRaises(
+            ValueError, lambda: alg.process(np.random.randn(numM, numM, numB))
+        )
+        self.assertRaises(ValueError, lambda: alg.process(np.zeros(())))
+
+        alg.updateParameters(numMaxSteps=0)
+        self.assertRaises(ValueError, lambda: alg.process(arrB))
+        alg.updateParameters(numMaxSteps=-123)
+        self.assertRaises(ValueError, lambda: alg.process(arrB))

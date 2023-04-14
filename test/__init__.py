@@ -1,3 +1,3 @@
-from .testinit import TestInit
-from .testinterface import TestInterface
+from .init import TestInit
+from .interface import TestInterface
 from .algorithm import TestAlgorithm
