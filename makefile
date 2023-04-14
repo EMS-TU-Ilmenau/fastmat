@@ -147,7 +147,8 @@ compile-coverage:
 .PHONY: coverage
 coverage: | compile-coverage
 	$(info * running coverage analysis)
-	coverage run --source=fastmat bee.py list makedump
+	coverage run --source=fastmat -m unittest test -v
+	coverage run -a --source=fastmat bee.py list makedump
 	coverage run -a --source=fastmat bee.py test -v -s .class
 	coverage run -a --source=fastmat bee.py test -v -s .transform
 	coverage run -a --source=fastmat bee.py test -v -s .algorithm
@@ -185,10 +186,12 @@ testBee:
 		> test.calibrate.log
 
 
-# target ' testCode': Run unit tests
+# target 'testCode': Run unit tests
 .PHONY: testCode
 testCode: compile
 	$(info * running unit tests)
+	$(PYTHON) -m unittest test -v
+	$(info * running numeric unit tests)
 	$(PYTHON) bee.py test -v $(TEST_OPTIONS)
 
 
