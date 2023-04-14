@@ -107,6 +107,7 @@ cdef class OMP(Algorithm):
         # check the must-have parameters
         if not isinstance(fmatA, Matrix):
             raise TypeError("fmatA must be a fastmat matrix")
+
         self.fmatA = fmatA
 
         # set default parameters (and create attributes)

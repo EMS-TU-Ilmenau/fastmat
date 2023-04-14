@@ -103,6 +103,13 @@ cdef class Algorithm(object):
         a mathing attribute in the algorithm class will cause an AttributeError
         to be raised.
         """
+        if getattr(self, '_attributes', None) is None:
+            # This is the first updateParameters call and is supposed to hold
+            # the initial parameters. Since we do not know if the user might
+            # add some extra parameters, we take the set of here-supplied
+            # parameters as the set of allowed parameters.
+            self._attributes = kwargs.copy()
+
         for key, value in kwargs.items():
             if not hasattr(self, key) and (self._attributes is not None and
                                            key not in self._attributes):

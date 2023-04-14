@@ -5,6 +5,28 @@ import fastmat as fm
 
 class TestInterface(unittest.TestCase):
 
+    def test_utilities(self):
+        arr = np.random.randn(25, 35)
+        instance = fm.Matrix(arr)
+
+        # Test querying the memory footprint of objects
+        numBytesReference = instance.nbytesReference
+        numBytes = instance.nbytes
+
+        # Test if auto-reload of getMemoryFootprint works
+        # (needed if fastmat is not imported as a whole)
+        try:
+            global getMemoryFootprint
+            _getMemoryFootprint = getMemoryFootprint
+            getMemoryFootprint = None
+            numBytesReference2 = instance.nbytesReference
+            getMemoryFootprint = _getMemoryFootprint
+            self.assert_equal(numBytesReference, numBytesReference2)
+        except NameError:
+            pass
+
+
+
     def test_slicing(self):
         arr = np.random.randn(25, 35)
         instance = fm.Matrix(arr)
@@ -91,11 +113,16 @@ class TestInterface(unittest.TestCase):
 
     
     def test_representation(self):
-        arr = np.random.randn(25, 35)
+        arr = np.random.randn(20, 20)
         instance = fm.Matrix(arr)
 
-        instance, str(instance), repr(instance)
-
+        for ii in [
+            instance, instance.H, instance.T, instance.conj,
+            instance.inverse, instance.pseudoInverse,
+            instance.profileForward, instance.profileBackward
+        ]:
+            self.assertTrue(isinstance(str(ii), str))
+            self.assertTrue(isinstance(repr(ii), str))
 
 
 #    def test_deprecation_warnings(self):
