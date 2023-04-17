@@ -125,5 +125,19 @@ class TestInterface(unittest.TestCase):
             self.assertTrue(isinstance(repr(ii), str))
 
 
-#    def test_deprecation_warnings(self):
-#        self.
+    def test_operators(self):
+        arrA = np.random.randn(25, 35)
+        arrB = np.random.randn(25, 35)
+        A, B  = fm.Matrix(arrA), fm.Matrix(arrB)
+
+        np.testing.assert_array_equal((A + B)[...], arrA + arrB)
+        np.testing.assert_array_equal((B + A)[...], arrB + arrA)
+        np.testing.assert_array_equal((A - B)[...], arrA - arrB)
+        np.testing.assert_array_equal((B - A)[...], arrB - arrA)
+
+        np.testing.assert_array_equal((A * B.T)[...], arrA @ arrB.T)
+        np.testing.assert_array_equal((B * A.T)[...], arrB @ arrA.T)
+        np.testing.assert_array_equal((A * 2.)[...], arrA * 2.)
+        np.testing.assert_array_equal((2. * A)[...], 2. * arrA)
+
+        np.testing.assert_array_equal((A / 2.)[...], arrA / 2.)
