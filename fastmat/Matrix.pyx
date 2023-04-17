@@ -1732,8 +1732,8 @@ cdef class Matrix(object):
         # that this is fulfilled already
         if requiredSize > 0:
             # check dimension count and sizes
-            if arrInput.ndim > 2:
-                raise ValueError("Input data array must be at most 2D")
+            if (arrInput.ndim < 1) or (arrInput.ndim > 2):
+                raise ValueError("Input data array must be 1D or 2D")
 
             # arrInput.N must match self.numCols in forward() and
             # .numRows in backward()
