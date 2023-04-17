@@ -33,8 +33,16 @@ class TestClass(unittest.TestCase):
     def test_Circulant(self):
         self.assertRaises(ValueError, lambda: fm.Circulant(np.zeros(())))
 
+    def test_Diag(self):
+        self.assertRaises(ValueError, lambda: fm.Diag(np.zeros(())))
+        self.assertRaises(ValueError, lambda: fm.Diag(np.zeros((2, 3))))
+        self.assertRaises(ValueError, lambda: fm.Diag(np.zeros((2, 3, 4))))
+
     def test_Fourier(self):
         self.assertRaises(ValueError, lambda: fm.Fourier(0))
+
+    def test_Kron(self):
+        pass#self.assertRaises(ValueError)
 
     def test_LFSRCirculant(self):
         self.assertRaises(ValueError, lambda: fm.LFSRCirculant(0, 1))
@@ -152,6 +160,10 @@ class TestClass(unittest.TestCase):
         Pr.colNorms, Pc.rowNorms, Pt.colNorms, Pt.rowNorms
         np.testing.assert_array_equal(Pt[...], M[...])
 
+    def test_Parametric(self):
+        P = fm.Parametric(np.arange(10), np.arange(10), lambda x, y: x + y)
+        P.vecX, P.vecY, P.fun
+    
     def test_Polynomial(self):
         self.assertRaises(ValueError, lambda: fm.Polynomial(
             fm.Matrix(np.random.randn(25, 35)), [1, 2, 3]
