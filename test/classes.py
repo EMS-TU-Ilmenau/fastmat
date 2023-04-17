@@ -48,6 +48,12 @@ class TestClass(unittest.TestCase):
     def test_Fourier(self):
         self.assertRaises(ValueError, lambda: fm.Fourier(0))
 
+    def test_Hadamard(self):
+        self.assertRaises(ValueError, lambda: fm.Hadamard(0))
+        self.assertRaises(
+            ValueError, lambda: (fm.Hadamard(31), fm.Hadamard(63))
+        )
+
     def test_Kron(self):
         arrM = np.random.randn(25, 35)
         M = fm.Matrix(arrM)
@@ -58,9 +64,34 @@ class TestClass(unittest.TestCase):
         self.assertRaises(ValueError, lambda: fm.LFSRCirculant(0, 1))
         self.assertRaises(ValueError, lambda: fm.LFSRCirculant(0x1891, 0))
         self.assertRaises(ValueError, lambda: fm.LFSRCirculant(0x1892, 1))
-
         L = fm.LFSRCirculant(0x1891, 0xFFF)
         L.size, L.taps, L.states
+
+    def test_LowRank(self):
+        self.assertRaises(ValueError, lambda: fm.LowRank(
+            None, np.ones((10, 2)), np.ones((10, 2))
+        ))
+        self.assertRaises(ValueError, lambda: fm.LowRank(
+            np.arange(2), None, np.ones((10, 2))
+        ))
+        self.assertRaises(ValueError, lambda: fm.LowRank(
+            np.arange(2), np.ones((10, 2)), None
+        ))
+        self.assertRaises(ValueError, lambda: fm.LowRank(
+            np.arange(1), np.ones((10, )), np.ones((10, ))
+        ))
+        self.assertRaises(ValueError, lambda: fm.LowRank(
+            np.arange(4), np.ones((2, 3, 4)), np.zeros((4, 3))
+        ))
+        self.assertRaises(ValueError, lambda: fm.LowRank(
+            np.arange(3), np.ones((3, 4)), np.zeros((3, 4))
+        ))
+        self.assertRaises(ValueError, lambda: fm.LowRank(
+            np.arange(4), np.ones((3, 4)), np.zeros((4, 3))
+        ))
+        L = fm.LowRank(np.ones((2, )), np.ones((10, 2)), np.ones((10, 2)))
+        L.vecS, L.arrU, L.arrV
+
 
     def test_Matrix(self):
         self.assertRaises(
@@ -110,6 +141,20 @@ class TestClass(unittest.TestCase):
             self.assertRaises(TypeError, lambda: cc(None))
         
         self.assertRaises(ValueError, lambda: fm.Inverse(M))
+
+    def test_Outer(self):
+        self.assertRaises(
+            ValueError, lambda: fm.Outer(np.arange(10), None)
+        )
+        self.assertRaises(
+            ValueError, lambda: fm.Outer(None, np.arange(10))
+        )
+        self.assertRaises(
+            ValueError, lambda: fm.Outer(np.arange(10), np.zeros((20, 30)))
+        )
+        self.assertRaises(
+            ValueError, lambda: fm.Outer(np.zeros((20, 30)), np.arange(10))
+        )
 
     def test_Partial(self):
         arr = np.random.randn(25, 35)
@@ -188,6 +233,10 @@ class TestClass(unittest.TestCase):
             fm.Matrix(np.random.randn(25, 35)), [1, 2, 3]
         ))
         fm.Polynomial(fm.Fourier(10), [1, 2, 3]).coeff
+
+    def test_Sparse(self):
+        self.assertRaises(TypeError, lambda: fm.Sparse(np.zeros((10, 11))))
+        fm.Sparse(sps.diags(np.arange(10))).spArray
 
     def test_Sum(self):
         self.assertRaises(ValueError, lambda: fm.Sum())

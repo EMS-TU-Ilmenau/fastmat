@@ -121,16 +121,29 @@ cdef class LowRank(Product):
             supported by :py:class:`fastmat.Matrix`.
         '''
 
-        # complain if dimension does not match
-        if vecS.ndim != 1:
-            raise ValueError(
-                "Singular value vector must have exactly one active dimension.")
+        # check dimensions
+        vecS = np.atleast_1d(vecS) if isinstance(vecS, (list, tuple)) \
+            else vecS if isinstance(vecS, np.ndarray) else None
+        arrU = np.atleast_1d(arrU) if isinstance(arrU, (list, tuple)) \
+            else arrU if isinstance(arrU, np.ndarray) else None
+        arrV = np.atleast_1d(arrV) if isinstance(arrV, (list, tuple)) \
+            else arrV if isinstance(arrV, np.ndarray) else None
+        
+        if vecS is None or arrU is None or arrV is None:
+            raise ValueError("LowRank: U, S and V must be array types.")
 
-        if arrU.ndim != 2 or arrV.ndim != 2:
-            raise ValueError("Defining arrays must be 2D.")
+        if (
+            (vecS.ndim != 1) or (vecS.size == 0) or
+            (arrU.ndim != 2) or (arrU.size == 0) or
+            (arrV.ndim != 2) or (arrV.size == 0)
+        ):
+            raise ValueError("LowRank: S must be 1D, U and V must be 2D.")
 
         if vecS.shape[0] != arrU.shape[1]:
             raise ValueError("Size of U must fit to rank.")
+
+        if vecS.shape[0] != arrV.shape[1]:
+            raise ValueError("Size of V must fit to rank.")
 
         # determine matrix data data type from parameters, then adjust them to
         # match (parameters)

@@ -220,8 +220,7 @@ cdef class Hadamard(Matrix):
                 elif typeX == TYPE_INT8:
                     _hadamardCore[np.int8_t](&strA, &strB, 0)
                 else:
-                    raise NotImplementedError(
-                        "Hadamard: %d not supported." %(typeX))
+                    raise NotImplementedError("Unsupported type: %d" %(typeX))
 
                 butterflyDistance <<= 1
                 butterflyCount >>= 1

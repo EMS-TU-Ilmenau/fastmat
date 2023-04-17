@@ -99,15 +99,22 @@ cdef class Outer(Matrix):
         '''
 
         # check dimensions
-        vecV = _arrSqueezedCopy(vecV)
-        vecH = _arrSqueezedCopy(vecH)
+        vecV = _arrSqueezedCopy(vecV) if isinstance(vecV, np.ndarray) \
+            else np.atleast_1d(vecV) if isinstance(vecV, (list, tuple)) \
+            else None
+        vecH = _arrSqueezedCopy(vecH) if isinstance(vecH, np.ndarray) \
+            else np.atleast_1d(vecH) if isinstance(vecH, (list, tuple)) \
+            else None
 
-        if vecV.ndim != 1 or vecH.ndim != 1:
+        if (
+            (vecV is None) or (vecV.ndim != 1) or (vecV.size == 0) or
+            (vecH is None) or (vecH.ndim != 1) or (vecH.size == 0)
+        ):
             raise ValueError("Outer parameters must be one-dimensional.")
-
+        
         # height and width of matrix is defined by length of input vectors
-        cdef intsize numRows = len(vecV)
-        cdef intsize numCols = len(vecH)
+        cdef intsize numRows = vecV.size
+        cdef intsize numCols = vecH.size
 
         # determine joint data type of operation
         datatype = np.promote_types(vecV.dtype, vecH.dtype)
@@ -175,11 +182,8 @@ cdef class Outer(Matrix):
                 getTypeEps(param['mTypeV'])
             )
 
-        def _ignore(param):
-            return (
-                param['mTypeH'] == param['mTypeV'] ==
-                param[TEST.DATATYPE] == np.int8
-            )
+        def _ignore(pp):
+            return pp['mTypeH'] == pp['mTypeV'] == pp[TEST.DATATYPE] == np.int8
 
         return {
             TEST.COMMON: {
