@@ -20,6 +20,7 @@ cimport numpy as np
 
 from .Matrix cimport Matrix
 from .core.types cimport *
+from .core.cmath cimport _arrSqueezedCopy
 
 cdef class Permutation(Matrix):
 
@@ -72,14 +73,19 @@ cdef class Permutation(Matrix):
             Additional keyworded arguments. Supports all optional arguments
             supported by :py:class:`fastmat.Matrix`.
         '''
-        numRows = sigma.shape[0]
+        if not isinstance(sigma, np.ndarray):
+            sigma = np.array(sigma)
+        
+        self._sigma = _arrSqueezedCopy(sigma)
+        if (sigma.ndim != 1) or (self._sigma.ndim != 1):
+            raise ValueError(
+                "Diag: Definition vector must have exactly one dimension.")
 
+        numRows = sigma.shape[0]
         if not np.allclose(np.sort(sigma), np.arange(numRows)):
             raise ValueError("Not a permutation.")
 
-        self._sigma = sigma
         self._tau = np.argsort(sigma)
-
         self._initProperties(numRows, numRows, np.int8, **options)
 
     ############################################## class property override

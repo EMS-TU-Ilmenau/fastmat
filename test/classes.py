@@ -10,6 +10,7 @@ class TestClass(unittest.TestCase):
         self.assertRaises(ValueError, lambda: fm.Blocks(None))
         self.assertRaises(ValueError, lambda: fm.Blocks([]))
         self.assertRaises(TypeError, lambda: fm.Blocks([None, 1]))
+        self.assertRaises(TypeError, lambda: fm.Blocks([fm.Eye(100)]))
         self.assertRaises(TypeError, lambda: fm.Blocks([[1, 2], [2, 3, 4]]))
         self.assertRaises(
             ValueError, lambda: fm.Blocks([
@@ -28,6 +29,12 @@ class TestClass(unittest.TestCase):
                 [fm.Eye(10), fm.Eye(10)],
                 [fm.Eye(10), fm.Eye(11)]
             ])
+        )
+
+    def test_BlockDiag(self):
+        self.assertRaises(ValueError, lambda: fm.BlockDiag())
+        self.assertRaises(
+            ValueError, lambda: fm.BlockDiag(fm.Eye(10), None, fm.Eye(100))
         )
 
     def test_Circulant(self):
@@ -157,19 +164,32 @@ class TestClass(unittest.TestCase):
         )
         
         # Check retrieving row and column norms for partial Partials
-        Pr = fm.Partial(M, rows=idxRow, cols=None)
-        Pc = fm.Partial(M, rows=None, cols=idxCol)
-        Pt = fm.Partial(M, rows=None, cols=None)
-        Pr.colNorms, Pc.rowNorms, Pt.colNorms, Pt.rowNorms
-        np.testing.assert_array_equal(Pt[...], M[...])
+        for P in [
+            fm.Partial(M, rows=idxRow, cols=None),
+            fm.Partial(M, rows=None, cols=idxCol),
+            fm.Partial(M, rows=None, cols=None)
+        ]:
+            P.rowNorms, P.colNorms
+
+        # This test will be applied to the last iterated value, which should
+        # have rows=None and cols=None
+        np.testing.assert_array_equal(P[...], M[...])
 
     def test_Parametric(self):
         P = fm.Parametric(np.arange(10), np.arange(10), lambda x, y: x + y)
         P.vecX, P.vecY, P.fun
     
+    def test_Permutation(self):
+        for vecSigma in [np.arange(10) - 1, [1, 1, 3, 0, 4, 5, 6, 7, 8, 9]]:
+            self.assertRaises(ValueError, lambda: fm.Permutation(vecSigma))
+
     def test_Polynomial(self):
         self.assertRaises(ValueError, lambda: fm.Polynomial(
             fm.Matrix(np.random.randn(25, 35)), [1, 2, 3]
         ))
         fm.Polynomial(fm.Fourier(10), [1, 2, 3]).coeff
 
+    def test_Sum(self):
+        self.assertRaises(ValueError, lambda: fm.Sum())
+        self.assertRaises(TypeError, lambda: fm.Sum(fm.Eye(10), 10))
+        self.assertRaises(ValueError, lambda: fm.Sum(fm.Eye(10), fm.Eye(11)))

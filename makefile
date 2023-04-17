@@ -163,7 +163,7 @@ coverage: | compile-coverage
 	coverage run -a --source=fastmat bee.py calibrate Circulant
 	coverage run -a --source=fastmat bee.py test -vf -s Matrix.class Circulant.class
 	coverage run -a --source=fastmat bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=2
-	rm *.{dtypes,forward,overhead}.*.csv
+	rm ./*.{dtypes,forward,overhead}.*.csv
 
 # target 'doc': Compile documentation
 .PHONY: doc
@@ -193,7 +193,7 @@ testBee:
 		> test.benchmark.log
 	$(PYTHON) bee.py calibrate Circulant\
 		> test.calibrate.log
-	rm *.{dtypes,forward,overhead}.*.csv
+	rm ./*.{dtypes,forward,overhead}.*.csv
 
 
 # target 'testCode': Run unit tests
