@@ -83,15 +83,15 @@ cdef class Diag(Matrix):
             Additional keyworded arguments. Supports all optional arguments
             supported by :py:class:`fastmat.Matrix`.
         '''
-        # numRows is size of matrix (and of diagonal vector)
-        numRows = len(vecD)
-
         # store diagonal entry vector as copy of vecD and complain if
         # dimension does not match
         self._vecD = _arrSqueezedCopy(vecD)
-        if self._vecD.ndim != 1:
+        if (vecD.ndim != 1) or (self._vecD.ndim != 1):
             raise ValueError(
                 "Diag: Definition vector must have exactly one dimension.")
+
+        # numRows is size of matrix (and of diagonal vector)
+        numRows = self._vecD.size
 
         # set properties of matrix
         self._cythonCall = True
