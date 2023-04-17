@@ -101,16 +101,25 @@ cdef class Blocks(Matrix):
         # of containers (i.e. lists). Therefore, if we encounter a Matrix
         # instance directly at the second level, we should notify the user
         # verbosely what exactly is wrong with that and how to fix it.
-        for rr, item in enumerate(arrMatrices):
-            if isinstance(item, Matrix):
+        for rr, rowMatrices in enumerate(arrMatrices):
+            if isinstance(rowMatrices, Matrix):
                 raise TypeError(
                     (
                         "Blocks.row(%d) is of type %s. Instantiate Blocks " +
                         "with a 2D structure of iterables (e.g. nested " +
                         "lists) holding fastmat Matrix instances in their " +
                         "second level."
-                    ) %(rr, repr(item))
+                    ) %(rr, repr(rowMatrices))
                 )
+
+            for cc, item in enumerate(rowMatrices):
+                if not isinstance(item, Matrix):
+                    raise TypeError(
+                        (
+                            "Blocks[%d, %d] is of type %s and not a " +
+                            "fastmat Matrix isntance."
+                        ) %(rr, cc, repr(item))
+                    )
 
         # initialize number of columns
         self._numCols = len(arrMatrices[0])
