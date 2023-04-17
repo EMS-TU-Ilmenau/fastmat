@@ -82,6 +82,9 @@ cdef class Polynomial(Matrix):
 
         if mat.numRows != mat.numCols:
             raise ValueError("Polynomial: Matrix must be square.")
+        
+        if not isinstance(coeff, np.ndarray):
+            coeff = np.array(coeff)
 
         dtype = np.promote_types(mat.dtype, coeff.dtype)
 
