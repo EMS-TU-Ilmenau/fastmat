@@ -30,6 +30,12 @@ class TestClass(unittest.TestCase):
             ])
         )
 
+    def test_Circulant(self):
+        self.assertRaises(ValueError, lambda: fm.Circulant(np.zeros(())))
+
+    def test_Fourier(self):
+        self.assertRaises(ValueError, lambda: fm.Fourier(0))
+
     def test_LFSRCirculant(self):
         self.assertRaises(ValueError, lambda: fm.LFSRCirculant(0, 1))
         self.assertRaises(ValueError, lambda: fm.LFSRCirculant(0x1891, 0))
@@ -37,7 +43,6 @@ class TestClass(unittest.TestCase):
 
         L = fm.LFSRCirculant(0x1891, 0xFFF)
         L.size, L.taps, L.states
-
 
     def test_Matrix(self):
         self.assertRaises(
@@ -146,3 +151,10 @@ class TestClass(unittest.TestCase):
         Pt = fm.Partial(M, rows=None, cols=None)
         Pr.colNorms, Pc.rowNorms, Pt.colNorms, Pt.rowNorms
         np.testing.assert_array_equal(Pt[...], M[...])
+
+    def test_Polynomial(self):
+        self.assertRaises(ValueError, lambda: fm.Polynomial(
+            fm.Matrix(np.random.randn(25, 35)), [1, 2, 3]
+        ))
+        fm.Polynomial(fm.Fourier(10), [1, 2, 3]).coeff
+
