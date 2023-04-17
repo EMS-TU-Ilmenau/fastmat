@@ -1679,6 +1679,9 @@ cdef class Matrix(object):
             raise TypeError("Invalid product term for fastmat Matrix.")
 
     def __div__(self, divisor):
+        return self.__truediv__(divisor)
+
+    def __truediv__(self, divisor):
         """
         Return the product of a this matrix by the reciproce of a given scalar.
         """
@@ -1689,9 +1692,6 @@ cdef class Matrix(object):
                 raise ZeroDivisionError("Division by Zero.")
         else:
             raise TypeError("Only scalars allowed as divisors.")
-
-    def __truediv__(self, divisor):
-        return self.__div__(divisor)
 
     def __floordiv__(self, divisor):
         raise NotImplementedError("Matrix Floor division not allowed.")
