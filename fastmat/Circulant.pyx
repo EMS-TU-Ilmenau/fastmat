@@ -99,7 +99,7 @@ cdef class Circulant(Partial):
         cdef Kron KN
         cdef Product P
         cdef bint truncate
-        if self._tenC.ndim < 1:
+        if (tenC.ndim < 1) or (self._tenC.ndim < 1):
             raise ValueError("Column-definition tensor must be at least 1D.")
         elif self._tenC.ndim == 1:
             # regular circulant matrix
