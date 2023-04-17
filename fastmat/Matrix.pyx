@@ -1521,8 +1521,6 @@ cdef class Matrix(object):
         dims = len(arrMatrix.shape)
         if dims == 2:
             self._array = np.copy(arrMatrix)
-        elif dims < 2:
-            self._array = np.reshape(np.copy(arrMatrix), (len(arrMatrix), 1))
         else:
             raise NotImplementedError("Matrix data array must be 2D")
 
