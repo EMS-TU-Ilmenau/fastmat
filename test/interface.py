@@ -5,65 +5,22 @@ import fastmat as fm
 
 class TestInterface(unittest.TestCase):
 
-    def test_utilities(self):
-        arr = np.random.randn(25, 35)
-        instance = fm.Matrix(arr)
+    def test_operators(self):
+        arrA = np.random.randn(25, 35)
+        arrB = np.random.randn(25, 35)
+        A, B  = fm.Matrix(arrA), fm.Matrix(arrB)
 
-        # Test querying the memory footprint of objects
-        numBytesReference = instance.nbytesReference
-        numBytes = instance.nbytes
+        np.testing.assert_array_equal((A + B)[...], arrA + arrB)
+        np.testing.assert_array_equal((B + A)[...], arrB + arrA)
+        np.testing.assert_array_equal((A - B)[...], arrA - arrB)
+        np.testing.assert_array_equal((B - A)[...], arrB - arrA)
 
-        # Test if auto-reload of getMemoryFootprint works
-        # (needed if fastmat is not imported as a whole)
-        try:
-            global getMemoryFootprint
-            _getMemoryFootprint = getMemoryFootprint
-            getMemoryFootprint = None
-            numBytesReference2 = instance.nbytesReference
-            getMemoryFootprint = _getMemoryFootprint
-            self.assert_equal(numBytesReference, numBytesReference2)
-        except NameError:
-            pass
+        np.testing.assert_array_equal((A * B.T)[...], arrA @ arrB.T)
+        np.testing.assert_array_equal((B * A.T)[...], arrB @ arrA.T)
+        np.testing.assert_array_equal((A * 2.)[...], arrA * 2.)
+        np.testing.assert_array_equal((2. * A)[...], 2. * arrA)
 
-
-
-    def test_slicing(self):
-        arr = np.random.randn(25, 35)
-        instance = fm.Matrix(arr)
-
-        idxR = np.arange(arr.shape[0])
-        idxC = np.arange(arr.shape[1])
-        # Test the individual single- and batch row- and column access methods
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc].reshape((-1, 1)) for cc in idxC]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :].reshape((1, -1)) for rr in idxR]), arr
-        )
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc] for cc in np.split(idxC, 5)]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :] for rr in np.split(idxR, 5)]), arr
-        )
-        # Now fetch the whole array at once
-        np.testing.assert_array_equal(
-            instance[...], arr
-        )
-        # And repeat the same from above, but this time with cache in place
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc].reshape((-1, 1)) for cc in idxC]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :].reshape((1, -1)) for rr in idxR]), arr
-        )
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc] for cc in np.split(idxC, 5)]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :] for rr in np.split(idxR, 5)]), arr
-        )
-
+        np.testing.assert_array_equal((A / 2.)[...], arrA / 2.)
 
     def test_properties(self):
         # Prepare some low-rank matrix with known values/vectors,
@@ -110,7 +67,6 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(instance.largestEV, instance.largestEigenValue)
         self.assertEqual(instance.largestSV, instance.largestSingularValue)
         self.assertEqual(instance.largestSV, instance.largestSingularValue)
-
     
     def test_representation(self):
         arr = np.random.randn(20, 20)
@@ -124,20 +80,65 @@ class TestInterface(unittest.TestCase):
             self.assertTrue(isinstance(str(ii), str))
             self.assertTrue(isinstance(repr(ii), str))
 
+    def test_slicing(self):
+        arr = np.random.randn(25, 35)
+        instance = fm.Matrix(arr)
 
-    def test_operators(self):
-        arrA = np.random.randn(25, 35)
-        arrB = np.random.randn(25, 35)
-        A, B  = fm.Matrix(arrA), fm.Matrix(arrB)
+        idxR = np.arange(arr.shape[0])
+        idxC = np.arange(arr.shape[1])
+        # Test the individual single- and batch row- and column access methods
+        np.testing.assert_array_equal(
+            np.hstack([instance[:, cc].reshape((-1, 1)) for cc in idxC]), arr
+        )
+        np.testing.assert_array_equal(
+            np.vstack([instance[rr, :].reshape((1, -1)) for rr in idxR]), arr
+        )
+        np.testing.assert_array_equal(
+            np.hstack([instance[:, cc] for cc in np.split(idxC, 5)]), arr
+        )
+        np.testing.assert_array_equal(
+            np.vstack([instance[rr, :] for rr in np.split(idxR, 5)]), arr
+        )
+        # Now fetch the whole array at once
+        np.testing.assert_array_equal(
+            instance[...], arr
+        )
+        # And repeat the same from above, but this time with cache in place
+        np.testing.assert_array_equal(
+            np.hstack([instance[:, cc].reshape((-1, 1)) for cc in idxC]), arr
+        )
+        np.testing.assert_array_equal(
+            np.vstack([instance[rr, :].reshape((1, -1)) for rr in idxR]), arr
+        )
+        np.testing.assert_array_equal(
+            np.hstack([instance[:, cc] for cc in np.split(idxC, 5)]), arr
+        )
+        np.testing.assert_array_equal(
+            np.vstack([instance[rr, :] for rr in np.split(idxR, 5)]), arr
+        )
 
-        np.testing.assert_array_equal((A + B)[...], arrA + arrB)
-        np.testing.assert_array_equal((B + A)[...], arrB + arrA)
-        np.testing.assert_array_equal((A - B)[...], arrA - arrB)
-        np.testing.assert_array_equal((B - A)[...], arrB - arrA)
+    def test_types(self):
+        print()
+        fm.core.types._typeSelection()
+        fm.core.types._typeInfo()
 
-        np.testing.assert_array_equal((A * B.T)[...], arrA @ arrB.T)
-        np.testing.assert_array_equal((B * A.T)[...], arrB @ arrA.T)
-        np.testing.assert_array_equal((A * 2.)[...], arrA * 2.)
-        np.testing.assert_array_equal((2. * A)[...], 2. * arrA)
+    def test_utilities(self):
+        arr = np.random.randn(25, 35)
+        instance = fm.Matrix(arr)
 
-        np.testing.assert_array_equal((A / 2.)[...], arrA / 2.)
+        # Test querying the memory footprint of objects
+        numBytesReference = instance.nbytesReference
+        numBytes = instance.nbytes
+
+        # Test if auto-reload of getMemoryFootprint works
+        # (needed if fastmat is not imported as a whole)
+        try:
+            global getMemoryFootprint
+            _getMemoryFootprint = getMemoryFootprint
+            getMemoryFootprint = None
+            numBytesReference2 = instance.nbytesReference
+            getMemoryFootprint = _getMemoryFootprint
+            self.assert_equal(numBytesReference, numBytesReference2)
+        except NameError:
+            pass
+
