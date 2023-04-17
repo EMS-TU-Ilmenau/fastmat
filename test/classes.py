@@ -92,7 +92,6 @@ class TestClass(unittest.TestCase):
         L = fm.LowRank(np.ones((2, )), np.ones((10, 2)), np.ones((10, 2)))
         L.vecS, L.arrU, L.arrV
 
-
     def test_Matrix(self):
         self.assertRaises(
             NotImplementedError, lambda: fm.Matrix(np.zeros(()))
@@ -233,6 +232,16 @@ class TestClass(unittest.TestCase):
             fm.Matrix(np.random.randn(25, 35)), [1, 2, 3]
         ))
         fm.Polynomial(fm.Fourier(10), [1, 2, 3]).coeff
+
+    def test_Product(self):
+        self.assertRaises(
+            TypeError, lambda: fm.Product(fm.Eye(10), None, fm.Eye(10))
+        )
+        self.assertRaises(ValueError, lambda: fm.Product())
+        self.assertRaises(
+            ValueError, lambda: fm.Product(fm.Eye(10), fm.Eye(11), fm.Eye(10))
+        )
+        fm.Product(fm.Eye(10), fm.Eye(10), debug=True)
 
     def test_Sparse(self):
         self.assertRaises(TypeError, lambda: fm.Sparse(np.zeros((10, 11))))
