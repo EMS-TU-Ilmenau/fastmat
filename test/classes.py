@@ -42,7 +42,10 @@ class TestClass(unittest.TestCase):
         self.assertRaises(ValueError, lambda: fm.Fourier(0))
 
     def test_Kron(self):
-        pass#self.assertRaises(ValueError)
+        arrM = np.random.randn(25, 35)
+        M = fm.Matrix(arrM)
+        self.assertRaises(ValueError, lambda: fm.Kron(fm.Eye(10), M))
+        self.assertRaises(ValueError, lambda: fm.Kron(fm.Eye(10)))
 
     def test_LFSRCirculant(self):
         self.assertRaises(ValueError, lambda: fm.LFSRCirculant(0, 1))
