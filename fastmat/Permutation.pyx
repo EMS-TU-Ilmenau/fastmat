@@ -75,7 +75,7 @@ cdef class Permutation(Matrix):
         '''
         if not isinstance(sigma, np.ndarray):
             sigma = np.array(sigma)
-        
+
         self._sigma = _arrSqueezedCopy(sigma)
         if (sigma.ndim != 1) or (self._sigma.ndim != 1):
             raise ValueError(

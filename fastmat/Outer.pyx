@@ -111,7 +111,7 @@ cdef class Outer(Matrix):
             (vecH is None) or (vecH.ndim != 1) or (vecH.size == 0)
         ):
             raise ValueError("Outer parameters must be one-dimensional.")
-        
+
         # height and width of matrix is defined by length of input vectors
         cdef intsize numRows = vecV.size
         cdef intsize numCols = vecH.size

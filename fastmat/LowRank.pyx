@@ -128,7 +128,7 @@ cdef class LowRank(Product):
             else arrU if isinstance(arrU, np.ndarray) else None
         arrV = np.atleast_1d(arrV) if isinstance(arrV, (list, tuple)) \
             else arrV if isinstance(arrV, np.ndarray) else None
-        
+
         if vecS is None or arrU is None or arrV is None:
             raise ValueError("LowRank: U, S and V must be array types.")
 
