@@ -117,11 +117,6 @@ class TestInterface(unittest.TestCase):
             np.vstack([instance[rr, :] for rr in np.split(idxR, 5)]), arr
         )
 
-    def test_types(self):
-        print()
-        fm.core.types._typeSelection()
-        fm.core.types._typeInfo()
-
     def test_utilities(self):
         arr = np.random.randn(25, 35)
         instance = fm.Matrix(arr)
