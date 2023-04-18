@@ -243,23 +243,17 @@ class TestCore(unittest.TestCase):
                     check(arr_B, arr_ref_B, arr_base_B)
 
                     arr_B[...] = arr
-                    vecFirst = stride_subgrid.numVectors // 3
-                    vecLast = (stride_subgrid.numVectors * 2 - 1) // 3
                     strideCopy(&stride_subgrid, &stride_arr_B)
-                    strideSubgrid(
-                        &stride_subgrid, vecFirst, eleFirst, 1, 1,
-                        vecLast - vecFirst + 1, eleLast - eleFirst + 1
-                    )
+                    # Construct a subgrid of size [2 x 4],
+                    # starting from index [1, 1] in F-contiguous style
+                    strideSubgrid(&stride_subgrid, 1, 1, 2, 1, 4, 2)
+                    strideSliceElements(&stride_subgrid, -1, -1, 1)
                     opZeroVectors(&stride_subgrid)
                     arr_ref_B = arr_ref.copy()
-                    if axis == 0:
-                        arr_ref_B[
-                            eleFirst:eleLast + 1, vecFirst:vecLast + 1
-                        ] = 0
-                    else:
-                        arr_ref_B[
-                            vecFirst:vecLast + 1, eleFirst:eleLast + 1
-                        ] = 0
+                    view = arr_ref_B[1:1 + 8, 1] if axis == 0 \
+                        else arr_ref_B[1, 1:1 + 8]
+                    
+                    view.reshape((2, 4), order='F')[-1, :] = 0
 
                     check(arr_B, arr_ref_B, arr_base_B)
 

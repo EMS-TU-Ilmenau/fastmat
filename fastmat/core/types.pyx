@@ -113,7 +113,7 @@ cdef ftype approximateType(INFO_TYPE_s *dtype):
     return TYPE_INVALID
 
 
-cdef INFO_TYPE_s *getTypeInfo(object dtype):
+cdef INFO_TYPE_s * getTypeInfo(object dtype) except *:
     """Short summary.
 
     Parameters
@@ -152,13 +152,13 @@ cdef INFO_TYPE_s *getTypeInfo(object dtype):
         ntype = dtype
 
     cdef ftype fusedType = typeSelection[ntype.type_num]
-    if fusedType == TYPE_INVALID:
+    if fusedType >= TYPE_INVALID:
         raise TypeError("Not a fastmat fused type: %s" %(str(dtype)))
 
     return &(typeInfo[fusedType])
 
 
-cdef ntype getNumpyType(object obj):
+cpdef ntype getNumpyType(object obj) except *:
     """Short summary.
 
     Parameters
@@ -177,7 +177,7 @@ cdef ntype getNumpyType(object obj):
     return info[0].numpyType
 
 
-cdef ftype getFusedType(object obj):
+cpdef ftype getFusedType(object obj) except *:
     """Short summary.
 
     Parameters
@@ -196,7 +196,7 @@ cdef ftype getFusedType(object obj):
     return info[0].fusedType
 
 
-cpdef np.float64_t getTypeEps(object obj):
+cpdef np.float64_t getTypeEps(object obj) except *:
     """Short summary.
 
     Parameters
@@ -215,7 +215,7 @@ cpdef np.float64_t getTypeEps(object obj):
     return info[0].eps
 
 
-cpdef np.float64_t getTypeMin(object obj):
+cpdef np.float64_t getTypeMin(object obj) except *:
     """Short summary.
 
     Parameters
@@ -237,7 +237,7 @@ cpdef np.float64_t getTypeMin(object obj):
     return info[0].min
 
 
-cpdef np.float64_t getTypeMax(object obj):
+cpdef np.float64_t getTypeMax(object obj) except *:
     """Short summary.
 
     Parameters
@@ -258,7 +258,7 @@ cpdef np.float64_t getTypeMax(object obj):
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].max
 
-cpdef isInteger(object obj):
+cpdef bint isInteger(object obj) except *:
     """Short summary.
 
     Parameters
@@ -276,7 +276,7 @@ cpdef isInteger(object obj):
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isInt
 
-cpdef isFloat(object obj):
+cpdef bint isFloat(object obj) except *:
     """Short summary.
 
     Parameters
@@ -296,7 +296,7 @@ cpdef isFloat(object obj):
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isFloat
 
-cpdef isComplex(object obj):
+cpdef bint isComplex(object obj) except *:
     """Short summary.
 
     Parameters
@@ -316,7 +316,7 @@ cpdef isComplex(object obj):
 
 ################################################## type Promotion stuff
 
-cdef ftype promoteFusedTypes(ftype type1, ftype type2):
+cdef ftype promoteFusedTypes(ftype type1, ftype type2) except *:
     """Short summary.
 
     Parameters

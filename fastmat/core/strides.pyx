@@ -27,31 +27,31 @@ from .types cimport *
 ################################################################################
 ###  Basic stride operations
 ################################################################################
-cdef void strideInit(STRIDE_s *stride, np.ndarray arr, np.uint8_t axis):
-    """Short summary.
+cdef void strideInit(
+    STRIDE_s * stride, np.ndarray arr, np.uint8_t axis
+) except *:
+    """Initialize a stride operator from an existing `ndarray`.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
+    stride : STRIDE_s *
+        Pointer to the `STRIDE_s` data structure generated.
+
     arr : np.ndarray
-        Description of parameter `arr`.
+        The `ndarray` to base the stride structure on.
+
     axis : np.uint8_t
-        Description of parameter `axis`.
+        The axis that should be interpreted
 
     Returns
     -------
-    void
-        Description of returned object.
+    None
 
     """
     if axis > 1:
         raise ValueError("Striding operations support 2D-arrays only.")
 
-    stride[0].dtype         = getFusedType(arr)
-    if stride[0].dtype >= TYPE_INVALID:
-        raise ValueError("Striding does not support given array data type.")
-
+    stride[0].dtype         = getFusedType(arr.dtype)
     stride[0].base          = arr.data                  # array base pointer
     stride[0].strideElement = arr.strides[axis]         # the selected axis
     stride[0].strideVector  = arr.strides[axis ^ 1]     # the other axis
@@ -60,119 +60,137 @@ cdef void strideInit(STRIDE_s *stride, np.ndarray arr, np.uint8_t axis):
     stride[0].sizeItem      = np.PyArray_ITEMSIZE(arr)  # size of one item
 
 
-cdef void strideCopy(STRIDE_s *strideDst, STRIDE_s *strideSrc):
-    """Short summary.
+cdef void strideCopy(STRIDE_s * strideDst, STRIDE_s * strideSrc):
+    """Copy a stride structure
 
     Parameters
     ----------
-    *strideDst : STRIDE_s
-        Description of parameter `*strideDst`.
-    *strideSrc : STRIDE_s
-        Description of parameter `*strideSrc`.
+    strideDst : STRIDE_s *
+        A pointer to the destination `STRIDE_s` object
+
+    strideSrc : STRIDE_s *
+        A pointer to the source `STRIDE_s` object
 
     Returns
     -------
-    void
-        Description of returned object.
+    None
 
     """
     memcpy(strideDst, strideSrc, sizeof(STRIDE_s))
 
 
-cdef void strideSliceVectors(STRIDE_s *stride,
-                             intsize start, intsize stop, intsize step):
-    """Short summary.
+cdef void strideSliceVectors(
+    STRIDE_s * stride, intsize first, intsize last, intsize step
+):
+    """Modify a stride object by subselecting along the vector axis.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
-    start : intsize
-        Description of parameter `start`.
-    stop : intsize
-        Description of parameter `stop`.
+    stride : STRIDE_s *
+        A pointer to the `STRIDE_s` object to be modified.
+
+    first : intsize
+        The first index to start indexing from. Must be inside the open
+        interval [0, length[. If negative, it is assumed to be the last index.
+
+    last : intsize
+        The last index to stop indexing at. Must be inside the open
+        interval [0, length[. If negative, it is assumed to be the last index.
+
     step : intsize
-        Description of parameter `step`.
+        The stepping size as number of elements. Can be negative.
 
     Returns
     -------
-    void
-        Description of returned object.
-
+    None
     """
     # CAUTION: NOT VERIFIED YET
-    if start < 0:
-        start = stride[0].numVectors
+    if first < 0:
+        first = stride[0].numVectors - 1
 
-    if stop < 0:
-        stop = stride[0].numVectors
+    if last < 0:
+        last = stride[0].numVectors - 1
 
-    stride[0].base += start * stride[0].strideVector
-    stride[0].numVectors = stop if step == 0 else (stop - start) // step
+    stride[0].base += first * stride[0].strideVector
+    stride[0].numVectors = \
+        ((last - first) if step == 0 else (last - first) // step) + 1
     stride[0].strideVector = stride[0].strideVector * step
 
-cdef void strideSliceElements(STRIDE_s *stride,
-                              intsize start, intsize stop, intsize step):
-    """Short summary.
+
+cdef void strideSliceElements(
+    STRIDE_s * stride, intsize first, intsize last, intsize step
+):
+    """Modify a stride object by subselecting along the element axis.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
-    start : intsize
-        Description of parameter `start`.
-    stop : intsize
-        Description of parameter `stop`.
+    stride : STRIDE_s *
+        A pointer to the `STRIDE_s` object to be modified.
+
+    first : intsize
+        The first index to start indexing from. Must be inside the open
+        interval [0, length[. If negative, it is assumed to be the last index.
+
+    last : intsize
+        The last index to stop indexing at. Must be inside the open
+        interval [0, length[. If negative, it is assumed to be the last index.
+
     step : intsize
-        Description of parameter `step`.
+        The stepping size as number of elements. Can be negative.
 
     Returns
     -------
-    void
-        Description of returned object.
-
+    None
     """
-    if start < 0:
-        start = stride[0].numElements
+    if first < 0:
+        first = stride[0].numElements - 1
 
-    if stop < 0:
-        stop = stride[0].numElements
+    if last < 0:
+        last = stride[0].numElements - 1
 
-    stride[0].base += start * stride[0].strideElement
-    stride[0].numElements = stop if step == 0 else (stop - start) // step
+    stride[0].base += first * stride[0].strideElement
+    stride[0].numElements = \
+        ((last - first) if step == 0 else (last - first) // step) + 1
     stride[0].strideElement = stride[0].strideElement * step
 
-cdef void strideSubgridVector(STRIDE_s *stride,
-                              intsize idxVector, intsize idxElement,
-                              intsize steppingElements, intsize numElements,
-                              intsize steppingVectors, intsize numVectors):
-    """Short summary.
+
+cdef void strideSubgrid(
+    STRIDE_s * stride,
+    intsize idxVector, intsize idxElement,
+    intsize steppingVectors, intsize steppingElements,
+    intsize numVectors, intsize numElements
+):
+    """Modify a stride object to span a linear vector into a new 2D grid.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
+    stride : STRIDE_s *
+        A pointer to the `STRIDE_s` object to be modified.
+
     idxVector : intsize
-        Description of parameter `idxVector`.
+        The starting vector index in the stride, using the old indexing.
+        Must be strictly inside the exis bounds.
+
     idxElement : intsize
-        Description of parameter `idxElement`.
-    steppingElements : intsize
-        Description of parameter `steppingElements`.
-    numElements : intsize
-        Description of parameter `numElements`.
+        The starting element index in the stride, using the old indexing.
+        Must be strictly inside the exis bounds.
+
     steppingVectors : intsize
-        Description of parameter `steppingVectors`.
+        The subgrid step size along the new Vector axis.
+
+    steppingElements : intsize
+        The subgrid step size along the new Element axis.
+
     numVectors : intsize
-        Description of parameter `numVectors`.
+        The new size along the new Vector axis.
+
+    numElements : intsize
+        The new size along the new Element axis.
 
     Returns
     -------
-    void
-        Description of returned object.
-
+    None
     """
-    # CAUTION: NOT VERIFIED YET
-
     # compute new base pointer (offset subgrid stride from current one)
     stride[0].base += (stride[0].strideElement * idxElement +
                        stride[0].strideVector * idxVector)
@@ -180,54 +198,55 @@ cdef void strideSubgridVector(STRIDE_s *stride,
     # now compute new spans and strides for element and vector axes. Both of
     # them originate from the vector at position (idxElement, idxVector).
     # This allows mapping butterfly operation slicing directly to a 2D stride!
+#    stride[0].strideVector = stride[0].strideElement * steppingVectors # <-- This line works in Hadamard, but not in striding self-checks. Fix Hadamard!
     stride[0].strideVector = stride[0].strideElement * steppingVectors
     stride[0].strideElement = stride[0].strideElement * steppingElements
     stride[0].numElements = numElements
     stride[0].numVectors = numVectors
 
-cdef void strideFlipVectors(STRIDE_s *stride):
-    """Short summary.
+
+cdef void strideFlipVectors(STRIDE_s * stride):
+    """Flip the strided array along its the Vector axis.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
+    stride : STRIDE_s *
+        A pointer to the `STRIDE_s` object to be modified.
 
     Returns
     -------
-    void
-        Description of returned object.
-
+    None
     """
     stride[0].base += (stride[0].numVectors - 1) * stride[0].strideVector
     stride[0].strideVector = -stride[0].strideVector
 
-cdef void strideFlipElements(STRIDE_s *stride):
-    """Short summary.
+
+cdef void strideFlipElements(STRIDE_s * stride):
+    """Flip the strided array along its the Element axis.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
+    stride : STRIDE_s *
+        A pointer to the `STRIDE_s` object to be modified.
 
     Returns
     -------
-    void
-        Description of returned object.
-
+    None
     """
     stride[0].base += (stride[0].numElements - 1) * stride[0].strideElement
     stride[0].strideElement = -stride[0].strideElement
 
-cdef stridePrint(STRIDE_s *stride, text=''):
-    """Short summary.
+
+cdef void stridePrint(STRIDE_s * stride, text='') except *:
+    """Print information about a strided array to stdout.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
-    text : type
-        Description of parameter `text`.
+    stride : STRIDE_s *
+        A pointer to the `STRIDE_s` object to be printed.
+
+    text : str
+        Additional information to be appended in the output
 
     Returns
     -------
@@ -241,32 +260,32 @@ cdef stridePrint(STRIDE_s *stride, text=''):
         stride[0].strideElement, stride[0].strideVector, stride[0].sizeItem,
         ": %s" %(text, ) if len(text) > 0 else ""))
 
+
 ################################################################################
 ###  Operations with strides
 ################################################################################
-cdef opCopyVector(STRIDE_s *strideDst, intsize idxVectorDst,
-                  STRIDE_s *strideSrc, intsize idxVectorSrc):
-    """Short summary.
+cdef void opCopyVector(STRIDE_s * strideDst, intsize idxVectorDst,
+                       STRIDE_s * strideSrc, intsize idxVectorSrc) except *:
+    """Copy data from one strided array to another along their Element axes.
 
     Parameters
     ----------
-    *strideDst : STRIDE_s
-        Description of parameter `*strideDst`.
+    strideDst : STRIDE_s *
+        A pointer to the destination strided array.
+
     idxVectorDst : intsize
-        Description of parameter `idxVectorDst`.
-    *strideSrc : STRIDE_s
-        Description of parameter `*strideSrc`.
+        The index along the Vector axis to put the copied Element-axis data to.
+
+    strideSrc : STRIDE_s *
+        A pointer to the source strided array.
+
     idxVectorSrc : intsize
-        Description of parameter `idxVectorSrc`.
+        The index along the Element axis to put the copied Vector-axis data to.
 
     Returns
     -------
-    type
-        Description of returned object.
-
+    None
     """
-    # CAUTION: NOT VERIFIED YET
-
     cdef intsize nn
     cdef intsize dstStride = strideDst[0].strideElement
     cdef intsize srcStride = strideSrc[0].strideElement
@@ -314,23 +333,21 @@ cdef opCopyVector(STRIDE_s *strideDst, intsize idxVectorDst,
             ptrSrc += srcStride
 
 
-cdef opZeroVector(STRIDE_s *stride, intsize idxVector):
-    """Short summary.
+cdef void opZeroVector(STRIDE_s * stride, intsize idxVector):
+    """Zero all elements of a strided array belonging to a Vector axis index.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
-    idxVector : intsize
-        Description of parameter `idxVector`.
+    strideDst : STRIDE_s *
+        A pointer to the strided array to be modified.
+
+    idxVectorDst : intsize
+        The index along the Vector axis, for which to zero all data elements.
 
     Returns
     -------
-    type
-        Description of returned object.
-
+    None
     """
-    # CAUTION: NOT VERIFIED YET
     cdef intsize nn
     cdef char *ptr = stride[0].base + stride[0].strideVector * idxVector
     cdef intsize strideElement = stride[0].strideElement
@@ -366,19 +383,18 @@ cdef opZeroVector(STRIDE_s *stride, intsize idxVector):
             memset(ptr, 0, sizeItem)
             ptr += strideElement
 
-cdef opZeroVectors(STRIDE_s *stride):
-    """Short summary.
+
+cdef void opZeroVectors(STRIDE_s * stride):
+    """Zero all elements of a strided array along both axes.
 
     Parameters
     ----------
-    *stride : STRIDE_s
-        Description of parameter `*stride`.
+    stride : STRIDE_s *
+        A pointer to the strided array to be modified.
 
     Returns
     -------
-    type
-        Description of returned object.
-
+    None
     """
     # CAUTION: NOT VERIFIED YET
     cdef intsize nn, mm, sizeChunk
@@ -390,19 +406,29 @@ cdef opZeroVectors(STRIDE_s *stride):
     cdef char *ptr = stride[0].base
     cdef char *ptrVector
 
-    if ((strideElement == sizeItem and
-         strideVector == numElements * sizeItem)):
+    if ((abs(strideElement) == sizeItem and
+         abs(strideVector) == numElements * sizeItem)):
         # both axes are contiguous: jackpot!
-        memset(ptr, 0, strideVector * numVectors)
-    elif strideElement == sizeItem:
+        sizeChunk = strideVector * numVectors
+        if sizeChunk < 0:
+            sizeChunk = abs(sizeChunk)
+            ptr -= sizeChunk - sizeItem
+        memset(ptr, 0, sizeChunk)
+    elif abs(strideElement) == sizeItem:
         # element-contiguous: loop memset calls
-        sizeChunk = numElements * sizeItem
+        sizeChunk = strideElement * numElements
+        if sizeChunk < 0:
+            sizeChunk = abs(sizeChunk)
+            ptr -= sizeChunk - sizeItem
         for mm in range(numVectors):
             memset(ptr, 0, sizeChunk)
             ptr += strideVector
-    elif strideVector == sizeItem:
+    elif abs(strideVector) == sizeItem:
         # vector-contiguous: loop memset calls
-        sizeChunk = numVectors * sizeItem
+        sizeChunk = strideVector * numVectors
+        if sizeChunk < 0:
+            sizeChunk = abs(sizeChunk)
+            ptr -= sizeChunk - sizeItem
         for nn in range(numElements):
             memset(ptr, 0, sizeChunk)
             ptr += strideElement
@@ -410,31 +436,36 @@ cdef opZeroVectors(STRIDE_s *stride):
     # do it the long and manual way
     elif sizeItem == 8:
         for mm in range(numVectors):
-            ptrVector = ptr + strideVector
+            ptrVector = ptr
             for nn in range(numElements):
                 (<np.int64_t *> ptrVector)[0] = 0
                 ptrVector += strideElement
+            ptr += strideVector
     elif sizeItem == 4:
         for mm in range(numVectors):
-            ptrVector = ptr + strideVector
+            ptrVector = ptr
             for nn in range(numElements):
                 (<np.int32_t *> ptrVector)[0] = 0
                 ptrVector += strideElement
+            ptr += strideVector
     elif sizeItem == 2:
         for mm in range(numVectors):
-            ptrVector = ptr + strideVector
+            ptrVector = ptr
             for nn in range(numElements):
                 (<np.int16_t *> ptrVector)[0] = 0
                 ptrVector += strideElement
+            ptr += strideVector
     elif sizeItem == 1:
         for mm in range(numVectors):
-            ptrVector = ptr + strideVector
+            ptrVector = ptr
             for nn in range(numElements):
                 ptrVector[0] = 0
                 ptrVector += strideElement
+            ptr += strideVector
     else:
         for mm in range(numVectors):
-            ptrVector = ptr + strideVector
+            ptrVector = ptr
             for nn in range(numElements):
                 memset(ptrVector, 0, sizeItem)
                 ptrVector += strideElement
+            ptr += strideVector
