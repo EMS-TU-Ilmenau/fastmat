@@ -61,6 +61,7 @@ class TEST(NAME):
     TOL_MINEPS      = 'tolMinEps'
     TOL_POWER       = 'tolPower'
     IGNORE          = 'ignore'
+    SKIP            = 'skip'
     PARAMALIGN      = 'alignment'
     RESULT_TOLERR   = 'testTolError'
     RESULT_INPUT    = 'testInput'
@@ -1088,6 +1089,10 @@ class Test(Worker):
                      if isinstance(variant[key], type)
                      else str(variant[key])
                      for key in lstVariantPermutations])
+
+                # see if this variant should be skipped
+                if variant.get(TEST.SKIP, lambda param: False)(variant):
+                    continue
 
                 # call variant initialization routine, if defined
                 if TEST.INIT_VARIANT in variant:
