@@ -41,6 +41,9 @@ class TestInterface(unittest.TestCase):
 #        np.testing.assert_array_equal(np.squeeze(u1), u[:, idx_largest_sv])
 #        np.testing.assert_array_equal(np.squeeze(v1), v[idx_largest_sv, :])
         self.assertEqual(instance.largestEV, instance.largestEigenValue)
+        self.assertEqual(instance.H.largestEV, instance.largestEigenValue)
+        self.assertEqual(instance.T.largestEV, instance.largestEigenValue)
+        self.assertEqual(instance.conj.largestEV, instance.largestEigenValue)
         np.testing.assert_array_equal(
             instance.largestEigenVec, instance.largestEigenVec
         )
