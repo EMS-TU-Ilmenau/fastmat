@@ -104,7 +104,6 @@ cdef void strideSliceVectors(
     -------
     None
     """
-    # CAUTION: NOT VERIFIED YET
     if first < 0:
         first = stride[0].numVectors - 1
 
@@ -198,7 +197,6 @@ cdef void strideSubgrid(
     # now compute new spans and strides for element and vector axes. Both of
     # them originate from the vector at position (idxElement, idxVector).
     # This allows mapping butterfly operation slicing directly to a 2D stride!
-#    stride[0].strideVector = stride[0].strideElement * steppingVectors # <-- This line works in Hadamard, but not in striding self-checks. Fix Hadamard!
     stride[0].strideVector = stride[0].strideElement * steppingVectors
     stride[0].strideElement = stride[0].strideElement * steppingElements
     stride[0].numElements = numElements
@@ -396,7 +394,6 @@ cdef void opZeroVectors(STRIDE_s * stride):
     -------
     None
     """
-    # CAUTION: NOT VERIFIED YET
     cdef intsize nn, mm, sizeChunk
     cdef np.uint8_t sizeItem = stride[0].sizeItem
     cdef intsize numElements = stride[0].numElements

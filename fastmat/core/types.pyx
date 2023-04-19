@@ -75,20 +75,19 @@ cdef inline void getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
 
 
 cdef ftype approximateType(INFO_TYPE_s *dtype):
-    """Short summary.
+    """Return most suited fastmat datatype id for given type descriptor.
 
     Parameters
     ----------
     *dtype : INFO_TYPE_s
-        Description of parameter `*dtype`.
+        An `INFO_TYPE_s` structure holding type info to find a ftype for.
 
     Returns
     -------
     ftype
-        Description of returned object.
+        The determines fastmat-type.
 
     """
-    '''Return most suited fastmat datatype id for given type descriptor.'''
     if dtype[0].isNumber:
         if dtype[0].isInt:
             if dtype[0].dsize <= 1:

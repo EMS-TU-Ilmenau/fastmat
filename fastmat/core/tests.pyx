@@ -25,6 +25,7 @@ from .types import _typeInfo, _typeSelection
 
 import unittest
 
+
 class TestCore(unittest.TestCase):
     # opCopyVector(STRIDE_s *, intsize, STRIDE_s *, intsize)
     # opZeroVector(STRIDE_s *, intsize)
@@ -211,7 +212,6 @@ class TestCore(unittest.TestCase):
                     arr_B = slice_base(arr_base_B) if order == 'S' \
                         else arr_base_B[...]
 
-
                     # ... , construct the slices ...
                     strideInit(&stride_arr_B, arr_B, axis)
 
@@ -252,11 +252,10 @@ class TestCore(unittest.TestCase):
                     arr_ref_B = arr_ref.copy()
                     view = arr_ref_B[1:1 + 8, 1] if axis == 0 \
                         else arr_ref_B[1, 1:1 + 8]
-                    
+
                     view.reshape((2, 4), order='F')[-1, :] = 0
 
                     check(arr_B, arr_ref_B, arr_base_B)
-
 
     def test_types(self):
 
@@ -271,6 +270,3 @@ class TestCore(unittest.TestCase):
 
         print(queryTypeInfo(np.int16))
         self.assertRaises(TypeError, lambda: queryTypeInfo(object))
-
-    def test_cmath(self):
-        pass

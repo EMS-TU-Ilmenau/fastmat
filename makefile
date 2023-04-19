@@ -153,7 +153,7 @@ coverage-report:
 	coverage report
 
 .PHONY: coverage
-coverage: | compile-coverage
+coverage: | styleCheck compile-coverage
 	$(info * running coverage analysis)
 	coverage run --source=fastmat -m unittest test -v
 	coverage run -a --source=fastmat bee.py list makedump
