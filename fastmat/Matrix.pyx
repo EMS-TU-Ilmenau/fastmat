@@ -2073,6 +2073,7 @@ cdef class Matrix(object):
                     TEST.NUM_COLS   : TEST.Permutation(
                         [numCols, TEST.NUM_ROWS]
                     ),
+                    'c-style'       : TEST.Permutation([False, True]),
                     'mType'         : TEST.Permutation(TEST.FLOATTYPES),
                     TEST.PARAMALIGN : TEST.Permutation(TEST.ALLALIGNMENTS),
                     'arrM'          : TEST.ArrayGenerator({
@@ -2085,8 +2086,16 @@ cdef class Matrix(object):
                     TEST.DATASHAPE_T: (TEST.NUM_ROWS if swap else TEST.NUM_COLS,
                                        TEST.DATACOLS),
                     TEST.OBJECT     : self.__class__,
-                    TEST.INITARGS   : (lambda param: [Matrix(param['arrM']())]),
-                    TEST.NAMINGARGS : dynFormat("%s", 'arrM')
+                    TEST.INITARGS   : (lambda param: [
+                        Diag(param['arrM']()[:, 0]) if param['c-style']
+                        else Matrix(param['arrM']())
+                    ]),
+                    TEST.SKIP       : TEST.IgnoreFunc(lambda param: (
+                        param['c-style'] and (param[TEST.NUM_COLS] != numRows)
+                    )),
+                    TEST.NAMINGARGS : dynFormat(
+                        "%s,c-style:%s", 'arrM', 'c-style'
+                    )
                 },
                 TEST.CLASS: {},
                 TEST.TRANSFORMS: {}
