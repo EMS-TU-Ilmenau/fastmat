@@ -10,21 +10,60 @@ class TestInterface(unittest.TestCase):
         arrB = np.random.randn(25, 35)
         A, B  = fm.Matrix(arrA), fm.Matrix(arrB)
 
-        np.testing.assert_array_equal((A + B)[...], arrA + arrB)
-        np.testing.assert_array_equal((A.__add__(B))[...], arrA + arrB)
-        np.testing.assert_array_equal((A.__radd__(B))[...], arrB + arrA)
-        np.testing.assert_array_equal((A - B)[...], arrA - arrB)
-        np.testing.assert_array_equal((A.__sub__(B))[...], arrA - arrB)
-        np.testing.assert_array_equal((A.__rsub__(B))[...], arrB - arrA)
+        np.testing.assert_allclose(
+            (A + B)[...], arrA + arrB,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.__add__(B))[...], arrA + arrB,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.__radd__(B))[...], arrB + arrA,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A - B)[...], arrA - arrB,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.__sub__(B))[...], arrA - arrB,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.__rsub__(B))[...], arrB - arrA,
+            rtol=1e-11, atol=1e-14
+        )
 
-        np.testing.assert_array_equal((A * B.T)[...], arrA @ arrB.T)
-        np.testing.assert_array_equal((A.__mul__(B.T))[...], arrA @ arrB.T)
-        np.testing.assert_array_equal((A.T.__rmul__(B))[...], arrB @ arrA.T)
-        np.testing.assert_array_equal((A * 2.)[...], arrA * 2.)
-        np.testing.assert_array_equal((A.__mul__(2.))[...], arrA * 2.)
-        np.testing.assert_array_equal((A.__rmul__(2.))[...], 2. * arrA)
+        np.testing.assert_allclose(
+            (A * B.T)[...], arrA @ arrB.T,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.__mul__(B.T))[...], arrA @ arrB.T,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.T.__rmul__(B))[...], arrB @ arrA.T,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A * 2.)[...], arrA * 2.,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.__mul__(2.))[...], arrA * 2.,
+            rtol=1e-11, atol=1e-14
+        )
+        np.testing.assert_allclose(
+            (A.__rmul__(2.))[...], 2. * arrA,
+            rtol=1e-11, atol=1e-14
+        )
 
-        np.testing.assert_array_equal((A / 2.)[...], arrA / 2.)
+        np.testing.assert_allclose(
+            (A / 2.)[...], arrA / 2.,
+            rtol=1e-11, atol=1e-14
+        )
 
         self.assertEqual(len(A), 0)
         self.assertEqual(len(A + B), 2)

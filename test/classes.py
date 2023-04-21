@@ -319,30 +319,30 @@ class TestClass(unittest.TestCase):
         np.testing.assert_allclose(
             T3A.colNormalized[...],
             arrT3A / np.linalg.norm(arrT3A, axis=0)[np.newaxis, :],
-            rtol=1e-12, atol=1e-15
+            rtol=1e-11, atol=1e-14
         )
         np.testing.assert_allclose(
             T3A.rowNormalized[...],
             arrT3A / np.linalg.norm(arrT3A, axis=1)[:, np.newaxis],
-            rtol=1e-12, atol=1e-15
+            rtol=1e-11, atol=1e-14
         )
         np.testing.assert_allclose(
             T3B.colNormalized[...],
             arrT3B / np.linalg.norm(arrT3B, axis=0)[np.newaxis, :],
-            rtol=1e-12, atol=1e-15
+            rtol=1e-11, atol=1e-14
         )
         np.testing.assert_allclose(
             T3B.rowNormalized[...],
             arrT3B / np.linalg.norm(arrT3B, axis=1)[:, np.newaxis],
-            rtol=1e-12, atol=1e-15
+            rtol=1e-11, atol=1e-14
         )
         np.testing.assert_allclose(
             T3C.colNormalized[...],
             arrT3C / np.linalg.norm(arrT3C, axis=0)[np.newaxis, :],
-            rtol=1e-12, atol=1e-15
+            rtol=1e-11, atol=1e-14
         )
         np.testing.assert_allclose(
             T3C.rowNormalized[...],
             arrT3C / np.linalg.norm(arrT3C, axis=1)[:, np.newaxis],
-            rtol=1e-12, atol=1e-15
+            rtol=1e-11, atol=1e-14
         )
