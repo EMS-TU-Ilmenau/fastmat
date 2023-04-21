@@ -256,3 +256,78 @@ class TestClass(unittest.TestCase):
         self.assertRaises(ValueError, lambda: fm.Sum())
         self.assertRaises(TypeError, lambda: fm.Sum(fm.Eye(10), 10))
         self.assertRaises(ValueError, lambda: fm.Sum(fm.Eye(10), fm.Eye(11)))
+
+    def test_Toeplitz(self):
+        arrC = np.random.randn(4, 10, 10)
+        arrR = np.random.randn(6, 10, 10)
+        tenT = np.vstack([arrC, arrR])
+        split = arrC.shape[0]
+
+        T1A = fm.Toeplitz(arrC[:, 0, 0], arrR[:, 0, 0])
+        np.testing.assert_array_equal(T1A.vecC, arrC[:, 0, 0])
+        np.testing.assert_array_equal(T1A.vecR, arrR[:, 0, 0])
+        self.assertRaises(ValueError, lambda: \
+            fm.Toeplitz(arrC[:, 0, 0], arrR[:, 0, 0], split=5)
+        )
+        self.assertRaises(ValueError, lambda: \
+            fm.Toeplitz(arrC[:, :, 0], arrR[:, :, 0])
+        )
+        self.assertRaises(ValueError, lambda: fm.Toeplitz())
+        self.assertRaises(TypeError, lambda: fm.Toeplitz('abc'))
+        self.assertRaises(ValueError, lambda: fm.Toeplitz('abc', 'def'))
+        self.assertRaises(ValueError, lambda: fm.Toeplitz('abc', 'def', 'ghi'))
+
+        T1B = fm.Toeplitz(tenT[:, 0, 0], split=split)
+        np.testing.assert_array_equal(T1B.tenT, tenT[:, 0, 0])
+        np.testing.assert_array_equal(T1A[...], T1B[...])
+        np.testing.assert_array_equal(T1A[...], T1A.reference())
+        self.assertRaises(ValueError)
+
+        T2 = fm.Toeplitz(tenT[:, :, 0], split=2 * (split, ))
+        np.testing.assert_array_equal(T2[...], T2.reference())
+
+        T3A = fm.Toeplitz(tenT, split=3 * (split, ))
+        T3B = fm.Toeplitz(tenT[:9, :9, :9])
+        np.testing.assert_array_equal(T3A[...], T3A.reference())
+        np.testing.assert_array_equal(T3B[...], T3B.reference())
+        np.testing.assert_array_equal(T3A.vecC, arrC)
+        np.testing.assert_array_equal(T3A.vecR, arrR)
+        np.testing.assert_array_equal(T3A.tenT, tenT)
+        self.assertRaises(ValueError, lambda: fm.Toeplitz(tenT))
+        self.assertRaises(
+            ValueError, lambda: fm.Toeplitz(tenT, split=np.zeros((2, 2)))
+        )
+        self.assertRaises(
+            ValueError, lambda: fm.Toeplitz(tenT, split=4 * (split, ))
+        )
+        self.assertRaises(
+            ValueError, lambda: fm.Toeplitz(tenT, split=[0, 4, 4])
+        )
+        self.assertRaises(
+            ValueError, lambda: fm.Toeplitz(tenT, split=[-1, 4, 4])
+        )
+        self.assertRaises(
+            ValueError, lambda: fm.Toeplitz(tenT, split=[4, 4, 11])
+        )
+
+        arrT3A, arrT3B = T3A.reference(), T3B.reference()
+        np.testing.assert_allclose(
+            T3A.colNormalized[...],
+            arrT3A / np.linalg.norm(arrT3A, axis=0)[np.newaxis, :],
+            rtol=1e-12, atol=1e-15
+        )
+        np.testing.assert_allclose(
+            T3A.rowNormalized[...],
+            arrT3A / np.linalg.norm(arrT3A, axis=1)[:, np.newaxis],
+            rtol=1e-12, atol=1e-15
+        )
+        np.testing.assert_allclose(
+            T3B.colNormalized[...],
+            arrT3B / np.linalg.norm(arrT3B, axis=0)[np.newaxis, :],
+            rtol=1e-12, atol=1e-15
+        )
+        np.testing.assert_allclose(
+            T3B.rowNormalized[...],
+            arrT3B / np.linalg.norm(arrT3B, axis=1)[:, np.newaxis],
+            rtol=1e-12, atol=1e-15
+        )

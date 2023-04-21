@@ -45,7 +45,7 @@ class TestAlgorithm(unittest.TestCase):
             np.sort(np.squeeze(idx_support))
         )
         np.testing.assert_allclose(
-            np.squeeze(y), np.squeeze(x), rtol=1e-12, atol=1e-12
+            np.squeeze(y), np.squeeze(x), rtol=1e-12, atol=1e-15
         )
 
         # Check that the abstract base class is protected
