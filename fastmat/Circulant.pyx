@@ -99,7 +99,7 @@ cdef class Circulant(Partial):
         cdef Kron KN
         cdef Product P
         cdef bint truncate
-        if self._tenC.ndim < 1:
+        if (tenC.ndim < 1) or (self._tenC.ndim < 1):
             raise ValueError("Column-definition tensor must be at least 1D.")
         elif self._tenC.ndim == 1:
             # regular circulant matrix
@@ -282,8 +282,7 @@ cdef class Circulant(Partial):
     cpdef np.ndarray _genArrS(
         self,
         np.ndarray arrN,
-        np.ndarray arrNout,
-        bint verbose=False
+        np.ndarray arrNout
     ):
         '''
         Filter out the non-zero elements in the padded version of X iteratively.
@@ -306,11 +305,6 @@ cdef class Circulant(Partial):
         arrN : :py:class:`numpy.ndarray`
             The size the dimension originally had.
 
-        verbose : bool
-            Output verbose information.
-
-            Defaults to False.
-
         Returns
         -------
         arrS : :py:class:`numpy.ndarray`
@@ -327,18 +321,6 @@ cdef class Circulant(Partial):
         # now buckle up!
         # we go through all dimensions first
         for ii in range(n):
-            if verbose:
-                print("state", arrS)
-                print("modulus", np.mod(
-                    np.arange(numRowsout),
-                    np.prod(arrNout[:(n -ii)])
-                ))
-                print("inequ", arrN[n -1 -ii] * np.prod(arrNout[:(n -1 -ii)]))
-                print("res", np.mod(
-                    np.arange(numRowsout),
-                    np.prod(arrNout[:(n -1 -ii)])
-                ) < arrN[n -1 -ii] * np.prod(arrNout[:(n -1 -ii)]))
-
             # iteratively subselect more and more indices in arrS
             # we do this the following way first we filter out all ones, that
             # originate from expanding in the first dimension and then in
@@ -361,16 +343,13 @@ cdef class Circulant(Partial):
 
     cpdef np.ndarray _reference(self):
         return self._refRecursion(
-            np.array((<object> self._tenC).shape),
-            self._tenC,
-            False
+            np.array((<object> self._tenC).shape), self._tenC
         )
 
     def _refRecursion(
         self,
         np.ndarray arrN,
-        np.ndarray tenC,
-        bint verbose=False
+        np.ndarray tenC
     ):
         '''
         Build the d-level circulant matrix recursively from a d-dimensional
@@ -386,11 +365,6 @@ cdef class Circulant(Partial):
 
         tenC : :py:class:`numpy.ndarray`
             The defining elements.
-
-        verbose : bool
-            Output verbose information.
-
-            Defaults to False.
 
         Returns
         -------
@@ -412,11 +386,6 @@ cdef class Circulant(Partial):
         cdef np.ndarray arrNprod = np.array(
             list(map(lambda ii : np.prod(arrN[ii:]), range(len(arrN) + 1)))
         )
-        if verbose:
-            print(numD, arrN)
-            print()
-            print(tenC)
-            print(arrNprod)
 
         # The resulting d-level matrix
         cdef np.ndarray arrC, vecC
@@ -431,24 +400,12 @@ cdef class Circulant(Partial):
                 # calculate the submatrices by going one level deeper into
                 # the recursion. here we always trim away the first dimension
                 # of the tensor, making it of rank (d-1)
-                if verbose:
-                    print("Going one level deeper: %d" % (nn))
                 subC = self._refRecursion(arrN[1 :], tenC[nn])
 
                 # place them at the correct positions with some modulo g0re
                 for ii in range(arrN[0]):
                     NN = (arrNprod[1] * ((nn + ii) % (arrN[0]))) % arrNprod[0]
                     MM = (arrNprod[1] * ii)
-                    if verbose:
-                        print("nn=%d, ii=%d, NN=%d, MM=%d, \
-                                NNto=%d, MMto=%d, CN=%d, CM=%d"
-                              % (nn, ii, NN, MM, NN + arrNprod[1],
-                                 MM + arrNprod[1], subC.shape[0], subC.shape[1])
-                              )
-                        print(arrC[NN:NN + arrNprod[1],
-                                   MM:MM + arrNprod[1]].shape)
-                        print((<object> arrC).shape)
-                        print(arrN[0])
 
                     # do the actual placement by copying in the right memor
                     # region
@@ -457,8 +414,6 @@ cdef class Circulant(Partial):
         else:
             # if we are in the lowest level, we just return the circulant
             # block by calling the normal circulant reference
-            if verbose:
-                print("Deepest level reached")
 
             arrC = np.empty((numRows, numRows), dtype=self.dtype)
             vecC = tenC[:numRows]

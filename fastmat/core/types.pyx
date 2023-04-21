@@ -28,22 +28,21 @@ np.import_array()
 ################################################## type handling
 
 cdef inline void getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
-    """Short summary.
+    """
+    Fill in type descriptor structure (INTO_TYPE_s) for a given numpy.dtype.
 
     Parameters
     ----------
     dtype : np.dtype
-        Description of parameter `dtype`.
-    *info : INFO_TYPE_s
-        Description of parameter `*info`.
+        The numpy.dtype object to retrieve type information for.
+
+    info : INFO_TYPE_s *
+        A pointer to the `INFO_TYPE_s` structure to be filled.
 
     Returns
     -------
-    inline void
-        Description of returned object.
-
+    None
     """
-    '''Fill in type descriptor (INTO_TYPE_s) for given a numpy.dtype.'''
     info[0].numpyType   = dtype.type_num
     info[0].fusedType   = typeSelection[info[0].numpyType]
     info[0].dsize       = dtype.itemsize
@@ -75,20 +74,19 @@ cdef inline void getDtypeInfo(np.dtype dtype, INFO_TYPE_s *info):
 
 
 cdef ftype approximateType(INFO_TYPE_s *dtype):
-    """Short summary.
+    """
+    Return most suited fastmat datatype id for given type descriptor.
 
     Parameters
     ----------
     *dtype : INFO_TYPE_s
-        Description of parameter `*dtype`.
+        An `INFO_TYPE_s` structure holding type info to find a ftype for.
 
     Returns
     -------
     ftype
-        Description of returned object.
-
+        The determined fastmat-type.
     """
-    '''Return most suited fastmat datatype id for given type descriptor.'''
     if dtype[0].isNumber:
         if dtype[0].isInt:
             if dtype[0].dsize <= 1:
@@ -113,224 +111,263 @@ cdef ftype approximateType(INFO_TYPE_s *dtype):
     return TYPE_INVALID
 
 
-cdef INFO_TYPE_s *getTypeInfo(object dtype):
-    """Short summary.
+cdef INFO_TYPE_s * getTypeInfo(object obj) except *:
+    """
+    Retrieve a type information structure from a given numpy/python type.
+
+    Takes any valid type descriptor as input (np.dtype, int, type).
+    If dtype is an ndarray, the type of the ndarray will be determined.
+
+    NOTE: This function fetches actual data from the pre-generated `typeInfo`
+          array. Therefore, you must never modify the returned structure.
 
     Parameters
     ----------
-    dtype : object
-        Description of parameter `dtype`.
+    obj : object
+        The type object to retrieve the most fitting type information for.
 
     Returns
     -------
-    INFO_TYPE_s
-        Description of returned object.
+    INFO_TYPE_s *
+        A pointer to the type descriptor structure `INFO_TYPE_s`, which
+        resembles the requested type most closely.
 
+        NOTE: Never modify this structure!
+
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''
-    Return a pointer to a type descriptor (INFO_TYPE_s) for a given type
-    object. Takes any valid type descriptor as input (np.dtype, int, type).
-    This function fetches actual data from the pre-generated `typeInfo` array.
-
-    If dtype is an ndarray, the type of the ndarray will be determined.
-    '''
     cdef np.dtype ntype
 
-    if type(dtype) == type:
+    if type(obj) == type:
         # if dtype is a python type object, convert it to a numpy type container
-        ntype = np.dtype(dtype)
-    elif type(dtype) == int:
+        ntype = np.dtype(obj)
+    elif type(obj) == int:
         # then check for common types: np.dtype and int (numpy typenum)
-        ntype = np.PyArray_DescrFromType(dtype)
-    elif isinstance(dtype, np.ndarray):
+        ntype = np.PyArray_DescrFromType(obj)
+    elif isinstance(obj, np.ndarray):
         # if dtype is an ndarray, take the array type
-        ntype = dtype.dtype
-    elif not isinstance(dtype, np.dtype):
+        ntype = obj.dtype
+    elif not isinstance(obj, np.dtype):
         # throw an error if itself not a dtype
-        raise TypeError("Invalid type information %s" % (str(dtype)))
+        raise TypeError("Invalid type information %s" % (str(obj), ))
     else:
-        ntype = dtype
+        ntype = obj
 
     cdef ftype fusedType = typeSelection[ntype.type_num]
-    if fusedType == TYPE_INVALID:
-        raise TypeError("Not a fastmat fused type: %s" %(str(dtype)))
+    if fusedType >= TYPE_INVALID:
+        raise TypeError("Not a fastmat fused type: %s" %(str(obj), ))
 
     return &(typeInfo[fusedType])
 
 
-cdef ntype getNumpyType(object obj):
-    """Short summary.
+cpdef ntype getNumpyType(object obj) except *:
+    """
+    Return numpy type number for a given data type (or array).
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type or `numpy.ndarray` to query for.
 
     Returns
     -------
     ntype
-        Description of returned object.
+        The numpy type number for that type.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''Return numpy type number for a given or a given array's data type.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].numpyType
 
 
-cdef ftype getFusedType(object obj):
-    """Short summary.
+cpdef ftype getFusedType(object obj) except *:
+    """
+    Return fastmat type number for a given data type (or array).
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type or `numpy.ndarray` to query for.
 
     Returns
     -------
     ftype
-        Description of returned object.
+        The fastmat type number for that type.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
     '''Return fastmat type number for a given or a given array's data type.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].fusedType
 
 
-cpdef np.float64_t getTypeEps(object obj):
-    """Short summary.
+cpdef np.float64_t getTypeEps(object obj) except *:
+    """
+    Return eps for a given data type (or array).
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type or `numpy.ndarray` to query for.
 
     Returns
     -------
     np.float64_t
-        Description of returned object.
+        The epsilon value for that type.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''Return eps for a given or a given array's data type.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].eps
 
 
-cpdef np.float64_t getTypeMin(object obj):
-    """Short summary.
+cpdef np.float64_t getTypeMin(object obj) except *:
+    """
+    Return the minimum representable value for a given data type (or array).
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type or `numpy.ndarray` to query for.
 
     Returns
     -------
     np.float64_t
-        Description of returned object.
+        The minimum representable value for that type.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''
-    Return the minimum representable value for a given or a given array's data
-    type.
-    '''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].min
 
 
-cpdef np.float64_t getTypeMax(object obj):
-    """Short summary.
+cpdef np.float64_t getTypeMax(object obj) except *:
+    """
+    Return the maximum representable value for a given data type (or array).
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type or `numpy.ndarray` to query for.
 
     Returns
     -------
     np.float64_t
-        Description of returned object.
+        The maximum representable value for that type.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''
-    Return the maximum representable value for a given or a given array's data
-    type.
-    '''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].max
 
-cpdef isInteger(object obj):
-    """Short summary.
+cpdef bint isInteger(object obj) except *:
+    """
+    Return whether a given data type or an array's data type is integer.
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type to query for.
 
     Returns
     -------
     type
-        Description of returned object.
+        True if the data type is of integer kind.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''Return whether a given data type or an array's data type is integer.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isInt
 
-cpdef isFloat(object obj):
-    """Short summary.
+cpdef bint isFloat(object obj) except *:
+    """
+    Return whether a given data type or an array's data type is floating point.
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type to query for.
 
     Returns
     -------
     type
-        Description of returned object.
+        True if the data type is of floating point kind.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''
-    Return whether a given data type or an array's data type is floating point.
-    '''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isFloat
 
-cpdef isComplex(object obj):
-    """Short summary.
+cpdef bint isComplex(object obj) except *:
+    """
+    Return whether a given data type or an array's data type is complex.
 
     Parameters
     ----------
     obj : object
-        Description of parameter `obj`.
+        The object type to query for.
 
     Returns
     -------
-    type
-        Description of returned object.
+    bool
+        True if the data type is of complex kind.
 
+    Raises
+    ------
+    TypeError
+        When the type is not supported by fastmat.
     """
-    '''Return whether a given data type or an array's data type is complex.'''
     cdef INFO_TYPE_s *info = getTypeInfo(obj)
     return info[0].isComplex
 
 ################################################## type Promotion stuff
 
-cdef ftype promoteFusedTypes(ftype type1, ftype type2):
-    """Short summary.
+cdef ftype promoteFusedTypes(ftype type1, ftype type2) except *:
+    """
+    Return the fastmat type most suited for results based on given types.
 
     Parameters
     ----------
     type1 : ftype
-        Description of parameter `type1`.
+        The fastmat type identifier for one operation argument.
+
     type2 : ftype
-        Description of parameter `type2`.
+        The fastmat type identifier for another operation argument.
 
     Returns
     -------
     ftype
-        Description of returned object.
+        The fastmat type number that safely expands both argument types, such
+        that an operation on both can be held without numerical accuracy loss.
 
+    Raises
+    ------
+    ValueError
+        Invalid fastmat type identifier are passed.
     """
     if (type1 < 0) or (type2 >= NUM_TYPES) or \
        (type2 < 0) or (type2 >= NUM_TYPES):
@@ -339,18 +376,18 @@ cdef ftype promoteFusedTypes(ftype type1, ftype type2):
     return typeInfo[type1].promote[type2]
 
 cpdef object safeTypeExpansion(object dtype):
-    """Short summary.
+    """
+    Return a floating type expanding the given type with full accuracy.
 
     Parameters
     ----------
     dtype : object
-        Description of parameter `dtype`.
+        A type object to be expanded to float without numerical accuracy loss.
 
     Returns
     -------
     object
-        Description of returned object.
-
+        The safely expanded datatype
     """
     return (np.float32 if (dtype == np.int8) or (dtype == np.int16)
             else (np.float64 if (dtype == np.int32) or (dtype == np.int64)
@@ -419,15 +456,15 @@ for tt in range(NUM_TYPES):
 
 
 def _typeSelection():
-    """Short summary.
+    """
+    Print type map and selection table.
+
+    NOTE: This function is used for debugging of extension-type internals.
 
     Returns
     -------
-    type
-        Description of returned object.
-
+    None
     """
-    '''Print internals to assist debugging.'''
     print("typeSelection =")
     lst = [[] for ii in range(NUM_TYPES)]
     for ii in range(<int> np.NPY_NTYPES):
@@ -439,13 +476,14 @@ def _typeSelection():
 
 
 def _typeInfo():
-    """Short summary.
+    """
+    Print the type information table, also accessed by getTypeInfo.
+
+    NOTE: This function is used for debugging of extension-type internals.
 
     Returns
     -------
-    type
-        Description of returned object.
-
+    None
     """
     print("typeInfo =")
     for tt in range(NUM_TYPES):

@@ -214,9 +214,10 @@ cdef class Fourier(Matrix):
             arrRes = np.fft.fft(arrX, axis=0)
         else:
             arrRes = _arrEmpty(
-                2, self._numL, M,
-                typeInfo[promoteFusedTypes(
-                    self.fusedType, getFusedType(arrX))].numpyType)
+                2, self._numL, M, typeInfo[
+                    promoteFusedTypes(self.fusedType, getFusedType(arrX))
+                ].numpyType
+            )
 
             strideInit(&strResPadding, arrRes, 0)
             strideSliceElements(&strResPadding, self.order, -1, 1)

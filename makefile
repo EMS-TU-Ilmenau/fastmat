@@ -144,16 +144,26 @@ compile-coverage:
 	$(info * compiling fastmat package locally, with profiling and tracing)
 	$(PYTHON) setup.py build_ext --inplace --enable-cython-tracing
 
+.PHONY: coverage-submit
+coverage-submit:
+	coveralls
+
+.PHONY: coverage-report
+coverage-report:
+	coverage report
+
 .PHONY: coverage
-coverage: | compile-coverage
+coverage: | styleCheck compile-coverage
 	$(info * running coverage analysis)
-	coverage run --source=fastmat bee.py list makedump
+	coverage run --source=fastmat -m unittest test -v
+	coverage run -a --source=fastmat bee.py list makedump
 	coverage run -a --source=fastmat bee.py test -v -s .class
 	coverage run -a --source=fastmat bee.py test -v -s .transform
 	coverage run -a --source=fastmat bee.py test -v -s .algorithm
 	coverage run -a --source=fastmat bee.py calibrate Circulant
 	coverage run -a --source=fastmat bee.py test -vf -s Matrix.class Circulant.class
-	coverage run -a --source=fastmat bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=2
+	coverage run -a --source=fastmat bee.py benchmark maxIter=0.001 maxInit=0.01 minItems=2 compactStats=0
+	-rm ./*.dtypes.*.csv ./*.forward.*.csv ./*.overhead.*.csv
 
 # target 'doc': Compile documentation
 .PHONY: doc
@@ -183,12 +193,15 @@ testBee:
 		> test.benchmark.log
 	$(PYTHON) bee.py calibrate Circulant\
 		> test.calibrate.log
+	-rm ./*.dtypes.*.csv ./*.forward.*.csv ./*.overhead.*.csv
 
 
-# target ' testCode': Run unit tests
+# target 'testCode': Run unit tests
 .PHONY: testCode
 testCode: compile
 	$(info * running unit tests)
+	$(PYTHON) -m unittest test -v
+	$(info * running numeric unit tests)
 	$(PYTHON) bee.py test -v $(TEST_OPTIONS)
 
 

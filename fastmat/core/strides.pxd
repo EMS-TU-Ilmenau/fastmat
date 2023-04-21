@@ -34,20 +34,19 @@ ctypedef struct STRIDE_s:
     ftype           dtype
 
 ################################################## Basic stride operations
-cdef void strideInit(STRIDE_s *, np.ndarray, np.uint8_t)
+cdef void strideInit(STRIDE_s *, np.ndarray, np.uint8_t) except *
 cdef void strideCopy(STRIDE_s *, STRIDE_s *)
 cdef void strideSliceVectors(STRIDE_s *, intsize, intsize, intsize)
 cdef void strideSliceElements(STRIDE_s *, intsize, intsize, intsize)
-cdef void strideSubgridVector(STRIDE_s *,
-                              intsize, intsize,
-                              intsize, intsize, intsize, intsize)
+cdef void strideSubgrid(STRIDE_s *,
+                        intsize, intsize, intsize, intsize, intsize, intsize)
 cdef void strideFlipVectors(STRIDE_s *)
 cdef void strideFlipElements(STRIDE_s *)
 
-cdef stridePrint(STRIDE_s *, text=?)
+cdef void stridePrint(STRIDE_s *, text=?) except *
 
 
 ################################################## Operations with strides
-cdef opCopyVector(STRIDE_s *, intsize, STRIDE_s *, intsize)
-cdef opZeroVector(STRIDE_s *, intsize)
-cdef opZeroVectors(STRIDE_s *)
+cdef void opCopyVector(STRIDE_s *, intsize, STRIDE_s *, intsize) except *
+cdef void opZeroVector(STRIDE_s *, intsize)
+cdef void opZeroVectors(STRIDE_s *)

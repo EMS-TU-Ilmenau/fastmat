@@ -196,12 +196,16 @@ cdef class Hadamard(Matrix):
                 # element 5 |C | D | B
                 # element 6 |D |C  |  C
                 # element 7 |D |D |   D
-                strideSubgridVector(&strA, mm, 0,
-                                    1, butterflyDistance,
-                                    2 * butterflyDistance, butterflyCount)
-                strideSubgridVector(&strB, mm, butterflyDistance,
-                                    1, butterflyDistance,
-                                    2 * butterflyDistance, butterflyCount)
+                strideSubgrid(
+                    &strA, mm, 0,
+                    2 * butterflyDistance, 1,
+                    butterflyCount, butterflyDistance
+                )
+                strideSubgrid(
+                    &strB, mm, butterflyDistance,
+                    2 * butterflyDistance, 1,
+                    butterflyCount, butterflyDistance
+                )
 
                 if typeX == TYPE_FLOAT32:
                     _hadamardCore[np.float32_t](&strA, &strB, 0)
@@ -220,8 +224,7 @@ cdef class Hadamard(Matrix):
                 elif typeX == TYPE_INT8:
                     _hadamardCore[np.int8_t](&strA, &strB, 0)
                 else:
-                    raise NotImplementedError(
-                        "Hadamard: %d not supported." %(typeX))
+                    raise NotImplementedError("Unsupported type: %d" %(typeX))
 
                 butterflyDistance <<= 1
                 butterflyCount >>= 1

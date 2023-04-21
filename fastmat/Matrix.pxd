@@ -80,8 +80,8 @@ cdef class Matrix:
     cdef public Matrix      _colNormalized
     cdef public Matrix      _rowNormalized
     cdef public object      _largestEigenValue
+    cdef public object      _largestEigenVec
     cdef public object      _largestSingularValue
-    # cache for largestSingularVectors
     cdef public tuple       _largestSingularVectors
     cdef public object      _scipyLinearOperator # interface to scipy
     cdef public Matrix      _T                   # cache for transpose matrix

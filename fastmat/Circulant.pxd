@@ -31,5 +31,5 @@ cdef class Circulant(Partial):
     ############################################## class methods
     cpdef np.ndarray _preProcSlice(
         self, np.ndarray, int, np.ndarray, np.ndarray)
-    cpdef np.ndarray _genArrS(self, np.ndarray, np.ndarray, bint verbose=?)
+    cpdef np.ndarray _genArrS(self, np.ndarray, np.ndarray)
     cpdef np.ndarray _reference(self)
