@@ -938,22 +938,26 @@ class Test(Worker):
             }, TEST.CLASS: {
                 # define tests
                 TEST.QUERY: IgnoreDict({
-                    'arr'   : testArray,
-                    'iface' : testInterface,
-                    'item'  : testGetItem,
-                    'gCs'   : testGetColsSingle,
-                    'gCm'   : testGetColsMultiple,
-                    'gRs'   : testGetRowsSingle,
-                    'gRm'   : testGetRowsMultiple,
-                    'CnVec' : testColNorms,
-                    'RnVec' : testRowNorms,
-                    'CnMat' : testColNormsColNormalized,
-                    'RnMat' : testRowNormalized,
-                    'lSV'   : testLargestSV,
-                    'gram'  : testGram,
-                    'T'     : testTranspose,
-                    'H'     : testHermitian,
-                    'conj'  : testConjugate
+                    '0.ifc' : testInterface,
+                    '1.T'   : testTranspose,
+                    '1.H'   : testHermitian,
+                    '1.con' : testConjugate,
+                    '2.grm' : testGram,
+                    '2.lSV' : testLargestSV,
+                    '2.itm' : testGetItem,
+                    '3.gCs' : testGetColsSingle,
+                    '3.gCm' : testGetColsMultiple,
+                    '3.gRs' : testGetRowsSingle,
+                    '3.gRm' : testGetRowsMultiple,
+                    '4.arr' : testArray,
+                    '5.gCs' : testGetColsSingle,
+                    '5.gCm' : testGetColsMultiple,
+                    '5.gRs' : testGetRowsSingle,
+                    '5.gRm' : testGetRowsMultiple,
+                    '6.CnV' : testColNorms,
+                    '6.RnV' : testRowNorms,
+                    '6.CnM' : testColNormsColNormalized,
+                    '6.RnM' : testRowNormalized,
                 })
 
             }, TEST.TRANSFORMS: {
@@ -1182,7 +1186,12 @@ class Test(Worker):
                    for variant in resultTest.values()):
                 return
 
+        if len(resultTest) < 1:
+            print("No result status printable.")
+            return
+
         lenNameV=max(len(nameV) for nameV in resultTest.keys())
+
         if lenName < 1:
             lenName=len(nameTest)
 

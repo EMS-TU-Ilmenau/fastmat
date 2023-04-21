@@ -38,6 +38,10 @@ class TestClass(unittest.TestCase):
         )
 
     def test_Circulant(self):
+        dims = (11, 12)
+        self.assertEqual(
+            fm.Circulant(np.random.rand(*dims), verbose=True).tenC.shape, dims
+        )
         self.assertRaises(ValueError, lambda: fm.Circulant(np.zeros(())))
 
     def test_Diag(self):
@@ -106,7 +110,7 @@ class TestClass(unittest.TestCase):
             TypeError, lambda: fm.Matrix(sps.diags([1, 2, 3]))
         )
 
-        arrM = np.random.randn(25, 35)
+        arrM = np.random.randn(25, 35) + 1j * np.random.randn(25, 35)
         M = fm.Matrix(arrM)
         self.assertRaises(TypeError, lambda: M + 1)
         self.assertRaises(TypeError, lambda: 1 + M)
@@ -137,6 +141,7 @@ class TestClass(unittest.TestCase):
             fm.Hermitian, fm.Conjugate, fm.Transpose,
             fm.Inverse, fm.PseudoInverse
         ]:
+            repr(cc)
             self.assertRaises(TypeError, lambda: cc(None))
         
         self.assertRaises(ValueError, lambda: fm.Inverse(M))

@@ -11,16 +11,30 @@ class TestInterface(unittest.TestCase):
         A, B  = fm.Matrix(arrA), fm.Matrix(arrB)
 
         np.testing.assert_array_equal((A + B)[...], arrA + arrB)
-        np.testing.assert_array_equal((B + A)[...], arrB + arrA)
+        np.testing.assert_array_equal((A.__add__(B))[...], arrA + arrB)
+        np.testing.assert_array_equal((A.__radd__(B))[...], arrB + arrA)
         np.testing.assert_array_equal((A - B)[...], arrA - arrB)
-        np.testing.assert_array_equal((B - A)[...], arrB - arrA)
+        np.testing.assert_array_equal((A.__sub__(B))[...], arrA - arrB)
+        np.testing.assert_array_equal((A.__rsub__(B))[...], arrB - arrA)
 
         np.testing.assert_array_equal((A * B.T)[...], arrA @ arrB.T)
-        np.testing.assert_array_equal((B * A.T)[...], arrB @ arrA.T)
+        np.testing.assert_array_equal((A.__mul__(B.T))[...], arrA @ arrB.T)
+        np.testing.assert_array_equal((A.T.__rmul__(B))[...], arrB @ arrA.T)
         np.testing.assert_array_equal((A * 2.)[...], arrA * 2.)
-        np.testing.assert_array_equal((2. * A)[...], 2. * arrA)
+        np.testing.assert_array_equal((A.__mul__(2.))[...], arrA * 2.)
+        np.testing.assert_array_equal((A.__rmul__(2.))[...], 2. * arrA)
 
         np.testing.assert_array_equal((A / 2.)[...], arrA / 2.)
+
+        self.assertEqual(len(A), 0)
+        self.assertEqual(len(A + B), 2)
+
+        self.assertRaises(TypeError, lambda: A.__add__(2))
+        self.assertRaises(TypeError, lambda: A.__radd__(2))
+        self.assertRaises(TypeError, lambda: A.__sub__(2))
+        self.assertRaises(TypeError, lambda: A.__rsub__(2))
+        self.assertRaises(TypeError, lambda: A.__mul__('ab'))
+        self.assertRaises(TypeError, lambda: A.__rmul__('cd'))
 
     def test_properties(self):
         # Prepare some low-rank matrix with known values/vectors,
@@ -85,41 +99,91 @@ class TestInterface(unittest.TestCase):
             self.assertTrue(isinstance(repr(ii), str))
 
     def test_slicing(self):
-        arr = np.random.randn(25, 35)
-        instance = fm.Matrix(arr)
+        d = 5
+        n, m = 5 * d, 7 * d
+        arrH, arrV = np.random.randn(n), np.random.randn(m)
+        arr = np.outer(arrH, arrV)
+        np.set_printoptions(edgeitems=100, linewidth=250)
+        for inst in [fm.Matrix(arr), fm.Outer(arrH, arrV)]:
+            idxR = np.arange(arr.shape[0])
+            idxC = np.arange(arr.shape[1])
 
-        idxR = np.arange(arr.shape[0])
-        idxC = np.arange(arr.shape[1])
-        # Test the individual single- and batch row- and column access methods
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc].reshape((-1, 1)) for cc in idxC]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :].reshape((1, -1)) for rr in idxR]), arr
-        )
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc] for cc in np.split(idxC, 5)]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :] for rr in np.split(idxR, 5)]), arr
-        )
-        # Now fetch the whole array at once
-        np.testing.assert_array_equal(
-            instance[...], arr
-        )
-        # And repeat the same from above, but this time with cache in place
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc].reshape((-1, 1)) for cc in idxC]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :].reshape((1, -1)) for rr in idxR]), arr
-        )
-        np.testing.assert_array_equal(
-            np.hstack([instance[:, cc] for cc in np.split(idxC, 5)]), arr
-        )
-        np.testing.assert_array_equal(
-            np.vstack([instance[rr, :] for rr in np.split(idxR, 5)]), arr
-        )
+            # Test access methods for single- and batch rows and columns
+            np.testing.assert_array_equal(
+                np.hstack([inst[:, cc].reshape((-1, 1)) for cc in idxC]), arr
+            )
+            np.testing.assert_array_equal(
+                np.vstack([inst[rr, :].reshape((1, -1)) for rr in idxR]), arr
+            )
+            np.testing.assert_array_equal(
+                np.hstack([inst[:, cc:cc + d] for cc in idxC[::d]]), arr
+            )
+            np.testing.assert_array_equal(
+                np.vstack([inst[rr:rr + d, :] for rr in idxR[::d]]), arr
+            )
+            np.testing.assert_array_equal(
+                np.hstack([inst[..., cc:cc + d] for cc in idxC[::d]]), arr
+            )
+            np.testing.assert_array_equal(
+                np.vstack([inst[rr:rr + d, ...] for rr in idxR[::d]]), arr
+            )
+            np.testing.assert_array_equal(
+                np.hstack([
+                    np.vstack([
+                        inst[rr:rr + d, cc:cc + d] for rr in idxR[::d]
+                    ]) for cc in idxC[::d]
+                ]), arr
+            )
+            np.testing.assert_array_equal(
+                np.hstack([inst[:, cc] for cc in np.split(idxC, 5)]), arr
+            )
+            np.testing.assert_array_equal(
+                np.vstack([inst[rr, :] for rr in np.split(idxR, 5)]), arr
+            )
+            np.testing.assert_array_equal(
+                np.hstack([inst[..., cc] for cc in np.split(idxC, 5)]), arr
+            )
+            np.testing.assert_array_equal(
+                np.vstack([inst[rr, ...] for rr in np.split(idxR, 5)]), arr
+            )
+
+            # Now fetch the whole array at once
+            np.testing.assert_array_equal(inst[...], arr
+                                          )
+            # And repeat from above, but this time with cache in place
+            np.testing.assert_array_equal(
+                np.hstack([inst[:, cc].reshape((-1, 1)) for cc in idxC]), arr
+            )
+            np.testing.assert_array_equal(
+                np.vstack([inst[rr, :].reshape((1, -1)) for rr in idxR]), arr
+            )
+            np.testing.assert_array_equal(
+                np.hstack([inst[:, cc] for cc in np.split(idxC, 5)]), arr
+            )
+            np.testing.assert_array_equal(
+                np.vstack([inst[rr, :] for rr in np.split(idxR, 5)]), arr
+            )
+
+            self.assertRaises(IndexError, lambda: inst[:, :, :])
+            self.assertRaises(IndexError, lambda: inst[:])
+            self.assertRaises(IndexError, lambda: inst[0])
+            self.assertRaises(IndexError, lambda: inst.getRow(-1))
+            self.assertRaises(IndexError, lambda: inst.getRow(n))
+            self.assertRaises(IndexError, lambda: inst.getCol(-1))
+            self.assertRaises(IndexError, lambda: inst.getCol(m))
+
+            self.assertRaises(TypeError, lambda: inst['a', 'b'])
+            self.assertRaises(TypeError, lambda: inst['a', :])
+            self.assertRaises(TypeError, lambda: inst[:, 'b'])
+            self.assertRaises(TypeError, lambda: inst.getCol(np.zeros((2, 2))))
+            self.assertRaises(TypeError, lambda: inst.getRow(np.zeros((2, 2))))
+            for exception, dtype in [(IndexError, int), (TypeError, float)]:
+                self.assertRaises(
+                    exception, lambda: inst[:, np.zeros((2, 2), dtype=dtype)]
+                )
+                self.assertRaises(
+                    exception, lambda: inst[np.zeros((2, 2), dtype=dtype), :]
+                )
 
     def test_utilities(self):
         arr = np.random.randn(25, 35)

@@ -392,36 +392,37 @@ cdef class Matrix(object):
 
         Parameters
         ----------
-        indices : int OR :py:class:`numpy.ndarray`
+        indices : int, slice or :py:class:`numpy.ndarray`
             If an integer is given, this is equal to the output of
             :py:meth:`getCol`(indices).
-            If a 1d vector is given, a 2d :py:class:`numpy.ndarray` containing
-            the columns, as specified by the indices in `indices`, is returned
+            If a 1D vector or slice is given, a 2D :py:class:`numpy.ndarray`
+            containing the columns as requested by `indices` is returned.
 
         Returns
         -------
-            1d or 2d (depending on type of `indices`) :py:class:`numpy.ndarray`
+            1D or 2D (depending on type of `indices`) :py:class:`numpy.ndarray`
             holding the specified column(s).
         """
-        cdef np.ndarray arrResult, arrIdx
-        cdef intsize ii, numSize
-
         if np.isscalar(indices):
-            arrResult = self.getCol(indices)
+            return self.getCol(indices)
+        elif self._array is not None:
+            return self._array[:, indices]
+
+        cdef np.ndarray arrIdx
+        if isinstance(indices, slice):
+            arrIdx = np.arange(*indices.indices(self.numCols))
         else:
             arrIdx = np.array(indices)
-            if arrIdx.ndim > 1:
-                raise ValueError("Index array must have at most one dimension.")
 
-            # if a dense representation already exists, use it!
-            if self._array is not None:
-                arrResult = self._array[:, indices]
-            else:
-                numSize = arrIdx.size
-                arrResult = _arrEmpty(2, self.numRows, numSize, self.numpyType)
+        if arrIdx.ndim > 1:
+            raise IndexError("Index array must have at most one dimension.")
 
-                for ii in range(numSize):
-                    arrResult[:, ii] = self.getCol(arrIdx[ii])
+        cdef intsize ii, numSize = arrIdx.size
+        cdef np.ndarray arrResult = _arrEmpty(
+            2, self.numRows, numSize, self.numpyType
+        )
+        for ii in range(numSize):
+            arrResult[:, ii] = self.getCol(arrIdx[ii])
 
         return arrResult
 
@@ -438,8 +439,11 @@ cdef class Matrix(object):
         -------
             1d-:py:class:`numpy.ndarray` holding the specified column.
         """
+        if not np.isscalar(idx):
+            raise TypeError("Scalar index required.")
+
         if idx < 0 or idx >= self.numCols:
-            raise ValueError("Column index exceeds matrix dimensions.")
+            raise IndexError("Column index exceeds matrix dimensions.")
 
         # if a dense representation already exists, use it!
         if self._array is not None:
@@ -459,36 +463,38 @@ cdef class Matrix(object):
 
         Parameters
         ----------
-        indices : int OR :py:class:`numpy.ndarray`
+        indices : int, slice or :py:class:`numpy.ndarray`
             If an integer is given, this is equal to the output of
             :py:meth:`getRow`(indices).
-            If a 1d vector is given, a 2d :py:class:`numpy.ndarray` containing
-            the rows, as specified by the indices in `indices`, is returned
+            If a 1D vector or slice is given, a 2D :py:class:`numpy.ndarray`
+            containing the rows as requested by `indices` is returned.
 
         Returns
         -------
-            1d or 2d (depending on type of `indices`) :py:class:`numpy.ndarray`
+            1D or 2D (depending on type of `indices`) :py:class:`numpy.ndarray`
             holding the specified row(s).
         """
-        cdef np.ndarray arrResult, arrIdx
-        cdef intsize ii, numSize
-
         if np.isscalar(indices):
-            arrResult = self.getRow(indices)
+            return self.getRow(indices)
+        elif self._array is not None:
+            return self._array[indices, :]
+
+        cdef np.ndarray arrIdx
+        if isinstance(indices, slice):
+            arrIdx = np.arange(*indices.indices(self.numRows))
         else:
             arrIdx = np.array(indices)
-            if arrIdx.ndim > 1:
-                raise ValueError("Index array must have at most one dimension.")
+
+        if arrIdx.ndim > 1:
+            raise IndexError("Index array must have at most one dimension.")
 
             # if a dense representation already exists, use it!
-            if self._array is not None:
-                arrResult = self._array[indices, :]
-            else:
-                numSize = arrIdx.size
-                arrResult = _arrEmpty(2, numSize, self.numCols, self.numpyType)
-
-                for ii in range(numSize):
-                    arrResult[ii, :] = self.getRow(arrIdx[ii])
+        cdef intsize ii, numSize = arrIdx.size
+        cdef np.ndarray arrResult = _arrEmpty(
+            2, numSize, self.numCols, self.numpyType
+        )
+        for ii in range(numSize):
+            arrResult[ii, :] = self.getRow(arrIdx[ii])
 
         return arrResult
 
@@ -505,8 +511,11 @@ cdef class Matrix(object):
         -------
             1d-:py:class:`numpy.ndarray` holding the specified row.
         """
+        if not np.isscalar(idx):
+            raise TypeError("Scalar index required.")
+
         if idx < 0 or idx >= self.numRows:
-            raise ValueError("Row index exceeds matrix dimensions.")
+            raise IndexError("Row index exceeds matrix dimensions.")
 
         # if a dense representation already exists, use it!
         if self._array is not None:
@@ -527,88 +536,115 @@ cdef class Matrix(object):
         Parameters
         ----------
         tplIdx : tuple
-            Element index or slice objects. The tuple contains either one
-            Ellipsis object or two objects of type `int`, iterable or `slice`.
+            Element index or slicing the matrix. The tuple contains either one
+            Ellipsis or two objects of either type `int`, iterable or `slice`.
 
         Returns
         -------
-        If `tplIdx` is of type (int, int)
-            Return the single element at the given index
-
-        If `tplIdx` is of type (int, iterable or slice)
-            Return the row indexed by `int` as 1d :py:class:`numpy.ndarray`, or
-            a selection of it.
-
-        if `tplIdx` is of type (iterable or slice, int)
-            Return the column indexed by `int` as 1d :py:class:`numpy.ndarray`,
-            or a selection of it.
-
-        if `tplIdx` is of type (iterable or slice, iterable or slice)
-            Return a subselection of the matrix' array representation as
-            2d :py:class:`numpy.ndarray`.
-
         if `tplIdx` is of type (ellipsis):
             Return the full matrix' array representation as
             2d :py:class:`numpy.ndarray`.
+
+        If `tplIdx` is of type (int, int)
+            Return the single element at the given index
+
+        If `tplIdx` is of type (int, iterable or slice or ndarray or Ellipsis)
+            Return the row indexed by `int` as 1d :py:class:`numpy.ndarray`.
+
+        If `tplIdx` is of type (iterable or slice or ndarray or Ellipsis, int)
+            Return the column indexed by `int` as 1d :py:class:`numpy.ndarray`.
+
+        if both `tplIdx` element types are iterable, slice, ndarray or Ellipsis
+            Return a subselection of the matrix' array representation as
+            2d :py:class:`numpy.ndarray`.
         """
-        if tplIdx is Ellipsis:
-            return self.array
-        elif not isinstance(tplIdx, tuple) or len(tplIdx) != 2:
-            raise ValueError("Applied matrix indexing not supported.")
+        def convert_selector(object index, intsize size):
+            # Interpret the indexing structure convert slices to ranges
+            # After that we have either an ndarray object (arbitrary indexing),
+            # tuple object describing regular indexing (start, stop, step) or an
+            # int object (for element or single-row/column access).
+            # For each type of object, immediately collapse single-item ranges.
+            cdef np.ndarray arr
+            cdef slice slc
 
-        cdef bint fullAccessCols, fullAccessRows
-        cdef slice slcCol, slcRow
-        cdef tuple idxCols, idxRows
-        cdef intsize numCols, numRows
+            if isinstance(index, (list, tuple, np.ndarray)):
+                arr = _arrSqueeze1D(index, 0)
+                if not isInteger(arr):
+                    raise TypeError(
+                        "Group indexing only allows int vectors."
+                    )
 
-        # from here on we know it's a 2D tuple. Access the _array if available
-        if self._array is not None:
-            return self._array[tplIdx[0], tplIdx[1]]
-        elif isinstance(tplIdx[0], slice):
-            slcRow = tplIdx[0]
-            if isinstance(tplIdx[1], slice):
-                # double slice! Check if complete cols or rows may be requested
-                slcCol = tplIdx[1]
+                if arr.ndim != 1:
+                    raise IndexError(
+                        "Group indexing vector must be 1D."
+                    )
 
-                # determine slice index ranges, number of requested elements
-                # along each axis and whether full axis access is possible
-                idxRows = slcRow.indices(self.numRows)
-                idxCols = slcCol.indices(self.numCols)
-                numRows = (idxRows[1] - idxRows[0]) // idxRows[2]
-                numCols = (idxCols[1] - idxCols[0]) // idxCols[2]
-                fullAccessCols = (numRows == self.numRows and
-                                  idxRows == (0, self.numRows, 1))
-                fullAccessRows = (numCols == self.numCols and
-                                  idxCols == (0, self.numCols, 1))
+                return (arr[0] if arr.size == 1 else arr, arr.size)
 
-                # check if the slices result in a true element access
-                if numRows == 1 and numCols == 1:
-                    return self._getItem(idxRows[0], idxCols[0])
+            elif index is Ellipsis:
+                return (Ellipsis, size)
 
-                # depending on this information access the array in the most
-                # efficient way
-                if fullAccessCols and fullAccessRows:
-                    return self.array
-                elif fullAccessCols:
-                    return self.getCols(np.arange(*idxRows))
-                elif fullAccessRows:
-                    return self.getRows(np.arange(*idxCols))
-                else:
-                    # do what involves less resulting memory
-                    if numCols * self.numRows < numRows * self.numCols:
-                        return self.getCols(np.arange(*idxCols))[slcRow, ...]
-                    else:
-                        return self.getRows(np.arange(*idxRows))[..., slcCol]
+            elif isinstance(index, slice):
+                slc = slice(*index.indices(size))
+                return (Ellipsis, size) if (
+                    slc.start == 0 and slc.stop == size and slc.step == 1
+                ) else (slc, (slc.stop - slc.start) / slc.step)
 
+            elif np.isscalar(index):
+                return (index, 1)
             else:
-                # Column-access!
-                return self.getCols(tplIdx[1])[slcRow, ...]
-        elif np.isscalar(tplIdx[0]) and np.isscalar(tplIdx[1]):
-            # True element access!
-            return self._getItem(*tplIdx)
+                raise TypeError(
+                    "Axis index is neither iterable, slice or int."
+                )
+
+        cdef object rowSelector = Ellipsis
+        cdef object colSelector = Ellipsis
+        cdef intsize rowCount = self.numRows
+        cdef intsize colCount = self.numCols
+
+        # If there's a dense _array available, use it. Otherwise interpret
+        # the given index tuple into its row and column components
+        if tplIdx is not Ellipsis:
+            if not isinstance(tplIdx, tuple):
+                raise IndexError("Invalid type of indexing tuple.")
+            elif len(tplIdx) < 1 or len(tplIdx) > 2:
+                raise IndexError("None or too many indices given.")
+
+            rowSelector, rowCount = convert_selector(
+                tplIdx[0], self.numRows
+            )
+            if len(tplIdx) > 1:
+                colSelector, colCount = convert_selector(
+                    tplIdx[1], self.numCols
+                )
+
+        if np.isscalar(rowSelector):
+            if np.isscalar(colSelector):
+                #   (1) [int, int]
+                return self._getItem(rowSelector, colSelector)
+            else:
+                #   (3) [int, ellipsis], [int, slice], [int, ndarray]
+                return self._getRow(rowSelector)[colSelector]
+        elif np.isscalar(colSelector):
+            #       (3) [ellipsis, int], [slice, int], [ndarray, int]
+            return self._getCol(colSelector)[rowSelector]
+        elif rowSelector is Ellipsis:
+            if colSelector is Ellipsis:
+                #   (1) [ellipsis, ellipsis]
+                return self.array
+            else:
+                #   (2) [ellipsis, slice], [ellipsis, ndarray]
+                return self.getCols(colSelector)
+        elif colSelector is Ellipsis:
+            #       (2) [slice, ellipsis], [ndarray, ellipsis]
+            return self.getRows(rowSelector)
         else:
-            # Row access!
-            return self.getRows(tplIdx[0])[..., tplIdx[1]]
+            #       (4) all permutations of slice and ndarray for row and col
+            # Use rows or columns, depending on which selects fewer vectors
+            return None if (rowCount <= 0) or (colCount <= 0) else (
+                self.getRows(rowSelector)[colSelector] if rowCount < colCount
+                else self.getCols(colSelector)[rowSelector]
+            )
 
     cpdef object _getItem(self, intsize idxRow, intsize idxCol):
         '''Internally overloadable method for customizing self.getItem.'''
@@ -1418,14 +1454,15 @@ cdef class Matrix(object):
             numVectors
         )
         return (
-            estBypassFwd
-            if ((self._array is not None or self.bypassAutoArray) and
-                self.bypassAllow and (estBypassFwd < estAlgFwd))
-            else estAlgFwd,
-            estBypassBwd
-            if ((self._arrayH is not None or self.bypassAutoArray) and
-                self.bypassAllow and (estBypassBwd < estAlgBwd))
-            else estAlgBwd
+            estBypassFwd if (
+                (self._array is not None or self.bypassAutoArray) and
+                self.bypassAllow and (estBypassFwd < estAlgFwd)
+            ) else estAlgFwd
+        ), (
+            estBypassBwd if (
+                (self._arrayH is not None or self.bypassAutoArray) and
+                self.bypassAllow and (estBypassBwd < estAlgBwd)
+            ) else estAlgBwd
         )
 
     ############################################## class methods

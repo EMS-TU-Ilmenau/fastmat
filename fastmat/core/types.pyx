@@ -111,7 +111,7 @@ cdef ftype approximateType(INFO_TYPE_s *dtype):
     return TYPE_INVALID
 
 
-cdef INFO_TYPE_s * getTypeInfo(object dtype) except *:
+cdef INFO_TYPE_s * getTypeInfo(object obj) except *:
     """
     Retrieve a type information structure from a given numpy/python type.
 
@@ -123,7 +123,7 @@ cdef INFO_TYPE_s * getTypeInfo(object dtype) except *:
 
     Parameters
     ----------
-    dtype : object
+    obj : object
         The type object to retrieve the most fitting type information for.
 
     Returns
@@ -141,24 +141,24 @@ cdef INFO_TYPE_s * getTypeInfo(object dtype) except *:
     """
     cdef np.dtype ntype
 
-    if type(dtype) == type:
+    if type(obj) == type:
         # if dtype is a python type object, convert it to a numpy type container
-        ntype = np.dtype(dtype)
-    elif type(dtype) == int:
+        ntype = np.dtype(obj)
+    elif type(obj) == int:
         # then check for common types: np.dtype and int (numpy typenum)
-        ntype = np.PyArray_DescrFromType(dtype)
-    elif isinstance(dtype, np.ndarray):
+        ntype = np.PyArray_DescrFromType(obj)
+    elif isinstance(obj, np.ndarray):
         # if dtype is an ndarray, take the array type
-        ntype = dtype.dtype
-    elif not isinstance(dtype, np.dtype):
+        ntype = obj.dtype
+    elif not isinstance(obj, np.dtype):
         # throw an error if itself not a dtype
-        raise TypeError("Invalid type information %s" % (str(dtype)))
+        raise TypeError("Invalid type information %s" % (str(obj), ))
     else:
-        ntype = dtype
+        ntype = obj
 
     cdef ftype fusedType = typeSelection[ntype.type_num]
     if fusedType >= TYPE_INVALID:
-        raise TypeError("Not a fastmat fused type: %s" %(str(dtype)))
+        raise TypeError("Not a fastmat fused type: %s" %(str(obj), ))
 
     return &(typeInfo[fusedType])
 
