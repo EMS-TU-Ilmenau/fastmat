@@ -288,14 +288,18 @@ class TestClass(unittest.TestCase):
 
         T3A = fm.Toeplitz(tenT, split=3 * (split, ))
         T3B = fm.Toeplitz(tenT[:9, :9, :9])
+        T3C = fm.Toeplitz(tenT, split=3 * (tenT.shape[0] - split, ))
         np.testing.assert_array_equal(T3A[...], T3A.reference())
         np.testing.assert_array_equal(T3B[...], T3B.reference())
+        np.testing.assert_array_equal(T3C[...], T3C.reference())
         np.testing.assert_array_equal(T3A.vecC, arrC)
         np.testing.assert_array_equal(T3A.vecR, arrR)
         np.testing.assert_array_equal(T3A.tenT, tenT)
+        np.testing.assert_array_equal(T3B.tenT, tenT[:9, :9, :9])
+        np.testing.assert_array_equal(T3C.tenT, tenT)
         self.assertRaises(ValueError, lambda: fm.Toeplitz(tenT))
         self.assertRaises(
-            ValueError, lambda: fm.Toeplitz(tenT, split=np.zeros((2, 2)))
+            ValueError, lambda: fm.Toeplitz(tenT, split=np.zeros((3, 3)))
         )
         self.assertRaises(
             ValueError, lambda: fm.Toeplitz(tenT, split=4 * (split, ))
@@ -310,7 +314,8 @@ class TestClass(unittest.TestCase):
             ValueError, lambda: fm.Toeplitz(tenT, split=[4, 4, 11])
         )
 
-        arrT3A, arrT3B = T3A.reference(), T3B.reference()
+        arrT3A, arrT3B, arrT3C = \
+            T3A.reference(), T3B.reference(), T3C.reference()
         np.testing.assert_allclose(
             T3A.colNormalized[...],
             arrT3A / np.linalg.norm(arrT3A, axis=0)[np.newaxis, :],
@@ -329,5 +334,15 @@ class TestClass(unittest.TestCase):
         np.testing.assert_allclose(
             T3B.rowNormalized[...],
             arrT3B / np.linalg.norm(arrT3B, axis=1)[:, np.newaxis],
+            rtol=1e-12, atol=1e-15
+        )
+        np.testing.assert_allclose(
+            T3C.colNormalized[...],
+            arrT3C / np.linalg.norm(arrT3C, axis=0)[np.newaxis, :],
+            rtol=1e-12, atol=1e-15
+        )
+        np.testing.assert_allclose(
+            T3C.rowNormalized[...],
+            arrT3C / np.linalg.norm(arrT3C, axis=1)[:, np.newaxis],
             rtol=1e-12, atol=1e-15
         )
