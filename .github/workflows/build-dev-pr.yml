@@ -26,7 +26,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
 #        python-version: ["3.7", "3.9", "3.10", "3.11"]
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.12"]
         include:
 #          # Numpy C-API 0x12
 #          - python-version: "3.7"
@@ -50,12 +50,12 @@ jobs:
             cibw-archs-windows: "AMD64"
             pip-requires: "cython>=0.29 numpy==1.21.6 scipy==1.7.3 cibuildwheel==2.12.1 twine"
           # Numpy C-API 0x16
-          - python-version: "3.11"
-            cibw-build: "cp311*"
+          - python-version: "3.12"
+            cibw-build: "cp311* cp312*"
             cibw-archs-linux: "x86_64"
             cibw-archs-macos: "x86_64"
             cibw-archs-windows: "AMD64"
-            pip-requires: "cython>=0.29 numpy==1.24.2 scipy==1.10.1 cibuildwheel==2.12.1 twine"
+            pip-requires: "cython>=0.29 numpy==1.26.4 scipy==1.12.0 cibuildwheel==2.17.0 twine"
 
     steps:
     - uses: actions/checkout@v3
@@ -98,7 +98,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["macos-latest"]
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.12"]
         include:
           # Numpy C-API 0x13
           - python-version: "3.9"
@@ -111,10 +111,10 @@ jobs:
             cibw-archs-macos: "arm64"
             pip-requires: "cython>=0.29 numpy==1.21.6 scipy==1.7.3 cibuildwheel==2.12.1 twine"
           # Numpy C-API 0x16
-          - python-version: "3.11"
-            cibw-build: "cp311*"
+          - python-version: "3.12"
+            cibw-build: "cp311* cp312*"
             cibw-archs-macos: "arm64"
-            pip-requires: "cython>=0.29 numpy==1.24.2 scipy==1.10.1 cibuildwheel==2.12.1 twine"
+            pip-requires: "cython>=0.29 numpy==1.26.4 scipy==1.12.0 cibuildwheel==2.17.0 twine"
 
     steps:
     - uses: actions/checkout@v3
