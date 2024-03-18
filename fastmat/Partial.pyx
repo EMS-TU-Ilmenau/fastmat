@@ -131,7 +131,7 @@ cdef class Partial(Matrix):
 
         # initialize matrix for full support (used anyway for checking)
         if not isinstance(mat, Matrix):
-            raise ValueError("Partial: fastmat Matrix required.")
+            raise TypeError("Partial: fastmat Matrix required.")
 
         self._content = (mat, )
 

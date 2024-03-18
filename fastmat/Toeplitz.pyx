@@ -66,7 +66,7 @@ cdef class Toeplitz(Partial):
         def __get__(self):
             import warnings
             warnings.warn('vecC is deprecated.', FutureWarning)
-            return self._tenT[:self._arrDimCols[0]]
+            return self._tenT[:self._arrDimRows[0]]
 
     property vecR:
         r"""Return the row-defining vector of Toeplitz matrix."""
@@ -74,7 +74,7 @@ cdef class Toeplitz(Partial):
         def __get__(self):
             import warnings
             warnings.warn('vecR is deprecated.', FutureWarning)
-            return self._tenT[self._arrDimCols[0]:]
+            return self._tenT[-self._arrDimCols[0] + 1:]
 
     def __init__(self, *args, **options):
         '''
@@ -202,7 +202,6 @@ cdef class Toeplitz(Partial):
             )
         elif any(ll < 1 or ll > arrDim[ii]
                  for ii, ll in enumerate(arrSplit)):
-            print(arrDim, arrSplit, (<object> self._tenT).shape)
             raise ValueError(
                 "Entry in split vector outside of defining tensor bounds"
             )

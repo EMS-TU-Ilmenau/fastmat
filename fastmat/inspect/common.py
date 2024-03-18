@@ -165,68 +165,6 @@ class IgnoreFunc(object):
         return self._fun(*args, **kwargs)
 
 
-################################################## paramApplyDefaults()
-def paramApplyDefaults(
-    params,
-    templates=None,
-    templateKey=None,
-    extraArgs=None
-):
-    """Short summary.
-
-    Parameters
-    ----------
-    params : type
-        Description of parameter `params`.
-    templates : type
-        Description of parameter `templates`.
-    templateKey : type
-        Description of parameter `templateKey`.
-    extraArgs : type
-        Description of parameter `extraArgs`.
-
-    Returns
-    -------
-    type
-        Description of returned object.
-
-    """
-
-    # have some defaults from templates
-    # first, fetch the template as defaults, then update with target,
-    # then assign the whole dict to target
-    result = {}
-    if templates is not None:
-        # 1. COMMON - section of templates (lowest-priority)
-        result.update(templates.get(NAME.COMMON, {}))
-        # 2. the templates-section corresponding to the templateKey
-        result.update(templates.get(templateKey, {}))
-        # 3. specific reference to a template by the 'template' key in params
-        if NAME.TEMPLATE in params:
-            result.update(templates.get(params[NAME.TEMPLATE], {}))
-
-    # 4. actual parameters (params)
-    result.update(params)
-
-    # 5. extraArgs (which usually come from command-line) (top-priority)
-    if extraArgs is not None:
-        for p in extraArgs:
-            for pp in list(p.split(',')):
-                tokens = pp.split('=')
-                if len(tokens) >= 2:
-                    string = "=".join(tokens[1:])
-                    try:
-                        val = int(string)
-                    except ValueError:
-                        try:
-                            val = float(string)
-                        except ValueError:
-                            val = string
-                    result[tokens[0]] = val
-
-    return paramDict(result)
-
-
 ################################################## paramPermute()
 def paramPermute(dictionary, copy=True, PermutationClass=Permutation):
     """Short summary.

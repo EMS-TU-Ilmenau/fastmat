@@ -23,6 +23,15 @@ from .Matrix cimport Matrix
 from .core.types cimport *
 from .core.cmath cimport _dotSingleRow, _conjugateInplace, _arrEmpty
 
+
+def _parametric_test_complex(x, y):
+    return x * np.int8(2) - np.complex64(1j) * y
+
+
+def _parametric_test_real(x, y):
+    return x * np.int8(2) - np.int8(3) * y
+
+
 cdef class Parametric(Matrix):
     r"""
 
@@ -310,6 +319,26 @@ cdef class Parametric(Matrix):
     ############################################## class inspection, QM
     def _getTest(self):
         from .inspect import TEST, dynFormat
+
+        def _initArgs(param):
+            return [
+                param['vecX'](), param['vecY'](),
+                TEST.IgnoreFunc(
+                    _parametric_test_complex
+                    if param['complexFun']
+                    else _parametric_test_real
+                )
+            ]
+
+        def _strC(param):
+            return ('complex' if param['complexFun'] else 'real')
+
+        def _strV(param):
+            return ('vector' if param['rangeAccess'] else 'single')
+
+        def _ignore(param):
+            return (param['typeX'] == param['typeY'] == np.int8)
+
         return {
             TEST.COMMON: {
                 # define parameters for test
@@ -333,61 +362,69 @@ cdef class Parametric(Matrix):
 
                 # define constructor for test instances and naming of test
                 TEST.OBJECT     : Parametric,
-                TEST.INITARGS   : (lambda param: [
-                    param['vecX'](),
-                    param['vecY'](),
-                    (TEST.IgnoreFunc(lambda x, y:
-                                     x * np.int8(2) - np.complex64(1j) * y)
-                     if param['complexFun']
-                     else TEST.IgnoreFunc(lambda x, y :
-                                          x * np.int8(2) - np.int8(3) * y))
-                ]),
+                TEST.INITARGS   : _initArgs,
                 TEST.INITKWARGS : {'rangeAccess': 'rangeAccess'},
 
                 # name the test instances individually to reflect test scenario
-                'strC'          : (lambda param:
-                                   ('complex' if param['complexFun']
-                                    else 'real')),
-                'strV'          : (lambda param:
-                                   ('vector' if param['rangeAccess']
-                                    else 'single')),
+                'strC'          : _strC,
+                'strV'          : _strV,
                 TEST.NAMINGARGS : dynFormat("x:%s,y:%s,%s,%s",
                                             'vecX', 'vecY', 'strV', 'strC'),
                 TEST.TOL_POWER  : 4.
             },
             TEST.CLASS: {
                 # ignore int8 datatype as there will be overflows
-                TEST.IGNORE     : TEST.IgnoreFunc(lambda param: (
-                    param['typeX'] == param['typeY'] == np.int8))
+                TEST.IGNORE     : TEST.IgnoreFunc(_ignore)
             },
             TEST.TRANSFORMS: {}
         }
 
     def _getBenchmark(self):
         from .inspect import BENCH
+
+        def _common_func_gen(c):
+            def _func(x, y):
+                return np.sin(2 * np.pi * x ** y)
+
+            support = np.arange(c).astype(np.double) / c
+            return Parametric(support, support, _func)
+
+        def _common_func_size(c):
+            return c
+
+        def _common_func_step(c):
+            return c * 10 ** (1. / 12)
+
+        def _overhead_func_gen(c):
+            return _dtypes_func_gen(c, float)
+
+        def _overhead_dtypes_func_size(c):
+            return 2 ** c
+
+        def _overhead_func_step(c):
+            return c + 1
+
+        def _dtypes_func_gen(c, datatype):
+            def _func(x, y):
+                return datatype(1)
+
+            support = np.arange(2 ** c).astype(datatype) / (2 ** c)
+            return Parametric(support, support, _func)
+
         return {
             BENCH.COMMON: {
-                BENCH.FUNC_GEN  : (lambda c: Parametric(
-                    np.arange(c).astype(np.double) / c,
-                    np.arange(c).astype(np.double) / c,
-                    (lambda x, y: np.sin(2 * np.pi * x ** y)))),
-                BENCH.FUNC_SIZE : (lambda c: c),
-                BENCH.FUNC_STEP : (lambda c: c * 10 ** (1. / 12))
+                BENCH.FUNC_GEN  : _common_func_gen,
+                BENCH.FUNC_SIZE : _common_func_size,
+                BENCH.FUNC_STEP : _common_func_step
             },
             BENCH.FORWARD: {},
             BENCH.OVERHEAD: {
-                BENCH.FUNC_GEN  : (lambda c: Parametric(
-                    np.arange(2 ** c).astype(np.double) / (2 ** c),
-                    np.arange(2 ** c).astype(np.double) / (2 ** c),
-                    (lambda x, y: 1.0))),
-                BENCH.FUNC_SIZE : (lambda c: 2 ** c),
-                BENCH.FUNC_STEP : (lambda c: c + 1)
+                BENCH.FUNC_GEN  : _overhead_func_gen,
+                BENCH.FUNC_SIZE : _overhead_dtypes_func_size,
+                BENCH.FUNC_STEP : _overhead_func_step
             },
             BENCH.DTYPES: {
-                BENCH.FUNC_GEN  : (lambda c, datatype: Parametric(
-                    np.arange(2 ** c).astype(datatype) / (2 ** c),
-                    np.arange(2 ** c).astype(datatype) / (2 ** c),
-                    (lambda x, y: datatype(1)))),
-                BENCH.FUNC_SIZE : (lambda c: 2 ** c)
+                BENCH.FUNC_GEN  : _dtypes_func_gen,
+                BENCH.FUNC_SIZE : _overhead_dtypes_func_size
             }
         }

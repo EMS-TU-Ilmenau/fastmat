@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import itertools
+import pickle
 import numpy as np
 from pprint import pprint
 
@@ -60,6 +61,7 @@ class TEST(NAME):
     TOL_MINEPS      = 'tolMinEps'
     TOL_POWER       = 'tolPower'
     IGNORE          = 'ignore'
+    SKIP            = 'skip'
     PARAMALIGN      = 'alignment'
     RESULT_TOLERR   = 'testTolError'
     RESULT_INPUT    = 'testInput'
@@ -745,6 +747,7 @@ def testLargestSV(test):
         result=compareResults(test, query)
         if result[TEST.RESULT]:
             break
+
     return result
 
 
@@ -935,22 +938,26 @@ class Test(Worker):
             }, TEST.CLASS: {
                 # define tests
                 TEST.QUERY: IgnoreDict({
-                    'arr'   : testArray,
-                    'iface' : testInterface,
-                    'item'  : testGetItem,
-                    'gCs'   : testGetColsSingle,
-                    'gCm'   : testGetColsMultiple,
-                    'gRs'   : testGetRowsSingle,
-                    'gRm'   : testGetRowsMultiple,
-                    'CnVec' : testColNorms,
-                    'RnVec' : testRowNorms,
-                    'CnMat' : testColNormsColNormalized,
-                    'RnMat' : testRowNormalized,
-                    'lSV'   : testLargestSV,
-                    'gram'  : testGram,
-                    'T'     : testTranspose,
-                    'H'     : testHermitian,
-                    'conj'  : testConjugate
+                    '0.ifc' : testInterface,
+                    '1.T'   : testTranspose,
+                    '1.H'   : testHermitian,
+                    '1.con' : testConjugate,
+                    '2.grm' : testGram,
+                    '2.lSV' : testLargestSV,
+                    '2.itm' : testGetItem,
+                    '3.gCs' : testGetColsSingle,
+                    '3.gCm' : testGetColsMultiple,
+                    '3.gRs' : testGetRowsSingle,
+                    '3.gRm' : testGetRowsMultiple,
+                    '4.arr' : testArray,
+                    '5.gCs' : testGetColsSingle,
+                    '5.gCm' : testGetColsMultiple,
+                    '5.gRs' : testGetRowsSingle,
+                    '5.gRm' : testGetRowsMultiple,
+                    '6.CnV' : testColNorms,
+                    '6.RnV' : testRowNorms,
+                    '6.CnM' : testColNormsColNormalized,
+                    '6.RnM' : testRowNormalized,
                 })
 
             }, TEST.TRANSFORMS: {
@@ -1087,16 +1094,27 @@ class Test(Worker):
                      else str(variant[key])
                      for key in lstVariantPermutations])
 
+                # see if this variant should be skipped
+                if variant.get(TEST.SKIP, lambda param: False)(variant):
+                    continue
+
                 # call variant initialization routine, if defined
                 if TEST.INIT_VARIANT in variant:
                     variant[TEST.INIT_VARIANT](variant)
 
+                # serialize the variant object and de-serialze into a fresh
+                # deep-copied instance whenever a new query is run.
+                # This ensures that there's really no caching taking place.
+                obj_instance = pickle.dumps(variant[TEST.INSTANCE])
+
                 # execute test queries, collect results as [query-name] level
                 # and store in [variant-name] level into test result structure.
-                resultTest[variant[NAME.VARIANT]]={
-                    name: tryQuery(nameTest, query, variant)
-                    for name, query in test[TEST.QUERY].items()
-                }
+                result_queries = {}
+                for name, query in test[TEST.QUERY].items():
+                    variant[TEST.INSTANCE] = pickle.loads(obj_instance)
+                    result_queries[name] = tryQuery(nameTest, query, variant)
+
+                resultTest[variant[NAME.VARIANT]] = result_queries
 
             self.emitStatus(nameTest, resultTest, lenName, descrVariants)
 
@@ -1168,7 +1186,12 @@ class Test(Worker):
                    for variant in resultTest.values()):
                 return
 
+        if len(resultTest) < 1:
+            print("No result status printable.")
+            return
+
         lenNameV=max(len(nameV) for nameV in resultTest.keys())
+
         if lenName < 1:
             lenName=len(nameTest)
 

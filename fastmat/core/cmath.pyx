@@ -386,7 +386,7 @@ cpdef np.ndarray _arrEmpty(
     )
 
 ################################################## _arrSqueeze1DF()
-cdef np.ndarray _arrSqueeze1D(object data, int flags):
+cpdef np.ndarray _arrSqueeze1D(object data, int flags):
     """Return a squeezed, at least 1D :py:class:`numpy.ndarray` that resembles
     the given data structure and apply special flags during object conversion.
 
