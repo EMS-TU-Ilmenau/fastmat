@@ -206,7 +206,7 @@ cdef class Partial(Matrix):
         further.
         '''
         # determine if subclassed
-        if type(self) == Partial:
+        if type(self) is Partial:
             return "<%s[%dx%d](%s[%dx%d]):0x%12x>" %(
                 self.__class__.__name__,
                 self.numRows, self.numCols,

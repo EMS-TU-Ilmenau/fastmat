@@ -141,10 +141,10 @@ cdef INFO_TYPE_s * getTypeInfo(object obj) except *:
     """
     cdef np.dtype ntype
 
-    if type(obj) == type:
+    if type(obj) is type:
         # if dtype is a python type object, convert it to a numpy type container
         ntype = np.dtype(obj)
-    elif type(obj) == int:
+    elif type(obj) is int:
         # then check for common types: np.dtype and int (numpy typenum)
         ntype = np.PyArray_DescrFromType(obj)
     elif isinstance(obj, np.ndarray):
