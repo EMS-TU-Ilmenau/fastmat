@@ -55,7 +55,7 @@ jobs:
             cibw-archs-linux: "x86_64"
             cibw-archs-macos: "x86_64"
             cibw-archs-windows: "AMD64"
-            pip-requires: "cython>=0.29 numpy==1.26.4 scipy==1.12.0 cibuildwheel==2.12.1 twine"
+            pip-requires: "cython>=0.29 numpy==1.26.4 scipy==1.12.0 cibuildwheel==2.17.0 twine"
 
     steps:
     - uses: actions/checkout@v3
@@ -114,7 +114,7 @@ jobs:
           - python-version: "3.12"
             cibw-build: "cp311* cp312*"
             cibw-archs-macos: "arm64"
-            pip-requires: "cython>=0.29 numpy==1.26.4 scipy==1.12.0 cibuildwheel==2.12.1 twine"
+            pip-requires: "cython>=0.29 numpy==1.26.4 scipy==1.12.0 cibuildwheel==2.17.0 twine"
 
     steps:
     - uses: actions/checkout@v3
